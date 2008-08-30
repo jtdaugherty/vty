@@ -1,0 +1,44 @@
+Name:           ansi-terminal
+Version:        0.1
+Cabal-Version:  >= 1.2
+Category:       User Interfaces
+Synopsis:       Simple ANSI terminal support, with Windows compatibility
+Description:    Allows QuickCheck properties to be assembled into test groups, run in parallel or selectively
+                and more...
+License:        BSD3
+License-File:   LICENSE
+Author:         Max Bolingbroke
+Maintainer:     batterseapower@hotmail.com
+Homepage:       http://bsp.lighthouseapp.com/projects/16235-ansi-terminal/overview
+Build-Type:     Simple
+
+Flag SplitBase
+        Description:    Choose the new smaller, split-up base package
+        Default:        True
+
+
+Library
+        Exposed-Modules:        System.Console.ANSI
+        
+        Other-Modules:          System.Console.ANSI.Common
+        
+        if os(windows)
+                Build-Depends:  Win32 >= 2.0
+                Cpp-Options:    WINDOWS
+                Other-Modules:  System.Console.ANSI.Windows
+                                System.Console.ANSI.Windows.Foreign
+                                System.Console.ANSI.Windows.Emulator
+        else
+                -- We assume any non-Windows platform is Unix
+                Build-Depends:  unix >= 2.3.0.0
+                Cpp-Options:    UNIX
+                Other-Modules:  System.Console.ANSI.Unix
+        
+        if flag(splitBase)
+                Build-Depends:  base >= 3
+        else
+                Build-Depends:  base < 3
+        
+        Extensions:             CPP
+        
+        Ghc-Options:            -Wall
