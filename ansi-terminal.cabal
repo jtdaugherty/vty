@@ -22,16 +22,18 @@ Library
         
         Other-Modules:          System.Console.ANSI.Common
         
+        Cpp-Options:            -Iincludes
+        
         if os(windows)
                 Build-Depends:  Win32 >= 2.0
-                Cpp-Options:    WINDOWS
+                Cpp-Options:    -DWINDOWS
                 Other-Modules:  System.Console.ANSI.Windows
                                 System.Console.ANSI.Windows.Foreign
                                 System.Console.ANSI.Windows.Emulator
         else
                 -- We assume any non-Windows platform is Unix
                 Build-Depends:  unix >= 2.3.0.0
-                Cpp-Options:    UNIX
+                Cpp-Options:    -DUNIX
                 Other-Modules:  System.Console.ANSI.Unix
         
         if flag(splitBase)
@@ -40,5 +42,6 @@ Library
                 Build-Depends:  base < 3
         
         Extensions:             CPP
+                                ForeignFunctionInterface
         
         Ghc-Options:            -Wall

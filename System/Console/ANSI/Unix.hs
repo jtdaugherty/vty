@@ -2,6 +2,11 @@ module System.Console.ANSI.Unix (
 #include "Exports-Include.hs"
     ) where
 
+import System.Console.ANSI.Common
+
+import Data.List
+
+
 #include "Common-Include.hs"
 
 
@@ -33,7 +38,7 @@ clearLine = csi [2] "K"
 scrollPageUp n = csi [n] "S"
 scrollPageDown n = csi [n] "T"
 
-setSGR sgr = csi [ansiSGRToCode n] "m"
+setSGR sgr = csi [ansiSGRToCode sgr] "m"
 
 hideCursor = csi [] "?25l"
 showCursor = csi [] "?25h"
