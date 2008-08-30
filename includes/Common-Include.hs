@@ -15,6 +15,7 @@ clearFromCursorToScreenEnd, clearFromCursorToScreenBeginning, clearScreen :: IO 
 
 clearFromCursorToLineEnd, clearFromCursorToLineBeginning, clearLine :: IO ()
 
+-- | Scroll the displayed information up or down the terminal: not widely supported
 scrollPageUp, scrollPageDown :: Int -- ^ Number of lines to scroll by
                              -> IO ()
 

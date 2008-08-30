@@ -8,14 +8,15 @@ data ANSIColor = Black
                | Magenta
                | Cyan
                | White
+               deriving (Bounded, Enum, Show)
 
 data ANSISGR = Reset
              | BoldIntensity
-             | FaintIntensity -- ^ Not widely supported
+             | FaintIntensity -- ^ Not widely supported: sometimes treated as conceal
              | NormalIntensity
              | Italic -- ^ Not widely supported: sometimes treated as swapping foreground and background
-             | SingleUnderline -- ^ Not widely supported
-             | DoubleUnderline
+             | SingleUnderline
+             | DoubleUnderline -- ^ Not widely supported
              | NoUnderline
              | SlowBlink
              | RapidBlink
