@@ -3,8 +3,7 @@ Version:        0.1
 Cabal-Version:  >= 1.2
 Category:       User Interfaces
 Synopsis:       Simple ANSI terminal support, with Windows compatibility
-Description:    Allows QuickCheck properties to be assembled into test groups, run in parallel or selectively
-                and more...
+Description:    ANSI terminal support for Haskell: allows cursor movement, screen clearing, color output and showing or hiding the cursor
 License:        BSD3
 License-File:   LICENSE
 Author:         Max Bolingbroke
