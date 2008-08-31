@@ -1,5 +1,5 @@
 Name:           ansi-terminal
-Version:        0.2
+Version:        0.3
 Cabal-Version:  >= 1.2
 Category:       User Interfaces
 Synopsis:       Simple ANSI terminal support, with Windows compatibility
@@ -19,6 +19,8 @@ Flag Example
         Description:    Build the example application
         Default:        False
 
+Extra-Source-Files:     includes/Common-Include.hs
+                        includes/Exports-Include.hs
 
 Library
         Exposed-Modules:        System.Console.ANSI
