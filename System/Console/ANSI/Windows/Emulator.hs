@@ -43,21 +43,69 @@ setColumn n = adjustCursorPosition (const (fromIntegral n)) id
 setPosition x y = adjustCursorPosition (const (fromIntegral x)) (const (fromIntegral y))
 
 
-clearFromCursorToScreenEnd = undefined
-clearFromCursorToScreenBeginning = undefined
-clearScreen = undefined
+clearChar :: WCHAR
+clearChar = charToWCHAR ' '
 
+clearAttribute :: WORD
+clearAttribute = 0
 
-clearFromCursorToLineEnd = undefined
-clearFromCursorToLineBeginning = undefined
-clearLine = undefined
+clearScreenFraction :: (SMALL_RECT -> COORD -> (DWORD, COORD)) -> IO ()
+clearScreenFraction fraction_finder = do
+    handle <- getStdHandle sTD_OUTPUT_HANDLE
+    screen_buffer_info <- getConsoleScreenBufferInfo handle
+    
+    let window = csbi_window screen_buffer_info
+        cursor_pos = csbi_cursor_position screen_buffer_info
+        (fill_length, fill_cursor_pos) = fraction_finder window cursor_pos
+    
+    fillConsoleOutputCharacter handle clearChar fill_length fill_cursor_pos
+    fillConsoleOutputAttribute handle clearAttribute fill_length fill_cursor_pos
+    return ()
+
+clearFromCursorToScreenEnd = clearScreenFraction go
+  where
+    go window cursor_pos = (fromIntegral fill_length, cursor_pos)
+      where
+        size_x = rect_width window
+        size_y = rect_bottom window - coord_y cursor_pos
+        line_remainder = size_x - coord_x cursor_pos
+        fill_length = size_x * size_y + line_remainder
+
+clearFromCursorToScreenBeginning = clearScreenFraction go
+  where
+    go window cursor_pos = (fromIntegral fill_length, rect_top_left window)
+      where
+        size_x = rect_width window
+        size_y = coord_y cursor_pos - rect_top window
+        line_remainder = coord_x cursor_pos
+        fill_length = size_x * size_y + line_remainder
+
+clearScreen = clearScreenFraction go
+  where
+    go window _ = (fromIntegral fill_length, rect_top_left window)
+      where
+        size_x = rect_width window
+        size_y = rect_height window
+        fill_length = size_x * size_y
+
+clearFromCursorToLineEnd = clearScreenFraction go
+  where
+    go window cursor_pos = (fromIntegral (rect_right window - coord_x cursor_pos), cursor_pos)
+
+clearFromCursorToLineBeginning = clearScreenFraction go
+  where
+    go window cursor_pos = (fromIntegral (coord_x cursor_pos), cursor_pos { coord_x = rect_left window })
+
+clearLine = clearScreenFraction go
+  where
+    go window cursor_pos = (fromIntegral (rect_width window), cursor_pos { coord_x = rect_left window })
 
 
 scrollPage :: Int -> IO ()
 scrollPage new_origin_y = do
     handle <- getStdHandle sTD_OUTPUT_HANDLE
     screen_buffer_info <- getConsoleScreenBufferInfo handle
-    let fill = CHAR_INFO (charToWCHAR ' ') (csbi_attributes screen_buffer_info)
+    let fill = CHAR_INFO clearChar clearAttribute
         window = csbi_window screen_buffer_info
         origin = COORD (rect_left window) (rect_top window + fromIntegral new_origin_y)
     scrollConsoleScreenBuffer handle window Nothing origin fill

@@ -29,26 +29,27 @@ Library
         Cpp-Options:            -Iincludes
         
         if os(windows)
-                Build-Depends:  Win32 >= 2.0
-                Cpp-Options:    -DWINDOWS
-                Other-Modules:  System.Console.ANSI.Windows
-                                System.Console.ANSI.Windows.Foreign
-                                System.Console.ANSI.Windows.Emulator
+                Build-Depends:          Win32 >= 2.0
+                Cpp-Options:            -DWINDOWS
+                Extra-Libraries:        "kernel32"
+                Other-Modules:          System.Console.ANSI.Windows
+                                        System.Console.ANSI.Windows.Foreign
+                                        System.Console.ANSI.Windows.Emulator
         else
                 -- We assume any non-Windows platform is Unix
-                Build-Depends:  unix >= 2.3.0.0
-                Cpp-Options:    -DUNIX
-                Other-Modules:  System.Console.ANSI.Unix
+                Build-Depends:          unix >= 2.3.0.0
+                Cpp-Options:            -DUNIX
+                Other-Modules:          System.Console.ANSI.Unix
         
         if flag(splitBase)
-                Build-Depends:  base >= 3
+                Build-Depends:          base >= 3
         else
-                Build-Depends:  base < 3
+                Build-Depends:          base < 3
         
         Extensions:             CPP
                                 ForeignFunctionInterface
         
-        Ghc-Options:            -Wall
+        Ghc-Options:                    -Wall
 
 Executable ansi-terminal-example
         Main-Is:                System/Console/ANSI/Example.hs
@@ -56,21 +57,22 @@ Executable ansi-terminal-example
         Cpp-Options:            -Iincludes
         
         if os(windows)
-                Build-Depends:  Win32 >= 2.0
-                Cpp-Options:    -DWINDOWS
-                Other-Modules:  System.Console.ANSI.Windows
-                                System.Console.ANSI.Windows.Foreign
-                                System.Console.ANSI.Windows.Emulator
+                Build-Depends:          Win32 >= 2.0
+                Cpp-Options:            -DWINDOWS
+                Extra-Libraries:        "kernel32"
+                Other-Modules:          System.Console.ANSI.Windows
+                                        System.Console.ANSI.Windows.Foreign
+                                        System.Console.ANSI.Windows.Emulator
         else
                 -- We assume any non-Windows platform is Unix
-                Build-Depends:  unix >= 2.3.0.0
-                Cpp-Options:    -DUNIX
-                Other-Modules:  System.Console.ANSI.Unix
+                Build-Depends:          unix >= 2.3.0.0
+                Cpp-Options:            -DUNIX
+                Other-Modules:          System.Console.ANSI.Unix
         
         if flag(splitBase)
-                Build-Depends:  base >= 3
+                Build-Depends:          base >= 3
         else
-                Build-Depends:  base < 3
+                Build-Depends:          base < 3
         
         Extensions:             CPP
                                 ForeignFunctionInterface
@@ -78,4 +80,4 @@ Executable ansi-terminal-example
         Ghc-Options:            -Wall
         
         if !flag(example)
-                Buildable:      False
+                Buildable:              False

@@ -1,11 +1,11 @@
 -- | "System.Win32.Console" is really very impoverished, so I have had to do all the FFI myself.
 module System.Console.ANSI.Windows.Foreign (
         -- Re-exports from Win32.Types
-        BOOL, WORD, WCHAR, HANDLE, SHORT,
+        BOOL, WORD, DWORD, WCHAR, HANDLE, SHORT,
         
         charToWCHAR,
         
-        COORD(..), SMALL_RECT(..), rect_top, rect_bottom, rect_left, rect_right,
+        COORD(..), SMALL_RECT(..), rect_top, rect_bottom, rect_left, rect_right, rect_width, rect_height,
         CONSOLE_CURSOR_INFO(..), CONSOLE_SCREEN_BUFFER_INFO(..), CHAR_INFO(..),
         
         sTD_INPUT_HANDLE, sTD_OUTPUT_HANDLE, sTD_ERROR_HANDLE,
@@ -22,6 +22,8 @@ module System.Console.ANSI.Windows.Foreign (
         setConsoleCursorPosition,
         setConsoleCursorInfo,
         
+        fillConsoleOutputAttribute,
+        fillConsoleOutputCharacter,
         scrollConsoleScreenBuffer
     ) where
 
@@ -30,6 +32,7 @@ import Foreign.Marshal
 import Foreign.Ptr
 import Foreign.Storable
 
+import Data.Bits
 import Data.Char
 
 import System.Win32.Types
@@ -41,6 +44,16 @@ type WCHAR = CWchar
 
 charToWCHAR :: Char -> WCHAR
 charToWCHAR char = fromIntegral (ord char)
+
+
+-- This is a FFI hack. Some of the API calls take a Coord, but that isn't a built-in FFI type so I can't
+-- use it directly. Instead, I use UNPACKED_COORD and marshal COORDs into this manually. Note that we CAN'T
+-- just use two SHORTs directly because they get expanded to 4 bytes each instead of just boing 2 lots of 2
+-- bytes by the stdcall convention, so linking fails.
+type UNPACKED_COORD = CInt
+
+unpackCOORD :: COORD -> UNPACKED_COORD
+unpackCOORD (COORD x y) = (fromIntegral x) `shiftL` sizeOf y .|. (fromIntegral y)
 
 
 peekAndOffset :: Storable a => Ptr a -> IO (a, Ptr b)
@@ -83,6 +96,10 @@ rect_top = coord_y . rect_top_left
 rect_left = coord_x . rect_top_left
 rect_bottom = coord_y . rect_bottom_right
 rect_right = coord_x . rect_bottom_right
+
+rect_width, rect_height :: SMALL_RECT -> SHORT
+rect_width rect = rect_right rect - rect_left rect + 1
+rect_height rect = rect_bottom rect - rect_top rect + 1
 
 
 instance Storable SMALL_RECT where
@@ -185,10 +202,12 @@ foreign import stdcall unsafe "windows.h GetConsoleScreenBufferInfo" cGetConsole
 foreign import stdcall unsafe "windows.h GetConsoleCursorInfo" cGetConsoleCursorInfo :: HANDLE -> Ptr CONSOLE_CURSOR_INFO -> IO BOOL
 
 foreign import stdcall unsafe "windows.h SetConsoleTextAttribute" cSetConsoleTextAttribute :: HANDLE -> WORD -> IO BOOL
-foreign import stdcall unsafe "windows.h SetConsoleCursorPosition" cSetConsoleCursorPosition :: HANDLE -> SHORT -> SHORT -> IO BOOL -- Note unpacked COORD parameter
+foreign import stdcall unsafe "windows.h SetConsoleCursorPosition" cSetConsoleCursorPosition :: HANDLE -> UNPACKED_COORD -> IO BOOL
 foreign import stdcall unsafe "windows.h SetConsoleCursorInfo" cSetConsoleCursorInfo :: HANDLE -> Ptr CONSOLE_CURSOR_INFO -> IO BOOL
 
-foreign import stdcall unsafe "windows.h ScrollConsoleScreenBuffer" cScrollConsoleScreenBuffer :: HANDLE -> Ptr SMALL_RECT -> Ptr SMALL_RECT -> SHORT -> SHORT -> Ptr CHAR_INFO -> IO BOOL -- Note unpacked COORD parameter
+foreign import stdcall unsafe "windows.h FillConsoleOutputAttribute" cFillConsoleOutputAttribute :: HANDLE -> WORD -> DWORD -> UNPACKED_COORD -> Ptr DWORD -> IO BOOL
+foreign import stdcall unsafe "windows.h FillConsoleOutputCharacterW" cFillConsoleOutputCharacter :: HANDLE -> TCHAR -> DWORD -> UNPACKED_COORD -> Ptr DWORD -> IO BOOL
+foreign import stdcall unsafe "windows.h ScrollConsoleScreenBufferW" cScrollConsoleScreenBuffer :: HANDLE -> Ptr SMALL_RECT -> Ptr SMALL_RECT -> UNPACKED_COORD -> Ptr CHAR_INFO -> IO BOOL
 
 
 getConsoleScreenBufferInfo :: HANDLE -> IO CONSOLE_SCREEN_BUFFER_INFO
@@ -206,15 +225,26 @@ setConsoleTextAttribute :: HANDLE -> WORD -> IO ()
 setConsoleTextAttribute handle attributes = failIfFalse_ "setConsoleTextAttribute" $ cSetConsoleTextAttribute handle attributes
 
 setConsoleCursorPosition :: HANDLE -> COORD -> IO ()
-setConsoleCursorPosition handle (COORD x y) = failIfFalse_ "setConsoleCursorPosition" $ cSetConsoleCursorPosition handle x y
+setConsoleCursorPosition handle cursor_position = failIfFalse_ "setConsoleCursorPosition" $ cSetConsoleCursorPosition handle (unpackCOORD cursor_position)
 
 setConsoleCursorInfo :: HANDLE -> CONSOLE_CURSOR_INFO -> IO ()
 setConsoleCursorInfo handle console_cursor_info = with console_cursor_info $ \ptr_console_cursor_info -> do
     failIfFalse_ "setConsoleCursorInfo" $ cSetConsoleCursorInfo handle ptr_console_cursor_info
 
+
+fillConsoleOutputAttribute :: HANDLE -> WORD -> DWORD -> COORD -> IO DWORD
+fillConsoleOutputAttribute handle attribute fill_length write_origin = alloca $ \ptr_chars_written -> do
+    failIfFalse_ "fillConsoleOutputAttribute" $ cFillConsoleOutputAttribute handle attribute fill_length (unpackCOORD write_origin) ptr_chars_written
+    peek ptr_chars_written
+
+fillConsoleOutputCharacter :: HANDLE -> TCHAR -> DWORD -> COORD -> IO DWORD
+fillConsoleOutputCharacter handle char fill_length write_origin = alloca $ \ptr_chars_written -> do
+    failIfFalse_ "fillConsoleOutputCharacter" $ cFillConsoleOutputCharacter handle char fill_length (unpackCOORD write_origin) ptr_chars_written
+    peek ptr_chars_written
+
 scrollConsoleScreenBuffer :: HANDLE -> SMALL_RECT -> Maybe SMALL_RECT -> COORD -> CHAR_INFO -> IO ()
-scrollConsoleScreenBuffer handle scroll_rectangle mb_clip_rectangle (COORD destination_origin_x destination_origin_y) fill 
+scrollConsoleScreenBuffer handle scroll_rectangle mb_clip_rectangle destination_origin fill 
   = with scroll_rectangle $ \ptr_scroll_rectangle ->
     maybeWith with mb_clip_rectangle $ \ptr_clip_rectangle ->
     with fill $ \ptr_fill ->
-    failIfFalse_ "scrollConsoleScreenBuffer" $ cScrollConsoleScreenBuffer handle ptr_scroll_rectangle ptr_clip_rectangle destination_origin_x destination_origin_y ptr_fill
+    failIfFalse_ "scrollConsoleScreenBuffer" $ cScrollConsoleScreenBuffer handle ptr_scroll_rectangle ptr_clip_rectangle (unpackCOORD destination_origin) ptr_fill
