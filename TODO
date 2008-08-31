@@ -1,5 +1,6 @@
 === High Priority ===
-Get the example working on Windows
 
 === Medium Priority ===
 Make all functions work on handles rather than always on stdout
+
+=== Low Priority ===
