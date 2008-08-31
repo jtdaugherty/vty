@@ -52,8 +52,10 @@ charToWCHAR char = fromIntegral (ord char)
 -- bytes by the stdcall convention, so linking fails.
 type UNPACKED_COORD = CInt
 
+-- Field packing order determined experimentally: I couldn't immediately find a specification for Windows
+-- struct layout anywhere.
 unpackCOORD :: COORD -> UNPACKED_COORD
-unpackCOORD (COORD x y) = (fromIntegral x) `shiftL` sizeOf y .|. (fromIntegral y)
+unpackCOORD (COORD x y) = (fromIntegral y) `shiftL` (sizeOf x * 8) .|. (fromIntegral x)
 
 
 peekAndOffset :: Storable a => Ptr a -> IO (a, Ptr b)
@@ -71,6 +73,9 @@ data COORD = COORD {
         coord_x :: SHORT,
         coord_y :: SHORT
     }
+
+instance Show COORD where
+    show (COORD x y) = "(" ++ show x ++ ", " ++ show y ++ ")"
 
 instance Storable COORD where
     sizeOf ~(COORD x y) = sizeOf x + sizeOf y
@@ -101,6 +106,8 @@ rect_width, rect_height :: SMALL_RECT -> SHORT
 rect_width rect = rect_right rect - rect_left rect + 1
 rect_height rect = rect_bottom rect - rect_top rect + 1
 
+instance Show SMALL_RECT where
+    show (SMALL_RECT tl br) = show tl ++ "-" ++ show br
 
 instance Storable SMALL_RECT where
     sizeOf ~(SMALL_RECT tl br) = sizeOf tl + sizeOf br
@@ -120,6 +127,7 @@ data CONSOLE_CURSOR_INFO = CONSOLE_CURSOR_INFO {
         cci_cursor_size :: DWORD,
         cci_cursor_visible :: BOOL
     }
+    deriving (Show)
 
 instance Storable CONSOLE_CURSOR_INFO where
     sizeOf ~(CONSOLE_CURSOR_INFO size visible) = sizeOf size + sizeOf visible
@@ -140,6 +148,7 @@ data CONSOLE_SCREEN_BUFFER_INFO = CONSOLE_SCREEN_BUFFER_INFO {
         csbi_window :: SMALL_RECT,
         csbi_maximum_window_size :: COORD
     }
+    deriving (Show)
 
 instance Storable CONSOLE_SCREEN_BUFFER_INFO where
     sizeOf ~(CONSOLE_SCREEN_BUFFER_INFO size cursor_position attributes window maximum_window_size)
@@ -164,6 +173,7 @@ data CHAR_INFO = CHAR_INFO {
         ci_char :: WCHAR,
         ci_attributes :: WORD
     }
+    deriving (Show)
 
 instance Storable CHAR_INFO where
     sizeOf ~(CHAR_INFO char attributes) = sizeOf char + sizeOf attributes

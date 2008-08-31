@@ -15,32 +15,32 @@ screenRectangle = do
     fmap csbi_window $ getConsoleScreenBufferInfo handle
 
 
-adjustCursorPosition :: (SHORT -> SHORT) -> (SHORT -> SHORT) -> IO ()
+adjustCursorPosition :: (SHORT -> SHORT -> SHORT) -> (SHORT -> SHORT -> SHORT) -> IO ()
 adjustCursorPosition change_x change_y = do
     handle <- getStdHandle sTD_OUTPUT_HANDLE
     screen_buffer_info <- getConsoleScreenBufferInfo handle
-    let (COORD x y) = csbi_cursor_position screen_buffer_info
-        cursor_pos' = COORD (change_x x) (change_y y)
+    let window = csbi_window screen_buffer_info
+        (COORD x y) = csbi_cursor_position screen_buffer_info
+        cursor_pos' = COORD (change_x (rect_left window) x) (change_y (rect_top window) y)
     setConsoleCursorPosition handle cursor_pos'
 
-cursorUp n = adjustCursorPosition id (\x -> x - fromIntegral n)
-cursorDown n = adjustCursorPosition id (+ (fromIntegral n))
-cursorForward n = adjustCursorPosition (+ (fromIntegral n)) id
-cursorBackward n = adjustCursorPosition (\x -> x - fromIntegral n) id
+cursorUp n       = adjustCursorPosition (\_ x -> x) (\_ y -> y - fromIntegral n)
+cursorDown n     = adjustCursorPosition (\_ x -> x) (\_ y -> y + fromIntegral n)
+cursorForward n  = adjustCursorPosition (\_ x -> x + fromIntegral n) (\_ y -> y)
+cursorBackward n = adjustCursorPosition (\_ x -> x - fromIntegral n) (\_ y -> y)
 
 
-adjustLine :: (SHORT -> SHORT) -> IO ()
+adjustLine :: (SHORT -> SHORT -> SHORT) -> IO ()
 adjustLine change_y = do
-    left <- fmap rect_left $ screenRectangle
-    adjustCursorPosition (const (fromIntegral left)) change_y
+    adjustCursorPosition (\window_left _ -> window_left) change_y
 
-nextLine n = adjustLine (+ (fromIntegral n))
-previousLine n = adjustLine (\x -> x - fromIntegral n)
+nextLine n     = adjustLine (\_ y -> y + fromIntegral n)
+previousLine n = adjustLine (\_ y -> y - fromIntegral n)
 
 
-setColumn n = adjustCursorPosition (const (fromIntegral n)) id
+setColumn x = adjustCursorPosition (\window_left _ -> window_left + fromIntegral x) (\_ y -> y)
 
-setPosition x y = adjustCursorPosition (const (fromIntegral x)) (const (fromIntegral y))
+setPosition y x = adjustCursorPosition (\window_left _ -> window_left + fromIntegral x) (\window_top _ -> window_top + fromIntegral y)
 
 
 clearChar :: WCHAR
@@ -135,13 +135,13 @@ applyBackgroundANSIColorToAttribute = applyANSIColorToAttribute bACKGROUND_RED b
 
 applyANSISGRToAttribute :: ANSISGR -> WORD -> WORD
 applyANSISGRToAttribute sgr attribute = case sgr of
-    Reset -> 0
+    Reset -> fOREGROUND_WHITE
     BoldIntensity   -> attribute .|. iNTENSITY
     FaintIntensity  -> attribute .&. (complement iNTENSITY) -- Not supported
     NormalIntensity -> attribute .&. (complement iNTENSITY)
     Italic -> attribute -- Not supported
-    SingleUnderline -> attribute .|. cOMMON_LVB_UNDERSCORE -- Not supported
-    DoubleUnderline -> attribute .|. cOMMON_LVB_UNDERSCORE
+    SingleUnderline -> attribute .|. cOMMON_LVB_UNDERSCORE -- Not supported, since cOMMON_LVB_UNDERSCORE seems to have no effect
+    DoubleUnderline -> attribute .|. cOMMON_LVB_UNDERSCORE -- Not supported, since cOMMON_LVB_UNDERSCORE seems to have no effect
     NoUnderline     -> attribute .&. (complement cOMMON_LVB_UNDERSCORE)
     SlowBlink  -> attribute -- Not supported
     RapidBlink -> attribute -- Not supported
@@ -156,6 +156,7 @@ applyANSISGRToAttribute sgr attribute = case sgr of
     BackgroundHighIntensity color   -> applyBackgroundANSIColorToAttribute color (attribute .|. bACKGROUND_INTENSITY)
   where
     iNTENSITY = fOREGROUND_INTENSITY .|. bACKGROUND_INTENSITY
+    fOREGROUND_WHITE = fOREGROUND_RED .|. fOREGROUND_GREEN .|. fOREGROUND_BLUE
 
 setSGR sgr = do
     handle <- getStdHandle sTD_OUTPUT_HANDLE
