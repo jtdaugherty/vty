@@ -1,9 +1,9 @@
 Name:           ansi-terminal
-Version:        0.1
+Version:        0.2
 Cabal-Version:  >= 1.2
 Category:       User Interfaces
 Synopsis:       Simple ANSI terminal support, with Windows compatibility
-Description:    ANSI terminal support for Haskell: allows cursor movement, screen clearing, color output and showing or hiding the cursor. Compatible with Windows and Unixes with ANSI terminals.
+Description:    ANSI terminal support for Haskell: allows cursor movement, screen clearing, color output and showing or hiding the cursor. Compatible with Windows and those Unixes with ANSI terminals.
 License:        BSD3
 License-File:   LICENSE
 Author:         Max Bolingbroke
