@@ -1,0 +1,53 @@
+#!/bin/bash
+#
+
+echo "Have you updated the version number? Type 'yes' if you have!"
+read version_response
+
+if [ "$version_response" != "yes" ]; then
+    echo "Go and update the version number"
+    exit 1
+fi
+
+sdist_output=`runghc Setup.lhs sdist`
+
+if [ "$?" != "0" ]; then
+    echo "Cabal sdist failed, aborting"
+    exit 1
+fi
+
+# Want to find a line like:
+# Source tarball created: dist/ansi-terminal-0.1.tar.gz
+
+# Test this with:
+# runghc Setup.lhs sdist | grep ...
+filename=`echo $sdist_output | grep '^Source tarball created: ' | sed 's/^Source tarball created: //'`
+
+if [ "$filename" = "" ]; then
+    echo "Could not find filename, aborting"
+    exit 1
+fi
+
+# Test this with:
+# echo dist/ansi-terminal-0.1.tar.gz | sed ...
+version=`echo $filename | sed 's/^[^0-9]*\([0-9\.]*\).tar.gz$/\1/'`
+
+if [ "$version" = "$filename" ]; then
+    echo "Could not find version, aborting"
+    exit 1
+fi
+
+git tag "v$version"
+
+if [ "$?" != "0" ]; then
+    echo "Git tag failed, aborting"
+    exit 1
+fi
+
+# You need to have stored your Hackage username and password as directed by cabal-upload
+cabal-upload $filename
+
+if [ "$?" != "0" ]; then
+    echo "Hackage upload failed, aborting"
+    exit 1
+fi
