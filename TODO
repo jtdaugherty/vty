@@ -1,6 +1,9 @@
 === High Priority ===
 
 === Medium Priority ===
-Make all functions work on handles rather than always on stdout
+Make all functions work on handles rather than always on stdout.  The problem with this is that we need to extract the Windows HANDLE from a Haskell Handle
+in order to work out where we should issue the console API calls on.  There doesn't appear to be a way to do this: indeed, it's not clear it even makes
+sense to do it.  The unix package has something /like/ what we want, but it takes a Handle to a Fd, flushing and closing (!) the Handle as it does it: this
+is not really what we want (even if it was available for Win32).
 
 === Low Priority ===
