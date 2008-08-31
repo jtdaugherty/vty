@@ -11,6 +11,9 @@ Maintainer:     batterseapower@hotmail.com
 Homepage:       http://bsp.lighthouseapp.com/projects/16235-hs-ansi-terminal/overview
 Build-Type:     Simple
 
+Extra-Source-Files:     includes/Common-Include.hs
+                        includes/Exports-Include.hs
+
 Flag SplitBase
         Description:    Choose the new smaller, split-up base package
         Default:        True
@@ -18,9 +21,6 @@ Flag SplitBase
 Flag Example
         Description:    Build the example application
         Default:        False
-
-Extra-Source-Files:     includes/Common-Include.hs
-                        includes/Exports-Include.hs
 
 Library
         Exposed-Modules:        System.Console.ANSI
