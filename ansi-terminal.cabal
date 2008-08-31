@@ -8,7 +8,7 @@ License:        BSD3
 License-File:   LICENSE
 Author:         Max Bolingbroke
 Maintainer:     batterseapower@hotmail.com
-Homepage:       http://bsp.lighthouseapp.com/projects/16235-ansi-terminal/overview
+Homepage:       http://bsp.lighthouseapp.com/projects/16235-hs-ansi-terminal/overview
 Build-Type:     Simple
 
 Flag SplitBase
