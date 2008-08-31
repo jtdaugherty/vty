@@ -1,4 +1,6 @@
-module Main where
+module Main (
+        main
+    ) where
 
 import System.Console.ANSI
 
@@ -9,23 +11,25 @@ import Control.Monad
 
 
 examples :: [IO ()]
-examples = [cursorMovementExample,
-            lineChangeExample,
-            setPositionExample,
-            clearExample,
-            scrollExample,
-            sgrExample,
-            cursorVisibilityExample]
+examples = [ cursorMovementExample
+           , lineChangeExample
+           , setPositionExample
+           , clearExample
+           , scrollExample
+           , sgrExample
+           , cursorVisibilityExample
+           ]
 
 main :: IO ()
 main = mapM_ (\example -> resetScreen >> example) examples
 
 resetScreen :: IO ()
-resetScreen = clearScreen >> setSGR Reset >> setPosition 1 1
+resetScreen = clearScreen >> setSGR Reset >> setPosition 0 0
 
 pause :: IO ()
 pause = do
     hFlush stdout
+    -- 1 second pause
     threadDelay 1000000
 
 cursorMovementExample :: IO ()
@@ -57,8 +61,8 @@ cursorMovementExample = do
     cursorDown 1
     putStr "Disconnected"
     pause
-    -- Line One - Extrzz  - AndMore
-    -- Line Two                    Disconnected
+    -- Line One - Extrzz  - And More
+    -- Line Two                     Disconnected
 
 lineChangeExample :: IO ()
 lineChangeExample = do
@@ -88,19 +92,19 @@ setPositionExample = do
     -- Line One
     -- Line Two
     
-    setPosition 1 6
+    setPosition 0 5
     putStr "Foo"
     pause
     -- Line Foo
     -- Line Two
     
-    setPosition 2 6
+    setPosition 1 5
     putStr "Bar"
     pause
     -- Line Foo
     -- Line Bar
     
-    setColumn 2
+    setColumn 1
     putStr "oaf"
     pause
     -- Line Foo
@@ -114,7 +118,7 @@ clearExample = do
     -- Line One
     -- Line Two
     
-    setPosition 1 5
+    setPosition 0 4
     clearFromCursorToScreenEnd
     pause
     -- Line
@@ -127,7 +131,7 @@ clearExample = do
     -- Line One
     -- Line Two
     
-    setPosition 2 5
+    setPosition 1 4
     clearFromCursorToScreenBeginning
     pause
     --
@@ -141,13 +145,13 @@ clearExample = do
     -- Line One
     -- Line Two
     
-    setPosition 1 5
+    setPosition 0 4
     clearFromCursorToLineEnd
     pause
     -- Line
     -- Line Two
     
-    setPosition 2 5
+    setPosition 1 4
     clearFromCursorToLineBeginning
     pause
     -- Line
@@ -219,13 +223,13 @@ sgrExample = do
     setSGR (ForegroundHighIntensity Red)
     setSGR (BackgroundHighIntensity Blue)
     
-    clearScreen >> setPosition 1 1
+    clearScreen >> setPosition 0 0
     setSGR DontSwapForegroundBackground
     putStr "Red-On-Blue"
     pause
     -- Red-On-Blue
     
-    clearScreen >> setPosition 1 1
+    clearScreen >> setPosition 0 0
     setSGR SwapForegroundBackground
     putStr "Blue-On-Red"
     pause
