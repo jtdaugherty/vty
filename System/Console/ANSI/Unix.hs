@@ -23,9 +23,9 @@ cursorBackward n = csi [n] "D"
 nextLine n = csi [n] "E"
 previousLine n = csi [n] "F"
 
-setColumn n = csi [n] "G"
+setColumn n = csi [n + 1] "G"
 
-setPosition n m = csi [n, m] "H"
+setPosition n m = csi [n + 1, m + 1] "H"
 
 clearFromCursorToScreenEnd = csi [0] "J"
 clearFromCursorToScreenBeginning = csi [1] "J"
