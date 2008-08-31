@@ -21,9 +21,10 @@ fi
 
 # Test this with:
 # runghc Setup.lhs sdist | grep ...
-filename=`echo $sdist_output | grep '^Source tarball created: ' | sed 's/^Source tarball created: //'`
+filename=`echo $sdist_output | sed 's/.*Source tarball created: \([^ ]*\).*/\1/'`
+echo "Filename: $filename"
 
-if [ "$filename" = "" ]; then
+if [ "$filename" = "$sdist_output" ]; then
     echo "Could not find filename, aborting"
     exit 1
 fi
@@ -31,11 +32,15 @@ fi
 # Test this with:
 # echo dist/ansi-terminal-0.1.tar.gz | sed ...
 version=`echo $filename | sed 's/^[^0-9]*\([0-9\.]*\).tar.gz$/\1/'`
+echo "Version: $version"
 
 if [ "$version" = "$filename" ]; then
     echo "Could not find version, aborting"
     exit 1
 fi
+
+echo "This is your last chance to abort! I'm going to upload in 10 seconds"
+sleep 10
 
 git tag "v$version"
 
@@ -45,9 +50,13 @@ if [ "$?" != "0" ]; then
 fi
 
 # You need to have stored your Hackage username and password as directed by cabal-upload
-cabal-upload $filename
+# I use -v5 because otherwise the error messages can be cryptic :-)
+cabal-upload -v5 $filename
 
 if [ "$?" != "0" ]; then
     echo "Hackage upload failed, aborting"
     exit 1
 fi
+
+# Success!
+exit 0
