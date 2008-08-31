@@ -133,6 +133,15 @@ applyForegroundANSIColorToAttribute, applyBackgroundANSIColorToAttribute :: ANSI
 applyForegroundANSIColorToAttribute = applyANSIColorToAttribute fOREGROUND_RED fOREGROUND_GREEN fOREGROUND_BLUE
 applyBackgroundANSIColorToAttribute = applyANSIColorToAttribute bACKGROUND_RED bACKGROUND_GREEN bACKGROUND_BLUE
 
+swapForegroundBackgroundColors :: WORD -> WORD
+swapForegroundBackgroundColors attribute = clean_attribute .|. foreground_attribute' .|. background_attribute'
+  where
+    foreground_attribute = attribute .&. fOREGROUND_INTENSE_WHITE
+    background_attribute = attribute .&. bACKGROUND_INTENSE_WHITE
+    clean_attribute = attribute .&. complement (fOREGROUND_INTENSE_WHITE .|. bACKGROUND_INTENSE_WHITE)
+    foreground_attribute' = background_attribute `shiftR` 4
+    background_attribute' = foreground_attribute `shiftL` 4
+
 applyANSISGRToAttribute :: ANSISGR -> WORD -> WORD
 applyANSISGRToAttribute sgr attribute = case sgr of
     Reset -> fOREGROUND_WHITE
@@ -148,15 +157,24 @@ applyANSISGRToAttribute sgr attribute = case sgr of
     NoBlink    -> attribute
     Conceal -> attribute -- Not supported
     Reveal  -> attribute
-    SwapForegroundBackground     -> attribute .|. cOMMON_LVB_REVERSE_VIDEO
-    DontSwapForegroundBackground -> attribute .&. (complement cOMMON_LVB_REVERSE_VIDEO)
+    -- The cOMMON_LVB_REVERSE_VIDEO doesn't actually appear to have any affect on the colors being displayed, so the emulator
+    -- just uses it to carry information and implements the color-swapping behaviour itself. Bit of a hack, I guess :-)
+    SwapForegroundBackground     ->
+        -- Check if the color-swapping flag is already set
+        if attribute .&. cOMMON_LVB_REVERSE_VIDEO /= 0
+         then attribute
+         else swapForegroundBackgroundColors attribute .|. cOMMON_LVB_REVERSE_VIDEO
+    DontSwapForegroundBackground ->
+        -- Check if the color-swapping flag is already not set
+        if attribute .&. cOMMON_LVB_REVERSE_VIDEO == 0
+         then attribute
+         else swapForegroundBackgroundColors attribute .&. (complement cOMMON_LVB_REVERSE_VIDEO)
     ForegroundNormalIntensity color -> applyForegroundANSIColorToAttribute color (attribute .&. (complement fOREGROUND_INTENSITY))
     ForegroundHighIntensity color   -> applyForegroundANSIColorToAttribute color (attribute .|. fOREGROUND_INTENSITY)
     BackgroundNormalIntensity color -> applyBackgroundANSIColorToAttribute color (attribute .&. (complement bACKGROUND_INTENSITY))
     BackgroundHighIntensity color   -> applyBackgroundANSIColorToAttribute color (attribute .|. bACKGROUND_INTENSITY)
   where
     iNTENSITY = fOREGROUND_INTENSITY .|. bACKGROUND_INTENSITY
-    fOREGROUND_WHITE = fOREGROUND_RED .|. fOREGROUND_GREEN .|. fOREGROUND_BLUE
 
 setSGR sgr = do
     handle <- getStdHandle sTD_OUTPUT_HANDLE
