@@ -8,7 +8,7 @@ License:        BSD3
 License-File:   LICENSE
 Author:         Max Bolingbroke
 Maintainer:     batterseapower@hotmail.com
-Homepage:       http://bsp.lighthouseapp.com/projects/16235-hs-ansi-terminal/overview
+Homepage:       http://wiki.omega-prime.co.uk/doku.php/projects/haskell/ansi-terminal
 Build-Type:     Simple
 
 Extra-Source-Files:     includes/Common-Include.hs
