@@ -1,0 +1,54 @@
+h1. ANSI Terminal
+
+You can help improve this README with extra snippets and advice by using the "GitHub wiki":http://github.com/batterseapower/ansi-terminal/wikis/readme.
+
+
+h2. Installing
+
+To just install the library:
+
+<pre>
+<code>runghc Setup.lhs configure
+runghc Setup.lhs build
+sudo runghc Setup.lhs install
+</pre>
+</code>
+
+If you want to build the example, to check it's all working:
+
+<pre>
+<code>runghc Setup.lhs configure -fexample
+runghc Setup.lhs build
+dist/build/ansi-terminal-example/ansi-terminal-example
+</pre>
+</code>
+
+
+h2. Description
+
+"ANSI":http://en.wikipedia.org/wiki/ANSI_escape_sequences terminal support for Haskell, which allows:
+
+* Cursor movement
+* Screen and line clearing
+* Color output
+* Showing or hiding the cursor
+
+It is compatible with Windows (via an emulation layer) and those Unixes with ANSI terminals
+
+If you like this, you may be interested in "ansi-wl-pprint":http://github.com/batterseapower/ansi-wl-pprint, which provides a pretty-printer that can construct strings containing ANSI colorisation.
+
+
+h2. Example
+
+A full example is provided with the package, and can be compiled by suppling Cabal with the @-fexample@ flag. It is also available online at "GitHub":http://github.com/batterseapower/ansi-terminal/tree/master/System/Console/ANSI/Example.hs.
+
+The API is very simple, and should be available to look at "here":http://github.com/batterseapower/ansi-terminal/tree/master/includes/Common-Include.hs. It basically consists of @IO@ actions for the various operations. Note that a Unix-only library for ANSI output would permit a pure API that outputs strings, but unfortunately it's not possible to provide ANSI operations with strings in Windows, so I must provide a stateful @IO@-based interface.
+
+
+h2. Linkage
+
+"Hackage":http://hackage.haskell.org/cgi-bin/hackage-scripts/package/ansi-terminal
+
+"Bug Tracker":http://bsp.lighthouseapp.com/projects/16235-hs-ansi-terminal
+
+"GitHub":http://github.com/batterseapower/ansi-terminal/
