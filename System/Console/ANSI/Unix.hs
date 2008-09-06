@@ -4,6 +4,8 @@ module System.Console.ANSI.Unix (
 
 import System.Console.ANSI.Common
 
+import System.IO
+
 import Data.List
 
 
@@ -11,38 +13,8 @@ import Data.List
 
 
 -- | The reference I used for the escape characters in this module was http://en.wikipedia.org/wiki/ANSI_escape_sequences
-csi :: [Int] -> String -> IO ()
-csi args code = putStr $ "\ESC[" ++ concat (intersperse ";" (map show args)) ++ code
-
-
-cursorUp n = csi [n] "A"
-cursorDown n = csi [n] "B"
-cursorForward n = csi [n] "C"
-cursorBackward n = csi [n] "D"
-
-nextLine n = csi [n] "E"
-previousLine n = csi [n] "F"
-
-setColumn n = csi [n + 1] "G"
-
-setPosition n m = csi [n + 1, m + 1] "H"
-
-clearFromCursorToScreenEnd = csi [0] "J"
-clearFromCursorToScreenBeginning = csi [1] "J"
-clearScreen = csi [2] "J"
-
-clearFromCursorToLineEnd = csi [0] "K"
-clearFromCursorToLineBeginning = csi [1] "K"
-clearLine = csi [2] "K"
-
-scrollPageUp n = csi [n] "S"
-scrollPageDown n = csi [n] "T"
-
-setSGR sgr = csi [ansiSGRToCode sgr] "m"
-
-hideCursor = csi [] "?25l"
-showCursor = csi [] "?25h"
-
+csi :: Handle -> [Int] -> String -> IO ()
+csi handle args code = hPutStr handle $ "\ESC[" ++ concat (intersperse ";" (map show args)) ++ code
 
 ansiColorToCode :: ANSIColor -> Int
 ansiColorToCode color = case color of
@@ -76,3 +48,32 @@ ansiSGRToCode sgr = case sgr of
     ForegroundHighIntensity color   -> 90 + ansiColorToCode color
     BackgroundNormalIntensity color -> 40 + ansiColorToCode color
     BackgroundHighIntensity color   -> 100 + ansiColorToCode color
+
+
+hCursorUp h n = csi h [n] "A"
+hCursorDown h n = csi h [n] "B"
+hCursorForward h n = csi h [n] "C"
+hCursorBackward h n = csi h [n] "D"
+
+hNextLine h n = csi h [n] "E"
+hPreviousLine h n = csi h [n] "F"
+
+hSetColumn h n = csi h [n + 1] "G"
+
+hSetPosition h n m = csi h [n + 1, m + 1] "H"
+
+hClearFromCursorToScreenEnd h = csi h [0] "J"
+hClearFromCursorToScreenBeginning h = csi h [1] "J"
+hClearScreen h = csi h [2] "J"
+
+hClearFromCursorToLineEnd h = csi h [0] "K"
+hClearFromCursorToLineBeginning h = csi h [1] "K"
+hClearLine h = csi h [2] "K"
+
+hScrollPageUp h n = csi h [n] "S"
+hScrollPageDown h n = csi h [n] "T"
+
+hSetSGR h sgr = csi h [ansiSGRToCode sgr] "m"
+
+hHideCursor h = csi h [] "?25l"
+hShowCursor h = csi h [] "?25h"

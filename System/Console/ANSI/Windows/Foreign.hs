@@ -24,7 +24,9 @@ module System.Console.ANSI.Windows.Foreign (
         
         fillConsoleOutputAttribute,
         fillConsoleOutputCharacter,
-        scrollConsoleScreenBuffer
+        scrollConsoleScreenBuffer,
+        
+        withHandleToHANDLE
     ) where
 
 import Foreign.C.Types
@@ -36,6 +38,13 @@ import Data.Bits
 import Data.Char
 
 import System.Win32.Types
+
+import Control.Concurrent.MVar
+import Control.Exception (bracket)
+
+import Foreign.StablePtr
+
+import GHC.IOBase (Handle(..), Handle__(..), FD)
 
 
 -- Some Windows types missing from System.Win32
@@ -264,3 +273,35 @@ scrollConsoleScreenBuffer handle scroll_rectangle mb_clip_rectangle destination_
     maybeWith with mb_clip_rectangle $ \ptr_clip_rectangle ->
     with fill $ \ptr_fill ->
     failIfFalse_ "scrollConsoleScreenBuffer" $ cScrollConsoleScreenBuffer handle ptr_scroll_rectangle ptr_clip_rectangle (unpackCOORD destination_origin) ptr_fill
+
+
+-- This essential function comes from msvcrt.  It's OK to depend on msvcrt since GHC's base package does.
+foreign import ccall unsafe "_get_osfhandle" cget_osfhandle :: FD -> IO HANDLE
+
+-- | This bit is all highly dubious.  The problem is that we want to output ANSI to arbitrary Handles rather than forcing
+-- people to use stdout.  However, the Windows ANSI emulator needs a Windows HANDLE to work it's magic, so we need to be able
+-- to extract one of those from the Haskell Handle.
+--
+-- This code accomplishes this, albeit at the cost of only being compatible with GHC.
+withHandleToHANDLE :: Handle -> (HANDLE -> IO a) -> IO a
+withHandleToHANDLE haskell_handle action = 
+    -- Create a stable pointer to the Handle. This prevents the garbage collector
+    -- getting to it while we are doing horrible manipulations with it, and hence
+    -- stops it being finalized (and closed).
+    withStablePtr haskell_handle $ const $ do
+        -- Grab the write handle variable from the Handle
+        let write_handle_mvar = case haskell_handle of
+                FileHandle _ handle_mvar     -> handle_mvar
+                DuplexHandle _ _ handle_mvar -> handle_mvar -- This is "write" MVar, we could also take the "read" one
+        
+        -- Get the FD from the algebraic data type
+        fd <- fmap haFD $ readMVar write_handle_mvar
+        
+        -- Finally, turn that (C-land) FD into a HANDLE using msvcrt
+        windows_handle <- cget_osfhandle fd
+        
+        -- Do what the user originally wanted
+        action windows_handle
+
+withStablePtr :: a -> (StablePtr a -> IO b) -> IO b
+withStablePtr value = bracket (newStablePtr value) freeStablePtr

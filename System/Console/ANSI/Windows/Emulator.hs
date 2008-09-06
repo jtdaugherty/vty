@@ -1,9 +1,11 @@
 module System.Console.ANSI.Windows.Emulator (
-        #include "Exports-Include.hs"
+#include "Exports-Include.hs"
     ) where
 
 import System.Console.ANSI.Common
 import System.Console.ANSI.Windows.Foreign
+
+import System.IO
 
 import Data.Bits
 
@@ -11,38 +13,30 @@ import Data.Bits
 #include "Common-Include.hs"
 
 
-screenRectangle :: IO SMALL_RECT
-screenRectangle = do
-    handle <- getStdHandle sTD_OUTPUT_HANDLE
-    fmap csbi_window $ getConsoleScreenBufferInfo handle
-
-
-adjustCursorPosition :: (SHORT -> SHORT -> SHORT) -> (SHORT -> SHORT -> SHORT) -> IO ()
-adjustCursorPosition change_x change_y = do
-    handle <- getStdHandle sTD_OUTPUT_HANDLE
+adjustCursorPosition :: HANDLE -> (SHORT -> SHORT -> SHORT) -> (SHORT -> SHORT -> SHORT) -> IO ()
+adjustCursorPosition handle change_x change_y = do
     screen_buffer_info <- getConsoleScreenBufferInfo handle
     let window = csbi_window screen_buffer_info
         (COORD x y) = csbi_cursor_position screen_buffer_info
         cursor_pos' = COORD (change_x (rect_left window) x) (change_y (rect_top window) y)
     setConsoleCursorPosition handle cursor_pos'
 
-cursorUp n       = adjustCursorPosition (\_ x -> x) (\_ y -> y - fromIntegral n)
-cursorDown n     = adjustCursorPosition (\_ x -> x) (\_ y -> y + fromIntegral n)
-cursorForward n  = adjustCursorPosition (\_ x -> x + fromIntegral n) (\_ y -> y)
-cursorBackward n = adjustCursorPosition (\_ x -> x - fromIntegral n) (\_ y -> y)
+hCursorUp h n       = withHandleToHANDLE h $ \handle -> adjustCursorPosition handle (\_ x -> x) (\_ y -> y - fromIntegral n)
+hCursorDown h n     = withHandleToHANDLE h $ \handle -> adjustCursorPosition handle (\_ x -> x) (\_ y -> y + fromIntegral n)
+hCursorForward h n  = withHandleToHANDLE h $ \handle -> adjustCursorPosition handle (\_ x -> x + fromIntegral n) (\_ y -> y)
+hCursorBackward h n = withHandleToHANDLE h $ \handle -> adjustCursorPosition handle (\_ x -> x - fromIntegral n) (\_ y -> y)
 
 
-adjustLine :: (SHORT -> SHORT -> SHORT) -> IO ()
-adjustLine change_y = do
-    adjustCursorPosition (\window_left _ -> window_left) change_y
+adjustLine :: HANDLE -> (SHORT -> SHORT -> SHORT) -> IO ()
+adjustLine handle change_y = adjustCursorPosition handle (\window_left _ -> window_left) change_y
 
-nextLine n     = adjustLine (\_ y -> y + fromIntegral n)
-previousLine n = adjustLine (\_ y -> y - fromIntegral n)
+hNextLine h n     = withHandleToHANDLE h $ \handle -> adjustLine handle (\_ y -> y + fromIntegral n)
+hPreviousLine h n = withHandleToHANDLE h $ \handle -> adjustLine handle (\_ y -> y - fromIntegral n)
 
 
-setColumn x = adjustCursorPosition (\window_left _ -> window_left + fromIntegral x) (\_ y -> y)
+hSetColumn h x = withHandleToHANDLE h $ \handle -> adjustCursorPosition handle (\window_left _ -> window_left + fromIntegral x) (\_ y -> y)
 
-setPosition y x = adjustCursorPosition (\window_left _ -> window_left + fromIntegral x) (\window_top _ -> window_top + fromIntegral y)
+hSetPosition h y x = withHandleToHANDLE h $ \handle -> adjustCursorPosition handle (\window_left _ -> window_left + fromIntegral x) (\window_top _ -> window_top + fromIntegral y)
 
 
 clearChar :: WCHAR
@@ -51,9 +45,8 @@ clearChar = charToWCHAR ' '
 clearAttribute :: WORD
 clearAttribute = 0
 
-clearScreenFraction :: (SMALL_RECT -> COORD -> (DWORD, COORD)) -> IO ()
-clearScreenFraction fraction_finder = do
-    handle <- getStdHandle sTD_OUTPUT_HANDLE
+hClearScreenFraction :: HANDLE -> (SMALL_RECT -> COORD -> (DWORD, COORD)) -> IO ()
+hClearScreenFraction handle fraction_finder = do
     screen_buffer_info <- getConsoleScreenBufferInfo handle
     
     let window = csbi_window screen_buffer_info
@@ -64,7 +57,7 @@ clearScreenFraction fraction_finder = do
     fillConsoleOutputAttribute handle clearAttribute fill_length fill_cursor_pos
     return ()
 
-clearFromCursorToScreenEnd = clearScreenFraction go
+hClearFromCursorToScreenEnd h = withHandleToHANDLE h $ \handle -> hClearScreenFraction handle go
   where
     go window cursor_pos = (fromIntegral fill_length, cursor_pos)
       where
@@ -73,7 +66,7 @@ clearFromCursorToScreenEnd = clearScreenFraction go
         line_remainder = size_x - coord_x cursor_pos
         fill_length = size_x * size_y + line_remainder
 
-clearFromCursorToScreenBeginning = clearScreenFraction go
+hClearFromCursorToScreenBeginning h = withHandleToHANDLE h $ \handle -> hClearScreenFraction handle go
   where
     go window cursor_pos = (fromIntegral fill_length, rect_top_left window)
       where
@@ -82,7 +75,7 @@ clearFromCursorToScreenBeginning = clearScreenFraction go
         line_remainder = coord_x cursor_pos
         fill_length = size_x * size_y + line_remainder
 
-clearScreen = clearScreenFraction go
+hClearScreen h = withHandleToHANDLE h $ \handle -> hClearScreenFraction handle go
   where
     go window _ = (fromIntegral fill_length, rect_top_left window)
       where
@@ -90,30 +83,29 @@ clearScreen = clearScreenFraction go
         size_y = rect_height window
         fill_length = size_x * size_y
 
-clearFromCursorToLineEnd = clearScreenFraction go
+hClearFromCursorToLineEnd h = withHandleToHANDLE h $ \handle -> hClearScreenFraction handle go
   where
     go window cursor_pos = (fromIntegral (rect_right window - coord_x cursor_pos), cursor_pos)
 
-clearFromCursorToLineBeginning = clearScreenFraction go
+hClearFromCursorToLineBeginning h = withHandleToHANDLE h $ \handle -> hClearScreenFraction handle go
   where
     go window cursor_pos = (fromIntegral (coord_x cursor_pos), cursor_pos { coord_x = rect_left window })
 
-clearLine = clearScreenFraction go
+hClearLine h = withHandleToHANDLE h $ \handle -> hClearScreenFraction handle go
   where
     go window cursor_pos = (fromIntegral (rect_width window), cursor_pos { coord_x = rect_left window })
 
 
-scrollPage :: Int -> IO ()
-scrollPage new_origin_y = do
-    handle <- getStdHandle sTD_OUTPUT_HANDLE
+hScrollPage :: HANDLE -> Int -> IO ()
+hScrollPage handle new_origin_y = do
     screen_buffer_info <- getConsoleScreenBufferInfo handle
     let fill = CHAR_INFO clearChar clearAttribute
         window = csbi_window screen_buffer_info
         origin = COORD (rect_left window) (rect_top window + fromIntegral new_origin_y)
     scrollConsoleScreenBuffer handle window Nothing origin fill
 
-scrollPageUp n = scrollPage (negate n)
-scrollPageDown n = scrollPage n
+hScrollPageUp h n = withHandleToHANDLE h $ \handle -> hScrollPage handle (negate n)
+hScrollPageDown h n = withHandleToHANDLE h $ \handle -> hScrollPage handle n
 
 
 {-# INLINE applyANSIColorToAttribute #-}
@@ -178,20 +170,17 @@ applyANSISGRToAttribute sgr attribute = case sgr of
   where
     iNTENSITY = fOREGROUND_INTENSITY .|. bACKGROUND_INTENSITY
 
-setSGR sgr = do
-    handle <- getStdHandle sTD_OUTPUT_HANDLE
+hSetSGR h sgr = withHandleToHANDLE h $ \handle -> do
     screen_buffer_info <- getConsoleScreenBufferInfo handle
     let attribute = csbi_attributes screen_buffer_info
         attribute' = applyANSISGRToAttribute sgr attribute
     setConsoleTextAttribute handle attribute'
 
 
-changeCursorVisibility :: Bool -> IO ()
-changeCursorVisibility cursor_visible = do
-    handle <- getStdHandle sTD_OUTPUT_HANDLE
+hChangeCursorVisibility :: HANDLE -> Bool -> IO ()
+hChangeCursorVisibility handle cursor_visible = do
     cursor_info <- getConsoleCursorInfo handle
     setConsoleCursorInfo handle (cursor_info { cci_cursor_visible = cursor_visible })
 
-hideCursor = changeCursorVisibility False
-showCursor = changeCursorVisibility True
-    
+hHideCursor h = withHandleToHANDLE h $ \handle -> hChangeCursorVisibility handle False
+hShowCursor h = withHandleToHANDLE h $ \handle -> hChangeCursorVisibility handle True  
