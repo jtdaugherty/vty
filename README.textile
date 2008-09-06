@@ -47,8 +47,6 @@ The API is very simple, and should be available to look at "here":http://github.
 
 h2. Linkage
 
-"Hackage":http://hackage.haskell.org/cgi-bin/hackage-scripts/package/ansi-terminal
-
-"Bug Tracker":http://bsp.lighthouseapp.com/projects/16235-hs-ansi-terminal
-
-"GitHub":http://github.com/batterseapower/ansi-terminal/
+* "Hackage":http://hackage.haskell.org/cgi-bin/hackage-scripts/package/ansi-terminal
+* "Bug Tracker":http://bsp.lighthouseapp.com/projects/16235-hs-ansi-terminal
+* "GitHub":http://github.com/batterseapower/ansi-terminal/
