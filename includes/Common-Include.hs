@@ -87,15 +87,18 @@ scrollPageDown = hScrollPageDown stdout
 -- | Set the Select Graphic Rendition mode
 hSetSGR :: Handle
         -> [SGR] -- ^ Commands: these will typically be applied on top of the current console SGR mode.
-                 -- An empty list of commands is equivalent to the list @[Reset]@.
+                 -- An empty list of commands is equivalent to the list @[Reset]@. Commands are applied
+                 -- left to right.
         -> IO ()
 -- | Set the Select Graphic Rendition mode
 setSGR :: [SGR] -- ^ Commands: these will typically be applied on top of the current console SGR mode.
-                -- An empty list of commands is equivalent to the list @[Reset]@.
+                -- An empty list of commands is equivalent to the list @[Reset]@. Commands are applied
+                -- left to right.
        -> IO ()
 -- | Set the Select Graphic Rendition mode
 setSGRCode :: [SGR] -- ^ Commands: these will typically be applied on top of the current console SGR mode.
-                    -- An empty list of commands is equivalent to the list @[Reset]@.
+                    -- An empty list of commands is equivalent to the list @[Reset]@. Commands are applied
+                    -- left to right.
            -> String
 
 setSGR = hSetSGR stdout
