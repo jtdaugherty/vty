@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 module System.Console.ANSI.Unix (
 #include "Exports-Include.hs"
     ) where
@@ -13,8 +14,8 @@ import Data.List
 
 
 -- | The reference I used for the escape characters in this module was http://en.wikipedia.org/wiki/ANSI_escape_sequences
-csi :: Handle -> [Int] -> String -> IO ()
-csi handle args code = hPutStr handle $ "\ESC[" ++ concat (intersperse ";" (map show args)) ++ code
+csi :: [Int] -> String -> String
+csi args code = "\ESC[" ++ concat (intersperse ";" (map show args)) ++ code
 
 ansiColorToCode :: ANSIColor -> Int
 ansiColorToCode color = case color of
@@ -50,30 +51,63 @@ ansiSGRToCode sgr = case sgr of
     BackgroundHighIntensity color   -> 100 + ansiColorToCode color
 
 
-hCursorUp h n = csi h [n] "A"
-hCursorDown h n = csi h [n] "B"
-hCursorForward h n = csi h [n] "C"
-hCursorBackward h n = csi h [n] "D"
+cursorUpCode n = csi [n] "A"
+cursorDownCode n = csi [n] "B"
+cursorForwardCode n = csi [n] "C"
+cursorBackwardCode n = csi [n] "D"
 
-hNextLine h n = csi h [n] "E"
-hPreviousLine h n = csi h [n] "F"
+hCursorUp h n = hPutStr h $ cursorUpCode n
+hCursorDown h n = hPutStr h $ cursorDownCode n
+hCursorForward h n = hPutStr h $ cursorForwardCode n
+hCursorBackward h n = hPutStr h $ cursorBackwardCode n
 
-hSetColumn h n = csi h [n + 1] "G"
 
-hSetPosition h n m = csi h [n + 1, m + 1] "H"
+nextLineCode n = csi [n] "E"
+previousLineCode n = csi [n] "F"
 
-hClearFromCursorToScreenEnd h = csi h [0] "J"
-hClearFromCursorToScreenBeginning h = csi h [1] "J"
-hClearScreen h = csi h [2] "J"
+hNextLine h n = hPutStr h $ nextLineCode n
+hPreviousLine h n = hPutStr h $ previousLineCode n
 
-hClearFromCursorToLineEnd h = csi h [0] "K"
-hClearFromCursorToLineBeginning h = csi h [1] "K"
-hClearLine h = csi h [2] "K"
 
-hScrollPageUp h n = csi h [n] "S"
-hScrollPageDown h n = csi h [n] "T"
+setColumnCode n = csi [n + 1] "G"
+setPositionCode n m = csi [n + 1, m + 1] "H"
 
-hSetSGR h sgr = csi h [ansiSGRToCode sgr] "m"
+hSetColumn h n = hPutStr h $ setColumnCode n
+hSetPosition h n m = hPutStr h $ setPositionCode n m
 
-hHideCursor h = csi h [] "?25l"
-hShowCursor h = csi h [] "?25h"
+
+clearFromCursorToScreenEndCode = csi [0] "J"
+clearFromCursorToScreenBeginningCode = csi [1] "J"
+clearScreenCode = csi [2] "J"
+
+hClearFromCursorToScreenEnd h = hPutStr h clearFromCursorToScreenEndCode
+hClearFromCursorToScreenBeginning h = hPutStr h clearFromCursorToScreenBeginningCode
+hClearScreen h = hPutStr h clearScreenCode
+
+
+clearFromCursorToLineEndCode = csi [0] "K"
+clearFromCursorToLineBeginningCode = csi [1] "K"
+clearLineCode = csi [2] "K"
+
+hClearFromCursorToLineEnd h = hPutStr h clearFromCursorToLineEndCode
+hClearFromCursorToLineBeginning h = hPutStr h clearFromCursorToLineBeginningCode
+hClearLine h = hPutStr h clearLineCode
+
+
+scrollPageUpCode n = csi [n] "S"
+scrollPageDownCode n = csi [n] "T"
+
+hScrollPageUp h n = hPutStr h $ scrollPageUpCode n
+hScrollPageDown h n = hPutStr h $ scrollPageDownCode n
+
+
+setSGRCode sgr = csi [ansiSGRToCode sgr] "m"
+
+hSetSGR h sgr = hPutStr h $ setSGRCode sgr
+
+
+hideCursorCode = csi [] "?25l"
+showCursorCode = csi [] "?25h"
+
+hHideCursor h = hPutStr h hideCursorCode
+hShowCursor h = hPutStr h showCursorCode

@@ -26,6 +26,11 @@ hCursorDown h n     = withHandleToHANDLE h $ \handle -> adjustCursorPosition han
 hCursorForward h n  = withHandleToHANDLE h $ \handle -> adjustCursorPosition handle (\_ x -> x + fromIntegral n) (\_ y -> y)
 hCursorBackward h n = withHandleToHANDLE h $ \handle -> adjustCursorPosition handle (\_ x -> x - fromIntegral n) (\_ y -> y)
 
+cursorUpCode _       = ""
+cursorDownCode _     = ""
+cursorForwardCode _  = ""
+cursorBackwardCode _ = ""
+
 
 adjustLine :: HANDLE -> (SHORT -> SHORT -> SHORT) -> IO ()
 adjustLine handle change_y = adjustCursorPosition handle (\window_left _ -> window_left) change_y
@@ -33,10 +38,18 @@ adjustLine handle change_y = adjustCursorPosition handle (\window_left _ -> wind
 hNextLine h n     = withHandleToHANDLE h $ \handle -> adjustLine handle (\_ y -> y + fromIntegral n)
 hPreviousLine h n = withHandleToHANDLE h $ \handle -> adjustLine handle (\_ y -> y - fromIntegral n)
 
+nextLineCode _     = ""
+previousLineCode _ = ""
+
 
 hSetColumn h x = withHandleToHANDLE h $ \handle -> adjustCursorPosition handle (\window_left _ -> window_left + fromIntegral x) (\_ y -> y)
 
+setColumnCode _ = ""
+
+
 hSetPosition h y x = withHandleToHANDLE h $ \handle -> adjustCursorPosition handle (\window_left _ -> window_left + fromIntegral x) (\window_top _ -> window_top + fromIntegral y)
+
+setPositionCode _ _ = ""
 
 
 clearChar :: WCHAR
@@ -95,6 +108,13 @@ hClearLine h = withHandleToHANDLE h $ \handle -> hClearScreenFraction handle go
   where
     go window cursor_pos = (fromIntegral (rect_width window), cursor_pos { coord_x = rect_left window })
 
+clearFromCursorToScreenEndCode       = ""
+clearFromCursorToScreenBeginningCode = ""
+clearScreenCode                      = ""
+clearFromCursorToLineEndCode         = ""
+clearFromCursorToLineBeginningCode   = ""
+clearLineCode                        = ""
+
 
 hScrollPage :: HANDLE -> Int -> IO ()
 hScrollPage handle new_origin_y = do
@@ -106,6 +126,9 @@ hScrollPage handle new_origin_y = do
 
 hScrollPageUp h n = withHandleToHANDLE h $ \handle -> hScrollPage handle (negate n)
 hScrollPageDown h n = withHandleToHANDLE h $ \handle -> hScrollPage handle n
+
+scrollPageUpCode _   = ""
+scrollPageDownCode _ = ""
 
 
 {-# INLINE applyANSIColorToAttribute #-}
@@ -176,6 +199,8 @@ hSetSGR h sgr = withHandleToHANDLE h $ \handle -> do
         attribute' = applyANSISGRToAttribute sgr attribute
     setConsoleTextAttribute handle attribute'
 
+setSGRCode _ = ""
+
 
 hChangeCursorVisibility :: HANDLE -> Bool -> IO ()
 hChangeCursorVisibility handle cursor_visible = do
@@ -183,4 +208,7 @@ hChangeCursorVisibility handle cursor_visible = do
     setConsoleCursorInfo handle (cursor_info { cci_cursor_visible = cursor_visible })
 
 hHideCursor h = withHandleToHANDLE h $ \handle -> hChangeCursorVisibility handle False
-hShowCursor h = withHandleToHANDLE h $ \handle -> hChangeCursorVisibility handle True  
+hShowCursor h = withHandleToHANDLE h $ \handle -> hChangeCursorVisibility handle True
+
+hideCursorCode = ""
+showCursorCode = ""
