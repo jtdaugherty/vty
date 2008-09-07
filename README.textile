@@ -42,7 +42,11 @@ h2. Example
 
 A full example is provided with the package, and can be compiled by suppling Cabal with the @-fexample@ flag. It is also available online at "GitHub":http://github.com/batterseapower/ansi-terminal/tree/master/System/Console/ANSI/Example.hs.
 
-The API is very simple, and should be available to look at "here":http://github.com/batterseapower/ansi-terminal/tree/master/includes/Common-Include.hs. It basically consists of @IO@ actions for the various operations. Note that a Unix-only library for ANSI output would permit a pure API that outputs strings, but unfortunately it's not possible to provide ANSI operations with strings in Windows, so I must provide a stateful @IO@-based interface.
+Not all of the ANSI escape codes are provided by this module, but most (if not all) of the popular and well supported ones are. For a full list, you can see the API "here":http://github.com/batterseapower/ansi-terminal/tree/master/includes/Common-Include.hs. Each supported escape code or family of codes has a corresponding function that comes in three variants:
+
+* A straight @IO@ variant that doesn't take a @Handle@ and just applies the ANSI escape code to the terminal attached to stdout
+* An @IO@ variant similar to above, but which takes a @Handle@ to which the ANSI escape should be applied
+* A @String@ variant that returns a literal string that should be included to get the effect of the code. This is the only one of the three API variants that only works on Unix-like operating systems: on Windows these strings will always be blank!
 
 
 h2. Linkage
