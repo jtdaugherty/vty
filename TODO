@@ -3,3 +3,5 @@
 === Medium Priority ===
 
 === Low Priority ===
+* Detect use of handles that are not console handles and raise some error?
+* Provide API for hiding cursor in a region of IO using installHandler
