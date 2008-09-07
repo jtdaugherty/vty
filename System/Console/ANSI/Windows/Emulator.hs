@@ -8,6 +8,7 @@ import System.Console.ANSI.Windows.Foreign
 import System.IO
 
 import Data.Bits
+import Data.List
 
 
 #include "Common-Include.hs"
@@ -44,21 +45,21 @@ cursorBackwardCode _ = ""
 adjustLine :: HANDLE -> (SHORT -> SHORT -> SHORT) -> IO ()
 adjustLine handle change_y = adjustCursorPosition handle (\window_left _ -> window_left) change_y
 
-hNextLine h n     = withHandle h $ \handle -> adjustLine handle (\_ y -> y + fromIntegral n)
-hPreviousLine h n = withHandle h $ \handle -> adjustLine handle (\_ y -> y - fromIntegral n)
+hCursorDownLine h n = withHandle h $ \handle -> adjustLine handle (\_ y -> y + fromIntegral n)
+hCursorUpLine h n   = withHandle h $ \handle -> adjustLine handle (\_ y -> y - fromIntegral n)
 
-nextLineCode _     = ""
-previousLineCode _ = ""
-
-
-hSetColumn h x = withHandle h $ \handle -> adjustCursorPosition handle (\window_left _ -> window_left + fromIntegral x) (\_ y -> y)
-
-setColumnCode _ = ""
+cursorDownLineCode _   = ""
+cursorUpLineCode _ = ""
 
 
-hSetPosition h y x = withHandle h $ \handle -> adjustCursorPosition handle (\window_left _ -> window_left + fromIntegral x) (\window_top _ -> window_top + fromIntegral y)
+hSetCursorColumn h x = withHandle h $ \handle -> adjustCursorPosition handle (\window_left _ -> window_left + fromIntegral x) (\_ y -> y)
 
-setPositionCode _ _ = ""
+setCursorColumnCode _ = ""
+
+
+hSetCursorPosition h y x = withHandle h $ \handle -> adjustCursorPosition handle (\window_left _ -> window_left + fromIntegral x) (\window_top _ -> window_top + fromIntegral y)
+
+setCursorPositionCode _ _ = ""
 
 
 clearChar :: WCHAR
@@ -141,7 +142,7 @@ scrollPageDownCode _ = ""
 
 
 {-# INLINE applyANSIColorToAttribute #-}
-applyANSIColorToAttribute :: WORD -> WORD -> WORD -> ANSIColor -> WORD -> WORD
+applyANSIColorToAttribute :: WORD -> WORD -> WORD -> Color -> WORD -> WORD
 applyANSIColorToAttribute rED gREEN bLUE color attribute = case color of
     Black   -> attribute'
     Red     -> attribute' .|. rED
@@ -155,7 +156,7 @@ applyANSIColorToAttribute rED gREEN bLUE color attribute = case color of
     wHITE = rED .|. gREEN .|. bLUE
     attribute' = attribute .&. (complement wHITE)
 
-applyForegroundANSIColorToAttribute, applyBackgroundANSIColorToAttribute :: ANSIColor -> WORD -> WORD
+applyForegroundANSIColorToAttribute, applyBackgroundANSIColorToAttribute :: Color -> WORD -> WORD
 applyForegroundANSIColorToAttribute = applyANSIColorToAttribute fOREGROUND_RED fOREGROUND_GREEN fOREGROUND_BLUE
 applyBackgroundANSIColorToAttribute = applyANSIColorToAttribute bACKGROUND_RED bACKGROUND_GREEN bACKGROUND_BLUE
 
@@ -168,44 +169,42 @@ swapForegroundBackgroundColors attribute = clean_attribute .|. foreground_attrib
     foreground_attribute' = background_attribute `shiftR` 4
     background_attribute' = foreground_attribute `shiftL` 4
 
-applyANSISGRToAttribute :: ANSISGR -> WORD -> WORD
+applyANSISGRToAttribute :: SGR -> WORD -> WORD
 applyANSISGRToAttribute sgr attribute = case sgr of
     Reset -> fOREGROUND_WHITE
-    BoldIntensity   -> attribute .|. iNTENSITY
-    FaintIntensity  -> attribute .&. (complement iNTENSITY) -- Not supported
-    NormalIntensity -> attribute .&. (complement iNTENSITY)
-    Italic -> attribute -- Not supported
-    SingleUnderline -> attribute .|. cOMMON_LVB_UNDERSCORE -- Not supported, since cOMMON_LVB_UNDERSCORE seems to have no effect
-    DoubleUnderline -> attribute .|. cOMMON_LVB_UNDERSCORE -- Not supported, since cOMMON_LVB_UNDERSCORE seems to have no effect
-    NoUnderline     -> attribute .&. (complement cOMMON_LVB_UNDERSCORE)
-    SlowBlink  -> attribute -- Not supported
-    RapidBlink -> attribute -- Not supported
-    NoBlink    -> attribute
-    Conceal -> attribute -- Not supported
-    Reveal  -> attribute
+    SetConsoleIntensity intensity -> case intensity of
+        BoldIntensity   -> attribute .|. iNTENSITY
+        FaintIntensity  -> attribute .&. (complement iNTENSITY) -- Not supported
+        NormalIntensity -> attribute .&. (complement iNTENSITY)
+    SetItalicized _ -> attribute -- Not supported
+    SetUnderlining underlining -> case underlining of
+        NoUnderline -> attribute .&. (complement cOMMON_LVB_UNDERSCORE)
+        _           -> attribute .|. cOMMON_LVB_UNDERSCORE -- Not supported, since cOMMON_LVB_UNDERSCORE seems to have no effect
+    SetBlinkSpeed _ -> attribute -- Not supported
+    SetVisible _    -> attribute -- Not supported
     -- The cOMMON_LVB_REVERSE_VIDEO doesn't actually appear to have any affect on the colors being displayed, so the emulator
     -- just uses it to carry information and implements the color-swapping behaviour itself. Bit of a hack, I guess :-)
-    SwapForegroundBackground     ->
+    SetSwapForegroundBackground True ->
         -- Check if the color-swapping flag is already set
         if attribute .&. cOMMON_LVB_REVERSE_VIDEO /= 0
          then attribute
          else swapForegroundBackgroundColors attribute .|. cOMMON_LVB_REVERSE_VIDEO
-    DontSwapForegroundBackground ->
+    SetSwapForegroundBackground False ->
         -- Check if the color-swapping flag is already not set
         if attribute .&. cOMMON_LVB_REVERSE_VIDEO == 0
          then attribute
          else swapForegroundBackgroundColors attribute .&. (complement cOMMON_LVB_REVERSE_VIDEO)
-    ForegroundNormalIntensity color -> applyForegroundANSIColorToAttribute color (attribute .&. (complement fOREGROUND_INTENSITY))
-    ForegroundHighIntensity color   -> applyForegroundANSIColorToAttribute color (attribute .|. fOREGROUND_INTENSITY)
-    BackgroundNormalIntensity color -> applyBackgroundANSIColorToAttribute color (attribute .&. (complement bACKGROUND_INTENSITY))
-    BackgroundHighIntensity color   -> applyBackgroundANSIColorToAttribute color (attribute .|. bACKGROUND_INTENSITY)
+    SetColor Foreground Dull color  -> applyForegroundANSIColorToAttribute color (attribute .&. (complement fOREGROUND_INTENSITY))
+    SetColor Foreground Vivid color -> applyForegroundANSIColorToAttribute color (attribute .|. fOREGROUND_INTENSITY)
+    SetColor Background Dull color  -> applyBackgroundANSIColorToAttribute color (attribute .&. (complement bACKGROUND_INTENSITY))
+    SetColor Background Vivid color -> applyBackgroundANSIColorToAttribute color (attribute .|. bACKGROUND_INTENSITY)
   where
     iNTENSITY = fOREGROUND_INTENSITY .|. bACKGROUND_INTENSITY
 
 hSetSGR h sgr = withHandle h $ \handle -> do
     screen_buffer_info <- getConsoleScreenBufferInfo handle
     let attribute = csbi_attributes screen_buffer_info
-        attribute' = applyANSISGRToAttribute sgr attribute
+        attribute' = foldl' (flip applyANSISGRToAttribute) attribute sgr
     setConsoleTextAttribute handle attribute'
 
 setSGRCode _ = ""

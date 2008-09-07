@@ -12,41 +12,41 @@ cursorForward = hCursorForward stdout
 cursorBackward = hCursorBackward stdout
 
 
-hNextLine, hPreviousLine :: Handle
-                         -> Int -- ^ Number of lines to move
-                         -> IO ()
-nextLine, previousLine :: Int -- ^ Number of lines to move
-                       -> IO ()
-nextLineCode, previousLineCode :: Int -- ^ Number of lines to move
-                               -> String
+hCursorDownLine, hCursorUpLine :: Handle
+                               -> Int -- ^ Number of lines to move
+                               -> IO ()
+cursorDownLine, cursorUpLine :: Int -- ^ Number of lines to move
+                             -> IO ()
+cursorDownLineCode, cursorUpLineCode :: Int -- ^ Number of lines to move
+                                     -> String
 
-nextLine = hNextLine stdout
-previousLine = hPreviousLine stdout
-
-
-hSetColumn :: Handle
-           -> Int -- ^ 0-based column to move to
-           -> IO ()
-setColumn :: Int -- ^ 0-based column to move to
-          -> IO ()
-setColumnCode :: Int -- ^ 0-based column to move to
-              -> String
-
-setColumn = hSetColumn stdout
+cursorDownLine = hCursorDownLine stdout
+cursorUpLine = hCursorUpLine stdout
 
 
-hSetPosition :: Handle
-             -> Int -- ^ 0-based row to move to
-             -> Int -- ^ 0-based column to move to
-             -> IO ()
-setPosition :: Int -- ^ 0-based row to move to
-            -> Int -- ^ 0-based column to move to
-            -> IO ()
-setPositionCode :: Int -- ^ 0-based row to move to
-                -> Int -- ^ 0-based column to move to
-                -> String
+hSetCursorColumn :: Handle
+                 -> Int -- ^ 0-based column to move to
+                 -> IO ()
+setCursorColumn :: Int -- ^ 0-based column to move to
+                -> IO ()
+setCursorColumnCode :: Int -- ^ 0-based column to move to
+                    -> String
 
-setPosition = hSetPosition stdout
+setCursorColumn = hSetCursorColumn stdout
+
+
+hSetCursorPosition :: Handle
+                   -> Int -- ^ 0-based row to move to
+                   -> Int -- ^ 0-based column to move to
+                   -> IO ()
+setCursorPosition :: Int -- ^ 0-based row to move to
+                  -> Int -- ^ 0-based column to move to
+                  -> IO ()
+setCursorPositionCode :: Int -- ^ 0-based row to move to
+                      -> Int -- ^ 0-based column to move to
+                      -> String
+
+setCursorPosition = hSetCursorPosition stdout
 
 
 hClearFromCursorToScreenEnd, hClearFromCursorToScreenBeginning, hClearScreen :: Handle
@@ -86,13 +86,16 @@ scrollPageDown = hScrollPageDown stdout
 
 -- | Set the Select Graphic Rendition mode
 hSetSGR :: Handle
-        -> ANSISGR -- ^ Mode: this is applied to the current console SGR mode
+        -> [SGR] -- ^ Commands: these will typically be applied on top of the current console SGR mode.
+                 -- An empty list of commands is equivalent to the list @[Reset]@.
         -> IO ()
 -- | Set the Select Graphic Rendition mode
-setSGR :: ANSISGR -- ^ Mode: this is applied to the current console SGR mode
+setSGR :: [SGR] -- ^ Commands: these will typically be applied on top of the current console SGR mode.
+                -- An empty list of commands is equivalent to the list @[Reset]@.
        -> IO ()
 -- | Set the Select Graphic Rendition mode
-setSGRCode :: ANSISGR -- ^ Mode: this is applied to the current console SGR mode
+setSGRCode :: [SGR] -- ^ Commands: these will typically be applied on top of the current console SGR mode.
+                    -- An empty list of commands is equivalent to the list @[Reset]@.
            -> String
 
 setSGR = hSetSGR stdout

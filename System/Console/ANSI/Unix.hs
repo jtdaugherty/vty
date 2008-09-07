@@ -17,8 +17,8 @@ import Data.List
 csi :: [Int] -> String -> String
 csi args code = "\ESC[" ++ concat (intersperse ";" (map show args)) ++ code
 
-ansiColorToCode :: ANSIColor -> Int
-ansiColorToCode color = case color of
+colorToCode :: Color -> Int
+colorToCode color = case color of
     Black   -> 0
     Red     -> 1
     Green   -> 2
@@ -28,27 +28,31 @@ ansiColorToCode color = case color of
     Cyan    -> 6
     White   -> 7
 
-ansiSGRToCode :: ANSISGR -> Int
-ansiSGRToCode sgr = case sgr of
+sgrToCode :: SGR -> Int
+sgrToCode sgr = case sgr of
     Reset -> 0
-    BoldIntensity   -> 1
-    FaintIntensity  -> 2
-    NormalIntensity -> 22
-    Italic -> 3
-    SingleUnderline -> 4
-    DoubleUnderline -> 21
-    NoUnderline     -> 24
-    SlowBlink   -> 5
-    RapidBlink  -> 6
-    NoBlink     -> 25
-    Conceal -> 8
-    Reveal  -> 28
-    SwapForegroundBackground        -> 7
-    DontSwapForegroundBackground    -> 27
-    ForegroundNormalIntensity color -> 30 + ansiColorToCode color
-    ForegroundHighIntensity color   -> 90 + ansiColorToCode color
-    BackgroundNormalIntensity color -> 40 + ansiColorToCode color
-    BackgroundHighIntensity color   -> 100 + ansiColorToCode color
+    SetConsoleIntensity intensity -> case intensity of
+        BoldIntensity   -> 1
+        FaintIntensity  -> 2
+        NormalIntensity -> 22
+    SetItalicized True  -> 3
+    SetItalicized False -> 23
+    SetUnderlining underlining -> case underlining of
+        SingleUnderline -> 4
+        DoubleUnderline -> 21
+        NoUnderline     -> 24
+    SetBlinkSpeed blink_speed -> case blink_speed of
+        SlowBlink   -> 5
+        RapidBlink  -> 6
+        NoBlink     -> 25
+    SetVisible False -> 8
+    SetVisible True  -> 28
+    SetSwapForegroundBackground True  -> 7
+    SetSwapForegroundBackground False -> 27
+    SetColor Foreground Dull color  -> 30 + colorToCode color
+    SetColor Foreground Vivid color -> 90 + colorToCode color
+    SetColor Background Dull color  -> 40 + colorToCode color
+    SetColor Background Vivid color -> 100 + colorToCode color
 
 
 cursorUpCode n = csi [n] "A"
@@ -62,18 +66,18 @@ hCursorForward h n = hPutStr h $ cursorForwardCode n
 hCursorBackward h n = hPutStr h $ cursorBackwardCode n
 
 
-nextLineCode n = csi [n] "E"
-previousLineCode n = csi [n] "F"
+cursorDownLineCode n = csi [n] "E"
+cursorUpLineCode n = csi [n] "F"
 
-hNextLine h n = hPutStr h $ nextLineCode n
-hPreviousLine h n = hPutStr h $ previousLineCode n
+hCursorDownLine h n = hPutStr h $ cursorDownLineCode n
+hCursorUpLine h n = hPutStr h $ cursorUpLineCode n
 
 
-setColumnCode n = csi [n + 1] "G"
-setPositionCode n m = csi [n + 1, m + 1] "H"
+setCursorColumnCode n = csi [n + 1] "G"
+setCursorPositionCode n m = csi [n + 1, m + 1] "H"
 
-hSetColumn h n = hPutStr h $ setColumnCode n
-hSetPosition h n m = hPutStr h $ setPositionCode n m
+hSetCursorColumn h n = hPutStr h $ setCursorColumnCode n
+hSetCursorPosition h n m = hPutStr h $ setCursorPositionCode n m
 
 
 clearFromCursorToScreenEndCode = csi [0] "J"
@@ -101,9 +105,9 @@ hScrollPageUp h n = hPutStr h $ scrollPageUpCode n
 hScrollPageDown h n = hPutStr h $ scrollPageDownCode n
 
 
-setSGRCode sgr = csi [ansiSGRToCode sgr] "m"
+setSGRCode sgrs = csi (map sgrToCode sgrs) "m"
 
-hSetSGR h sgr = hPutStr h $ setSGRCode sgr
+hSetSGR h sgrs = hPutStr h $ setSGRCode sgrs
 
 
 hideCursorCode = csi [] "?25l"

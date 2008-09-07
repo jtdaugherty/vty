@@ -13,7 +13,7 @@ import Control.Monad
 examples :: [IO ()]
 examples = [ cursorMovementExample
            , lineChangeExample
-           , setPositionExample
+           , setCursorPositionExample
            , clearExample
            , scrollExample
            , sgrExample
@@ -24,7 +24,7 @@ main :: IO ()
 main = mapM_ (\example -> resetScreen >> example) examples
 
 resetScreen :: IO ()
-resetScreen = clearScreen >> setSGR Reset >> setPosition 0 0
+resetScreen = clearScreen >> setSGR [Reset] >> setCursorPosition 0 0
 
 pause :: IO ()
 pause = do
@@ -72,39 +72,39 @@ lineChangeExample = do
     -- Line One
     -- Line Two
     
-    previousLine 1
+    cursorUpLine 1
     putStr "New Line One"
     pause
     -- New Line One
     -- Line Two
     
-    nextLine 1
+    cursorDownLine 1
     putStr "New Line Two"
     pause
     -- New Line One
     -- New Line Two
 
-setPositionExample :: IO ()
-setPositionExample = do
+setCursorPositionExample :: IO ()
+setCursorPositionExample = do
     putStrLn "Line One"
     putStrLn "Line Two"
     pause
     -- Line One
     -- Line Two
     
-    setPosition 0 5
+    setCursorPosition 0 5
     putStr "Foo"
     pause
     -- Line Foo
     -- Line Two
     
-    setPosition 1 5
+    setCursorPosition 1 5
     putStr "Bar"
     pause
     -- Line Foo
     -- Line Bar
     
-    setColumn 1
+    setCursorColumn 1
     putStr "oaf"
     pause
     -- Line Foo
@@ -118,7 +118,7 @@ clearExample = do
     -- Line One
     -- Line Two
     
-    setPosition 0 4
+    setCursorPosition 0 4
     clearFromCursorToScreenEnd
     pause
     -- Line
@@ -131,7 +131,7 @@ clearExample = do
     -- Line One
     -- Line Two
     
-    setPosition 1 4
+    setCursorPosition 1 4
     clearFromCursorToScreenBeginning
     pause
     --
@@ -145,13 +145,13 @@ clearExample = do
     -- Line One
     -- Line Two
     
-    setPosition 0 4
+    setCursorPosition 0 4
     clearFromCursorToLineEnd
     pause
     -- Line
     -- Line Two
     
-    setPosition 1 4
+    setCursorPosition 1 4
     clearFromCursorToLineBeginning
     pause
     -- Line
@@ -190,47 +190,49 @@ scrollExample = do
 
 sgrExample :: IO ()
 sgrExample = do
-    let colors = enumFromTo minBound maxBound :: [ANSIColor]
-    forM_ [ForegroundNormalIntensity, ForegroundHighIntensity, BackgroundNormalIntensity, BackgroundHighIntensity] $ \color_way -> do
-        resetScreen
-        forM_ colors $ \color -> do
-            setSGR Reset
-            setSGR (color_way color)
-            putStrLn (show color)
-        pause
+    let colors = enumFromTo minBound maxBound :: [Color]
+    forM_ [Foreground, Background] $ \layer ->  do
+        forM_ [Dull, Vivid] $ \intensity -> do
+            resetScreen
+            forM_ colors $ \color -> do
+                setSGR [Reset]
+                setSGR [SetColor layer intensity color]
+                putStrLn (show color)
+            pause
     -- All the colors, 4 times in sequence
     
-    let named_styles = [ (BoldIntensity, "Bold")
-                       , (FaintIntensity, "Faint")
-                       , (NormalIntensity, "Normal")
-                       , (Italic, "Italic")
-                       , (SingleUnderline, "Single Underline")
-                       , (DoubleUnderline, "Double Underline")
-                       , (NoUnderline, "No Underline")
-                       , (SlowBlink, "Slow Blink")
-                       , (RapidBlink, "Rapid Blink")
-                       , (NoBlink, "No Blink")
-                       , (Conceal, "Conceal")
-                       , (Reveal, "Reveal")
+    let named_styles = [ (SetConsoleIntensity BoldIntensity, "Bold")
+                       , (SetConsoleIntensity FaintIntensity, "Faint")
+                       , (SetConsoleIntensity NormalIntensity, "Normal")
+                       , (SetItalicized True, "Italic")
+                       , (SetItalicized False, "No Italics")
+                       , (SetUnderlining SingleUnderline, "Single Underline")
+                       , (SetUnderlining DoubleUnderline, "Double Underline")
+                       , (SetUnderlining NoUnderline, "No Underline")
+                       , (SetBlinkSpeed SlowBlink, "Slow Blink")
+                       , (SetBlinkSpeed RapidBlink, "Rapid Blink")
+                       , (SetBlinkSpeed NoBlink, "No Blink")
+                       , (SetVisible False, "Conceal")
+                       , (SetVisible True, "Reveal")
                        ]
     forM_ named_styles $ \(style, name) -> do
               resetScreen
-              setSGR style
+              setSGR [style]
               putStrLn name
               pause
     -- Text describing a style displayed in that style in sequence
     
-    setSGR (ForegroundHighIntensity Red)
-    setSGR (BackgroundHighIntensity Blue)
+    setSGR [SetColor Foreground Vivid Red]
+    setSGR [SetColor Background Vivid Blue]
     
-    clearScreen >> setPosition 0 0
-    setSGR DontSwapForegroundBackground
+    clearScreen >> setCursorPosition 0 0
+    setSGR [SetSwapForegroundBackground False]
     putStr "Red-On-Blue"
     pause
     -- Red-On-Blue
     
-    clearScreen >> setPosition 0 0
-    setSGR SwapForegroundBackground
+    clearScreen >> setCursorPosition 0 0
+    setSGR [SetSwapForegroundBackground True]
     putStr "Blue-On-Red"
     pause
     -- Blue-On-Red

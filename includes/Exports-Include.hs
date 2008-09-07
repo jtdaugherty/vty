@@ -7,18 +7,18 @@ hCursorUp, hCursorDown, hCursorForward, hCursorBackward,
 cursorUpCode, cursorDownCode, cursorForwardCode, cursorBackwardCode,
 
 -- * Cursor movement by line
-nextLine, previousLine,
-hNextLine, hPreviousLine,
-nextLineCode, previousLineCode,
+cursorUpLine, cursorDownLine,
+hCursorUpLine, hCursorDownLine,
+cursorUpLineCode, cursorDownLineCode,
 
 -- * Directly changing cursor position
-setColumn,
-hSetColumn,
-setColumnCode,
+setCursorColumn,
+hSetCursorColumn,
+setCursorColumnCode,
 
-setPosition,
-hSetPosition,
-setPositionCode,
+setCursorPosition,
+hSetCursorPosition,
+setCursorPositionCode,
 
 -- * Clearing parts of the screen
 clearFromCursorToScreenEnd, clearFromCursorToScreenBeginning, clearScreen,
