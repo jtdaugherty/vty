@@ -13,7 +13,7 @@ import Data.List
 #include "Common-Include.hs"
 
 
--- | The reference I used for the escape characters in this module was http://en.wikipedia.org/wiki/ANSI_escape_sequences
+-- | The reference I used for the ANSI escape characters in this module was <http://en.wikipedia.org/wiki/ANSI_escape_sequences>.
 csi :: [Int] -> String -> String
 csi args code = "\ESC[" ++ concat (intersperse ";" (map show args)) ++ code
 
@@ -115,3 +115,11 @@ showCursorCode = csi [] "?25h"
 
 hHideCursor h = hPutStr h hideCursorCode
 hShowCursor h = hPutStr h showCursorCode
+
+
+-- | Thanks to Brandon S. Allbery and Curt Sampson for pointing me in the right direction on xterm title setting on haskell-cafe.
+-- The "0" signifies that both the title and "icon" text should be set: i.e. the text for the window in the Start bar (or similar)
+-- as well as that in the actual window title.  This is chosen for consistent behaviour between Unixes and Windows.
+setTitleCode title = "\ESC]0;" ++ filter (/= '\007') title ++ "\007"
+
+hSetTitle h title = hPutStr h $ setTitleCode title

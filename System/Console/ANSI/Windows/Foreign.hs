@@ -21,12 +21,13 @@ module System.Console.ANSI.Windows.Foreign (
         setConsoleTextAttribute,
         setConsoleCursorPosition,
         setConsoleCursorInfo,
+        setConsoleTitle,
         
         fillConsoleOutputAttribute,
         fillConsoleOutputCharacter,
         scrollConsoleScreenBuffer,
         
-        withHandleToHANDLE
+        withTString, withHandleToHANDLE
     ) where
 
 import Foreign.C.Types
@@ -229,6 +230,7 @@ foreign import stdcall unsafe "windows.h GetConsoleCursorInfo" cGetConsoleCursor
 foreign import stdcall unsafe "windows.h SetConsoleTextAttribute" cSetConsoleTextAttribute :: HANDLE -> WORD -> IO BOOL
 foreign import stdcall unsafe "windows.h SetConsoleCursorPosition" cSetConsoleCursorPosition :: HANDLE -> UNPACKED_COORD -> IO BOOL
 foreign import stdcall unsafe "windows.h SetConsoleCursorInfo" cSetConsoleCursorInfo :: HANDLE -> Ptr CONSOLE_CURSOR_INFO -> IO BOOL
+foreign import stdcall unsafe "windows.h SetConsoleTitleW" cSetConsoleTitle :: LPCTSTR -> IO BOOL
 
 foreign import stdcall unsafe "windows.h FillConsoleOutputAttribute" cFillConsoleOutputAttribute :: HANDLE -> WORD -> DWORD -> UNPACKED_COORD -> Ptr DWORD -> IO BOOL
 foreign import stdcall unsafe "windows.h FillConsoleOutputCharacterW" cFillConsoleOutputCharacter :: HANDLE -> TCHAR -> DWORD -> UNPACKED_COORD -> Ptr DWORD -> IO BOOL
@@ -255,6 +257,9 @@ setConsoleCursorPosition handle cursor_position = failIfFalse_ "setConsoleCursor
 setConsoleCursorInfo :: HANDLE -> CONSOLE_CURSOR_INFO -> IO ()
 setConsoleCursorInfo handle console_cursor_info = with console_cursor_info $ \ptr_console_cursor_info -> do
     failIfFalse_ "setConsoleCursorInfo" $ cSetConsoleCursorInfo handle ptr_console_cursor_info
+
+setConsoleTitle :: LPCTSTR -> IO ()
+setConsoleTitle title = failIfFalse_ "setConsoleTitle" $ cSetConsoleTitle title
 
 
 fillConsoleOutputAttribute :: HANDLE -> WORD -> DWORD -> COORD -> IO DWORD

@@ -220,3 +220,11 @@ hShowCursor h = withHandle h $ \handle -> hChangeCursorVisibility handle True
 
 hideCursorCode = ""
 showCursorCode = ""
+
+
+-- Windows only supports setting the terminal title on a process-wide basis, so for now we will
+-- assume that that is what the user intended. This will fail if they are sending the command
+-- over e.g. a network link... but that's not really what I'm designing for.
+hSetTitle _ title = withTString title $ setConsoleTitle
+
+setTitleCode _ = ""

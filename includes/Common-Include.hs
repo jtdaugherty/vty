@@ -111,3 +111,17 @@ hideCursorCode, showCursorCode :: String
 
 hideCursor = hHideCursor stdout
 showCursor = hShowCursor stdout
+
+
+-- | Set the terminal window title
+hSetTitle :: Handle
+          -> String -- ^ New title
+          -> IO ()
+-- | Set the terminal window title
+setTitle :: String -- ^ New title
+         -> IO ()
+-- | Set the terminal window title
+setTitleCode :: String -- ^ New title
+             -> String
+
+setTitle = hSetTitle stdout

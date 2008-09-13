@@ -18,6 +18,7 @@ examples = [ cursorMovementExample
            , scrollExample
            , sgrExample
            , cursorVisibilityExample
+           , titleExample
            ]
 
 main :: IO ()
@@ -250,3 +251,17 @@ cursorVisibilityExample = do
     showCursor
     pause
     -- Cursor Demo|
+
+titleExample :: IO ()
+titleExample = do
+    putStr "Title Demo"
+    pause
+    -- ~/foo/ - ansi-terminal-ex - 83x70
+    ------------------------------------
+    -- Title Demo
+    
+    setTitle "Yup, I'm a new title!"
+    pause
+    -- Yup, I'm a new title! - ansi-terminal-ex - 83x70
+    ---------------------------------------------------
+    -- Title Demo

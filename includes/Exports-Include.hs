@@ -42,4 +42,9 @@ setSGRCode,
 -- * Cursor visibilty changes
 hideCursor, showCursor,
 hHideCursor, hShowCursor,
-hideCursorCode, showCursorCode
+hideCursorCode, showCursorCode,
+
+-- * Changing the title
+setTitle,
+hSetTitle,
+setTitleCode
