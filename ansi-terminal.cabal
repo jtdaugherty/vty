@@ -10,7 +10,7 @@ License-File:        LICENSE
 Extra-Source-Files:  README.textile
 Author:              Max Bolingbroke
 Maintainer:          batterseapower@hotmail.com
-Homepage:            http://github.com/batterseapower/ansi-terminal
+Homepage:            http://batterseapower.github.com/ansi-terminal
 Build-Type:          Simple
 
 Extra-Source-Files:     includes/Common-Include.hs
