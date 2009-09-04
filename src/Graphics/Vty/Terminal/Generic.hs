@@ -1,0 +1,376 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ExistentialQuantification #-}
+-- Copyright 2009 Corey O'Connor
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts #-}
+module Graphics.Vty.Terminal.Generic
+    where
+
+import Data.Marshalling
+
+import Graphics.Vty.Picture
+import Graphics.Vty.Span
+import Graphics.Vty.DisplayRegion
+
+import Control.Monad ( liftM )
+
+import Data.Array
+import qualified Data.ByteString.Internal as BSCore
+import Data.Foldable
+import Data.IORef
+import Data.Word
+import Data.String.UTF8 hiding ( foldl )
+
+import System.IO
+
+data TerminalHandle where
+    TerminalHandle :: Terminal t => t -> TerminalState -> TerminalHandle
+
+terminal_state :: TerminalHandle -> TerminalState
+terminal_state (TerminalHandle _ s) = s
+
+new_terminal_handle :: forall t. Terminal t => t -> IO TerminalHandle
+new_terminal_handle t = liftM (TerminalHandle t) initial_terminal_state
+
+data TerminalState = TerminalState
+
+initial_terminal_state :: IO TerminalState
+initial_terminal_state = return $ TerminalState 
+
+class Terminal t where
+    -- | Text identifier for the terminal. Used for debugging.
+    terminal_ID :: t -> String
+    -- | 
+    release_terminal :: t -> IO ()
+    -- | Clear the display and initialize the terminal to some initial display state. 
+    --
+    -- The expectation of a program is that the display starts in some initial state. 
+    -- The initial state would consist of fixed values 
+    --  - cursor at top left
+    --  - UTF-8 character encoding
+    --  - drawing characteristics are the default
+    -- The abstract operation I think all these behaviors are instances of is reserving exclusive
+    -- access to a display such that:
+    --  - The previous state cannot be determined
+    --  - When exclusive access to a display is release the display returns to the previous state.
+    --
+    reserve_display :: t -> IO ()
+
+    -- | Return the display to the state before reserve_display
+    -- If no previous state then set the display state to the initial state.
+    release_display :: t -> IO ()
+    
+    -- | Returns the current display bounds.
+    display_bounds :: t -> IO DisplayRegion
+
+    -- Internal method used to provide the DisplayTerminal instance to the DisplayHandle
+    -- constructor.
+    display_terminal_instance :: t 
+                              -> DisplayRegion 
+                              -> (forall d. DisplayTerminal d => d -> DisplayHandle) 
+                              -> IO DisplayHandle
+
+    -- | Output the byte buffer of the specified size to the terminal device.  The size is equal to
+    -- end_ptr - start_ptr
+    output_byte_buffer :: t -> OutputBuffer -> Word -> IO ()
+
+instance Terminal TerminalHandle where
+    terminal_ID (TerminalHandle t _) = terminal_ID t
+    release_terminal (TerminalHandle t _) = release_terminal t
+    reserve_display (TerminalHandle t _) = reserve_display t
+    release_display (TerminalHandle t _) = release_display t
+    display_bounds (TerminalHandle t _) = display_bounds t
+    display_terminal_instance (TerminalHandle t _) = display_terminal_instance t
+    output_byte_buffer (TerminalHandle t _) = output_byte_buffer t
+
+data DisplayHandle where
+    DisplayHandle :: DisplayTerminal d => d -> TerminalHandle -> DisplayState -> DisplayHandle
+
+-- | Acquire display access to the given region of the display.
+-- Currently all regions have the upper left corner of (0,0) and the lower right corner at 
+-- (max display_width provided_width, max display_height provided_height)
+display_context :: TerminalHandle -> DisplayRegion -> IO DisplayHandle
+display_context t b = do
+    s <- initial_display_state
+    let c d = DisplayHandle d t s
+    display_terminal_instance t b c
+
+data DisplayState = DisplayState
+    { previous_output_ref :: IORef (Maybe SpanOpSequence)
+    }
+
+initial_display_state :: IO DisplayState
+initial_display_state = liftM DisplayState $ newIORef Nothing
+
+class DisplayTerminal d where
+    -- | Provide the bounds of the display context. 
+    context_region :: d -> DisplayRegion
+
+    --  | sets the output position to the specified row and column. Where the number of bytes
+    --  required for the control codes can be specified seperate from the actual byte sequence.
+    move_cursor_required_bytes :: d -> Word -> Word -> Word
+    serialize_move_cursor :: d -> Word -> Word -> OutputBuffer -> IO OutputBuffer
+
+    show_cursor_required_bytes :: d -> Word
+    serialize_show_cursor :: d -> OutputBuffer -> IO OutputBuffer
+
+    hide_cursor_required_bytes :: d -> Word
+    serialize_hide_cursor :: d -> OutputBuffer -> IO OutputBuffer
+
+    --  | Assure the specified output attributes will be applied to all the following text until the
+    --  next output attribute change. Where the number of bytes required for the control codes can
+    --  be specified seperate from the actual byte sequence.  The required number of bytes must be
+    --  at least the maximum number of bytes required by any attribute changes.  The serialization
+    --  equations must provide the ptr to the next byte to be specified in the output buffer.
+    --
+    --  The currently applied display attributes are provided as well. The Attr data type can
+    --  specify the style or color should not be changed from the currently applied display
+    --  attributes. In order to support this the currently applied display attributes are required.
+    --  In addition it may be possible to optimize the state changes based off the currently applied
+    --  display attributes.
+    attr_required_bytes :: d -> FixedAttr -> Attr -> Word
+    serialize_set_attr :: d -> FixedAttr -> Attr -> OutputBuffer -> IO OutputBuffer
+
+    -- | Reset the display attributes to the default display attributes
+    default_attr_required_bytes :: d -> Word
+    serialize_default_attr :: d -> OutputBuffer -> IO OutputBuffer
+
+
+instance DisplayTerminal DisplayHandle where
+    context_region (DisplayHandle d _ _) = context_region d
+    move_cursor_required_bytes (DisplayHandle d _ _) = move_cursor_required_bytes d
+    serialize_move_cursor (DisplayHandle d _ _) = serialize_move_cursor d
+    show_cursor_required_bytes (DisplayHandle d _ _) = show_cursor_required_bytes d
+    serialize_show_cursor (DisplayHandle d _ _) = serialize_show_cursor d
+    hide_cursor_required_bytes (DisplayHandle d _ _) = hide_cursor_required_bytes d
+    serialize_hide_cursor (DisplayHandle d _ _) = serialize_hide_cursor d
+    attr_required_bytes (DisplayHandle d _ _) = attr_required_bytes d
+    serialize_set_attr (DisplayHandle d _ _) = serialize_set_attr d
+    default_attr_required_bytes (DisplayHandle d _ _) = default_attr_required_bytes d
+    serialize_default_attr (DisplayHandle d _ _) = serialize_default_attr d
+    
+-- | All terminals serialize UTF8 text to the terminal device exactly as serialized in memory.
+utf8_text_required_bytes ::  UTF8 BSCore.ByteString -> Word
+utf8_text_required_bytes str =
+    let (_, _, src_bytes_length) = BSCore.toForeignPtr (toRep str)
+    in toEnum src_bytes_length
+
+-- | All terminals serialize UTF8 text to the terminal device exactly as serialized in memory.
+serialize_utf8_text  :: UTF8 BSCore.ByteString -> OutputBuffer -> IO OutputBuffer
+serialize_utf8_text str dest_ptr = 
+    let (src_fptr, src_ptr_offset, src_bytes_length) = BSCore.toForeignPtr (toRep str)
+    in withForeignPtr src_fptr $ \src_ptr -> do
+        let src_ptr' = src_ptr `plusPtr` src_ptr_offset
+        BSCore.memcpy dest_ptr src_ptr' (toEnum src_bytes_length) 
+        return (dest_ptr `plusPtr` src_bytes_length)
+
+
+-- | Displays the given `Picture`.
+--
+--      0. The image is cropped to the display size. 
+--
+--      1. Converted into a sequence of attribute changes and text spans.
+--      
+--      2. The cursor is hidden.
+--
+--      3. Serialized to the display.
+--
+--      4. The cursor is then shown and positioned or kept hidden.
+--
+-- 
+-- todo: specify possible IO exceptions.
+-- abstract from IO monad to a MonadIO instance.
+output_picture :: DisplayHandle -> Picture -> IO ()
+output_picture (DisplayHandle d t s) pic = do
+    let !r = context_region d
+    let !ops = spans_for_pic pic r
+    let !initial_attr = FixedAttr default_style_mask Nothing Nothing
+    -- Diff the previous output against the requested output. Differences are currently on a per-row
+    -- basis.
+    diffs :: [Bool]
+        <- readIORef (previous_output_ref s) 
+            >>= \mprevious_ops -> case mprevious_ops of
+                Nothing      
+                    -> return $ replicate ( fromEnum $ region_height $ effected_region ops ) 
+                                                   True
+                Just previous_ops 
+                    -> if effected_region previous_ops /= effected_region ops
+                            then return $ replicate ( fromEnum $ region_height $ effected_region ops ) 
+                                                    True
+                            else return $ zipWith (/=) ( elems $ row_ops previous_ops ) 
+                                                       ( elems $ row_ops ops )
+
+    -- determine the number of bytes required to completely serialize the output ops.
+    let total =   hide_cursor_required_bytes d 
+                + default_attr_required_bytes d
+                + required_bytes d initial_attr diffs ops 
+                + case pic_cursor pic of
+                    NoCursor -> 0
+                    Cursor x y ->   show_cursor_required_bytes d
+                                  + move_cursor_required_bytes d x y
+
+    -- ... then serialize
+    allocaBytes (fromEnum total) $ \start_ptr -> do
+        ptr <- serialize_hide_cursor d start_ptr
+        ptr' <- serialize_default_attr d ptr
+        ptr'' <- serialize_output_ops d ptr' initial_attr diffs ops
+        end_ptr <- case pic_cursor pic of
+                        NoCursor -> return ptr''
+                        Cursor x y -> do
+                            let m = cursor_output_map ops $ pic_cursor pic
+                                (ox, oy) = char_to_output_pos m (x,y)
+                            serialize_show_cursor d ptr'' >>= serialize_move_cursor d ox oy
+        -- todo: How to handle exceptions?
+        case end_ptr `minusPtr` start_ptr of
+            count | count < 0 -> fail "End pointer before start of buffer."
+                  | toEnum count > total -> fail $ "End pointer past end of buffer by " ++ show (toEnum count - total)
+                  | otherwise -> output_byte_buffer t start_ptr (toEnum count)
+        -- Cache the output spans.
+        writeIORef (previous_output_ref s) (Just ops)
+    return ()
+
+required_bytes :: DisplayTerminal d => d -> FixedAttr -> [Bool] -> SpanOpSequence -> Word
+required_bytes d in_fattr diffs ops = 
+    let (_, n, _, _) = foldl' required_bytes' (0, 0, in_fattr, diffs) ( row_ops ops )
+    in n
+    where 
+        required_bytes' (y, current_sum, fattr, True : diffs') span_ops
+            =   let (s, fattr') = span_ops_required_bytes d y fattr span_ops 
+                in ( y + 1, s + current_sum, fattr', diffs' )
+        required_bytes' (y, current_sum, fattr, False : diffs') _span_ops
+            = ( y + 1, current_sum, fattr, diffs' )
+        required_bytes' (_y, _current_sum, _fattr, [] ) _span_ops
+            = error "shouldn't be possible"
+
+span_ops_required_bytes :: DisplayTerminal d => d -> Word -> FixedAttr -> SpanOps -> (Word, FixedAttr)
+span_ops_required_bytes d y in_fattr span_ops = 
+    -- The first operation is to set the cursor to the start of the row
+    let header_required_bytes = move_cursor_required_bytes d 0 y
+    -- then the span ops are serialized in the order specified
+    in foldl' ( \(current_sum, fattr) op -> let (c, fattr') = span_op_required_bytes d fattr op 
+                                            in (c + current_sum, fattr') 
+              ) 
+              (header_required_bytes, in_fattr)
+              span_ops
+
+span_op_required_bytes :: DisplayTerminal d => d -> FixedAttr -> SpanOp -> (Word, FixedAttr)
+span_op_required_bytes d fattr (AttributeChange attr) = 
+    let c = attr_required_bytes d fattr attr
+        fattr' = fix_display_attr fattr attr
+    in (c, fattr')
+span_op_required_bytes _d fattr (TextSpan _ _ str) = (utf8_text_required_bytes str, fattr)
+
+serialize_output_ops :: DisplayTerminal d 
+                        => d 
+                        -> OutputBuffer 
+                        -> FixedAttr 
+                        -> [Bool]
+                        -> SpanOpSequence 
+                        -> IO OutputBuffer
+serialize_output_ops d start_ptr in_fattr diffs ops = do
+    (_, end_ptr, _, _) <- foldlM serialize_output_ops' 
+                              ( 0, start_ptr, in_fattr, diffs ) 
+                              ( row_ops ops )
+    return end_ptr
+    where 
+        serialize_output_ops' ( y, out_ptr, fattr, True : diffs' ) span_ops
+            =   serialize_span_ops d y out_ptr fattr span_ops 
+                >>= return . ( \(out_ptr', fattr') -> ( y + 1, out_ptr', fattr', diffs' ) )
+        serialize_output_ops' ( y, out_ptr, fattr, False : diffs' ) _span_ops
+            = return ( y + 1, out_ptr, fattr, diffs' )
+        serialize_output_ops' (_y, _out_ptr, _fattr, [] ) _span_ops
+            = error "shouldn't be possible"
+
+serialize_span_ops :: DisplayTerminal d 
+                      => d 
+                      -> Word 
+                      -> OutputBuffer 
+                      -> FixedAttr 
+                      -> SpanOps 
+                      -> IO (OutputBuffer, FixedAttr)
+serialize_span_ops d y out_ptr in_fattr span_ops = do
+    -- The first operation is to set the cursor to the start of the row
+    out_ptr' <- serialize_move_cursor d 0 y out_ptr
+    -- then the span ops are serialized in the order specified
+    foldlM ( \(out_ptr'', fattr) op -> serialize_span_op d op out_ptr'' fattr ) 
+           (out_ptr', in_fattr)
+           span_ops
+
+serialize_span_op :: DisplayTerminal d 
+                     => d 
+                     -> SpanOp 
+                     -> OutputBuffer 
+                     -> FixedAttr
+                     -> IO (OutputBuffer, FixedAttr)
+serialize_span_op d (AttributeChange attr) out_ptr fattr = do
+    out_ptr' <- serialize_set_attr d fattr attr out_ptr
+    let fattr' = fix_display_attr fattr attr
+    return (out_ptr', fattr')
+serialize_span_op _d (TextSpan _ _ str) out_ptr fattr = do
+    out_ptr' <- serialize_utf8_text str out_ptr
+    return (out_ptr', fattr)
+
+marshall_to_terminal :: Terminal t => t -> Word -> (Ptr Word8 -> IO (Ptr Word8)) -> IO ()
+marshall_to_terminal t c f = do
+    start_ptr <- mallocBytes (fromEnum c)
+    -- 
+    -- todo: capture exceptions?
+    end_ptr <- f start_ptr
+    case end_ptr `minusPtr` start_ptr of
+        count | count < 0 -> fail "End pointer before start pointer."
+              | otherwise -> output_byte_buffer t start_ptr (toEnum count)
+    free start_ptr
+    return ()
+
+
+-- | Given the previously applied display attributes as a FixedAttr and the current display
+-- attributes as an Attr produces a FixedAttr that represents the current display attributes. This
+-- is done by using the previously applied display attributes to remove the "KeepCurrent"
+-- abstraction.
+fix_display_attr :: FixedAttr -> Attr -> FixedAttr
+fix_display_attr fattr attr 
+    = FixedAttr ( fix_style (fixed_style fattr) (style attr) )
+                ( fix_color (fixed_fore_color fattr) (fore_color attr) )
+                ( fix_color (fixed_back_color fattr) (back_color attr) )
+    where
+        fix_style _s Default = default_style_mask
+        fix_style s KeepCurrent = s
+        fix_style _s (SetTo new_style) = new_style
+        fix_color _c Default = Nothing
+        fix_color c KeepCurrent = c
+        fix_color _c (SetTo c) = Just c
+
+data CursorOutputMap = CursorOutputMap
+    { char_to_output_pos :: (Word, Word) -> (Word, Word)
+    } 
+
+cursor_output_map :: SpanOpSequence -> Cursor -> CursorOutputMap
+cursor_output_map span_ops _cursor = CursorOutputMap
+    { char_to_output_pos = \(cx, cy) -> (cursor_column_offset span_ops cx cy, cy)
+    }
+
+cursor_column_offset :: SpanOpSequence -> Word -> Word -> Word
+cursor_column_offset span_ops cx cy =
+    let cursor_row_ops = row_ops span_ops ! cy
+        (out_offset, _, _) 
+            = foldl' ( \(d, current_cx, done) op -> 
+                        if done then (d, current_cx, done) else case span_op_has_width op of
+                            Nothing -> (d, current_cx, False)
+                            Just (cw, ow) -> case compare cx (current_cx + cw) of
+                                    GT -> ( d + ow
+                                          , current_cx + cw
+                                          , False 
+                                          )
+                                    EQ -> ( d + ow
+                                          , current_cx + cw
+                                          , True 
+                                          )
+                                    LT -> ( d + columns_to_char_offset (cx - current_cx) op
+                                          , current_cx + cw
+                                          , True
+                                          )
+                      )
+                      (0, 0, False)
+                      cursor_row_ops
+    in out_offset

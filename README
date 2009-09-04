@@ -1,0 +1,54 @@
+vty is a very simple terminal interface library.
+
+Vty currently provides:
+
+* Automatic handling of suspend/resume (SIGTSTP+SIGCONT).
+
+* Automatic handling of window resizes.
+
+* Supports Unicode characters on output, automatically setting and
+  resetting UTF-8 mode (beware double width and combining characters!)
+
+* Automatic computation of minimal differences.
+
+* Minimizes repaint area, thus virtually eliminating the flicker
+  problem that plagues ncurses programs.
+
+* A pure, compositional interface for efficiently constructing display
+  images.
+
+* Automatically decodes keyboard keys into (key,[modifier]) tuples.
+
+* Automatically supports refresh on Ctrl-L.
+
+* Automatically supports timeout after 50ms for lone ESC (a barely
+  noticable delay)
+
+* Interface is designed for relatively easy compatible extension.
+
+* Supports all ANSI SGR-modes (defined in console_codes(4)) with
+  a simple type-safe interface.
+
+* Properly handles cleanup, leaving the cursor at the bottom of
+  the screen and erasing the last line.
+
+Current disadvantages:
+
+* No current support for non-ANSI terminals.
+
+* UTF-8 support only works properly on the linux console/xterm,
+  and even then only if it is not the system default.
+
+* Minimal support for special keys on terminals other than the
+  linux-console.  (F1-5 and arrow keys should work, but anything
+  shifted isn't likely to.)
+
+* Uses the TIOCGWINSZ ioctl to find the current window size, which
+  appears to be limited to Linux and *BSD.
+
+darcs get --tag=rel-3.0.0 http://code.haskell.org/vty/
+
+To compile the demonstration program: ghc --make Test.hs gwinsz.c
+
+The main documentation consists of the haddock-comments and the
+demonstration program

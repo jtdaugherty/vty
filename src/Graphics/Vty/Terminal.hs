@@ -1,0 +1,107 @@
+-- Copyright 2009 Corey O'Connor
+--      * Graphics.Vty.Terminal: This instantiates an abtract interface to the terminal interface
+--      based on the TERM and COLORTERM environment variables. 
+--      * Graphics.Vty.Terminal.Generic: Defines the generic interface all terminals need to implement.
+--      * Graphics.Vty.Terminal.TerminfoBased: Defines a terminal instance that uses terminfo for all
+--      control strings. 
+--          - No attempt is made to change the character set to UTF-8 for these terminals. I don't
+--          know a way to reliably determine if that is required or how to do so.
+--      * Graphics.Vty.Terminal.XTermColor: This module contains an interface suitable for
+--      xterm-like terminals. These are the terminals where TERM == xterm. This does use terminfo
+--      for as many control codes as possible. H: This should derive functionality from the
+--      TerminfoBased terminal.
+--
+--  Selection of a terminal is done as follows:
+--      If TERM == xterm
+--          
+--          todo: Use XTermColor with the variant parameter 
+--              StandardXTerm if COLORTERM is not set
+--              GnomeTerminal if COLORTERM is gnome-terminal
+--                  - Default attribute is different ?How?
+--                  - No blink support
+--      otherwise TerminfoBased is used.
+--
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE GADTs #-}
+module Graphics.Vty.Terminal ( module Graphics.Vty.Terminal
+                             , Terminal(..)
+                             , TerminalHandle(..)
+                             , DisplayHandle(..)
+                             , output_picture
+                             , display_context
+                             )
+    where
+
+
+import Graphics.Vty.Terminal.Generic
+import Graphics.Vty.Terminal.MacOSX as MacOSX
+import Graphics.Vty.Terminal.XTermColor as XTermColor
+import Graphics.Vty.Terminal.TerminfoBased as TerminfoBased
+
+import Control.Exception ( SomeException, try )
+import Data.Either
+import Data.List ( isPrefixOf )
+import Data.Word
+
+import System.Environment
+
+-- | The terminal has to be determined dynamically at runtime. To satisfy this requirement all
+-- terminals instances are lifted into an abstract terminal handle via existential qualification.
+-- This implies that the only equations that can used are those in the terminal class.
+terminal_handle :: IO TerminalHandle
+terminal_handle = do
+    term_type <- getEnv "TERM"
+    t <- if "xterm" `isPrefixOf` term_type
+        then do
+            -- Mac OS X terminals define TERM_PROGRAM. Course, an xterm started by Terminal or iTerm
+            -- *also* has TERM_PROGRAM defined. However Terminal or iTerm will never have
+            -- XTERM_VERSION defined. whew
+            maybe_terminal_app <- get_env "TERM_PROGRAM"
+            case maybe_terminal_app of
+                -- No TERM_PROGRAM then assume actual xterm
+                Nothing 
+                    -> XTermColor.terminal_instance term_type >>= new_terminal_handle
+                Just v | v == "Apple_Terminal" || v == "iTerm.app" 
+                    -> do
+                        maybe_xterm <- get_env "XTERM_VERSION"
+                        case maybe_xterm of
+                            Nothing -> MacOSX.terminal_instance >>= new_terminal_handle
+                            Just _  -> XTermColor.terminal_instance term_type >>= new_terminal_handle
+                -- Assume any other terminal that sets TERM_PROGRAM to not be an OS X terminal.app
+                -- like terminal?
+                _   -> XTermColor.terminal_instance term_type >>= new_terminal_handle
+        -- Not an xterm-like terminal. try for generic terminfo.
+        else TerminfoBased.terminal_instance term_type >>= new_terminal_handle
+    return t
+    where
+        get_env var = do
+            mv <- try $ getEnv var
+            case mv of
+                Left (_e :: SomeException)  -> return $ Nothing
+                Right v -> return $ Just v
+
+-- | Sets the cursor position to the given output column and row. 
+--
+-- This is not necessarially the same as the character position with the same coordinates.
+-- Characters can be a variable number of columns in width.
+--
+-- Currently, the only way to set the cursor position to a given character coordinate is to specify
+-- the coordinate in the `Picture` instance provided to `output_picture`.
+set_cursor_pos :: TerminalHandle -> Word -> Word -> IO ()
+set_cursor_pos t x y = do
+    bounds <- display_bounds t
+    d <- display_context t bounds
+    marshall_to_terminal t (move_cursor_required_bytes d x y) (serialize_move_cursor d x y)
+
+hide_cursor :: TerminalHandle -> IO ()
+hide_cursor t = do
+    bounds <- display_bounds t
+    d <- display_context t bounds
+    marshall_to_terminal t (hide_cursor_required_bytes d) (serialize_hide_cursor d) 
+    
+show_cursor :: TerminalHandle -> IO ()
+show_cursor t = do
+    bounds <- display_bounds t
+    d <- display_context t bounds
+    marshall_to_terminal t (show_cursor_required_bytes d) (serialize_show_cursor d) 
+

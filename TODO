@@ -1,0 +1,13 @@
+Minor:
+- input parser uses similar interface to DisplayHandle. Derive instance from terminfo
+- Improve input handling performance.
+- xterm cursor foreground handling.
+    - specific color
+    - reverse video
+    - auto
+- position cursor correctly.
+
+
+Major:
+- Remove size fields in resize constr
+

@@ -1,0 +1,63 @@
+Name:                vty
+Version:             4.0.0
+License:             BSD3
+License-file:        LICENSE
+Author:              Stefan O'Rear, Corey O'Connor
+Maintainer:          Corey O'Connor (coreyoconnor@gmail.com)
+Category:            User Interfaces
+Synopsis:            A simple terminal access library
+Description:
+  vty is terminal GUI library in the niche of ncurses.  It is intended to be easy to use, have no
+  confusing corner cases, and good support for common terminal types.
+  .
+  Included in the source distribution is a program test/interactive_terminal_test.hs that
+  demonstrates the various features. 
+  .
+  If your terminal is not behaving as expected the results of the test/interactive_terminal_test.hs
+  program should be sent to the Vty maintainter to aid in debugging the issue.
+  .
+  Notable infelicities: Sometimes poor efficiency; Assumes UTF-8 character encoding support by the
+  terminal;
+  .
+  You can 'darcs get' it from <http://code.haskell.org/vty/>
+  &#169; 2006-2007 Stefan O'Rear; BSD3 license.
+  &#169; 2008-2009 Corey O'Connor; BSD3 license.
+
+Build-Depends:       base >= 4 && < 5, bytestring, containers, unix, uvector
+Build-Depends:       terminfo >= 0.2 && < 0.3
+Build-Depends:       utf8-string >= 0.3 && < 0.4
+Build-Depends:       transformers, monads-tf
+Build-Depends:       ghc-prim
+Build-Depends:       array
+Build-Depends:       parsec >= 3 && < 4
+Build-Type:          Simple
+Data-Files:          README, TODO
+Extra-Source-Files:  test/Test.hs, cbits/gwinsz.h, test/Bench.hs
+
+Exposed-Modules:     Graphics.Vty
+                     Graphics.Vty.Terminal
+                     Graphics.Vty.LLInput
+                     Graphics.Vty.Attributes
+                     Graphics.Vty.Picture
+                     Graphics.Vty.DisplayRegion
+
+other-modules:       Codec.Binary.UTF8.Width
+                     Data.Marshalling
+                     Data.Terminfo.Parse
+                     Data.Terminfo.Eval
+                     Graphics.Vty.Image
+                     Graphics.Vty.Span
+                     Graphics.Vty.Terminal.Generic
+                     Graphics.Vty.Terminal.XTermColor
+                     Graphics.Vty.Terminal.TerminfoBased
+
+C-Sources:           cbits/gwinsz.c
+                     cbits/set_term_timing.c
+                     cbits/mk_wcwidth.c
+Include-Dirs:        cbits
+hs-source-dirs:      src
+Install-Includes:    gwinsz.h
+
+ghc-options:         -funbox-strict-fields -Wall -threaded
+ghc-prof-options:    -funbox-strict-fields -auto-all -Wall -threaded
+
