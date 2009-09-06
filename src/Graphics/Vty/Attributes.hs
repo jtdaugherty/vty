@@ -1,27 +1,5 @@
 -- Copyright 2009 Corey O'Connor
 -- Display attributes
-{-# LANGUAGE MagicHash #-}
-module Graphics.Vty.Attributes
-    where
-
-import Data.Bits
-
-import Data.Word
-
-import Numeric
-
--- | A display attribute defines the color and style of all the characters rendered after the
--- attribute is applied.
---  6 possible style attributes:
---      standout
---      underline
---      reverse
---      blink
---      dim
---      bold/bright
---  ( invisible, protect, and altcharset are not supported)
---  At most 240 + 16 colors for the background and foreground. The 240 colors and 16 colors are
---  points in different palettes. Which is why it's not simply "at most 256 colors"
 --
 -- For efficiency this can be, in the future, encoded into a single 32 bit word. The 32 bit word is
 -- first divided into 4 groups of 8 bits where:
@@ -54,6 +32,19 @@ import Numeric
 --  Then the foreground color encoded into 8 bits.
 --  Then the background color encoded into 8 bits.
 --
+module Graphics.Vty.Attributes
+    where
+
+import Data.Bits
+
+import Data.Word
+
+-- | A display attribute defines the Color and Style of all the characters rendered after the
+-- attribute is applied.
+--
+--  At most 256 colors, picked from a 240 and 16 color palette, are possible for the background and
+--  foreground. The 240 colors and 16 colors are points in different palettes. See Color for more
+--  information.
 data Attr = Attr 
     { style :: !(MaybeDefault Style)
     , fore_color :: !(MaybeDefault Color)
@@ -62,32 +53,44 @@ data Attr = Attr
 
 -- | Specifies the display attributes such that the final style and color values do not depend on
 -- the previously applied display attribute. The display attributes can still depend on the
--- terminal's default attributes unfortunately.
+-- terminal's default colors (unfortunately).
 data FixedAttr = FixedAttr
     { fixed_style :: !Style
     , fixed_fore_color :: !(Maybe Color)
     , fixed_back_color :: !(Maybe Color)
     } deriving ( Eq, Show )
 
+-- | The style and color attributes can either be the terminal defaults. Or be equivalent to the
+-- previously applied style. Or be a specific value.
 data Eq v => MaybeDefault v = Default | KeepCurrent | SetTo !v
     deriving ( Eq, Show )
 
 -- | Abstract data type representing a color.
 --  
 -- Currently the foreground and background color are specified as points in either a:
+--
 --  * 16 color palette. Where the first 8 colors are equal to the 8 colors of the ISO 6429 (ANSI) 8
 --  color palette and the second 8 colors are bright/vivid versions of the first 8 colors.
+--
 --  * 240 color palette. This palette is a regular sampling of the full RGB colorspace. 
 -- 
 -- The 8 ISO 6429 (ANSI) colors are as follows:
---  0. black
---  1. red
---  2. green
---  3. yellow
---  4. blue
---  5. magenta
---  6. cyan
---  7. white
+--
+--      0. black
+--
+--      1. red
+--
+--      2. green
+--
+--      3. yellow
+--
+--      4. blue
+--
+--      5. magenta
+--
+--      6. cyan
+--
+--      7. white
 --
 -- The mapping from points in the 240 color palette to colors actually displayable by the terminal
 -- depends on the number of colors the terminal claims to support. Which is usually determined by
@@ -122,8 +125,6 @@ white  = ISOColor 7
 
 -- | Bright/Vivid variants of the standard 8-color ANSI 
 bright_black, bright_red, bright_green, bright_yellow :: Color
-
--- | Bright/Vivid variants of the standard 8-color ANSI 
 bright_blue, bright_magenta, bright_cyan, bright_white :: Color
 bright_black  = ISOColor 8
 bright_red    = ISOColor 9
@@ -134,16 +135,26 @@ bright_magenta= ISOColor 13
 bright_cyan   = ISOColor 14
 bright_white  = ISOColor 15
 
+-- | Styles are represented as an 8 bit word. Each bit in the word is 1 if the style attribute
+-- assigned to that bit should be applied and 0 if the style attribute should not be applied.
 type Style = Word8
 
--- | 6 possible style attributes:
---      standout
---      underline
---      reverse_video
---      blink
---      dim
---      bold/bright
---  ( invisible, protect, and altcharset are not supported)
+-- | The 6 possible style attributes:
+--
+--      * standout
+--
+--      * underline
+--
+--      * reverse_video
+--
+--      * blink
+--
+--      * dim
+--
+--      * bold/bright
+--
+--  ( The invisible, protect, and altcharset display attributes some terminals support are not
+--  supported via VTY.)
 standout, underline, reverse_video, blink, dim, bold :: Style
 standout        = 0x01
 underline       = 0x02
@@ -162,8 +173,9 @@ style_mask attr
         KeepCurrent -> 0
         SetTo v  -> v
 
+-- | true if the given Style value has the specified Style set.
 has_style :: Style -> Style -> Bool
-has_style style bit_mask = ( style .&. bit_mask ) /= 0
+has_style s bit_mask = ( s .&. bit_mask ) /= 0
 
 -- | Set the foreground color of an `Attr'.
 with_fore_color :: Attr -> Color -> Attr
@@ -184,7 +196,9 @@ def_attr = Attr Default Default Default
 
 -- | Keeps the style, background color and foreground color that was previously set. Used to
 -- override some part of the previous style.
+--
 -- EG: current_style `with_fore_color` bright_magenta
+--
 -- Would be the currently applied style (be it underline, bold, etc) but with the foreground color
 -- set to bright_magenta.
 current_attr :: Attr

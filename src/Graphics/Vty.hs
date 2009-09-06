@@ -37,12 +37,14 @@ import System.IO
 -- An alternative is to use unsafePerformIO to automatically create a singleton Vty instance when
 -- required.
 --
--- This has the same thread safety as `output_picture`.
+-- This does not assure any thread safety. In theory, as long as an update action is not executed
+-- when another update action is already then it's safe to call this on multiple threads.
 -- 
 -- todo: Once the Terminal interface encompasses input this interface will be deprecated.
 -- Currently, just using the Terminal interface there is no support for input events.
 data Vty = Vty 
-    { -- | Outputs the given Picture. Equivalent to output_picture. 
+    { -- | Outputs the given Picture. Equivalent to output_picture applied to a display context
+      -- implicitly managed by Vty.  
       update :: Picture -> IO ()
       -- | Get one Event object, blocking if necessary.
     , next_event :: IO Event

@@ -39,4 +39,4 @@ current_pic x y sx sy btl = pic_for_image i
             <-> char_fill pieceA ' ' sx (y - 1) 
             <-> char_fill pieceA ' ' x 1 <|> char pieceA '@' <|> char_fill pieceA ' ' (sx - x - 1) 1 
             <-> char_fill pieceA ' ' sx (sy - y - 2) 
-            <-> iso_10464_string dumpA btl
+            <-> iso_10646_string dumpA btl

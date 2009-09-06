@@ -2,23 +2,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
-{-# LANGUAGE MagicHash, UnboxedTuples #-}
 {-# OPTIONS_GHC -funbox-strict-fields #-}
-{- A picutre in VTY defines
- -  * properties required to display the image. These are properties that effect the output image
- -    but are independent of position 
- -  * A set of position-dependent text and attribute regions. The possible regions are
- -      * a point
- -      * a horizontal line of characters with a single attribute
- -      * a vertical line of a single character
- -      * a horizontal line of a single character.
- -      * a rectangle of a single character
- - 
- -
- - 
- - todo: Move to UTF-8 encoded bytestring streams?
- -}
-
 module Graphics.Vty.Image ( Image(..)
                           , image_width
                           , image_height
@@ -31,7 +15,7 @@ module Graphics.Vty.Image ( Image(..)
                           , background_fill
                           , char
                           , string
-                          , iso_10464_string
+                          , iso_10646_string
                           , utf8_string
                           , utf8_bytestring
                           , char_fill
@@ -56,17 +40,34 @@ infixr 4 <->
 
 type StringSeq = Seq.Seq Char
 
+-- | An image in VTY defines:
+--
+--  * properties required to display the image. These are properties that effect the output image
+--    but are independent of position 
+--
+--  * A set of position-dependent text and attribute regions. The possible regions are:
+--
+--      * a point. ( char )
+--
+--      * a horizontal line of characters with a single attribute. (string, utf8_string,
+--      utf8_bytestring )
+--
+--      * a fill of a single character. (char_fill)
+--
+--      * a fill of the picture's background. (background_fill)
+--
+-- todo: increase the number of encoded bytestring formats supported.
 data Image = 
-    -- | A horizontal text span is always >= 1 column and has a row height of 1.
+    -- A horizontal text span is always >= 1 column and has a row height of 1.
       HorizText
       { attr :: !Attr
-      -- | All character data is stored as Char sequences with the ISO-10646 encoding.
+      -- All character data is stored as Char sequences with the ISO-10646 encoding.
       , text :: StringSeq
-      -- | in columns
+      -- in columns
       , output_width :: !Word -- >= 0
       , char_width :: !Word -- >= 1
       }
-    -- | A horizontal join can be constructed between any two images. However a HorizJoin instance is
+    -- A horizontal join can be constructed between any two images. However a HorizJoin instance is
     -- required to be between two images of equal height. The horiz_join constructor adds blanks to
     -- the provided images that assure this is true for the HorizJoin value produced.
     | HorizJoin
@@ -75,7 +76,7 @@ data Image =
       , output_width :: !Word -- >= 1
       , output_height :: !Word -- >= 1
       }
-    -- | A veritical join can be constructed between any two images. However a VertJoin instance is
+    -- A veritical join can be constructed between any two images. However a VertJoin instance is
     -- required to be between two images of equal width. The horiz_join constructor adds blanks to
     -- the provides images that assure this is true for the HorizJoin value produced.
     | VertJoin
@@ -84,7 +85,7 @@ data Image =
       , output_width :: !Word -- >= 1
       , output_height :: !Word -- >= 1
       }
-    -- | A background fill will be filled with the background pattern. The background pattern is
+    -- A background fill will be filled with the background pattern. The background pattern is
     -- defined as a property of the Picture this Image is used to form. 
     | BGFill
       { output_width :: !Word -- >= 1
@@ -173,14 +174,14 @@ vert_join i_0 i_1 w h
                        w h
 vert_join _ _ _ _ = error "vert_join applied to undefined values."
 
--- | An area of the picture's bacground (See `Background`) of w columns and h rows.
+-- | An area of the picture's bacground (See Background) of w columns and h rows.
 background_fill :: Word -> Word -> Image
 background_fill w h 
     | w == 0    = IdImage
     | h == 0    = IdImage
     | otherwise = BGFill w h
 
--- | Access the width of an Image.
+-- | The width of an Image. This is the number display columns the image will occupy.
 image_width :: Image -> Word
 image_width HorizText { output_width = w } = w
 image_width HorizJoin { output_width = w } = w
@@ -188,7 +189,7 @@ image_width VertJoin { output_width = w } = w
 image_width BGFill { output_width = w } = w
 image_width IdImage = 0
 
--- | Access the height of an Image.
+-- | The height of an Image. This is the number of display rows the image will occupy.
 image_height :: Image -> Word
 image_height HorizText {} = 1
 image_height HorizJoin { output_height = r } = r
@@ -197,10 +198,10 @@ image_height BGFill { output_height = r } = r
 image_height IdImage = 0
 
 -- | Combines two images side by side.
--- The result image will have a width equal to the sum of the two images width.
--- The height will equal the largest height of the two images
--- The area not defined in one image due to a height missmatch will be filled with the background
--- pattern.
+--
+-- The result image will have a width equal to the sum of the two images width.  And the height will
+-- equal the largest height of the two images.  The area not defined in one image due to a height
+-- missmatch will be filled with the background pattern.
 (<|>) :: Image -> Image -> Image
 
 -- Two horizontal text spans with the same attributes can be merged.
@@ -257,24 +258,30 @@ vertcat :: [Image] -> Image
 vertcat = vert_cat
 
 -- | an image of a single character. This is a standard Haskell 31-bit character assumed to be in
--- the ISO-10464 encoding.
+-- the ISO-10646 encoding.
 char :: Attr -> Char -> Image
 char !a !c = HorizText a (Seq.singleton c) (safe_wcwidth c) 1
 
--- | A string of characters layed out on a single row. The string is assumed to be a sequence of
--- ISO-10464 characters. Note: depending on how the Haskell compiler represents string literals a
--- string literal in a UTF-8 encoded source file, for example, may be represented as a ISO-10464
--- string.  That is, I think, the case with GHC 6.10.
-iso_10464_string :: Attr -> String -> Image
-iso_10464_string !a !str = horiz_text a (Seq.fromList str) (safe_wcswidth str)
+-- | A string of characters layed out on a single row with the same display attribute. The string is
+-- assumed to be a sequence of ISO-10646 characters. 
+--
+-- Note: depending on how the Haskell compiler represents string literals a string literal in a
+-- UTF-8 encoded source file, for example, may be represented as a ISO-10646 string. 
+-- That is, I think, the case with GHC 6.10. This means, for the most part, you don't need to worry
+-- about the encoding format when outputting string literals. Just provide the string literal
+-- directly to iso_10646_string or string.
+-- 
+iso_10646_string :: Attr -> String -> Image
+iso_10646_string !a !str = horiz_text a (Seq.fromList str) (safe_wcswidth str)
 
 -- | Alias for iso_10646_string. Since the usual case is that a literal string like "foo" is
--- represented internally as a list of ISO 10646 31 bit characters. 
+-- represented internally as a list of ISO 10646 31 bit characters.  
+--
 -- Note: Keep in mind that GHC will compile source encoded as UTF-8 but the literal strings, while
 -- UTF-8 encoded in the source, will be transcoded to a ISO 10646 31 bit characters runtime
 -- representation.
 string :: Attr -> String -> Image
-string = iso_10464_string
+string = iso_10646_string
 
 -- | A string of characters layed out on a single row. The string is assumed to be a sequence of
 -- UTF-8 characters.
@@ -295,6 +302,10 @@ safe_wcswidth str = case wcswidth str of
 utf8_bytestring :: Attr -> BS.ByteString -> Image
 utf8_bytestring !a !bs = string a (UTF8.toString $ UTF8.fromRep bs)
 
+-- | creates a fill of the specified character. The dimensions are in number of characters wide and
+-- number of rows high.
+--
+-- Unlike the Background fill character this character can have double column display width.
 char_fill :: Enum d => Attr -> Char -> d -> d -> Image
 char_fill !a !c w h = 
     vert_cat $ replicate (fromEnum h) $ horiz_cat $ replicate (fromEnum w) $ char a c

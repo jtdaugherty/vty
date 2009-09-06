@@ -354,8 +354,8 @@ utf8_txt_0 = [ [ 0xe2 , 0x86 , 0x91 ]
              , [ 0x41 ]
              ]
 
-iso_10464_txt_0 :: String
-iso_10464_txt_0 = map toEnum
+iso_10646_txt_0 :: String
+iso_10646_txt_0 = map toEnum
     [ 8593 
     , 8593
     , 8595
@@ -394,7 +394,7 @@ unicode_single_width_1 = Test
         reserve_display t
         let pic = pic_for_image image
             image = line_0 <-> line_1
-            line_0 = iso_10464_string def_attr iso_10464_txt_0
+            line_0 = iso_10646_string def_attr iso_10646_txt_0
             line_1 = string def_attr "0123456789"
         d <- display_bounds t >>= display_context t
         output_picture d pic
@@ -446,8 +446,8 @@ utf8_txt_1 = [ [0xe4,0xbd,0xa0]
              , [0xe5,0x90,0x97]
              ]
 
-iso_10464_txt_1 :: String
-iso_10464_txt_1 = map toEnum [20320,22909,21527]
+iso_10646_txt_1 :: String
+iso_10646_txt_1 = map toEnum [20320,22909,21527]
 
 unicode_double_width_0 = Test
     { test_name = "Verify terminal can display unicode double-width characters. (Direct UTF-8)"
@@ -475,7 +475,7 @@ unicode_double_width_1 = Test
         reserve_display t
         let pic = pic_for_image image
             image = line_0 <-> line_1
-            line_0 = iso_10464_string def_attr iso_10464_txt_1
+            line_0 = iso_10646_string def_attr iso_10464_txt_1
             line_1 = string def_attr "012345"
         d <- display_bounds t >>= display_context t
         output_picture d pic

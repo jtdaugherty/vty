@@ -12,7 +12,7 @@ module Graphics.Vty.Picture ( module Graphics.Vty.Picture
                             , background_fill
                             , char
                             , string
-                            , iso_10464_string
+                            , iso_10646_string
                             , utf8_string
                             , utf8_bytestring
                             , char_fill
@@ -35,7 +35,7 @@ data Picture = Picture
     , pic_background :: Background
     }
 
--- | Create a picture instance from the given image. The picture will not have a displayed cursor
+-- | Create a picture for display for the given image. The picture will not have a displayed cursor
 -- and the background display attribute will be `current_attr`.
 pic_for_image :: Image -> Picture
 pic_for_image i = Picture 
@@ -46,25 +46,25 @@ pic_for_image i = Picture
 
 -- | A picture can be configured either to not show the cursor or show the cursor at the specified
 -- character position. 
+--
 -- There is not a 1 to 1 map from character positions to a row and column on the screen due to
 -- characters that take more than 1 column.
--- todo?: The Cursor can be given a (character,row) offset outside of the visible bounds of the output
--- region. In this case the cursor will not be shown.
+--
+-- todo: The Cursor can be given a (character,row) offset outside of the visible bounds of the
+-- output region. In this case the cursor will not be shown.
 data Cursor = 
       NoCursor
     | Cursor Word Word
 
--- | Unspecified regions are filled with the picture's background pattern.
--- The background pattern can specify a character and a display attribute. If the display attribute
--- used previously should be used for a background fill then use `current_attr` for the background
--- attribute. This is the default background display attribute.
+-- | Unspecified regions are filled with the picture's background pattern.  The background pattern
+-- can specify a character and a display attribute. If the display attribute used previously should
+-- be used for a background fill then use `current_attr` for the background attribute. This is the
+-- default background display attribute.
 --
--- The current attribute is always set to the default attributes on the start of updating the screen
--- to a picture.
+-- (tofix) The current attribute is always set to the default attributes at the start of updating the
+-- screen to a picture.
 --
--- todo: The background character *must* occupy a single column and no more. 
--- The spans for a picture do not specify character data beyond the bounds of the region provided.
--- A text run may be cropped or padded to fit within the region.
+-- (tofix) The background character *must* occupy a single column and no more.  
 data Background = Background 
     { background_char :: Char 
     , background_attr :: Attr

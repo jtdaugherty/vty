@@ -11,15 +11,6 @@
 --      for as many control codes as possible. H: This should derive functionality from the
 --      TerminfoBased terminal.
 --
---  Selection of a terminal is done as follows:
---      If TERM == xterm
---          
---          todo: Use XTermColor with the variant parameter 
---              StandardXTerm if COLORTERM is not set
---              GnomeTerminal if COLORTERM is gnome-terminal
---                  - Default attribute is different ?How?
---                  - No blink support
---      otherwise TerminfoBased is used.
 --
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
@@ -45,20 +36,47 @@ import Data.Word
 
 import System.Environment
 
--- | The terminal has to be determined dynamically at runtime. To satisfy this requirement all
+-- | Returns a TerminalHandle (an abstract Terminal instance) for the current terminal.
+--
+-- The specific Terminal implementation used is hidden from the API user. All terminal
+-- implementations are assumed to perform more, or less, the same. Currently all implementations use
+-- terminfo for at least some terminal specific information. This is why platforms without terminfo
+-- are not supported. However, as mentioned before, any specifics about it being based on terminfo
+-- are hidden from the API user.  If a terminal implementation is developed for a terminal for a
+-- platform without terminfo support then Vty should work as expected on that terminal.
+--
+-- Selection of a terminal is done as follows:
+--
+--      * If TERM == xterm
+--          then the terminal might be one of the Mac OS X .app terminals. Check if that might be
+--          the case and use MacOSX if so.
+--          otherwise use XTermColor.
+--
+--      * for any other TERM value TerminfoBased is used.
+--
+--
+-- The terminal has to be determined dynamically at runtime. To satisfy this requirement all
 -- terminals instances are lifted into an abstract terminal handle via existential qualification.
 -- This implies that the only equations that can used are those in the terminal class.
+--
+-- To differentiate between Mac OS X terminals this uses the TERM_PROGRAM environment variable.
+-- However, an xterm started by Terminal or iTerm *also* has TERM_PROGRAM defined since the
+-- environment variable is not reset/cleared by xterm. However a Terminal.app or iTerm.app started
+-- from an xterm under X11 on mac os x will likely be done via open. Since this does not propogate
+-- environment variables (I think?) this assumes that XTERM_VERSION will never be set for a true
+-- Terminal.app or iTerm.app session.
+--
+-- todo: add an implementation for windows that does not depend on terminfo. Should be installable
+-- with only what is provided in the haskell platform.
+--
+-- todo: The Terminal interface does not provide any input support.
 terminal_handle :: IO TerminalHandle
 terminal_handle = do
     term_type <- getEnv "TERM"
     t <- if "xterm" `isPrefixOf` term_type
         then do
-            -- Mac OS X terminals define TERM_PROGRAM. Course, an xterm started by Terminal or iTerm
-            -- *also* has TERM_PROGRAM defined. However Terminal or iTerm will never have
-            -- XTERM_VERSION defined. whew
             maybe_terminal_app <- get_env "TERM_PROGRAM"
             case maybe_terminal_app of
-                -- No TERM_PROGRAM then assume actual xterm
                 Nothing 
                     -> XTermColor.terminal_instance term_type >>= new_terminal_handle
                 Just v | v == "Apple_Terminal" || v == "iTerm.app" 
@@ -86,19 +104,21 @@ terminal_handle = do
 -- Characters can be a variable number of columns in width.
 --
 -- Currently, the only way to set the cursor position to a given character coordinate is to specify
--- the coordinate in the `Picture` instance provided to `output_picture`.
+-- the coordinate in the Picture instance provided to output_picture or refresh.
 set_cursor_pos :: TerminalHandle -> Word -> Word -> IO ()
 set_cursor_pos t x y = do
     bounds <- display_bounds t
     d <- display_context t bounds
     marshall_to_terminal t (move_cursor_required_bytes d x y) (serialize_move_cursor d x y)
 
+-- | Hides the cursor
 hide_cursor :: TerminalHandle -> IO ()
 hide_cursor t = do
     bounds <- display_bounds t
     d <- display_context t bounds
     marshall_to_terminal t (hide_cursor_required_bytes d) (serialize_hide_cursor d) 
     
+-- | Shows the cursor
 show_cursor :: TerminalHandle -> IO ()
 show_cursor t = do
     bounds <- display_bounds t
