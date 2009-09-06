@@ -19,6 +19,7 @@ module Graphics.Vty.Image ( Image(..)
                           , utf8_string
                           , utf8_bytestring
                           , char_fill
+                          , empty_image
                           -- | The possible display attributes used in constructing an `Image`.
                           , module Graphics.Vty.Attributes
                           )
@@ -91,7 +92,11 @@ data Image =
       { output_width :: !Word -- >= 1
       , output_height :: !Word -- >= 1
       }
-    -- Any image of zero size equals the id image
+    -- The combining operators identity constant. 
+    -- IdImage <|> a = a
+    -- IdImage <-> a = a
+    -- 
+    -- Any image of zero size equals the identity image.
     | IdImage
     deriving Eq
 
@@ -309,4 +314,9 @@ utf8_bytestring !a !bs = string a (UTF8.toString $ UTF8.fromRep bs)
 char_fill :: Enum d => Attr -> Char -> d -> d -> Image
 char_fill !a !c w h = 
     vert_cat $ replicate (fromEnum h) $ horiz_cat $ replicate (fromEnum w) $ char a c
+
+-- | The empty image. Useful for fold combinators. These occupy no space nor define any display
+-- attributes.
+empty_image :: Image 
+empty_image = IdImage
 

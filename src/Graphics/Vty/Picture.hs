@@ -16,6 +16,7 @@ module Graphics.Vty.Picture ( module Graphics.Vty.Picture
                             , utf8_string
                             , utf8_bytestring
                             , char_fill
+                            , empty_image
                             -- | The possible display attributes used in constructing an `Image`.
                             , module Graphics.Vty.Attributes
                             )

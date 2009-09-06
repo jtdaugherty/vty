@@ -4,6 +4,7 @@ verify_control_strings \
 verify_utf8_width \
 verify_image_ops \
 verify_image_trans \
+verify_empty_image_props \
 verify_picture_ops \
 verify_span_ops \
 verify_debug_terminal
