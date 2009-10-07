@@ -32,8 +32,6 @@ Build-Depends:       array
 Build-Depends:       parsec >= 3 && < 4
 Build-Type:          Simple
 Data-Files:          README, TODO
-Extra-Source-Files:  test/Test.hs, cbits/gwinsz.h, test/Bench.hs
-
 Exposed-Modules:     Graphics.Vty
                      Graphics.Vty.Terminal
                      Graphics.Vty.LLInput
@@ -56,8 +54,42 @@ C-Sources:           cbits/gwinsz.c
                      cbits/mk_wcwidth.c
 Include-Dirs:        cbits
 hs-source-dirs:      src
-Install-Includes:    gwinsz.h
+Extra-Source-Files: test/Makefile
+                    test/Bench2.hs
+                    test/Bench.hs
+                    test/BenchRenderChar.hs
+                    test/ControlTable.hs
+                    test/HereDoc.hs
+                    test/interactive_terminal_test.hs
+                    test/Test2.hs
+                    test/Test.hs
+                    test/verify_attribute_ops.hs
+                    test/verify_debug_terminal.hs
+                    test/verify_eval_terminfo_caps.hs
+                    test/Verify.hs
+                    test/verify_image_ops.hs
+                    test/verify_image_trans.hs
+                    test/verify_parse_terminfo_caps.hs
+                    test/verify_picture_ops.hs
+                    test/verify_picture_to_span.hs
+                    test/verify_span_ops.hs
+                    test/verify_utf8_width.hs
+                    test/vty_issue_18.hs
+                    test/yi_issue_264.hs
+                    test/Verify/Graphics/Vty/Attributes.hs
+                    test/Verify/Graphics/Vty/Picture.hs
+                    test/Verify/Graphics/Vty/Span.hs
+                    test/Verify/Graphics/Vty/DisplayRegion.hs
+                    test/Verify/Graphics/Vty/Image.hs
+                    test/Verify/Data/Terminfo/Parse.hs
+                    src/Codec/Binary/UTF8/Debug.hs
+                    src/Graphics/Vty/Terminal/Debug.hs
+                    src/Graphics/Vty/Debug.hs
+                    cbits/gwinsz.c
+                    cbits/mk_wcwidth.c
+                    cbits/set_term_timing.c
+                    cbits/gwinsz.h
 
-ghc-options:         -funbox-strict-fields -Wall -threaded
-ghc-prof-options:    -funbox-strict-fields -auto-all -Wall -threaded
+ghc-options:         -funbox-strict-fields -Wall -fno-full-laziness -fspec-constr
+ghc-prof-options:    -funbox-strict-fields -caf-all -Wall -fno-full-laziness -fspec-constr
 

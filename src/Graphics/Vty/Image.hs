@@ -32,6 +32,7 @@ import Codec.Binary.UTF8.Width
 import Codec.Binary.UTF8.String ( decode )
 
 import qualified Data.ByteString as BS
+import Data.Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.String.UTF8 as UTF8
 import Data.Word
@@ -111,6 +112,12 @@ instance Show Image where
         = "VertJoin (" ++ show c ++ ", " ++ show r ++ ") ( " ++ show t ++ " ) <-> ( " ++ show b ++ " )"
     show ( IdImage ) = "IdImage"
 
+-- | Currently append in the Monoid instance is equivalent to <->. Future versions will just stack
+-- the images.
+instance Monoid Image where
+    mempty = empty_image
+    mappend = (<->)
+    
 -- A horizontal text image of 0 characters in width simplifies to the IdImage
 horiz_text :: Attr -> StringSeq -> Word -> Image
 horiz_text a txt ow
