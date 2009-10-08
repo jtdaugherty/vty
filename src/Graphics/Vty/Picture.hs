@@ -1,5 +1,4 @@
 -- Copyright 2009 Corey O'Connor
-{-# LANGUAGE NamedFieldPuns #-}
 module Graphics.Vty.Picture ( module Graphics.Vty.Picture
                             , image_width
                             , image_height

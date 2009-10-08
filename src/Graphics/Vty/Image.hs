@@ -20,6 +20,7 @@ module Graphics.Vty.Image ( Image(..)
                           , utf8_bytestring
                           , char_fill
                           , empty_image
+                          , translate
                           -- | The possible display attributes used in constructing an `Image`.
                           , module Graphics.Vty.Attributes
                           )
@@ -31,6 +32,7 @@ import Codec.Binary.UTF8.Width
 
 import Codec.Binary.UTF8.String ( decode )
 
+import Data.AffineSpace
 import qualified Data.ByteString as BS
 import Data.Monoid
 import qualified Data.Sequence as Seq
@@ -94,11 +96,12 @@ data Image =
       , output_height :: !Word -- >= 1
       }
     -- The combining operators identity constant. 
-    -- IdImage <|> a = a
-    -- IdImage <-> a = a
+    -- EmptyImage <|> a = a
+    -- EmptyImage <-> a = a
     -- 
-    -- Any image of zero size equals the identity image.
-    | IdImage
+    -- Any image of zero size equals the empty image.
+    | EmptyImage
+    | Translation (Int, Int) Image
     deriving Eq
 
 instance Show Image where
@@ -110,7 +113,7 @@ instance Show Image where
         = "HorizJoin " ++ show c ++ " ( " ++ show l ++ " <|> " ++ show r ++ " )"
     show ( VertJoin { part_top = t, part_bottom = b, output_width = c, output_height = r } ) 
         = "VertJoin (" ++ show c ++ ", " ++ show r ++ ") ( " ++ show t ++ " ) <-> ( " ++ show b ++ " )"
-    show ( IdImage ) = "IdImage"
+    show ( EmptyImage ) = "EmptyImage"
 
 -- | Currently append in the Monoid instance is equivalent to <->. Future versions will just stack
 -- the images.
@@ -118,18 +121,18 @@ instance Monoid Image where
     mempty = empty_image
     mappend = (<->)
     
--- A horizontal text image of 0 characters in width simplifies to the IdImage
+-- A horizontal text image of 0 characters in width simplifies to the EmptyImage
 horiz_text :: Attr -> StringSeq -> Word -> Image
 horiz_text a txt ow
-    | ow == 0    = IdImage
+    | ow == 0    = EmptyImage
     | otherwise = HorizText a txt (toEnum $ Seq.length txt) ow
 
 horiz_join :: Image -> Image -> Word -> Word -> Image
 horiz_join i_0 i_1 w h
-    -- A horiz join of two 0 width images simplifies to the IdImage
-    | w == 0 = IdImage
+    -- A horiz join of two 0 width images simplifies to the EmptyImage
+    | w == 0 = EmptyImage
     -- A horizontal join where either part is 0 columns in width simplifies to the other part.
-    -- This covers the case where one part is the IdImage.
+    -- This covers the case where one part is the EmptyImage.
     | image_width i_0 == 0 = i_1
     | image_width i_1 == 0 = i_0
     -- If the images are of the same height then no BG padding is required
@@ -157,10 +160,10 @@ horiz_join _ _ _ _ = error "horiz_join applied to undefined values."
 
 vert_join :: Image -> Image -> Word -> Word -> Image
 vert_join i_0 i_1 w h
-    -- A vertical join of two 0 height images simplifies to the IdImage
-    | h == 0                = IdImage
+    -- A vertical join of two 0 height images simplifies to the EmptyImage
+    | h == 0                = EmptyImage
     -- A vertical join where either part is 0 rows in height simplifies to the other part.
-    -- This covers the case where one part is the IdImage
+    -- This covers the case where one part is the EmptyImage
     | image_height i_0 == 0 = i_1
     | image_height i_1 == 0 = i_0
     -- If the images are of the same height then no background padding is required
@@ -189,8 +192,8 @@ vert_join _ _ _ _ = error "vert_join applied to undefined values."
 -- | An area of the picture's bacground (See Background) of w columns and h rows.
 background_fill :: Word -> Word -> Image
 background_fill w h 
-    | w == 0    = IdImage
-    | h == 0    = IdImage
+    | w == 0    = EmptyImage
+    | h == 0    = EmptyImage
     | otherwise = BGFill w h
 
 -- | The width of an Image. This is the number display columns the image will occupy.
@@ -199,7 +202,7 @@ image_width HorizText { output_width = w } = w
 image_width HorizJoin { output_width = w } = w
 image_width VertJoin { output_width = w } = w
 image_width BGFill { output_width = w } = w
-image_width IdImage = 0
+image_width EmptyImage = 0
 
 -- | The height of an Image. This is the number of display rows the image will occupy.
 image_height :: Image -> Word
@@ -207,7 +210,7 @@ image_height HorizText {} = 1
 image_height HorizJoin { output_height = r } = r
 image_height VertJoin { output_height = r } = r
 image_height BGFill { output_height = r } = r
-image_height IdImage = 0
+image_height EmptyImage = 0
 
 -- | Combines two images side by side.
 --
@@ -257,14 +260,14 @@ im_t <-> im_b
 
 -- | Compose any number of images horizontally.
 horiz_cat :: [Image] -> Image
-horiz_cat = foldr (<|>) IdImage
+horiz_cat = foldr (<|>) EmptyImage
 
 horzcat :: [Image] -> Image
 horzcat = horiz_cat
 
 -- | Compose any number of images vertically.
 vert_cat :: [Image] -> Image
-vert_cat = foldr (<->) IdImage
+vert_cat = foldr (<->) EmptyImage
 
 vertcat :: [Image] -> Image
 vertcat = vert_cat
@@ -325,5 +328,8 @@ char_fill !a !c w h =
 -- | The empty image. Useful for fold combinators. These occupy no space nor define any display
 -- attributes.
 empty_image :: Image 
-empty_image = IdImage
+empty_image = EmptyImage
+
+translate :: Image -> (Int, Int) -> Image
+translate i v = Translation v i
 

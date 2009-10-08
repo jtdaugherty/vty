@@ -1,5 +1,4 @@
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -27,18 +26,18 @@ import Data.Word
 type Eval a = ReaderT (CapExpression,[CapParam]) (State [CapParam]) a
 type EvalIO a = ReaderT (CapExpression,[CapParam]) (StateT [CapParam] IO) a
 
-pop :: (StateType m ~ [CapParam], MonadState m) => m CapParam
+pop :: MonadState [CapParam] m => m CapParam
 pop = do
     v : stack <- get
     put stack
     return v
 
-read_param :: (EnvType m ~ (CapExpression, [CapParam]), MonadReader m) => Word -> m CapParam
+read_param :: MonadReader (CapExpression, [CapParam]) m => Word -> m CapParam
 read_param pn = do
     (_,params) <- ask
     return $ genericIndex params pn
 
-push :: (StateType m ~ [CapParam], MonadState m) => CapParam -> m ()
+push :: MonadState [CapParam] m => CapParam -> m ()
 push v = do
     stack <-get
     put (v : stack)

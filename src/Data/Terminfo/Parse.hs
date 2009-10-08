@@ -1,22 +1,19 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE NamedFieldPuns #-}
 module Data.Terminfo.Parse ( module Data.Terminfo.Parse
-                           , Text.Parsec.ParseError
+                           , Text.ParserCombinators.Parsec.ParseError
                            )
     where
 
 import Control.Monad ( liftM )
-import Control.Monad.ST.Strict
 
 import Data.Array.Unboxed
-import Data.Array.ST
 import Data.Monoid
 import Data.Word
 
-import Numeric
-
-import Text.Parsec
+import Text.ParserCombinators.Parsec
 
 type BytesLength = Word8
 type BytesOffset = Word8
@@ -46,6 +43,7 @@ data CapOp =
       , conditional_parts :: [(CapOps, CapOps)]
       }
     | BitwiseOr
+    | CompareEq
     | LiteralInt Int
     deriving ( Show )
 
@@ -55,15 +53,15 @@ data ParamOp =
     deriving ( Show )
 
 parse_cap_expression :: String -> Either ParseError CapExpression
-parse_cap_expression cap_string = runST $ do
-    v <- runParserT cap_expression_parser
+parse_cap_expression cap_string = 
+    let v = runParser cap_expression_parser
                            initial_build_state
                            "terminfo cap" 
                            cap_string 
-    case v of
-        Left error -> return $ Left error
+    in case v of
+        Left e -> Left e
         Right build_results -> 
-            return $ Right $ CapExpression
+            Right $ CapExpression
                 { cap_ops = out_cap_ops build_results
                 -- The cap bytes are the lower 8 bits of the input string's characters.
                 -- \todo Verify the input string actually contains an 8bit byte per character.
@@ -74,21 +72,27 @@ parse_cap_expression cap_string = runST $ do
                 , param_ops = out_param_ops build_results
                 }
 
+type CapParser a = GenParser Char BuildState a 
+
+cap_expression_parser :: CapParser BuildResults
 cap_expression_parser = do
     rs <- many $ param_escape_parser <|> bytes_op_parser 
     return $ mconcat rs
 
+param_escape_parser :: CapParser BuildResults
 param_escape_parser = do
     char '%'
     inc_offset 1
     literal_percent_parser <|> param_op_parser 
 
+literal_percent_parser :: CapParser BuildResults
 literal_percent_parser = do
     char '%'
     start_offset <- getState >>= return . next_offset
     inc_offset 1
     return $ BuildResults 0 [Bytes (start_offset, 1)] []
 
+param_op_parser :: CapParser BuildResults
 param_op_parser
     = increment_op_parser 
     <|> push_op_parser
@@ -96,23 +100,28 @@ param_op_parser
     <|> conditional_op_parser
     <|> bitwise_op_parser
     <|> literal_int_op_parser
+    <|> compare_op_parser
 
+increment_op_parser :: CapParser BuildResults
 increment_op_parser = do
     char 'i'
     inc_offset 1
     return $ BuildResults 0 [] [ IncFirstTwo ]
 
+push_op_parser :: CapParser BuildResults
 push_op_parser = do
     char 'p'
     param_n <- digit >>= return . (\d -> read [d])
     inc_offset 2
     return $ BuildResults param_n [ PushParam $ param_n - 1 ] []
 
+dec_out_parser :: CapParser BuildResults
 dec_out_parser = do
     char 'd'
     inc_offset 1
     return $ BuildResults 0 [ DecOut ] []
 
+conditional_op_parser :: CapParser BuildResults
 conditional_op_parser = do
     char '?'
     inc_offset 1
@@ -122,7 +131,9 @@ conditional_op_parser = do
                     true_part <- many_expr $ choice [ try $ lookAhead conditional_end_parser
                                                     , conditional_false_parser 
                                                     ]
-                    false_part <- many_expr $ lookAhead conditional_end_parser
+                    false_part <- many_expr $ choice [ try $ lookAhead conditional_end_parser
+                                                     , conditional_true_parser
+                                                     ]
                     return ( true_part, false_part )
                 ) 
                 conditional_end_parser
@@ -140,9 +151,9 @@ conditional_op_parser = do
 
     let true_param_ops = mconcat $ map out_param_ops true_parts
         false_param_ops = mconcat $ map out_param_ops false_parts
-        param_ops = mconcat [cond_param_ops, true_param_ops, false_param_ops]
+        p_ops = mconcat [cond_param_ops, true_param_ops, false_param_ops]
 
-    return $ BuildResults n'' [ Conditional cond cond_parts ] param_ops
+    return $ BuildResults n'' [ Conditional cond cond_parts ] p_ops
 
     where 
         many_p p end = choice 
@@ -153,26 +164,32 @@ conditional_op_parser = do
             ]
         many_expr end = liftM mconcat $ many_p ( param_escape_parser <|> bytes_op_parser ) end
 
+conditional_true_parser :: CapParser ()
 conditional_true_parser = do
     string "%t"
     inc_offset 2
 
+conditional_false_parser :: CapParser ()
 conditional_false_parser = do
     string "%e"
     inc_offset 2
 
+conditional_end_parser :: CapParser ()
 conditional_end_parser = do
     string "%;"
     inc_offset 2
 
+bitwise_op_parser :: CapParser BuildResults
 bitwise_op_parser = do
     bitwise_or_parser
 
+bitwise_or_parser :: CapParser BuildResults
 bitwise_or_parser = do
     char '|'
     inc_offset 1
     return $ BuildResults 0 [ BitwiseOr ] [ ]
 
+literal_int_op_parser :: CapParser BuildResults
 literal_int_op_parser = do
     char '{'
     inc_offset 1
@@ -183,19 +200,33 @@ literal_int_op_parser = do
     inc_offset 1
     return $ BuildResults 0 [ LiteralInt n ] [ ]
 
+compare_op_parser :: CapParser BuildResults
+compare_op_parser = do
+    char '='
+    inc_offset 1
+    return $ BuildResults 0 [ CompareEq ] [ ]
+
+bytes_op_parser :: CapParser BuildResults
 bytes_op_parser = do
     bytes <- many1 $ satisfy (/= '%')
     start_offset <- getState >>= return . next_offset
-    let !count = toEnum $ length bytes
-    modifyState $ \s -> s { next_offset = start_offset + count }
-    return $ BuildResults 0 [Bytes (start_offset, count)] []
+    let !c = toEnum $ length bytes
+    !s <- getState
+    let s' = s { next_offset = start_offset + c }
+    setState s'
+    return $ BuildResults 0 [Bytes (start_offset, c)] []
 
 data BuildState = BuildState 
     { next_offset :: Word8
     } 
 
-inc_offset n = modifyState $ \s -> s { next_offset = next_offset s + n }
+inc_offset :: Word8 -> CapParser ()
+inc_offset n = do
+    s <- getState
+    let s' = s { next_offset = next_offset s + n }
+    setState s'
 
+initial_build_state :: BuildState
 initial_build_state = BuildState 0
 
 data BuildResults = BuildResults

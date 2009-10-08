@@ -123,7 +123,7 @@ ops_for_row mrow_ops bg region image y remaining_columns
     | remaining_columns == 0 = return ()
     | y >= region_height region = return ()
     | otherwise = case image of
-        IdImage -> return ()
+        EmptyImage -> return ()
         -- The width provided is the number of columns this text span will occupy when displayed.
         -- if this is greater than the number of remaining columsn the output has to be produced a
         -- character at a time.
@@ -147,6 +147,7 @@ ops_for_row mrow_ops bg region image y remaining_columns
                                     then remaining_columns
                                     else width
             forM_ [y .. y + actual_height - 1] $ \y' -> snoc_bg_fill mrow_ops bg actual_width y'
+        Translation v i -> return ()
 
 snoc_text_span :: (Foldable.Foldable t) 
                 => Attr 
