@@ -1,6 +1,6 @@
 module Main where
 
-import Graphics.Vty.Picture
+import Graphics.Vty.Picture ( translate )
 
 import Verify
 
