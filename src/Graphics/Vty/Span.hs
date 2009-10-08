@@ -147,7 +147,7 @@ ops_for_row mrow_ops bg region image y remaining_columns
                                     then remaining_columns
                                     else width
             forM_ [y .. y + actual_height - 1] $ \y' -> snoc_bg_fill mrow_ops bg actual_width y'
-        Translation v i -> return ()
+        Translation v i -> ops_for_row mrow_ops bg region i y remaining_columns
 
 snoc_text_span :: (Foldable.Foldable t) 
                 => Attr 

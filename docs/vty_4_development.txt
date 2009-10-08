@@ -84,7 +84,24 @@ made up for the fact that QuickCheck tests are *extremely* easy and quick to imp
 I used a very simple Makefile to manage the execution of tests. The usage followed:
     make => built and ran all tests.
     make TEST => build and run test with name TEST. The output for a test was logged to a "results"
-    directory.
-Nothing fancy, but enough.
+    directory. The results included a time and memory profile.
+Nothing fancy, but enough to support a very quick modify/test cycle.
+
+Compared to VTY 3 the optimization of VTY 4 was easier. Each test provided basic performance
+feedback in addition to verifying correctness. I investigated significant changes in the performance
+data and, for each case, determined if the change was acceptable or indicated a performance
+regression. Any change in performance that was due to correcting the implementation was considered
+acceptable. This is in contrast to VTY 3 where all the optimizations in the final release were
+micro-optimizations: Hand application of primitive types and equations.
+
+Sun Jan 11 13:37 2009 Time and Allocation Profiling Report (Final)
+total time = 3.48 secs (174 ticks @ 20 ms)
+total alloc = 2,542,866,800 bytes (excludes profiling overheads)
+
+Current release of Vty with minimal use of primitive types but an entirely different algorithm:
+
+Thu Sep 3 13:30 2009 Time and Allocation Profiling Report (Final)
+total time = 1.84 secs (92 ticks @ 20 ms)
+total alloc = 1,513,254,136 bytes (excludes profiling overheads)
 
 
