@@ -156,6 +156,7 @@ all_tests
       , attributes_test_3
       , attributes_test_4
       , attributes_test_5
+      , inline_test_0
       ]
 
 reserve_output_test = Test 
@@ -845,3 +846,21 @@ Did the test output match the description?
         default_success_confirm_results
     }
 
+inline_test_0 = Test
+    { test_name = "Verify styled output can be performed without clearing the screen."
+    , test_ID = "inline_test_0"
+    , test_action = do
+        t <- terminal_handle
+        d <- display_bounds t >>= display_context t
+        let image = string ( def_attr `with_back_color` red ) "line 1."
+        putStrLn "line 0."
+        put_image_ln d image
+        putStrLn "line 2."
+        release_terminal t
+        return ()
+    , print_summary = putStr $ [$heredoc|
+lines are in order.
+|]
+
+    , confirm_results = generic_output_match_confirm
+    }
