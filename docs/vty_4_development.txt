@@ -2,56 +2,33 @@ The first project I focused on when I became fun-employed was improving Vty: A t
 library for Haskell software.
 <lj-cut/>
 Oh I know what you're thinking... Well no, but *I* think it's rediculous to spend time on a
-*terminal* library. Something like OpenGL or web related, hell anything where any significant activity
-has happened in the past few years seems more reasonable. Oh well. 
+*terminal* library. Something like OpenGL or web related, hell anything where any significant
+activity has happened in the past few years seems more reasonable. Eh! It was an entertaining
+challange.
 
-This is a diary of completing vty 4 mostly written after I was done. No really specific technical
-stuff is contained in this post.  I suppose it counts as a sort of postmortem.
+This is a post-mortem, of sorts, for VTY 4. The primary goal was to document the overall development
+process. A side goal is to provide an overview of the implementation aspects of VTY 4. It all
+probably be separated into a few reasonably short posts instead of just one overlong post. Ah well!
 
-I had taken over as maintainer of vty 3 from Stefan O'Rear. Vty 3 already worked great and I didn't
+I had taken over as maintainer of VTY 3 from Stefan O'Rear. VTY 3 already worked great and I didn't
 really see me doing much. Still there is always something to improve. In this case vty did not
 support the various terminals people wanted to use. And characters that occupy multiple output
 columns were causing corruption. 
 
-Plus, optimization is always fun. So trying my hands at optimizing Haskell code sounded great.
-Especially when, for the most part, there was an already fast and already working version to compare
-performance data against: Vty 3.
+Plus, optimization is damn fun! Trying my hands at optimizing Haskell code sounded great. Way more
+interesting than optimizing C++ ;-) Even better was that, for the most part, there was an already
+fast and already working version to compare performance against: VTY 3.
 
 I figured low level optimization was what I should start on. Which only makes sense considering I
-was only interested in optimization fun at the time. ;-) The result of this were much faster than
+was only interested in optimization fun at the time. ;-) The result of this was much faster than
 before. However, since I wasn't changing the design in any significant fashion some optimizations
-could not be implemented. In the end this route was only useful to define reasonable performance
-goals for a rewritter output layer.
+could not be implemented. In the end this route was only useful to define performance goals for a rewritten
+output layer.
 
 In addition I was learning Mandarin at the time. I wanted to, of course, create software to help me
 study. Since I have an infatuation with terminal user interfaces I wanted a terminal library that
-could handle double-width characters. I couldn't see an effective way to implement this with vty 3's
+could handle double-width characters. There was no reasonable way to implement this with VTY 3's
 implementation.
-
-Anybody who has needed to reimplement, or deal with the horrors of a botch reimplementation, knows
-how dangerous this can be. A botched reimplementation ends up costing more than continueing to
-maintain the old implementation. A reimplementation is only feasable if the immediate cost of
-performing the work is offset by the profits the improvements provide.
-
-A particular source of trouble for vty was the insanity of dealing with terminals or terminal
-emulators. I'm never going to refer to the physical box of relays from the 70s and 80s that is
-properly called a terminal again. Terminal emulators are now be refered to as terminals and the
-others don't exist. So...
-
-Terminals are software driven character displays and a keyboard. The software controls the diplay by
-serializing to the STDOUT UTF-8 byte character sequences. Which are then displayed. And control
-codes which modify the display of the characters. Input from the keyboard and events are read from
-STDIN.
-
-Why the fuck something as old as a terminal hasn't been beaten down into a simple, universally
-supported set of operations by now is a mystery. I don't think curses are terminfo count. I suspect
-if support for everything that cannot support the required interface is dropped things would only be
-better. For this reason I only focused on supporting the following terminals: xterm-256-color with
-UTF-8; Mac OS X Terminal.app; gnome terminal, kde terminal; and rxvt-unicode. Basically: All the
-terminals I could easily use and behaved close to how I expected.
-
-While I did not consider supporting the Windows platform I hoped that the abstractions used to
-handle the various non-Windows terminals would simplify supporting Windows in the future. 
 
 To assure the re-implementation did not introduce regressions I repeatedly:
 0. Characterized vty 3's implementation. Both in terms of functionality and performance.
@@ -87,21 +64,53 @@ I used a very simple Makefile to manage the execution of tests. The usage follow
     directory. The results included a time and memory profile.
 Nothing fancy, but enough to support a very quick modify/test cycle.
 
-Compared to VTY 3 the optimization of VTY 4 was easier. Each test provided basic performance
-feedback in addition to verifying correctness. I investigated significant changes in the performance
-data and, for each case, determined if the change was acceptable or indicated a performance
-regression. Any change in performance that was due to correcting the implementation was considered
-acceptable. This is in contrast to VTY 3 where all the optimizations in the final release were
-micro-optimizations: Hand application of primitive types and equations.
+As mentioned before, a particular source of trouble was the insanity of dealing with different
+terminals or terminal emulators. 
 
-Sun Jan 11 13:37 2009 Time and Allocation Profiling Report (Final)
-total time = 3.48 secs (174 ticks @ 20 ms)
-total alloc = 2,542,866,800 bytes (excludes profiling overheads)
+First off: I'm never going to refer to the physical box of relays from the 70s and 80s that is
+properly called a "terminal" again. "Terminal emulators" are now be refered to as terminals and the
+others should be archived and forgotten. So...
 
-Current release of Vty with minimal use of primitive types but an entirely different algorithm:
+Terminals are software driven character displays paired with keyboard input. The software controls
+the diplay by serializing to the STDOUT UTF-8 byte character sequences. Which are then displayed.
+And control bytes which modify the state of the terminal. Input from the keyboard and events are
+read from STDIN.
 
-Thu Sep 3 13:30 2009 Time and Allocation Profiling Report (Final)
-total time = 1.84 secs (92 ticks @ 20 ms)
-total alloc = 1,513,254,136 bytes (excludes profiling overheads)
+Why the fuck something as old as a terminal hasn't been beaten down into a simple, universally
+supported set of operations by now is a mystery. And no, curses and terminfo are not simple. I
+suspect if support for everything that does no support a reasonable interface is dropped things
+would only be better. For this reason I only focused on supporting the following terminals:
+xterm-256-color with UTF-8; Mac OS X Terminal.app; gnome terminal, kde terminal; and rxvt-unicode -
+All the terminals I could easily use and behaved how I wanted.
 
+Reliably optimizing VTY 4 was simple.  The only optimizations I applied were to reach the goal that
+nothing, once verified, got slower during further development.  Each test provided basic performance
+feedback in addition to verifying correctness. Such as a time and memory profile. I investigated
+significant changes in the performance data and, for each case, determined if the change was
+acceptable or indicated a performance regression. However, any change in performance that was done
+to correct the implementation was considered acceptable. All this is quite different from my
+optimization work on VTY 3. In VTY 3 all the optimizations in the final release were
+micro-optimizations: Hand application of primitive types and equations. Which were difficult to
+verify compared to VTY 4's optimizations.
+
+One source of VTY 4's speed was the use of a different serialization algorithm than VTY 3. VTY 3
+serialized bytes to the terminal an operation at a time. This resulted in either too many IO
+operations or too many memory allocations. So for VTY 4 the output algorithm had the goals to batch
+operations and not perform (any) memory allocation during serialization. Output was serialized to a fixed sized buffer then the buffer was
+output. While fast, to do this correctly the required buffer size must be known before
+serialization. This could be implemented performing a fold on the same output strucuture. 
+The only test that performed the equivalent operations under VTY 3 and VTY 4 was the basic benchmark
+test. For VTY 3 the best results were:
+    total time = 3.48 secs (174 ticks @ 20 ms)
+    total alloc = 2,542,866,800 bytes (excludes profiling overheads)
+
+For VTY 4 the results are:
+    total time = 1.84 secs (92 ticks @ 20 ms)
+    total alloc = 1,513,254,136 bytes (excludes profiling overheads)
+
+Both execution time and allocations were greatly reduced. A definite win!
+
+Everything in this project went better than I expected except, of course, the release took longer
+than expected. Ah well! I am more convinced than before that Haskell can provide a powerful
+systems programming environment. 
 
