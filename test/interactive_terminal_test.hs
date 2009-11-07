@@ -475,7 +475,7 @@ unicode_double_width_1 = Test
         reserve_display t
         let pic = pic_for_image image
             image = line_0 <-> line_1
-            line_0 = iso_10646_string def_attr iso_10464_txt_1
+            line_0 = iso_10646_string def_attr iso_10646_txt_1
             line_1 = string def_attr "012345"
         d <- display_bounds t >>= display_context t
         output_picture d pic
