@@ -3,6 +3,7 @@
 module Main where
 
 import Graphics.Vty.Attributes
+import Graphics.Vty.AttributeChange
 import Graphics.Vty.Image
 import Graphics.Vty.Picture
 import Graphics.Vty.Terminal
@@ -853,9 +854,9 @@ inline_test_0 = Test
         t <- terminal_handle
         d <- display_bounds t >>= display_context t
         putStrLn "line 0."
-        -- put_attr_change $ back_color red >> style underline
+        put_attr_change t $ back_color red >> style underline
         putStrLn "line 1."
-        -- put_attr_change $ default_all
+        put_attr_change t $ default_all
         putStrLn "line 2."
         release_terminal t
         return ()

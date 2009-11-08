@@ -37,6 +37,7 @@ Exposed-Modules:     Graphics.Vty
                      Graphics.Vty.Terminal
                      Graphics.Vty.LLInput
                      Graphics.Vty.Attributes
+                     Graphics.Vty.AttributeChange
                      Graphics.Vty.Picture
                      Graphics.Vty.DisplayRegion
 

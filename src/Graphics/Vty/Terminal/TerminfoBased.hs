@@ -12,6 +12,7 @@ import Data.Terminfo.Parse
 import Data.Terminfo.Eval
 
 import Graphics.Vty.Attributes
+import Graphics.Vty.DisplayAttributes
 import Graphics.Vty.Terminal.Generic
 import Graphics.Vty.DisplayRegion
 
@@ -19,9 +20,8 @@ import Control.Applicative
 import Control.Monad ( foldM )
 
 import Data.Bits ( (.&.) )
-import Data.List ( foldl' )
 import Data.Maybe ( fromJust )
-import Data.Monoid
+import Data.Monoid 
 import Data.Word
 
 import Foreign.C.Types ( CLong )
@@ -197,7 +197,7 @@ instance DisplayTerminal DisplayContext where
     -- Which is assumed to the be less than 512 for now. 
     --
     -- \todo Not verified as safe and wastes memory.
-    attr_required_bytes d _prev_attr _req_attr _diffs = 512
+    attr_required_bytes _d _prev_attr _req_attr _diffs = 512
 
     -- Portably setting the display attributes is a giant pain in the ass.
     -- If the terminal supports the sgr capability (which sets the on/off state of each style
@@ -230,7 +230,7 @@ instance DisplayTerminal DisplayContext where
                         EnterExitSeq caps 
                             -- only way to reset a color to the defaults
                             ->  serialize_default_attr d out_ptr
-                            >>= (\ptr -> foldM (\ptr cap -> serialize_cap_expression cap [] ptr) ptr caps)
+                            >>= (\out_ptr' -> foldM (\ptr cap -> serialize_cap_expression cap [] ptr) out_ptr' caps)
                             >>= set_colors
                         SetState state
                             -- implicitly resets the colors to the defaults
@@ -284,7 +284,7 @@ instance DisplayTerminal DisplayContext where
                 return ptr''
             apply_color_diff _f NoColorChange ptr
                 = return ptr
-            apply_color_diff _f ColorToDefault ptr
+            apply_color_diff _f ColorToDefault _ptr
                 = fail "ColorToDefault is not a possible case for apply_color_diffs"
             apply_color_diff f ( SetColor c ) ptr
                 = serialize_cap_expression ( f $ term d ) 
@@ -362,13 +362,13 @@ sgr_args_for_state attr_state = map (\b -> if b then 1 else 0)
     ]
 
 req_display_cap_seq_for :: DisplayAttrCaps -> Style -> [StyleStateChange] -> DisplayAttrSeq CapExpression
-req_display_cap_seq_for caps style diffs =
+req_display_cap_seq_for caps s diffs =
     -- First pass: concat the monoid points that are implied by the diffs
     let base = mconcat $ map diff_point diffs
     -- Second pass: Apply the capability restrictions. 
     in apply_caps base
     where 
-        set_state = SetState $ state_for_style style
+        set_state = SetState $ state_for_style s
         diff_point ApplyStandout = EnterExitSeq [ApplyStandout]
         diff_point ApplyUnderline = EnterExitSeq [ApplyUnderline] 
         diff_point ApplyReverseVideo = EnterExitSeq [ApplyReverseVideo]
