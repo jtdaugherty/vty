@@ -862,6 +862,7 @@ inline_test_0 = Test
         return ()
     , print_summary = putStr $ [$heredoc|
 lines are in order.
+the second line "line 1" should have a red background and the text underline.
 |]
 
     , confirm_results = generic_output_match_confirm
