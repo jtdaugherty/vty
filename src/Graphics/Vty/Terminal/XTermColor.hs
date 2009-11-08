@@ -62,6 +62,8 @@ data DisplayContext = DisplayContext
 instance DisplayTerminal DisplayContext where
     context_region d = context_region (super_display d)
 
+    context_color_count d = context_color_count (super_display d)
+
     move_cursor_required_bytes d = move_cursor_required_bytes (super_display d)
     serialize_move_cursor d = serialize_move_cursor (super_display d)
 

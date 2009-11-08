@@ -46,9 +46,9 @@ import Data.Word
 --  foreground. The 240 colors and 16 colors are points in different palettes. See Color for more
 --  information.
 data Attr = Attr 
-    { style :: !(MaybeDefault Style)
-    , fore_color :: !(MaybeDefault Color)
-    , back_color :: !(MaybeDefault Color)
+    { attr_style :: !(MaybeDefault Style)
+    , attr_fore_color :: !(MaybeDefault Color)
+    , attr_back_color :: !(MaybeDefault Color)
     } deriving ( Eq, Show )
 
 -- | Specifies the display attributes such that the final style and color values do not depend on
@@ -168,7 +168,7 @@ default_style_mask = 0x00
 
 style_mask :: Attr -> Word8
 style_mask attr 
-    = case style attr of
+    = case attr_style attr of
         Default  -> 0
         KeepCurrent -> 0
         SetTo v  -> v
@@ -179,15 +179,15 @@ has_style s bit_mask = ( s .&. bit_mask ) /= 0
 
 -- | Set the foreground color of an `Attr'.
 with_fore_color :: Attr -> Color -> Attr
-with_fore_color attr c = attr { fore_color = SetTo c }
+with_fore_color attr c = attr { attr_fore_color = SetTo c }
 
 -- | Set the background color of an `Attr'.
 with_back_color :: Attr -> Color -> Attr
-with_back_color attr c = attr { back_color = SetTo c }
+with_back_color attr c = attr { attr_back_color = SetTo c }
 
 -- | Add the given style attribute
 with_style :: Attr -> Style -> Attr
-with_style attr style_flag = attr { style = SetTo $ style_mask attr .|. style_flag }
+with_style attr style_flag = attr { attr_style = SetTo $ style_mask attr .|. style_flag }
 
 -- | Sets the style, background color and foreground color to the default values for the terminal.
 -- There is no easy way to determine what the default background and foreground colors are.

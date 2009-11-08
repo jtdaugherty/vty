@@ -852,9 +852,10 @@ inline_test_0 = Test
     , test_action = do
         t <- terminal_handle
         d <- display_bounds t >>= display_context t
-        let image = string ( def_attr `with_back_color` red ) "line 1."
         putStrLn "line 0."
-        put_image_ln d image
+        -- put_attr_change $ back_color red >> style underline
+        putStrLn "line 1."
+        -- put_attr_change $ default_all
         putStrLn "line 2."
         release_terminal t
         return ()

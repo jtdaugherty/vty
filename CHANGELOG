@@ -1,0 +1,49 @@
+4.1.0.0
+    * API changes:
+        * Attr record accessor fore_color changed to attr_fore_color
+        * Attr record accessor back_color changed to attr_back_color
+        * Attr record accessor style changed to attr_style
+        * Added an "inline" attribute changing DSL:
+            * put_attr_change applies and attribute change monad action
+            * can be used to change the display attrbiutes of text output via putStrLn and putStr,
+              for instance. EX: "put_attr_change $ back_color red" will set the background color to
+              red. 
+            * Does not apply to output_picture. 
+            * See Graphics.Vty.AttributeChange
+4.0.0.1
+    * binding for mk_wcswidth was incorrect. Most platforms just magically worked due to
+      coincidence.
+
+4.0.0
+    * Completely rewritten output backend.
+        * Efficient, scanline style output span generator. Has not been fully optimized, but good
+          enough.
+        * The details required to display the desired picture on a terminal are well encapsulated.
+        * Terminfo based display terminal implementation. With specialized derivitives for xterm,
+          Terminal.app, and iTerm.app. 
+            * Attempts to robustly handle even terminals that don't support all display attributes.
+            * I've tested the following terminals with success: iTerm.app, Terminal.app, xterm,
+              rxvt, mlterm, Eterm, gnome-terminal, konsole, screen, linux vty. Hopefully you will be
+              as successfull. 
+        * Improved unicode support. Double wide characters will display as expected.
+    * 256 color support. See Graphics.Vty.Attributes.Color240. The actual output color is adjusted
+      according to the number of colors the terminal supports.
+    * The Graphics.Vty.Image combinators no longer require matching dimensions to arguments.
+      Unspecified areas are filled in with a user-customizable background pattern. See
+      Graphics.Vty.Picture.
+    * output images are always cropped to display size.
+    * Significant code coverage by QuickCheck tests. An interactive test for those final properties
+      that couldn't be automatically verified.
+
+    issues resolved:
+        * "gnome terminal displays non-basic attributes as strikethrough"
+            * http://trac.haskell.org/vty/ticket/14
+        * "Multi-byte characters are not displayed correctly on update"
+            * http://trac.haskell.org/vty/ticket/10
+        * "Redraw does not handle rendering a line that extends beyond screen width characters" 
+            * http://trac.haskell.org/vty/ticket/13
+        * "The <|> and <-> combinators should be more forgiving of mismatched dimensions" 
+            * http://trac.haskell.org/vty/ticket/9
+        * "256-color support" 
+            * http://trac.haskell.org/vty/ticket/19
+

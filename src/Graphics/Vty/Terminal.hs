@@ -19,6 +19,7 @@ module Graphics.Vty.Terminal ( module Graphics.Vty.Terminal
                              , TerminalHandle(..)
                              , DisplayHandle(..)
                              , output_picture
+                             -- , put_attr_change
                              , display_context
                              )
     where
@@ -118,6 +119,12 @@ hide_cursor t = do
     d <- display_context t bounds
     marshall_to_terminal t (hide_cursor_required_bytes d) (serialize_hide_cursor d) 
     
+{-
+put_attr_change :: TerminalHandle ->  -> m ()
+put_attr_change d img = do
+    return ()
+-}
+
 -- | Shows the cursor
 show_cursor :: TerminalHandle -> IO ()
 show_cursor t = do

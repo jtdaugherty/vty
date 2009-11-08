@@ -4,7 +4,9 @@
 -- Copyright 2009 Corey O'Connor
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Graphics.Vty.Terminal.Generic
+module Graphics.Vty.Terminal.Generic ( module Graphics.Vty.Terminal.Generic
+                                     , OutputBuffer
+                                     )
     where
 
 import Data.Marshalling
@@ -14,11 +16,14 @@ import Graphics.Vty.Span
 import Graphics.Vty.DisplayRegion
 
 import Control.Monad ( liftM )
+import Control.Monad.Trans
 
 import Data.Array
+import Data.Bits ( (.&.) )
 import qualified Data.ByteString.Internal as BSCore
 import Data.Foldable
 import Data.IORef
+import Data.Monoid ( mconcat )
 import Data.Word
 import Data.String.UTF8 hiding ( foldl )
 
@@ -107,6 +112,9 @@ class DisplayTerminal d where
     -- | Provide the bounds of the display context. 
     context_region :: d -> DisplayRegion
 
+    -- | Maximum number of colors supported by the context.
+    context_color_count :: d -> Word
+
     --  | sets the output position to the specified row and column. Where the number of bytes
     --  required for the control codes can be specified seperate from the actual byte sequence.
     move_cursor_required_bytes :: d -> Word -> Word -> Word
@@ -129,8 +137,8 @@ class DisplayTerminal d where
     --  attributes. In order to support this the currently applied display attributes are required.
     --  In addition it may be possible to optimize the state changes based off the currently applied
     --  display attributes.
-    attr_required_bytes :: d -> FixedAttr -> Attr -> Word
-    serialize_set_attr :: d -> FixedAttr -> Attr -> OutputBuffer -> IO OutputBuffer
+    attr_required_bytes :: d -> FixedAttr -> Attr -> DisplayAttrDiffs -> Word
+    serialize_set_attr :: d -> FixedAttr -> Attr -> DisplayAttrDiffs -> OutputBuffer -> IO OutputBuffer
 
     -- | Reset the display attributes to the default display attributes
     default_attr_required_bytes :: d -> Word
@@ -139,6 +147,7 @@ class DisplayTerminal d where
 
 instance DisplayTerminal DisplayHandle where
     context_region (DisplayHandle d _ _) = context_region d
+    context_color_count (DisplayHandle d _ _) = context_color_count d
     move_cursor_required_bytes (DisplayHandle d _ _) = move_cursor_required_bytes d
     serialize_move_cursor (DisplayHandle d _ _) = serialize_move_cursor d
     show_cursor_required_bytes (DisplayHandle d _ _) = show_cursor_required_bytes d
@@ -256,8 +265,9 @@ span_ops_required_bytes d y in_fattr span_ops =
 
 span_op_required_bytes :: DisplayTerminal d => d -> FixedAttr -> SpanOp -> (Word, FixedAttr)
 span_op_required_bytes d fattr (AttributeChange attr) = 
-    let c = attr_required_bytes d fattr attr
-        fattr' = fix_display_attr fattr attr
+    let attr' = limit_attr_for_display d attr
+        c = attr_required_bytes d fattr attr' (display_attr_diffs fattr fattr')
+        fattr' = fix_display_attr fattr attr'
     in (c, fattr')
 span_op_required_bytes _d fattr (TextSpan _ _ str) = (utf8_text_required_bytes str, fattr)
 
@@ -304,8 +314,9 @@ serialize_span_op :: DisplayTerminal d
                      -> FixedAttr
                      -> IO (OutputBuffer, FixedAttr)
 serialize_span_op d (AttributeChange attr) out_ptr fattr = do
-    out_ptr' <- serialize_set_attr d fattr attr out_ptr
-    let fattr' = fix_display_attr fattr attr
+    let attr' = limit_attr_for_display d attr
+        fattr' = fix_display_attr fattr attr'
+    out_ptr' <- serialize_set_attr d fattr attr' (display_attr_diffs fattr fattr') out_ptr
     return (out_ptr', fattr')
 serialize_span_op _d (TextSpan _ _ str) out_ptr fattr = do
     out_ptr' <- serialize_utf8_text str out_ptr
@@ -330,9 +341,9 @@ marshall_to_terminal t c f = do
 -- abstraction.
 fix_display_attr :: FixedAttr -> Attr -> FixedAttr
 fix_display_attr fattr attr 
-    = FixedAttr ( fix_style (fixed_style fattr) (style attr) )
-                ( fix_color (fixed_fore_color fattr) (fore_color attr) )
-                ( fix_color (fixed_back_color fattr) (back_color attr) )
+    = FixedAttr ( fix_style (fixed_style fattr) (attr_style attr) )
+                ( fix_color (fixed_fore_color fattr) (attr_fore_color attr) )
+                ( fix_color (fixed_back_color fattr) (attr_back_color attr) )
     where
         fix_style _s Default = default_style_mask
         fix_style s KeepCurrent = s
@@ -340,6 +351,68 @@ fix_display_attr fattr attr
         fix_color _c Default = Nothing
         fix_color c KeepCurrent = c
         fix_color _c (SetTo c) = Just c
+
+data DisplayAttrDiffs = DisplayAttrDiffs 
+    { style_diffs :: [ StyleStateChange ]
+    , fore_color_diff :: DisplayColorDiff
+    , back_color_diff :: DisplayColorDiff
+    }
+
+data DisplayColorDiff 
+    = ColorToDefault
+    | NoColorChange
+    | SetColor !Color
+    deriving Eq
+
+data StyleStateChange 
+    = ApplyStandout
+    | RemoveStandout
+    | ApplyUnderline
+    | RemoveUnderline
+    | ApplyReverseVideo
+    | RemoveReverseVideo
+    | ApplyBlink
+    | RemoveBlink
+    | ApplyDim
+    | RemoveDim
+    | ApplyBold
+    | RemoveBold
+
+display_attr_diffs :: FixedAttr -> FixedAttr -> DisplayAttrDiffs
+display_attr_diffs attr attr' = DisplayAttrDiffs
+    { style_diffs = diff_styles ( fixed_style attr ) ( fixed_style attr' )
+    , fore_color_diff = diff_color ( fixed_fore_color attr ) ( fixed_fore_color attr' )
+    , back_color_diff = diff_color ( fixed_back_color attr ) ( fixed_back_color attr' )
+    }
+
+diff_color Nothing  (Just c') = SetColor c'
+diff_color (Just c) (Just c') 
+    | c == c'   = NoColorChange
+    | otherwise = SetColor c'
+diff_color Nothing  Nothing = NoColorChange
+diff_color (Just _) Nothing = ColorToDefault
+
+diff_styles :: Style -> Style -> [StyleStateChange]
+diff_styles prev cur 
+    = mconcat 
+    [ style_diff standout ApplyStandout RemoveStandout
+    , style_diff underline ApplyUnderline RemoveUnderline
+    , style_diff reverse_video ApplyReverseVideo RemoveReverseVideo
+    , style_diff blink ApplyBlink RemoveBlink
+    , style_diff dim ApplyDim RemoveDim
+    , style_diff bold ApplyBold RemoveBold
+    ]
+    where 
+        style_diff s sm rm 
+            = case ( 0 == prev .&. s, 0 == cur .&. s ) of
+                -- not set in either
+                ( True, True ) -> []
+                -- set in both
+                ( False, False ) -> []
+                -- now set
+                ( True, False) -> [ sm ]
+                -- now unset
+                ( False, True) -> [ rm ]
 
 data CursorOutputMap = CursorOutputMap
     { char_to_output_pos :: (Word, Word) -> (Word, Word)
@@ -374,3 +447,27 @@ cursor_column_offset span_ops cx cy =
                       (0, 0, False)
                       cursor_row_ops
     in out_offset
+
+limit_attr_for_display :: DisplayTerminal d => d -> Attr -> Attr
+limit_attr_for_display d attr 
+    = attr { attr_fore_color = clamp_color $ attr_fore_color attr
+           , attr_back_color = clamp_color $ attr_back_color attr
+           }
+    where
+        clamp_color Default     = Default
+        clamp_color KeepCurrent = KeepCurrent
+        clamp_color (SetTo c)   = clamp_color' c
+        clamp_color' (ISOColor v) 
+            | context_color_count d < 8            = Default
+            | context_color_count d < 16 && v >= 8 = SetTo $ ISOColor (v - 8)
+            | otherwise                            = SetTo $ ISOColor v
+        clamp_color' (Color240 v)
+            -- TODO: Choose closes ISO color?
+            | context_color_count d < 8            = Default
+            | context_color_count d < 16           = Default
+            | context_color_count d == 240         = SetTo $ Color240 v
+            | otherwise 
+                = let p :: Double = fromIntegral v / 240.0 
+                      v' = floor $ p * (fromIntegral $ context_color_count d)
+                  in SetTo $ Color240 v'
+

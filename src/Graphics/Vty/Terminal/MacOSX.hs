@@ -34,15 +34,21 @@ flushed_put str = do
     hPutStr stdout str
     hFlush stdout
 
+-- Terminal.app really does want the xterm-color smcup and rmcup caps. Not the generic xterm ones.
+smcup_str = "\ESC7\ESC[?47h"
+rmcup_str = "\ESC[2J\ESC[?47l\ESC8"
+
 instance Terminal Term where
     terminal_ID t = "Terminal.app :: MacOSX"
 
     release_terminal t = do 
         release_terminal $ super_term t
 
-    reserve_display t = reserve_display (super_term t)
+    reserve_display t = do
+        flushed_put smcup_str
 
-    release_display t = release_display (super_term t)
+    release_display t = do
+        flushed_put rmcup_str
 
     display_terminal_instance t b c = do
         d <- display_context (super_term t) b
@@ -58,6 +64,7 @@ data DisplayContext = DisplayContext
 
 instance DisplayTerminal DisplayContext where
     context_region d = context_region (super_display d)
+    context_color_count d = context_color_count (super_display d)
 
     move_cursor_required_bytes d = move_cursor_required_bytes (super_display d)
     serialize_move_cursor d = serialize_move_cursor (super_display d)
