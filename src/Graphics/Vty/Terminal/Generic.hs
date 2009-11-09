@@ -147,6 +147,10 @@ class DisplayTerminal d where
     default_attr_required_bytes :: d -> Word
     serialize_default_attr :: MonadIO m => d -> OutputBuffer -> m OutputBuffer
 
+    -- | See Graphics.Vty.Terminal.XTermColor.inline_hack
+    inline_hack :: MonadIO m => d -> m ()
+    inline_hack _d = return ()
+
 
 instance DisplayTerminal DisplayHandle where
     context_region (DisplayHandle d _ _) = context_region d
@@ -161,6 +165,7 @@ instance DisplayTerminal DisplayHandle where
     serialize_set_attr (DisplayHandle d _ _) = serialize_set_attr d
     default_attr_required_bytes (DisplayHandle d _ _) = default_attr_required_bytes d
     serialize_default_attr (DisplayHandle d _ _) = serialize_default_attr d
+    inline_hack (DisplayHandle d _ _) = inline_hack d 
     
 -- | All terminals serialize UTF8 text to the terminal device exactly as serialized in memory.
 utf8_text_required_bytes ::  UTF8 BSCore.ByteString -> Word

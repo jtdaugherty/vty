@@ -41,6 +41,7 @@ put_default_attr t = do
     marshall_to_terminal t ( default_attr_required_bytes d )
                            ( serialize_default_attr d )
     liftIO $ modifyIORef ( state_ref t ) $ \s -> s { known_fattr = Just $ FixedAttr default_style_mask Nothing Nothing }
+    inline_hack d
 
 put_attr_change :: ( Applicative m, MonadIO m ) => TerminalHandle -> AttrChange () -> m ()
 put_attr_change t c = do

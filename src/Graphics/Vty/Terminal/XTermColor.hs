@@ -82,3 +82,10 @@ instance DisplayTerminal DisplayContext where
     default_attr_required_bytes d = default_attr_required_bytes (super_display d)
     serialize_default_attr d = serialize_default_attr (super_display d)
 
+    -- I think xterm is broken: Reseting the background color as the first bytes serialized on a new
+    -- line does not effect the background color xterm uses to clear the line. Which is used *after*
+    -- the next newline.
+    inline_hack _d = do
+        liftIO $ hPutStr stdout "\ESC[K"
+        liftIO $ hFlush stdout
+
