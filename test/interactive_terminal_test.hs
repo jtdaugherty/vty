@@ -158,6 +158,7 @@ all_tests
       , attributes_test_4
       , attributes_test_5
       , inline_test_0
+      , inline_test_1
       ]
 
 reserve_output_test = Test 
@@ -863,6 +864,24 @@ inline_test_0 = Test
 lines are in order.
 The second line "line 2" should have a red background and the text underline.
 The third line "line 3" should be drawn in the same style as the first line.
+|]
+
+    , confirm_results = generic_output_match_confirm
+    }
+
+inline_test_1 = Test
+    { test_name = "Verify styled output can be performed without clearing the screen."
+    , test_ID = "inline_test_1"
+    , test_action = do
+        t <- terminal_handle
+        putStr "Not styled. "
+        put_attr_change t $ back_color red >> apply_style underline
+        putStr " Styled! "
+        put_default_attr t
+        putStrLn "Not styled."
+        release_terminal t
+        return ()
+    , print_summary = putStr $ [$heredoc|
 |]
 
     , confirm_results = generic_output_match_confirm
