@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
-module Graphics.Vty.AttributeChange ( module Graphics.Vty.AttributeChange
-                                    )
+module Graphics.Vty.Inline ( module Graphics.Vty.Inline
+                           )
     where
 
 import Graphics.Vty.Attributes

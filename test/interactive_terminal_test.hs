@@ -3,8 +3,8 @@
 module Main where
 
 import Graphics.Vty.Attributes
-import Graphics.Vty.AttributeChange
 import Graphics.Vty.Image
+import Graphics.Vty.Inline
 import Graphics.Vty.Picture
 import Graphics.Vty.Terminal
 import Graphics.Vty.DisplayRegion

@@ -10,7 +10,7 @@ verify_empty_image_props \
 verify_picture_ops \
 verify_span_ops \
 verify_debug_terminal \
-verify_attribute_change \
+verify_inline \
 
 
 TESTS :=\

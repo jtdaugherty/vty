@@ -1,6 +1,6 @@
 module Main where
 
-import Graphics.Vty.AttributeChange
+import Graphics.Vty.Inline
 import Graphics.Vty.Terminal
 
 import Verify
