@@ -8,7 +8,9 @@ verify_image_trans \
 verify_empty_image_props \
 verify_picture_ops \
 verify_span_ops \
-verify_debug_terminal
+verify_debug_terminal \
+verify_attribute_change \
+
 
 TESTS :=\
 Bench \

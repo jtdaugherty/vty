@@ -853,7 +853,7 @@ inline_test_0 = Test
     , test_action = do
         t <- terminal_handle
         putStrLn "line 0."
-        put_attr_change t $ back_color red >> style underline
+        put_attr_change t $ back_color red >> apply_style underline
         putStrLn "line 1."
         put_attr_change t $ default_all
         putStrLn "line 2."
