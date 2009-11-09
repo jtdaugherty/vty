@@ -1,10 +1,11 @@
+{-# LANGUAGE BangPatterns #-}
 module Graphics.Vty.DisplayAttributes
     where
 
 import Graphics.Vty.Attributes
 
 import Data.Bits ( (.&.) )
-import Data.Monoid ( mconcat )
+import Data.Monoid ( Monoid(..), mconcat )
 
 -- | Given the previously applied display attributes as a FixedAttr and the current display
 -- attributes as an Attr produces a FixedAttr that represents the current display attributes. This
@@ -28,6 +29,21 @@ data DisplayAttrDiff = DisplayAttrDiff
     , fore_color_diff :: DisplayColorDiff
     , back_color_diff :: DisplayColorDiff
     }
+
+instance Monoid DisplayAttrDiff where
+    mempty = DisplayAttrDiff [] NoColorChange NoColorChange
+    mappend d_0 d_1 = 
+        let ds = simplify_style_diffs ( style_diffs d_0 ) ( style_diffs d_1 )
+            fcd = simplify_color_diffs ( fore_color_diff d_0 ) ( fore_color_diff d_1 )
+            bcd = simplify_color_diffs ( back_color_diff d_0 ) ( back_color_diff d_1 )
+        in DisplayAttrDiff ds fcd bcd
+
+simplify_style_diffs :: [ StyleStateChange ] -> [ StyleStateChange ] -> [ StyleStateChange ]
+simplify_style_diffs cs_0 cs_1 = cs_0 `mappend` cs_1
+
+simplify_color_diffs _cd             ColorToDefault  = ColorToDefault
+simplify_color_diffs cd              NoColorChange   = cd
+simplify_color_diffs _cd             ( SetColor !c ) = SetColor c
 
 data DisplayColorDiff 
     = ColorToDefault

@@ -8,20 +8,18 @@ import Graphics.Vty.Terminal.Generic
 
 import Control.Monad.State.Strict
 
-data ChangeState = ChangeState
-    { change_sequence :: ()
-    }
-
-type AttrChange v = State ChangeState v
+type AttrChange v = State DisplayAttrDiff v
 
 back_color :: Color -> AttrChange ()
-back_color c = return ()
+back_color c = modify $ \ChangeState cs -> cs `mappend` [ DisplayAttrDiff [] NoColorChange ( SetTo c ) ]
 
 style :: Style -> AttrChange ()
-style s = return ()
+style s = modify $ \ChangeState cs -> cs `mappend` [ DisplayAttrDiff  NoColorChange NoColorChange ]
+
+diff_styles :: Style -> Style -> [StyleStateChange]
 
 default_all :: AttrChange ()
-default_all = return ()
+default_all = modify $ \ChangeState cs -> cs `mappend` [ DisplayAttrDiff remove_all_styles ColorToDefault ColorToDefault ]
 
 put_attr_change :: TerminalHandle -> AttrChange () -> IO ()
 put_attr_change t c = do

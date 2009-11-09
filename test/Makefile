@@ -1,6 +1,7 @@
 VERIF_TESTS := \
 verify_attribute_ops \
-verify_control_strings \
+verify_display_attributes \
+verify_parse_terminfo_caps \
 verify_utf8_width \
 verify_image_ops \
 verify_image_trans \
