@@ -34,14 +34,8 @@ remove_style s_mask = modify $ \attr ->
                     SetTo s -> s .&. complement s_mask
     in attr { attr_style = SetTo style' } 
 
-put_default_attr :: ( Applicative m, MonadIO m ) => TerminalHandle -> m () 
-put_default_attr t = do
-    bounds <- display_bounds t
-    d <- display_context t bounds
-    marshall_to_terminal t ( default_attr_required_bytes d )
-                           ( serialize_default_attr d )
-    liftIO $ modifyIORef ( state_ref t ) $ \s -> s { known_fattr = Just $ FixedAttr default_style_mask Nothing Nothing }
-    inline_hack d
+default_all :: AttrChange ()
+default_all = put def_attr
 
 put_attr_change :: ( Applicative m, MonadIO m ) => TerminalHandle -> AttrChange () -> m ()
 put_attr_change t c = do
@@ -60,4 +54,5 @@ put_attr_change t c = do
     marshall_to_terminal t ( attr_required_bytes d fattr attr' diffs )
                            ( serialize_set_attr d fattr attr' diffs )
     liftIO $ modifyIORef ( state_ref t ) $ \s -> s { known_fattr = Just fattr' }
+    inline_hack d
 

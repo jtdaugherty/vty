@@ -856,7 +856,7 @@ inline_test_0 = Test
         putStrLn "line 1."
         put_attr_change t $ back_color red >> apply_style underline
         putStrLn "line 2."
-        put_default_attr t
+        put_attr_change t $ default_all
         putStrLn "line 3."
         release_terminal t
         return ()
@@ -877,7 +877,7 @@ inline_test_1 = Test
         putStr "Not styled. "
         put_attr_change t $ back_color red >> apply_style underline
         putStr " Styled! "
-        put_default_attr t
+        put_attr_change t $ default_all
         putStrLn "Not styled."
         release_terminal t
         return ()
