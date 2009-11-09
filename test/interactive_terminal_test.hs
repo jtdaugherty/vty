@@ -852,17 +852,17 @@ inline_test_0 = Test
     , test_ID = "inline_test_0"
     , test_action = do
         t <- terminal_handle
-        putStrLn "line 0."
-        put_attr_change t $ back_color red >> apply_style underline
         putStrLn "line 1."
-        put_default_attr t
+        put_attr_change t $ back_color red >> apply_style underline
         putStrLn "line 2."
+        put_default_attr t
         putStrLn "line 3."
         release_terminal t
         return ()
     , print_summary = putStr $ [$heredoc|
 lines are in order.
-the second line "line 1" should have a red background and the text underline.
+The second line "line 2" should have a red background and the text underline.
+The third line "line 3" should be drawn in the same style as the first line.
 |]
 
     , confirm_results = generic_output_match_confirm

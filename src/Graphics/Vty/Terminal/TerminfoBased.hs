@@ -299,8 +299,7 @@ instance DisplayTerminal DisplayContext where
     default_attr_required_bytes d 
         = cap_expression_required_bytes (set_default_attr $ term d) []
     serialize_default_attr d out_ptr = do
-        out_ptr' <- serialize_cap_expression (set_default_attr $ term d) [] out_ptr
-        return out_ptr'
+        serialize_cap_expression ( set_default_attr $ term d ) [] out_ptr
 
 ansi_color_index :: Color -> Word
 ansi_color_index (ISOColor v) = toEnum $ fromEnum v
