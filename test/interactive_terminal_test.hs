@@ -852,7 +852,6 @@ inline_test_0 = Test
     , test_ID = "inline_test_0"
     , test_action = do
         t <- terminal_handle
-        d <- display_bounds t >>= display_context t
         putStrLn "line 0."
         put_attr_change t $ back_color red >> style underline
         putStrLn "line 1."

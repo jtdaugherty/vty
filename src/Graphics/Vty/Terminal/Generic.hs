@@ -38,9 +38,12 @@ new_terminal_handle :: forall t. Terminal t => t -> IO TerminalHandle
 new_terminal_handle t = liftM (TerminalHandle t) initial_terminal_state
 
 data TerminalState = TerminalState
+    { -- | The current terminal display attributes or Nothing if they are not known.
+      current_attr :: Maybe FixedAttr
+    }
 
 initial_terminal_state :: IO TerminalState
-initial_terminal_state = return $ TerminalState 
+initial_terminal_state = return $ TerminalState Nothing
 
 class Terminal t where
     -- | Text identifier for the terminal. Used for debugging.
@@ -50,7 +53,7 @@ class Terminal t where
     -- | Clear the display and initialize the terminal to some initial display state. 
     --
     -- The expectation of a program is that the display starts in some initial state. 
-    -- The initial state would consist of fixed values 
+    -- The initial state would consist of fixed values:
     --  - cursor at top left
     --  - UTF-8 character encoding
     --  - drawing characteristics are the default
@@ -58,7 +61,6 @@ class Terminal t where
     -- access to a display such that:
     --  - The previous state cannot be determined
     --  - When exclusive access to a display is release the display returns to the previous state.
-    --
     reserve_display :: t -> IO ()
 
     -- | Return the display to the state before reserve_display
@@ -136,8 +138,8 @@ class DisplayTerminal d where
     --  attributes. In order to support this the currently applied display attributes are required.
     --  In addition it may be possible to optimize the state changes based off the currently applied
     --  display attributes.
-    attr_required_bytes :: d -> FixedAttr -> Attr -> DisplayAttrDiffs -> Word
-    serialize_set_attr :: d -> FixedAttr -> Attr -> DisplayAttrDiffs -> OutputBuffer -> IO OutputBuffer
+    attr_required_bytes :: d -> FixedAttr -> Attr -> DisplayAttrDiff -> Word
+    serialize_set_attr :: d -> FixedAttr -> Attr -> DisplayAttrDiff -> OutputBuffer -> IO OutputBuffer
 
     -- | Reset the display attributes to the default display attributes
     default_attr_required_bytes :: d -> Word
@@ -315,7 +317,8 @@ serialize_span_op :: DisplayTerminal d
 serialize_span_op d (AttributeChange attr) out_ptr fattr = do
     let attr' = limit_attr_for_display d attr
         fattr' = fix_display_attr fattr attr'
-    out_ptr' <- serialize_set_attr d fattr attr' (display_attr_diffs fattr fattr') out_ptr
+        diffs = display_attr_diffs fattr fattr'
+    out_ptr' <- serialize_set_attr d fattr attr' diffs out_ptr
     return (out_ptr', fattr')
 serialize_span_op _d (TextSpan _ _ str) out_ptr fattr = do
     out_ptr' <- serialize_utf8_text str out_ptr

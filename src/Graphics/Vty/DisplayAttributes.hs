@@ -23,7 +23,7 @@ fix_display_attr fattr attr
         fix_color c KeepCurrent = c
         fix_color _c (SetTo c) = Just c
 
-data DisplayAttrDiffs = DisplayAttrDiffs 
+data DisplayAttrDiff = DisplayAttrDiff
     { style_diffs :: [ StyleStateChange ]
     , fore_color_diff :: DisplayColorDiff
     , back_color_diff :: DisplayColorDiff
@@ -49,8 +49,8 @@ data StyleStateChange
     | ApplyBold
     | RemoveBold
 
-display_attr_diffs :: FixedAttr -> FixedAttr -> DisplayAttrDiffs
-display_attr_diffs attr attr' = DisplayAttrDiffs
+display_attr_diffs :: FixedAttr -> FixedAttr -> DisplayAttrDiff
+display_attr_diffs attr attr' = DisplayAttrDiff
     { style_diffs = diff_styles ( fixed_style attr ) ( fixed_style attr' )
     , fore_color_diff = diff_color ( fixed_fore_color attr ) ( fixed_fore_color attr' )
     , back_color_diff = diff_color ( fixed_back_color attr ) ( fixed_back_color attr' )
