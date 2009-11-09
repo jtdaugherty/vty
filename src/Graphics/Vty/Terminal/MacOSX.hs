@@ -17,22 +17,27 @@ module Graphics.Vty.Terminal.MacOSX ( terminal_instance
 import Graphics.Vty.Terminal.Generic
 import qualified Graphics.Vty.Terminal.TerminfoBased as TerminfoBased
 
+import Control.Applicative
+import Control.Monad.Trans
+
 import System.IO
 
 data Term = Term 
     { super_term :: TerminalHandle
     }
 
--- Base this off the xterm terminfo database regardless of what the TERM environment variable is.
-terminal_instance :: IO Term
-terminal_instance = do
-    t <- TerminfoBased.terminal_instance "xterm" >>= new_terminal_handle
+-- for Terminal.app use "xterm". For iTerm.app use "xterm-256color"
+terminal_instance :: ( Applicative m, MonadIO m ) => String -> m Term
+terminal_instance v = do
+    let base_term "iTerm.app" = "xterm-256color"
+        base_term _ = "xterm"
+    t <- TerminfoBased.terminal_instance (base_term v) >>= new_terminal_handle
     return $ Term t
 
-flushed_put :: String -> IO ()
+flushed_put :: MonadIO m => String -> m ()
 flushed_put str = do
-    hPutStr stdout str
-    hFlush stdout
+    liftIO $ hPutStr stdout str
+    liftIO $ hFlush stdout
 
 -- Terminal.app really does want the xterm-color smcup and rmcup caps. Not the generic xterm ones.
 smcup_str = "\ESC7\ESC[?47h"

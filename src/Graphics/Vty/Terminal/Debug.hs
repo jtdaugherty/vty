@@ -8,9 +8,11 @@ module Graphics.Vty.Terminal.Debug ( DebugTerminal(..)
                                    )
     where
 
-import Graphics.Vty.WinRegion
+import Graphics.Vty.DisplayRegion
 import Graphics.Vty.Terminal.Generic
 
+import Control.Applicative
+import Control.Monad.Trans
 import Control.Monad.State.Strict
 
 import qualified Data.ByteString.UTF8 as BS
@@ -43,7 +45,7 @@ import Unsafe.Coerce
 
 data DebugTerminal = DebugTerminal
     { debug_terminal_last_output :: IORef (UTF8.UTF8 BS.ByteString)
-    , debug_terminal_bounds :: DisplayBounds
+    , debug_terminal_bounds :: DisplayRegion
     } 
 
 instance Terminal DebugTerminal where
@@ -52,36 +54,36 @@ instance Terminal DebugTerminal where
     reserve_display _t = return ()
     release_display _t = return ()
     display_bounds t = return $ debug_terminal_bounds t
-    display_context t bounds = return $ DisplayHandle (DebugDisplay bounds) (TerminalHandle t)
+    display_terminal_instance t r c = return $ c (DebugDisplay r)
     output_byte_buffer t out_buffer buffer_size 
-        =   do
+        =   liftIO $ do
             putStrLn $ "output_byte_buffer ?? " ++ show buffer_size
             peekArray (fromEnum buffer_size) out_buffer 
             >>= return . UTF8.fromRep . BSCore.pack
             >>= writeIORef (debug_terminal_last_output t)
 
 data DebugDisplay = DebugDisplay
-    { debug_display_bounds :: DisplayBounds
+    { debug_display_bounds :: DisplayRegion
     } 
 
-terminal_instance :: DisplayBounds -> IO TerminalHandle
-terminal_instance bounds = do
-    output_ref <- newIORef undefined
-    return $ TerminalHandle $ DebugTerminal output_ref bounds
+terminal_instance :: ( Applicative m, MonadIO m ) => DisplayRegion -> m TerminalHandle
+terminal_instance r = do
+    output_ref <- liftIO $ newIORef undefined
+    new_terminal_handle $ DebugTerminal output_ref r
 
 dehandle :: TerminalHandle -> DebugTerminal
-dehandle (TerminalHandle t) = unsafeCoerce t
+dehandle (TerminalHandle t _) = unsafeCoerce t
 
 instance DisplayTerminal DebugDisplay where
     -- | Provide the current bounds of the output terminal.
-    context_bounds d = debug_display_bounds d
+    context_region d = debug_display_bounds d
 
     -- | A cursor move is always visualized as the single character 'M'
     move_cursor_required_bytes _d _x _y = 1
 
     -- | A cursor move is always visualized as the single character 'M'
     serialize_move_cursor _d _x _y ptr = do
-        poke ptr (toEnum $ fromEnum 'M') 
+        liftIO $ poke ptr (toEnum $ fromEnum 'M') 
         return $ ptr `plusPtr` 1
 
     -- | Show cursor is always visualized as the single character 'S'
@@ -89,7 +91,7 @@ instance DisplayTerminal DebugDisplay where
 
     -- | Show cursor is always visualized as the single character 'S'
     serialize_show_cursor _d ptr = do
-        poke ptr (toEnum $ fromEnum 'S') 
+        liftIO $ poke ptr (toEnum $ fromEnum 'S') 
         return $ ptr `plusPtr` 1
 
     -- | Hide cursor is always visualized as the single character 'H'
@@ -97,7 +99,7 @@ instance DisplayTerminal DebugDisplay where
 
     -- | Hide cursor is always visualized as the single character 'H'
     serialize_hide_cursor _d ptr = do
-        poke ptr (toEnum $ fromEnum 'H') 
+        liftIO $ poke ptr (toEnum $ fromEnum 'H') 
         return $ ptr `plusPtr` 1
 
     -- | An attr change is always visualized as the single character 'A'
@@ -105,11 +107,11 @@ instance DisplayTerminal DebugDisplay where
 
     -- | An attr change is always visualized as the single character 'A'
     serialize_set_attr _d _fattr _attr ptr = do
-        poke ptr (toEnum $ fromEnum 'A')
+        liftIO $ poke ptr (toEnum $ fromEnum 'A')
         return $ ptr `plusPtr` 1
 
     default_attr_required_bytes _d = 1
     serialize_default_attr _d ptr = do
-        poke ptr (toEnum $ fromEnum 'D')
+        liftIO $ poke ptr (toEnum $ fromEnum 'D')
         return $ ptr `plusPtr` 1
         

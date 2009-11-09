@@ -5,7 +5,7 @@ module Verify.Graphics.Vty.Image ( module Verify.Graphics.Vty.Image
 
 import Graphics.Vty.Debug
 import Graphics.Vty.Image
-import Graphics.Vty.WinRegion
+import Graphics.Vty.DisplayRegion
 
 import Verify
 import Verify.Graphics.Vty.Attributes

@@ -18,6 +18,7 @@ import Graphics.Vty.DisplayRegion
 
 import Control.Applicative 
 import Control.Monad ( foldM )
+import Control.Monad.Trans
 
 import Data.Bits ( (.&.) )
 import Data.Maybe ( fromJust )
@@ -55,10 +56,10 @@ data DisplayAttrCaps = DisplayAttrCaps
     , enter_bold_mode :: Maybe CapExpression
     }
     
-marshall_cap_to_terminal :: Term -> (Term -> CapExpression) -> [CapParam] -> IO ()
+marshall_cap_to_terminal :: MonadIO m => Term -> (Term -> CapExpression) -> [CapParam] -> m ()
 marshall_cap_to_terminal t cap_selector cap_params = do
-    marshall_to_terminal t (cap_expression_required_bytes (cap_selector t) cap_params)
-                           (serialize_cap_expression (cap_selector t) cap_params)
+    marshall_to_terminal t ( cap_expression_required_bytes (cap_selector t) cap_params )
+                           ( serialize_cap_expression (cap_selector t) cap_params )
     return ()
 
 {- | Uses terminfo for all control codes. While this should provide the most compatible terminal
@@ -71,9 +72,9 @@ marshall_cap_to_terminal t cap_selector cap_params = do
  - todo: Some display attributes like underline and bold have independent string capabilities that
  - should be used instead of the generic "sgr" string capability.
  -}
-terminal_instance :: String -> IO Term
+terminal_instance :: ( Applicative m, MonadIO m ) => String -> m Term
 terminal_instance in_ID = do
-    ti <- Terminfo.setupTerm in_ID
+    ti <- liftIO $ Terminfo.setupTerm in_ID
     let require_cap str 
             = case Terminfo.getCapability ti (Terminfo.tiGetStr str) of
                 Nothing -> fail $ "Terminal does not define required capability \"" ++ str ++ "\""
@@ -100,7 +101,9 @@ terminal_instance in_ID = do
         <*> require_cap "clear"
         <*> current_display_attr_caps ti
 
-current_display_attr_caps :: Terminfo.Terminal -> IO DisplayAttrCaps
+current_display_attr_caps :: ( Applicative m, MonadIO m ) 
+                          => Terminfo.Terminal 
+                          -> m DisplayAttrCaps
 current_display_attr_caps ti 
     =   pure DisplayAttrCaps 
     <*> probe_cap "sgr"
@@ -147,15 +150,15 @@ instance Terminal Term where
         return $ c (DisplayContext b t color_count)
 
     display_bounds _t = do
-        raw_size <- get_window_size
+        raw_size <- liftIO $ get_window_size
         case raw_size of
             ( w, h )    | w < 0 || h < 0 -> fail $ "getwinsize returned < 0 : " ++ show raw_size
                         | otherwise      -> return $ DisplayRegion (toEnum w) (toEnum h)
 
     -- Output the byte buffer of the specified size to the terminal device.
     output_byte_buffer _t out_ptr out_byte_count = do
-        hPutBuf stdout out_ptr (fromEnum out_byte_count) 
-        hFlush stdout
+        liftIO $ hPutBuf stdout out_ptr (fromEnum out_byte_count) 
+        liftIO $ hFlush stdout
 
 foreign import ccall "gwinsz.h c_get_window_size" c_get_window_size :: IO CLong
 

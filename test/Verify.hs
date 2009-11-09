@@ -1,3 +1,6 @@
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 module Verify ( module Verify
@@ -20,6 +23,7 @@ import Test.QuickCheck.Monadic ( monadicIO )
 
 import qualified Codec.Binary.UTF8.String as UTF8
 
+import Control.Applicative
 import Control.Monad.State.Strict
 import Control.Monad.Trans ( liftIO )
 
@@ -30,7 +34,11 @@ import Numeric ( showHex )
 
 import System.IO
 
-type Test v = StateT TestState IO v
+type Test = StateT TestState IO
+
+instance Applicative Test where
+    pure = return
+    ( <*> ) = ap
 
 data TestState = TestState
     { results_ref :: IORef [QC.Result]

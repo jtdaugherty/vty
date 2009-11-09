@@ -1,3 +1,5 @@
+module Main where
+
 import Graphics.Vty
 
 import Control.Concurrent( threadDelay )

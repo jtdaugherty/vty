@@ -1,4 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+module Main where
+
 import Graphics.Vty
 
 import qualified Data.ByteString as B

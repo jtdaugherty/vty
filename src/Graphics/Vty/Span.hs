@@ -54,6 +54,12 @@ data SpanOpSequence = SpanOpSequence
 type RowOps = Array Word SpanOps
 type SpanOps = [SpanOp]
 
+span_ops_columns :: SpanOpSequence -> Word
+span_ops_columns ops = region_width $ effected_region ops
+
+span_ops_rows :: SpanOpSequence -> Word
+span_ops_rows ops = region_height $ effected_region ops
+
 span_ops_effected_columns :: [SpanOp] -> Word
 span_ops_effected_columns in_ops = span_ops_effected_columns' 0 in_ops
     where 

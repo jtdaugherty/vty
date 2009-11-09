@@ -97,8 +97,8 @@ is_bytes_op (Bytes {}) = True
 
 collect_bytes :: CapExpression -> [Word8]
 collect_bytes e = concat [ bytes 
-                         | Bytes byte_range <- cap_ops e
-                         , let bytes = bytes_for_range e byte_range 
+                         | Bytes offset c <- cap_ops e
+                         , let bytes = bytes_for_range e offset c
                          ]
 
 verify_bytes_equal out_bytes expected_bytes 

@@ -11,6 +11,9 @@ module Graphics.Vty.Terminal.XTermColor ( terminal_instance
 import Graphics.Vty.Terminal.Generic
 import qualified Graphics.Vty.Terminal.TerminfoBased as TerminfoBased
 
+import Control.Applicative
+import Control.Monad.Trans
+
 import System.IO
 
 data XTermColor = XTermColor 
@@ -20,16 +23,16 @@ data XTermColor = XTermColor
 
 -- Initialize the display to UTF-8
 -- Regardless of what is output the text encoding is assumed to be UTF-8
-terminal_instance :: String -> IO XTermColor
+terminal_instance :: ( Applicative m, MonadIO m ) => String -> m XTermColor
 terminal_instance variant = do
     flushed_put set_utf8_char_set
     t <- TerminfoBased.terminal_instance variant >>= new_terminal_handle
     return $ XTermColor variant t
 
-flushed_put :: String -> IO ()
+flushed_put :: MonadIO m => String -> m ()
 flushed_put str = do
-    hPutStr stdout str
-    hFlush stdout
+    liftIO $ hPutStr stdout str
+    liftIO $ hFlush stdout
 
 -- Since I don't know of a terminfo string cap that produces these strings these are hardcoded.
 set_utf8_char_set, set_default_char_set :: String

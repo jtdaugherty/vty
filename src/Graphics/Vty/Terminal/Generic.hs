@@ -18,6 +18,7 @@ import Graphics.Vty.DisplayRegion
 import Graphics.Vty.DisplayAttributes
 
 import Control.Monad ( liftM )
+import Control.Monad.Trans
 
 import Data.Array
 import qualified Data.ByteString.Internal as BSCore
@@ -34,7 +35,7 @@ data TerminalHandle where
 terminal_state :: TerminalHandle -> TerminalState
 terminal_state (TerminalHandle _ s) = s
 
-new_terminal_handle :: forall t. Terminal t => t -> IO TerminalHandle
+new_terminal_handle :: forall m t. ( MonadIO m, Terminal t ) => t -> m TerminalHandle
 new_terminal_handle t = liftM (TerminalHandle t) initial_terminal_state
 
 data TerminalState = TerminalState
@@ -42,14 +43,14 @@ data TerminalState = TerminalState
       current_attr :: Maybe FixedAttr
     }
 
-initial_terminal_state :: IO TerminalState
+initial_terminal_state :: MonadIO m => m TerminalState
 initial_terminal_state = return $ TerminalState Nothing
 
 class Terminal t where
     -- | Text identifier for the terminal. Used for debugging.
     terminal_ID :: t -> String
     -- | 
-    release_terminal :: t -> IO ()
+    release_terminal :: MonadIO m => t -> m ()
     -- | Clear the display and initialize the terminal to some initial display state. 
     --
     -- The expectation of a program is that the display starts in some initial state. 
@@ -61,25 +62,26 @@ class Terminal t where
     -- access to a display such that:
     --  - The previous state cannot be determined
     --  - When exclusive access to a display is release the display returns to the previous state.
-    reserve_display :: t -> IO ()
+    reserve_display :: MonadIO m => t -> m ()
 
     -- | Return the display to the state before reserve_display
     -- If no previous state then set the display state to the initial state.
-    release_display :: t -> IO ()
+    release_display :: MonadIO m => t -> m ()
     
     -- | Returns the current display bounds.
-    display_bounds :: t -> IO DisplayRegion
+    display_bounds :: MonadIO m => t -> m DisplayRegion
 
     -- Internal method used to provide the DisplayTerminal instance to the DisplayHandle
     -- constructor.
-    display_terminal_instance :: t 
+    display_terminal_instance :: MonadIO m 
+                              => t 
                               -> DisplayRegion 
                               -> (forall d. DisplayTerminal d => d -> DisplayHandle) 
-                              -> IO DisplayHandle
+                              -> m DisplayHandle
 
     -- | Output the byte buffer of the specified size to the terminal device.  The size is equal to
     -- end_ptr - start_ptr
-    output_byte_buffer :: t -> OutputBuffer -> Word -> IO ()
+    output_byte_buffer :: MonadIO m => t -> OutputBuffer -> Word -> m ()
 
 instance Terminal TerminalHandle where
     terminal_ID (TerminalHandle t _) = terminal_ID t
@@ -96,7 +98,7 @@ data DisplayHandle where
 -- | Acquire display access to the given region of the display.
 -- Currently all regions have the upper left corner of (0,0) and the lower right corner at 
 -- (max display_width provided_width, max display_height provided_height)
-display_context :: TerminalHandle -> DisplayRegion -> IO DisplayHandle
+display_context :: MonadIO m => TerminalHandle -> DisplayRegion -> m DisplayHandle
 display_context t b = do
     s <- initial_display_state
     let c d = DisplayHandle d t s
@@ -106,8 +108,8 @@ data DisplayState = DisplayState
     { previous_output_ref :: IORef (Maybe SpanOpSequence)
     }
 
-initial_display_state :: IO DisplayState
-initial_display_state = liftM DisplayState $ newIORef Nothing
+initial_display_state :: MonadIO m => m DisplayState
+initial_display_state = liftM DisplayState $ liftIO $ newIORef Nothing
 
 class DisplayTerminal d where
     -- | Provide the bounds of the display context. 
@@ -119,13 +121,13 @@ class DisplayTerminal d where
     --  | sets the output position to the specified row and column. Where the number of bytes
     --  required for the control codes can be specified seperate from the actual byte sequence.
     move_cursor_required_bytes :: d -> Word -> Word -> Word
-    serialize_move_cursor :: d -> Word -> Word -> OutputBuffer -> IO OutputBuffer
+    serialize_move_cursor :: MonadIO m => d -> Word -> Word -> OutputBuffer -> m OutputBuffer
 
     show_cursor_required_bytes :: d -> Word
-    serialize_show_cursor :: d -> OutputBuffer -> IO OutputBuffer
+    serialize_show_cursor :: MonadIO m => d -> OutputBuffer -> m OutputBuffer
 
     hide_cursor_required_bytes :: d -> Word
-    serialize_hide_cursor :: d -> OutputBuffer -> IO OutputBuffer
+    serialize_hide_cursor :: MonadIO m => d -> OutputBuffer -> m OutputBuffer
 
     --  | Assure the specified output attributes will be applied to all the following text until the
     --  next output attribute change. Where the number of bytes required for the control codes can
@@ -139,11 +141,11 @@ class DisplayTerminal d where
     --  In addition it may be possible to optimize the state changes based off the currently applied
     --  display attributes.
     attr_required_bytes :: d -> FixedAttr -> Attr -> DisplayAttrDiff -> Word
-    serialize_set_attr :: d -> FixedAttr -> Attr -> DisplayAttrDiff -> OutputBuffer -> IO OutputBuffer
+    serialize_set_attr :: MonadIO m => d -> FixedAttr -> Attr -> DisplayAttrDiff -> OutputBuffer -> m OutputBuffer
 
     -- | Reset the display attributes to the default display attributes
     default_attr_required_bytes :: d -> Word
-    serialize_default_attr :: d -> OutputBuffer -> IO OutputBuffer
+    serialize_default_attr :: MonadIO m => d -> OutputBuffer -> m OutputBuffer
 
 
 instance DisplayTerminal DisplayHandle where
@@ -167,10 +169,10 @@ utf8_text_required_bytes str =
     in toEnum src_bytes_length
 
 -- | All terminals serialize UTF8 text to the terminal device exactly as serialized in memory.
-serialize_utf8_text  :: UTF8 BSCore.ByteString -> OutputBuffer -> IO OutputBuffer
+serialize_utf8_text  :: MonadIO m => UTF8 BSCore.ByteString -> OutputBuffer -> m OutputBuffer
 serialize_utf8_text str dest_ptr = 
     let (src_fptr, src_ptr_offset, src_bytes_length) = BSCore.toForeignPtr (toRep str)
-    in withForeignPtr src_fptr $ \src_ptr -> do
+    in liftIO $ withForeignPtr src_fptr $ \src_ptr -> do
         let src_ptr' = src_ptr `plusPtr` src_ptr_offset
         BSCore.memcpy dest_ptr src_ptr' (toEnum src_bytes_length) 
         return (dest_ptr `plusPtr` src_bytes_length)
@@ -191,7 +193,7 @@ serialize_utf8_text str dest_ptr =
 -- 
 -- todo: specify possible IO exceptions.
 -- abstract from IO monad to a MonadIO instance.
-output_picture :: DisplayHandle -> Picture -> IO ()
+output_picture :: MonadIO m => DisplayHandle -> Picture -> m ()
 output_picture (DisplayHandle d t s) pic = do
     let !r = context_region d
     let !ops = spans_for_pic pic r
@@ -199,7 +201,7 @@ output_picture (DisplayHandle d t s) pic = do
     -- Diff the previous output against the requested output. Differences are currently on a per-row
     -- basis.
     diffs :: [Bool]
-        <- readIORef (previous_output_ref s) 
+        <- liftIO ( readIORef (previous_output_ref s) )
             >>= \mprevious_ops -> case mprevious_ops of
                 Nothing      
                     -> return $ replicate ( fromEnum $ region_height $ effected_region ops ) 
@@ -221,7 +223,7 @@ output_picture (DisplayHandle d t s) pic = do
                                   + move_cursor_required_bytes d x y
 
     -- ... then serialize
-    allocaBytes (fromEnum total) $ \start_ptr -> do
+    liftIO $ allocaBytes (fromEnum total) $ \start_ptr -> do
         ptr <- serialize_hide_cursor d start_ptr
         ptr' <- serialize_default_attr d ptr
         ptr'' <- serialize_output_ops d ptr' initial_attr diffs ops
@@ -237,7 +239,7 @@ output_picture (DisplayHandle d t s) pic = do
                   | toEnum count > total -> fail $ "End pointer past end of buffer by " ++ show (toEnum count - total)
                   | otherwise -> output_byte_buffer t start_ptr (toEnum count)
         -- Cache the output spans.
-        writeIORef (previous_output_ref s) (Just ops)
+        liftIO $ writeIORef (previous_output_ref s) (Just ops)
     return ()
 
 required_bytes :: DisplayTerminal d => d -> FixedAttr -> [Bool] -> SpanOpSequence -> Word
@@ -272,13 +274,13 @@ span_op_required_bytes d fattr (AttributeChange attr) =
     in (c, fattr')
 span_op_required_bytes _d fattr (TextSpan _ _ str) = (utf8_text_required_bytes str, fattr)
 
-serialize_output_ops :: DisplayTerminal d 
+serialize_output_ops :: ( MonadIO m, DisplayTerminal d )
                         => d 
                         -> OutputBuffer 
                         -> FixedAttr 
                         -> [Bool]
                         -> SpanOpSequence 
-                        -> IO OutputBuffer
+                        -> m OutputBuffer
 serialize_output_ops d start_ptr in_fattr diffs ops = do
     (_, end_ptr, _, _) <- foldlM serialize_output_ops' 
                               ( 0, start_ptr, in_fattr, diffs ) 
@@ -293,13 +295,13 @@ serialize_output_ops d start_ptr in_fattr diffs ops = do
         serialize_output_ops' (_y, _out_ptr, _fattr, [] ) _span_ops
             = error "shouldn't be possible"
 
-serialize_span_ops :: DisplayTerminal d 
+serialize_span_ops :: ( MonadIO m, DisplayTerminal d )
                       => d 
                       -> Word 
                       -> OutputBuffer 
                       -> FixedAttr 
                       -> SpanOps 
-                      -> IO (OutputBuffer, FixedAttr)
+                      -> m (OutputBuffer, FixedAttr)
 serialize_span_ops d y out_ptr in_fattr span_ops = do
     -- The first operation is to set the cursor to the start of the row
     out_ptr' <- serialize_move_cursor d 0 y out_ptr
@@ -308,12 +310,12 @@ serialize_span_ops d y out_ptr in_fattr span_ops = do
            (out_ptr', in_fattr)
            span_ops
 
-serialize_span_op :: DisplayTerminal d 
+serialize_span_op :: ( MonadIO m, DisplayTerminal d )
                      => d 
                      -> SpanOp 
                      -> OutputBuffer 
                      -> FixedAttr
-                     -> IO (OutputBuffer, FixedAttr)
+                     -> m (OutputBuffer, FixedAttr)
 serialize_span_op d (AttributeChange attr) out_ptr fattr = do
     let attr' = limit_attr_for_display d attr
         fattr' = fix_display_attr fattr attr'
@@ -324,16 +326,18 @@ serialize_span_op _d (TextSpan _ _ str) out_ptr fattr = do
     out_ptr' <- serialize_utf8_text str out_ptr
     return (out_ptr', fattr)
 
-marshall_to_terminal :: Terminal t => t -> Word -> (Ptr Word8 -> IO (Ptr Word8)) -> IO ()
+marshall_to_terminal :: ( MonadIO m, Terminal t )
+                     => t -> Word -> (Ptr Word8 -> m (Ptr Word8)) -> m ()
 marshall_to_terminal t c f = do
-    start_ptr <- mallocBytes (fromEnum c)
+    start_ptr <- liftIO $ mallocBytes (fromEnum c)
     -- 
     -- todo: capture exceptions?
     end_ptr <- f start_ptr
     case end_ptr `minusPtr` start_ptr of
         count | count < 0 -> fail "End pointer before start pointer."
+              | toEnum count > c -> fail $ "End pointer past end of buffer by " ++ show (toEnum count - c)
               | otherwise -> output_byte_buffer t start_ptr (toEnum count)
-    free start_ptr
+    liftIO $ free start_ptr
     return ()
 
 data CursorOutputMap = CursorOutputMap

@@ -7,7 +7,9 @@ import Graphics.Vty.Attributes
 import Graphics.Vty.DisplayAttributes
 import Graphics.Vty.Terminal.Generic
 
+import Control.Applicative
 import Control.Monad.State.Strict
+import Control.Monad.Trans
 
 import Data.Bits ( (.&.), complement )
 import Data.Monoid ( mappend )
@@ -67,7 +69,7 @@ remove_all_styles =
     , RemoveBold
     ]
 
-put_attr_change :: TerminalHandle -> AttrChange () -> IO ()
+put_attr_change :: MonadIO m => TerminalHandle -> AttrChange () -> m ()
 put_attr_change t c = do
     return ()
 

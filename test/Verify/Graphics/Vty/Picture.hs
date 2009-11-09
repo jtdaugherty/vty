@@ -9,7 +9,7 @@ import Graphics.Vty.Debug
 
 import Verify.Graphics.Vty.Attributes
 import Verify.Graphics.Vty.Image
-import Verify.Graphics.Vty.WinRegion
+import Verify.Graphics.Vty.DisplayRegion
 
 import Verify
 

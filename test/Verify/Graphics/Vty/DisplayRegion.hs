@@ -1,11 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Verify.Graphics.Vty.WinRegion ( module Verify.Graphics.Vty.WinRegion
-                                     , module Graphics.Vty.WinRegion
-                                     )
+module Verify.Graphics.Vty.DisplayRegion ( module Verify.Graphics.Vty.DisplayRegion
+                                         , module Graphics.Vty.DisplayRegion
+                                         )
     where
 
 import Graphics.Vty.Debug
-import Graphics.Vty.WinRegion
+import Graphics.Vty.DisplayRegion
 
 import Verify
 

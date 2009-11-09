@@ -3,13 +3,15 @@
         * Attr record accessor fore_color changed to attr_fore_color
         * Attr record accessor back_color changed to attr_back_color
         * Attr record accessor style changed to attr_style
-        * Added an "inline" attribute changing DSL:
-            * put_attr_change applies and attribute change monad action
-            * can be used to change the display attrbiutes of text output via putStrLn and putStr,
-              for instance. EX: "put_attr_change $ back_color red" will set the background color to
-              red. 
-            * Does not apply to output_picture. 
-            * See Graphics.Vty.AttributeChange
+        * Added an "inline" display attribute changing DSL:
+            * put_attr_change applies a display attribute change immediately to a terminal
+            * For instance, can be used to change the display attrbiutes of text output via putStrLn
+              and putStr. EX: "put_attr_change $ back_color red" will set the
+              background color to red. 
+            * Changes do not apply to a Picture output via output_picture. 
+            * See Graphics.Vty.Inline
+        * Moved all IO actions into any monad an instance of MonadIO
+
 4.0.0.1
     * binding for mk_wcswidth was incorrect. Most platforms just magically worked due to
       coincidence.

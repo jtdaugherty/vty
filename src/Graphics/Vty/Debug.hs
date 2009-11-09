@@ -9,7 +9,7 @@ import Graphics.Vty.Image
 import Graphics.Vty.Image.Debug
 import Graphics.Vty.Picture
 import Graphics.Vty.Span
-import Graphics.Vty.WinRegion
+import Graphics.Vty.DisplayRegion
 
 import Control.Monad
 import Data.Array
@@ -45,11 +45,10 @@ is_set_attr _attr _event = False
 data DebugWindow = DebugWindow Word Word
     deriving (Show, Eq)
 
-type TestWindow = DebugWindow
+region_for_window :: DebugWindow -> DisplayRegion
+region_for_window (DebugWindow w h) = DisplayRegion w h
 
-instance WinRegion DebugWindow where
-    win_width (DebugWindow w _) = w
-    win_height (DebugWindow _ h) = h
+type TestWindow = DebugWindow
 
 type ImageConstructLog = [ImageConstructEvent]
 data ImageConstructEvent = ImageConstructEvent

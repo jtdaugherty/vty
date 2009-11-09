@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Main where
 
-import Verify.Graphics.Vty.WinRegion
+import Verify.Graphics.Vty.DisplayRegion
 import Verify.Graphics.Vty.Picture
 import Verify.Graphics.Vty.Image
 import Verify.Graphics.Vty.Span
@@ -20,7 +20,7 @@ import System.IO
 
 unit_image_unit_bounds :: UnitImage -> Property
 unit_image_unit_bounds (UnitImage _ i) = liftIOResult $ do
-    t <- terminal_instance (DisplayBounds 1 1)
+    t <- terminal_instance (DisplayRegion 1 1)
     d <- display_bounds t >>= display_context t
     let pic = pic_for_image i
     output_picture d pic
@@ -28,7 +28,7 @@ unit_image_unit_bounds (UnitImage _ i) = liftIOResult $ do
 
 unit_image_arb_bounds :: UnitImage -> DebugWindow -> Property
 unit_image_arb_bounds (UnitImage _ i) (DebugWindow w h) = liftIOResult $ do
-    t <- terminal_instance (DisplayBounds w h)
+    t <- terminal_instance (DisplayRegion w h)
     d <- display_bounds t >>= display_context t
     let pic = pic_for_image i
     output_picture d pic
@@ -36,7 +36,7 @@ unit_image_arb_bounds (UnitImage _ i) (DebugWindow w h) = liftIOResult $ do
 
 single_T_row :: DebugWindow -> Property
 single_T_row (DebugWindow w h) = liftIOResult $ do
-    t <- terminal_instance (DisplayBounds w h)
+    t <- terminal_instance (DisplayRegion w h)
     d <- display_bounds t >>= display_context t
     -- create an image that contains just the character T repeated for a single row
     let i = horiz_cat $ replicate (fromEnum w) (char def_attr 'T')
@@ -55,7 +55,7 @@ single_T_row (DebugWindow w h) = liftIOResult $ do
     
 many_T_rows :: DebugWindow -> Property
 many_T_rows (DebugWindow w h) = liftIOResult $ do
-    t <- terminal_instance (DisplayBounds w h)
+    t <- terminal_instance (DisplayRegion w h)
     d <- display_bounds t >>= display_context t
     -- create an image that contains the character 'T' repeated for all the rows
     let i = vert_cat $ replicate (fromEnum h) $ horiz_cat $ replicate (fromEnum w) (char def_attr 'T')
@@ -72,7 +72,7 @@ many_T_rows (DebugWindow w h) = liftIOResult $ do
 
 many_T_rows_cropped_width :: DebugWindow -> Property
 many_T_rows_cropped_width (DebugWindow w h) = liftIOResult $ do
-    t <- terminal_instance (DisplayBounds w h)
+    t <- terminal_instance (DisplayRegion w h)
     d <- display_bounds t >>= display_context t
     -- create an image that contains the character 'T' repeated for all the rows
     let i = vert_cat $ replicate (fromEnum h) $ horiz_cat $ replicate (fromEnum w * 2) (char def_attr 'T')
@@ -89,7 +89,7 @@ many_T_rows_cropped_width (DebugWindow w h) = liftIOResult $ do
 
 many_T_rows_cropped_height :: DebugWindow -> Property
 many_T_rows_cropped_height (DebugWindow w h) = liftIOResult $ do
-    t <- terminal_instance (DisplayBounds w h)
+    t <- terminal_instance (DisplayRegion w h)
     d <- display_bounds t >>= display_context t
     -- create an image that contains the character 'T' repeated for all the rows
     let i = vert_cat $ replicate (fromEnum h * 2) $ horiz_cat $ replicate (fromEnum w) (char def_attr 'T')

@@ -29,7 +29,10 @@ import Graphics.Vty.Terminal.MacOSX as MacOSX
 import Graphics.Vty.Terminal.XTermColor as XTermColor
 import Graphics.Vty.Terminal.TerminfoBased as TerminfoBased
 
+import Control.Applicative
 import Control.Exception ( SomeException, try )
+import Control.Monad.Trans
+
 import Data.Either
 import Data.List ( isPrefixOf )
 import Data.Word
@@ -70,9 +73,9 @@ import System.Environment
 -- with only what is provided in the haskell platform.
 --
 -- todo: The Terminal interface does not provide any input support.
-terminal_handle :: IO TerminalHandle
+terminal_handle :: ( Applicative m, MonadIO m ) => m TerminalHandle
 terminal_handle = do
-    term_type <- getEnv "TERM"
+    term_type <- liftIO $ getEnv "TERM"
     t <- if "xterm" `isPrefixOf` term_type
         then do
             maybe_terminal_app <- get_env "TERM_PROGRAM"
@@ -83,7 +86,7 @@ terminal_handle = do
                     -> do
                         maybe_xterm <- get_env "XTERM_VERSION"
                         case maybe_xterm of
-                            Nothing -> MacOSX.terminal_instance >>= new_terminal_handle
+                            Nothing -> MacOSX.terminal_instance v >>= new_terminal_handle
                             Just _  -> XTermColor.terminal_instance term_type >>= new_terminal_handle
                 -- Assume any other terminal that sets TERM_PROGRAM to not be an OS X terminal.app
                 -- like terminal?
@@ -93,7 +96,7 @@ terminal_handle = do
     return t
     where
         get_env var = do
-            mv <- try $ getEnv var
+            mv <- liftIO $ try $ getEnv var
             case mv of
                 Left (_e :: SomeException)  -> return $ Nothing
                 Right v -> return $ Just v
@@ -105,21 +108,21 @@ terminal_handle = do
 --
 -- Currently, the only way to set the cursor position to a given character coordinate is to specify
 -- the coordinate in the Picture instance provided to output_picture or refresh.
-set_cursor_pos :: TerminalHandle -> Word -> Word -> IO ()
+set_cursor_pos :: MonadIO m => TerminalHandle -> Word -> Word -> m ()
 set_cursor_pos t x y = do
     bounds <- display_bounds t
     d <- display_context t bounds
     marshall_to_terminal t (move_cursor_required_bytes d x y) (serialize_move_cursor d x y)
 
 -- | Hides the cursor
-hide_cursor :: TerminalHandle -> IO ()
+hide_cursor :: MonadIO m => TerminalHandle -> m ()
 hide_cursor t = do
     bounds <- display_bounds t
     d <- display_context t bounds
     marshall_to_terminal t (hide_cursor_required_bytes d) (serialize_hide_cursor d) 
     
 -- | Shows the cursor
-show_cursor :: TerminalHandle -> IO ()
+show_cursor :: MonadIO m => TerminalHandle -> m ()
 show_cursor t = do
     bounds <- display_bounds t
     d <- display_context t bounds

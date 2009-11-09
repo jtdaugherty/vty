@@ -15,16 +15,18 @@ module Data.Terminfo.Eval ( cap_expression_required_bytes
 import Data.Marshalling
 import Data.Terminfo.Parse
 
+import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.State.Strict
+import Control.Monad.Trans
 
 import Data.Array.Unboxed
 import Data.Bits ( (.|.) )
 import Data.List 
 import Data.Word
 
-type Eval a = ReaderT (CapExpression,[CapParam]) (State [CapParam]) a
-type EvalIO a = ReaderT (CapExpression,[CapParam]) (StateT [CapParam] IO) a
+type EvalT m a = ReaderT (CapExpression,[CapParam]) (StateT [CapParam] m) a
+type Eval a = EvalT Identity a
 
 pop :: MonadState [CapParam] m => m CapParam
 pop = do
@@ -61,7 +63,7 @@ bytes_for_range cap (offset, count)
 cap_expression_required_bytes :: CapExpression -> [CapParam] -> Word
 cap_expression_required_bytes cap params = 
     let params' = apply_param_ops cap params
-    in fst $ runState (runReaderT (cap_ops_required_bytes $ cap_ops cap) (cap, params)) []
+    in fst $! runIdentity $ runStateT (runReaderT (cap_ops_required_bytes $ cap_ops cap) (cap, params')) []
 
 cap_ops_required_bytes :: CapOps -> Eval Word
 cap_ops_required_bytes ops = do
@@ -104,16 +106,16 @@ cap_op_required_bytes CompareEq = do
 cap_op_required_bytes (LiteralInt i) = do
     return $ toEnum $ length $ show i
 
-serialize_cap_expression :: CapExpression -> [CapParam] -> OutputBuffer -> IO OutputBuffer
+serialize_cap_expression :: MonadIO m => CapExpression -> [CapParam] -> OutputBuffer -> m OutputBuffer
 serialize_cap_expression cap params out_ptr = do
     let params' = apply_param_ops cap params
-    (out_ptr', _) <- runStateT (runReaderT (serialize_cap_ops out_ptr (cap_ops cap)) (cap, params')) []
+    (!out_ptr', _) <- runStateT (runReaderT (serialize_cap_ops out_ptr (cap_ops cap)) (cap, params')) []
     return out_ptr'
 
-serialize_cap_ops :: OutputBuffer -> CapOps -> EvalIO OutputBuffer
+serialize_cap_ops :: MonadIO m => OutputBuffer -> CapOps -> EvalT m OutputBuffer
 serialize_cap_ops out_ptr ops = foldM serialize_cap_op out_ptr ops
 
-serialize_cap_op :: OutputBuffer -> CapOp -> EvalIO OutputBuffer
+serialize_cap_op :: MonadIO m => OutputBuffer -> CapOp -> EvalT m OutputBuffer
 serialize_cap_op out_ptr (Bytes (offset, c)) = do
     (cap, _) <- ask
     let out_bytes = bytes_for_range cap (offset, c)
