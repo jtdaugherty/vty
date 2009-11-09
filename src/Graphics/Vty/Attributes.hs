@@ -36,7 +36,7 @@ module Graphics.Vty.Attributes
     where
 
 import Data.Bits
-
+import Data.Monoid
 import Data.Word
 
 -- | A display attribute defines the Color and Style of all the characters rendered after the
@@ -51,6 +51,13 @@ data Attr = Attr
     , attr_back_color :: !(MaybeDefault Color)
     } deriving ( Eq, Show )
 
+instance Monoid Attr where
+    mempty = Attr mempty mempty mempty
+    mappend attr_0 attr_1 = 
+        Attr ( attr_style attr_0 `mappend` attr_style attr_1 )
+             ( attr_fore_color attr_0 `mappend` attr_fore_color attr_1 )
+             ( attr_back_color attr_0 `mappend` attr_back_color attr_1 )
+
 -- | Specifies the display attributes such that the final style and color values do not depend on
 -- the previously applied display attribute. The display attributes can still depend on the
 -- terminal's default colors (unfortunately).
@@ -64,6 +71,18 @@ data FixedAttr = FixedAttr
 -- previously applied style. Or be a specific value.
 data Eq v => MaybeDefault v = Default | KeepCurrent | SetTo !v
     deriving ( Eq, Show )
+
+instance Eq v => Monoid ( MaybeDefault v ) where
+    mempty = KeepCurrent
+    mappend Default Default = Default
+    mappend Default KeepCurrent = Default
+    mappend Default ( SetTo v ) = SetTo v
+    mappend KeepCurrent Default = Default
+    mappend KeepCurrent KeepCurrent = KeepCurrent
+    mappend KeepCurrent ( SetTo v ) = SetTo v
+    mappend ( SetTo _v ) Default = Default
+    mappend ( SetTo v ) KeepCurrent = SetTo v
+    mappend ( SetTo _ ) ( SetTo v ) = SetTo v
 
 -- | Abstract data type representing a color.
 --  

@@ -855,8 +855,9 @@ inline_test_0 = Test
         putStrLn "line 0."
         put_attr_change t $ back_color red >> apply_style underline
         putStrLn "line 1."
-        put_attr_change t $ default_all
+        put_default_attr t
         putStrLn "line 2."
+        putStrLn "line 3."
         release_terminal t
         return ()
     , print_summary = putStr $ [$heredoc|

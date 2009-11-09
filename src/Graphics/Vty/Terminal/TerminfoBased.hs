@@ -157,7 +157,9 @@ instance Terminal Term where
 
     -- Output the byte buffer of the specified size to the terminal device.
     output_byte_buffer _t out_ptr out_byte_count = do
-        liftIO $ hPutBuf stdout out_ptr (fromEnum out_byte_count) 
+        if out_byte_count == 0
+            then return ()
+            else liftIO $ hPutBuf stdout out_ptr (fromEnum out_byte_count) 
         liftIO $ hFlush stdout
 
 foreign import ccall "gwinsz.h c_get_window_size" c_get_window_size :: IO CLong

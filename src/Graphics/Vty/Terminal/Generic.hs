@@ -27,24 +27,24 @@ import Data.IORef
 import Data.Word
 import Data.String.UTF8 hiding ( foldl )
 
-import System.IO
-
 data TerminalHandle where
-    TerminalHandle :: Terminal t => t -> TerminalState -> TerminalHandle
+    TerminalHandle :: Terminal t => t -> IORef TerminalState -> TerminalHandle
 
-terminal_state :: TerminalHandle -> TerminalState
-terminal_state (TerminalHandle _ s) = s
+state_ref :: TerminalHandle -> IORef TerminalState
+state_ref (TerminalHandle _ s_ref) = s_ref
 
 new_terminal_handle :: forall m t. ( MonadIO m, Terminal t ) => t -> m TerminalHandle
-new_terminal_handle t = liftM (TerminalHandle t) initial_terminal_state
+new_terminal_handle t = do
+    s_ref <- liftIO $ newIORef initial_terminal_state
+    return $ TerminalHandle t s_ref
 
 data TerminalState = TerminalState
     { -- | The current terminal display attributes or Nothing if they are not known.
-      current_attr :: Maybe FixedAttr
+      known_fattr :: Maybe FixedAttr
     }
 
-initial_terminal_state :: MonadIO m => m TerminalState
-initial_terminal_state = return $ TerminalState Nothing
+initial_terminal_state :: TerminalState
+initial_terminal_state = TerminalState Nothing
 
 class Terminal t where
     -- | Text identifier for the terminal. Used for debugging.
@@ -269,7 +269,8 @@ span_ops_required_bytes d y in_fattr span_ops =
 span_op_required_bytes :: DisplayTerminal d => d -> FixedAttr -> SpanOp -> (Word, FixedAttr)
 span_op_required_bytes d fattr (AttributeChange attr) = 
     let attr' = limit_attr_for_display d attr
-        c = attr_required_bytes d fattr attr' (display_attr_diffs fattr fattr')
+        diffs = display_attr_diffs fattr fattr'
+        c = attr_required_bytes d fattr attr' diffs
         fattr' = fix_display_attr fattr attr'
     in (c, fattr')
 span_op_required_bytes _d fattr (TextSpan _ _ str) = (utf8_text_required_bytes str, fattr)

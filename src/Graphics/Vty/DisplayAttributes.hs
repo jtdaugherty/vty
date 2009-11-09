@@ -29,6 +29,7 @@ data DisplayAttrDiff = DisplayAttrDiff
     , fore_color_diff :: DisplayColorDiff
     , back_color_diff :: DisplayColorDiff
     }
+    deriving ( Show )
 
 instance Monoid DisplayAttrDiff where
     mempty = DisplayAttrDiff [] NoColorChange NoColorChange
@@ -49,7 +50,7 @@ data DisplayColorDiff
     = ColorToDefault
     | NoColorChange
     | SetColor !Color
-    deriving Eq
+    deriving ( Show, Eq )
 
 data StyleStateChange 
     = ApplyStandout
@@ -64,6 +65,7 @@ data StyleStateChange
     | RemoveDim
     | ApplyBold
     | RemoveBold
+    deriving ( Show, Eq )
 
 display_attr_diffs :: FixedAttr -> FixedAttr -> DisplayAttrDiff
 display_attr_diffs attr attr' = DisplayAttrDiff
