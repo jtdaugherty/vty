@@ -15,18 +15,18 @@ import Data.Bits ( (.&.), complement )
 import Data.IORef
 import Data.Monoid ( mappend )
 
-type AttrChange v = State Attr v
+type InlineM v = State Attr v
 
-back_color :: Color -> AttrChange ()
+back_color :: Color -> InlineM ()
 back_color c = modify $ flip mappend ( current_attr `with_back_color` c )
 
-fore_color :: Color -> AttrChange ()
+fore_color :: Color -> InlineM ()
 fore_color c = modify $ flip mappend ( current_attr `with_fore_color` c )
 
-apply_style :: Style -> AttrChange ()
+apply_style :: Style -> InlineM ()
 apply_style s = modify $ flip mappend ( current_attr `with_style` s )
 
-remove_style :: Style -> AttrChange ()
+remove_style :: Style -> InlineM ()
 remove_style s_mask = modify $ \attr -> 
     let style' = case attr_style attr of
                     Default -> error $ "Graphics.Vty.Inline: Cannot remove_style if apply_style never used."
@@ -34,10 +34,10 @@ remove_style s_mask = modify $ \attr ->
                     SetTo s -> s .&. complement s_mask
     in attr { attr_style = SetTo style' } 
 
-default_all :: AttrChange ()
+default_all :: InlineM ()
 default_all = put def_attr
 
-put_attr_change :: ( Applicative m, MonadIO m ) => TerminalHandle -> AttrChange () -> m ()
+put_attr_change :: ( Applicative m, MonadIO m ) => TerminalHandle -> InlineM () -> m ()
 put_attr_change t c = do
     bounds <- display_bounds t
     d <- display_context t bounds
