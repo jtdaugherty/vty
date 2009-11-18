@@ -25,9 +25,12 @@ data XTermColor = XTermColor
 -- Regardless of what is output the text encoding is assumed to be UTF-8
 terminal_instance :: ( Applicative m, MonadIO m ) => String -> m XTermColor
 terminal_instance variant = do
+    -- If the terminal variant is xterm-color use xterm instead since, more often than not,
+    -- xterm-color is broken.
+    let variant' = if variant == "xterm-color" then "xterm" else variant
     flushed_put set_utf8_char_set
-    t <- TerminfoBased.terminal_instance variant >>= new_terminal_handle
-    return $ XTermColor variant t
+    t <- TerminfoBased.terminal_instance variant' >>= new_terminal_handle
+    return $ XTermColor variant' t
 
 flushed_put :: MonadIO m => String -> m ()
 flushed_put str = do
