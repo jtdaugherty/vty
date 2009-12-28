@@ -26,11 +26,10 @@ import Graphics.Vty.DisplayRegion
 import Graphics.Vty.LLInput
 
 import Data.IORef
-import Control.Concurrent
 
 import Data.Maybe ( maybe )
 
-import System.Console.Terminfo
+import qualified System.Console.Terminfo as Terminfo
 import System.IO
 
 -- | The main object.  At most one should be created.
@@ -49,9 +48,6 @@ data Vty = Vty
       -- | Get one Event object, blocking if necessary.
     , next_event :: IO Event
       -- | Handle to the terminal interface. See `Terminal`
-      -- 
-      -- todo: provide a similar abstraction for input. Use haskeline's input backend for
-      -- implementation.
       --
       -- The use of Vty typically follows this process:
       --
@@ -61,13 +57,16 @@ data Vty = Vty
       --
       --    2. repeat
       --
-      --    3. shutdown vty. todo: remove? Automate release of resources as much as possible.
+      --    3. shutdown vty. 
       -- 
-      -- This version currently supports the same interface.
+      -- todo: provide a similar abstraction to Graphics.Vty.Terminal for input. Use haskeline's
+      -- input backend for implementation.
+      -- 
+      -- todo: remove explicit `shutdown` requirement. 
     , terminal :: TerminalHandle
-      -- | Refresh the display. Normally the library takes care of refreshing. 
-      -- Nonetheless, some other program might output to the terminal and mess the display.
-      -- In that case the user might want to force a refresh.
+      -- | Refresh the display. Normally the library takes care of refreshing.  Nonetheless, some
+      -- other program might output to the terminal and mess the display.  In that case the user
+      -- might want to force a refresh.
     , refresh :: IO ()
       -- | Clean up after vty.
     , shutdown :: IO () 
@@ -80,7 +79,7 @@ mkVty = mkVtyEscDelay 0
 
 mkVtyEscDelay :: Int -> IO Vty
 mkVtyEscDelay escDelay = do 
-    term_info <- setupTermFromEnv 
+    term_info <- Terminfo.setupTermFromEnv 
     t <- terminal_handle
     reserve_display t
     (kvar, endi) <- initTermInput escDelay term_info
@@ -112,7 +111,8 @@ intMkVty kvar fend t = do
             writeIORef last_pic_ref $ Just in_pic
 
     let inner_refresh 
-            = readIORef last_pic_ref 
+            =   writeIORef last_update_ref Nothing
+            >>  readIORef last_pic_ref 
             >>= maybe ( return () ) ( \pic -> inner_update pic ) 
 
     let gkey = do k <- kvar

@@ -10,8 +10,6 @@ module Graphics.Vty.Image ( Image(..)
                           , (<->)
                           , horiz_cat
                           , vert_cat
-                          , horzcat
-                          , vertcat
                           , background_fill
                           , char
                           , string
@@ -72,8 +70,8 @@ data Image =
       , char_width :: !Word -- >= 1
       }
     -- A horizontal join can be constructed between any two images. However a HorizJoin instance is
-    -- required to be between two images of equal height. The horiz_join constructor adds blanks to
-    -- the provided images that assure this is true for the HorizJoin value produced.
+    -- required to be between two images of equal height. The horiz_join constructor adds background
+    -- filles to the provided images that assure this is true for the HorizJoin value produced.
     | HorizJoin
       { part_left :: Image 
       , part_right :: Image
@@ -81,8 +79,8 @@ data Image =
       , output_height :: !Word -- >= 1
       }
     -- A veritical join can be constructed between any two images. However a VertJoin instance is
-    -- required to be between two images of equal width. The horiz_join constructor adds blanks to
-    -- the provides images that assure this is true for the HorizJoin value produced.
+    -- required to be between two images of equal width. The vert_join constructor adds background
+    -- fills to the provides images that assure this is true for the VertJoin value produced.
     | VertJoin
       { part_top :: Image
       , part_bottom :: Image
@@ -125,7 +123,7 @@ instance Monoid Image where
 horiz_text :: Attr -> StringSeq -> Word -> Image
 horiz_text a txt ow
     | ow == 0    = EmptyImage
-    | otherwise = HorizText a txt (toEnum $ Seq.length txt) ow
+    | otherwise = HorizText a txt ow (toEnum $ Seq.length txt)
 
 horiz_join :: Image -> Image -> Word -> Word -> Image
 horiz_join i_0 i_1 w h
@@ -264,15 +262,9 @@ im_t <-> im_b
 horiz_cat :: [Image] -> Image
 horiz_cat = foldr (<|>) EmptyImage
 
-horzcat :: [Image] -> Image
-horzcat = horiz_cat
-
 -- | Compose any number of images vertically.
 vert_cat :: [Image] -> Image
 vert_cat = foldr (<->) EmptyImage
-
-vertcat :: [Image] -> Image
-vertcat = vert_cat
 
 -- | an image of a single character. This is a standard Haskell 31-bit character assumed to be in
 -- the ISO-10646 encoding.
@@ -307,12 +299,12 @@ utf8_string !a !str = string a ( decode str )
 
 safe_wcwidth :: Char -> Word
 safe_wcwidth c = case wcwidth c of
-    i   | i < 0 -> error "negative wcwidth"
+    i   | i < 0 -> 0 -- error "negative wcwidth"
         | otherwise -> toEnum i
 
 safe_wcswidth :: String -> Word
 safe_wcswidth str = case wcswidth str of
-    i   | i < 0 -> error "negative wcswidth"
+    i   | i < 0 -> 0 -- error "negative wcswidth"
         | otherwise -> toEnum i
 
 -- | Renders a UTF-8 encoded bytestring. 

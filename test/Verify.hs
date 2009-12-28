@@ -51,8 +51,10 @@ run_test t = do
     results <- readIORef $ results_ref s'
     let fail_results = [ fail_result | fail_result@(QC.Failure {}) <- results ]
     case fail_results of
-        [] -> putStrLn "PASS"
-        _  -> putStrLn "FAIL"
+        [] -> putStrLn "state: PASS"
+        rs  -> do
+            putStrLn "state: FAIL"
+            putStrLn $ "fail_count: " ++ show (length rs)
 
 verify :: Testable prop => String -> prop -> Test QC.Result
 verify prop_name prop = do

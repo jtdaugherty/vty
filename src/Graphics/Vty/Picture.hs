@@ -1,13 +1,12 @@
 -- Copyright 2009 Corey O'Connor
 module Graphics.Vty.Picture ( module Graphics.Vty.Picture
+                            , Image
                             , image_width
                             , image_height
                             , (<|>)
                             , (<->)
                             , horiz_cat
                             , vert_cat
-                            , horzcat
-                            , vertcat
                             , background_fill
                             , char
                             , string

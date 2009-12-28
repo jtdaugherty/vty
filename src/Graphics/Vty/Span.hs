@@ -221,26 +221,3 @@ snoc_op !mrow_ops !row !op = do
     writeSTArray mrow_ops row ops'
     return ()
 
-data StateTransition = 
-      NextSpan BuildState
-    | NextRow BuildState
-    deriving Show
-
-data BuildState = BuildState
-    { current_column :: !Word
-    , current_row_build_ops :: [BuildOp]
-    , next_row_build_ops :: [BuildOp]
-    }
-    deriving Show
-
--- A build op is a (column, row) offset into an image and the image.
-data BuildOp = BuildOp !Word !Word Image
-    deriving Show
-
-initial_state :: Image -> BuildState
-initial_state i = BuildState 0 [BuildOp 0 0 i] []
-
--- The first op for each row is to the set the current attribute. Which will either be 
---  0. the background attribute if the span starts out with the background or is undefined.
---  1. the attributes of the first text row.
-

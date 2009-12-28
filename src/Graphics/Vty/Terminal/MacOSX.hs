@@ -24,6 +24,7 @@ import System.IO
 
 data Term = Term 
     { super_term :: TerminalHandle
+    , term_app :: String
     }
 
 -- for Terminal.app use "xterm". For iTerm.app use "xterm-256color"
@@ -32,7 +33,7 @@ terminal_instance v = do
     let base_term "iTerm.app" = "xterm-256color"
         base_term _ = "xterm"
     t <- TerminfoBased.terminal_instance (base_term v) >>= new_terminal_handle
-    return $ Term t
+    return $ Term t v
 
 flushed_put :: MonadIO m => String -> m ()
 flushed_put str = do
@@ -40,19 +41,25 @@ flushed_put str = do
     liftIO $ hFlush stdout
 
 -- Terminal.app really does want the xterm-color smcup and rmcup caps. Not the generic xterm ones.
+smcup_str, rmcup_str :: String
 smcup_str = "\ESC7\ESC[?47h"
 rmcup_str = "\ESC[2J\ESC[?47l\ESC8"
 
+-- iTerm needs a clear screen after smcup as well?
+clear_screen_str :: String
+clear_screen_str = "\ESC[H\ESC[2J"
+
 instance Terminal Term where
-    terminal_ID t = "Terminal.app :: MacOSX"
+    terminal_ID t = term_app t ++ " :: MacOSX"
 
     release_terminal t = do 
         release_terminal $ super_term t
 
-    reserve_display t = do
+    reserve_display _t = do
         flushed_put smcup_str
+        flushed_put clear_screen_str
 
-    release_display t = do
+    release_display _t = do
         flushed_put rmcup_str
 
     display_terminal_instance t b c = do

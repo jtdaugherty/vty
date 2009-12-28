@@ -17,6 +17,32 @@
       coincidence.
 
 4.0.0
+    * API changes:
+        * "getSize" has been removed. Use "terminal vty >>= display_bounds" where "vty" is an
+          instance of the Vty data structure.
+        * added a "terminal" field to the Vty data structure. Accesses the TerminalHandle associated
+          with the Vty instance.
+        * Graphics.Vty.Types has undergone a number of changes. Summary:
+          * Partitioned into Graphics.Vty.Attributes for display attributes. Graphics.Vty.Image for
+            image combinators. Graphics.Vty.Picture for final picture construction.
+        * Graphics.Vty.Attributes:
+          * "setFG" and "setBG" are now "with_fore_color" and "with_back_color"
+          * All other "set.." equations similarly replaced.
+          * "attr" is now "def_attr", short for "default display attributes" Also added a
+            "current_attr" for "currently applied display attributes"
+        * Graphics.Vty.Image:
+          * "horzcat" is now "horiz_cat"
+          * "vertcat" is now "vert_cat"
+          * "renderBS" is now "utf8_bytestring"
+          * "renderChar" is now "char"
+          * "renderFill" is now "char_fill"
+          * added a "utf8_string" and "string" (AKA "iso_10464_string") for UTF-8 encoded Strings
+            and ISO-10464 encoded Strings. String literals in GHC have an ISO-10464 runtime
+            representation.
+        * Graphics.Vty.Picture:
+          * exports Graphics.Vty.Image
+          * "pic" is now "pic_for_image"
+          * added API for setting background fill pattern.
     * Completely rewritten output backend.
         * Efficient, scanline style output span generator. Has not been fully optimized, but good
           enough.

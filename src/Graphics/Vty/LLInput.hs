@@ -35,7 +35,7 @@ import System.Posix.IO ( stdInput
                        )
 
 -- |Representations of non-modifier keys.
-data Key = KEsc | KFun Int | KPrtScr | KPause | KASCII Char | KBS | KIns
+data Key = KEsc | KFun Int | KBackTab | KPrtScr | KPause | KASCII Char | KBS | KIns
          | KHome | KPageUp | KDel | KEnd | KPageDown | KNP5 | KUp | KMenu
          | KLeft | KDown | KRight | KEnter 
     deriving (Eq,Show,Ord)
@@ -67,7 +67,7 @@ initTermInput escDelay terminal = do
   hadInput <- newEmptyMVar
   oattr <- getTerminalAttributes stdInput
   let nattr = foldl withoutMode oattr [StartStopOutput, KeyboardInterrupts,
-                                       EnableEcho, ProcessInput]
+                                       EnableEcho, ProcessInput, ExtendedFunctions]
   setTerminalAttributes stdInput nattr Immediately
   set_term_timing
   let inputToEventThread :: IO ()
@@ -88,7 +88,7 @@ initTermInput escDelay terminal = do
                   setFdOption stdInput NonBlockingRead False
                   threadWaitRead stdInput
                   setFdOption stdInput NonBlockingRead True
-                  try readAll 
+                  try readAll :: IO (Either IOException ())
                   when (escDelay == 0) finishAtomicInput
                   loop
               readAll = do
@@ -141,32 +141,60 @@ initTermInput escDelay terminal = do
    
       caps_tabls = [("khome", (KHome, [])), 
                     ("kend",  (KEnd,  [])),
+                    ("cbt",   (KBackTab, [])),
+                    ("kcud1", (KDown,  [])),
+                    ("kcuu1", (KUp,  [])),
+                    ("kcuf1", (KRight,  [])),
+                    ("kcub1", (KLeft,  [])),
 
-                    ("kcud1",  (KDown,  [])),
-                    ("kcuu1",  (KUp,  [])),
-                    ("kcuf1",  (KRight,  [])),
-                    ("kcub1",  (KLeft,  []))
+                    ("kLFT", (KLeft, [MShift])),
+                    ("kRIT", (KRight, [MShift]))
                    ]
    
       caps_classify_table = [(x,y) | (Just x,y) <- map (first (getCapability terminal . tiGetStr)) $ caps_tabls]
       
       ansi_classify_table :: [[([Char], (Key, [Modifier]))]]
       ansi_classify_table =
-         [ let k c s = ("\ESC["++c,(s,[])) in
-           [ k "G" KNP5, k "P" KPause ],
+         [ let k c s = ("\ESC["++c,(s,[])) in [ k "G" KNP5, k "P" KPause,  k "A" KUp, k "B" KDown, k "C" KRight, k "D" KLeft ],
+
+           -- Support for arrows
+           [("\ESC[" ++ charCnt ++ show mc++c,(s,m)) 
+            | charCnt <- ["1;", ""], -- we can have a count or not
+            (m,mc) <- [([MShift],2::Int), ([MCtrl],5), ([MMeta],3), 
+                       ([MShift, MCtrl],6), ([MShift, MMeta],4)], -- modifiers and their codes
+            (c,s) <- [("A", KUp), ("B", KDown), ("C", KRight), ("D", KLeft)] -- directions and their codes
+           ],
+           
            let k n s = ("\ESC["++show n++"~",(s,[])) in zipWith k [2::Int,3,5,6] [KIns,KDel,KPageUp,KPageDown],
+
+           -- Support for simple characters.
            [ (x:[],(KASCII x,[])) | x <- map toEnum [0..255] ],
+
+           -- Support for function keys (should use terminfo)
            [ ("\ESC[["++[toEnum(64+i)],(KFun i,[])) | i <- [1..5] ],
            let f ff nrs m = [ ("\ESC["++show n++"~",(KFun (n-(nrs!!0)+ff), m)) | n <- nrs ] in
            concat [ f 6 [17..21] [], f 11 [23,24] [], f 1 [25,26] [MShift], f 3 [28,29] [MShift], f 5 [31..34] [MShift] ],
            [ ('\ESC':[x],(KASCII x,[MMeta])) | x <- '\ESC':'\t':[' ' .. '\DEL'] ],
+
+           -- Ctrl+Char
            [ ([toEnum x],(KASCII y,[MCtrl])) 
               | (x,y) <- zip ([0..31]) ('@':['a'..'z']++['['..'_']),
                 y /= 'i' -- Resolve issue #3 where CTRL-i hides TAB.
            ],
+           
+           -- Ctrl+Meta+Char
            [ ('\ESC':[toEnum x],(KASCII y,[MMeta,MCtrl])) | (x,y) <- zip [0..31] ('@':['a'..'z']++['['..'_']) ],
-           [ ("\ESC",(KEsc,[])) , ("\ESC\ESC",(KEsc,[MMeta])) , ("\DEL",(KBS,[])), ("\ESC\DEL",(KBS,[MMeta])),
-             ("\ESC\^J",(KEnter,[MMeta])), ("\^J",(KEnter,[])) ] ]
+
+           -- Special support
+           [ -- special support for ESC 
+             ("\ESC",(KEsc,[])) , ("\ESC\ESC",(KEsc,[MMeta])), 
+
+             -- Special support for backspace
+             ("\DEL",(KBS,[])), ("\ESC\DEL",(KBS,[MMeta])),
+             
+             -- Special support for Enter
+             ("\ESC\^J",(KEnter,[MMeta])), ("\^J",(KEnter,[])) ] 
+         ]
    
   eventThreadId <- forkIO $ inputToEventThread
   inputThreadId <- forkIO $ inputThread
@@ -184,9 +212,10 @@ initTermInput escDelay terminal = do
                   setTerminalAttributes stdInput oattr Immediately
   return (readChan eventChannel, uninit)
 
+first :: (a -> b) -> (a,c) -> (b,c)
 first f (x,y) = (f x, y)
 
-
+utf8Length :: (Num t, Ord a, Num a) => a -> t
 utf8Length c 
     | c < 0x80 = 1
     | c < 0xE0 = 2

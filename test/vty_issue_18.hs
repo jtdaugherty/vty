@@ -23,13 +23,6 @@ play vty sx sy =
       getEvent vty
       shutdown vty
       return ()
-      {-
-      k <- getEvent vty
-      case k of
-        EvKey KEsc [] -> shutdown vty >> return ()
-        EvResize nx ny -> play vty nx ny
-        _ -> shutdown vty
-        -}
 
 box :: Int -> Int -> Image
 box w h =

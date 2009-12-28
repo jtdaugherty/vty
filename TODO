@@ -1,13 +1,15 @@
-Minor:
-- input parser uses similar interface to DisplayHandle. Derive instance from terminfo
-- Improve input handling performance.
-- xterm cursor foreground handling.
-    - specific color
-    - reverse video
-    - auto
-- position cursor correctly.
-
-
-Major:
-- Remove size fields in resize constr
+- Improve input handling
+  - base off of haskeline input system. The haskeline input system appears to be excellent and
+    satisfy all of Vty's input requirements. The current haskeline distribution does not appear to
+    export the required modules. Either:
+        0. Add the required exports to the haskeline distribution. 
+            - fine for development but complicates the UI for production clients. Though, exposing
+              the modules would only complicate the appearance of haskeline's interface. 
+        1. Partition the backend of haskeline into a separate package usable by both vty and
+        haskeline.
+- use compact-string for character encoding handling
+- Custom cursor appearance handling?
+    - specific color?
+    - reverse video?
+    - auto?
 

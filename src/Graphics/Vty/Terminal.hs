@@ -13,7 +13,6 @@
 --
 --
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE GADTs #-}
 module Graphics.Vty.Terminal ( module Graphics.Vty.Terminal
                              , Terminal(..)
                              , TerminalHandle(..)

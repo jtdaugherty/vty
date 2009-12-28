@@ -1,0 +1,32 @@
+On the design of vty
+
+    It appears to me that there are two kinds of graphical
+applications, regardless of the output form; the synchronous and the
+asynchronous.  Synchronous displays update as changes occur; a good
+example of this type is nethack, with its many newsym() calls embedded
+in the logic.  Synchronous applications use very little abstractable
+code, and in practice all use low level interfaces such as terminfo.
+
+    Asynchronous screen programs, OTOH, do not have update code within
+the main logic.  Instead, they perform output "lazily", only computing
+it at periodic refresh points.  Because "backtracking" is not
+rendered, asynchronous screen programs use less bandwidth, and can
+(but usually don't) use less CPU.  Asynchronous programs have their
+update logic centralized in such a way that it can be abstracted as a
+library; this is what both vty and curses are.
+
+    In the past, vty has had considerable confusion and race
+conditions due to the fact that screen resizes can occur
+asynchronously with respect to output.  Vty 3.0 handles this in an
+very elegant (IMO) way, by treating resizes as just another input
+event; the size of the picture being output at any time need have no
+relation to the screen, though of course corruption will result if
+they are different.
+
+    On a "real" terminal (termcap, not xcurses), output and input can
+be completely separated; they can occur concurrently, and do not
+effect each other.  Because of this we simplify the internal structure
+by using entirely different mechanisms for input and output.  This is
+also a great benefit because of the differing characteristics of input
+code (complicated, best table driven, etc) versus output code
+(performance critical).

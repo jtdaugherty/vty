@@ -50,7 +50,7 @@ data CapOp =
       , conditional_parts :: ![(CapOps, CapOps)]
       }
     | BitwiseOr | BitwiseXOr | BitwiseAnd
-    | ArithPlus
+    | ArithPlus | ArithMinus
     | CompareEq | CompareLt | CompareGt
     deriving ( Show )
 
@@ -229,10 +229,18 @@ bitwise_xor_parser = do
     return $ BuildResults 0 [ BitwiseXOr ] [ ]
 
 arith_op_parser :: CapParser BuildResults
-arith_op_parser = do
-    char '+'
-    inc_offset 1
-    return $ BuildResults 0 [ ArithPlus ] [ ]
+arith_op_parser 
+    =   plus_op 
+    <|> minus_op 
+    where
+        plus_op = do
+            char '+'
+            inc_offset 1
+            return $ BuildResults 0 [ ArithPlus ] [ ]
+        minus_op = do
+            char '-'
+            inc_offset 1
+            return $ BuildResults 0 [ ArithMinus ] [ ]
 
 literal_int_op_parser :: CapParser BuildResults
 literal_int_op_parser = do

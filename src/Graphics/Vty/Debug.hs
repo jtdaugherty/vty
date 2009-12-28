@@ -6,7 +6,6 @@ where
 
 import Graphics.Vty.Attributes
 import Graphics.Vty.Image
-import Graphics.Vty.Image.Debug
 import Graphics.Vty.Picture
 import Graphics.Vty.Span
 import Graphics.Vty.DisplayRegion
@@ -21,7 +20,7 @@ instance Show SpanOpSequence where
 
 instance Show SpanOp where
     show (AttributeChange attr) = show attr
-    show (TextSpan width _) = "TextSpan " ++ show width
+    show (TextSpan ow cw _) = "TextSpan " ++ show ow ++ " " ++ show cw
 
 row_ops_effected_columns :: SpanOpSequence -> [Word]
 row_ops_effected_columns spans 

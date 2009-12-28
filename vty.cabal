@@ -4,6 +4,7 @@ License:             BSD3
 License-file:        LICENSE
 Author:              Stefan O'Rear, Corey O'Connor
 Maintainer:          Corey O'Connor (coreyoconnor@gmail.com)
+Homepage:            http://trac.haskell.org/vty/
 Category:            User Interfaces
 Synopsis:            A simple terminal access library
 Description:
@@ -20,11 +21,13 @@ Description:
   terminal;
   .
   You can 'darcs get' it from <http://code.haskell.org/vty/>
+  .
   &#169; 2006-2007 Stefan O'Rear; BSD3 license.
+  .
   &#169; 2008-2009 Corey O'Connor; BSD3 license.
 
-Build-Depends:       base >= 4 && < 5, bytestring, containers, unix, uvector
-Build-Depends:       terminfo >= 0.2 && < 0.3
+Build-Depends:       base >= 4 && < 5, bytestring, containers, unix
+Build-Depends:       terminfo >= 0.3 && < 0.4
 Build-Depends:       utf8-string >= 0.3 && < 0.4
 Build-Depends:       mtl >= 1.1.0.0 && < 1.2
 Build-Depends:       ghc-prim, parallel < 2
@@ -49,6 +52,7 @@ other-modules:       Codec.Binary.UTF8.Width
                      Graphics.Vty.Image
                      Graphics.Vty.Span
                      Graphics.Vty.Terminal.Generic
+                     Graphics.Vty.Terminal.MacOSX
                      Graphics.Vty.Terminal.XTermColor
                      Graphics.Vty.Terminal.TerminfoBased
 

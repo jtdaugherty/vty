@@ -1,9 +1,7 @@
 -- Copyright 2009 Corey O'Connor
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeFamilies #-}
 module Graphics.Vty.Terminal.TerminfoBased ( terminal_instance
                                            )
     where
@@ -21,8 +19,7 @@ import Control.Monad ( foldM )
 import Control.Monad.Trans
 
 import Data.Bits ( (.&.) )
-import Data.Maybe ( fromJust )
-import Data.Monoid 
+import Data.Maybe ( isJust, isNothing, fromJust )
 import Data.Word
 
 import Foreign.C.Types ( CLong )
@@ -124,7 +121,9 @@ current_display_attr_caps ti
 instance Terminal Term where
     terminal_ID t = term_info_ID t ++ " :: TerminfoBased"
 
-    release_terminal _t = do 
+    release_terminal t = do 
+        marshall_cap_to_terminal t set_default_attr []
+        marshall_cap_to_terminal t cnorm []
         return ()
 
     reserve_display t = do
@@ -132,6 +131,8 @@ instance Terminal Term where
             then marshall_cap_to_terminal t (fromJust . smcup) []
             else return ()
         -- Screen on OS X does not appear to support smcup?
+        -- To approximate the expected behavior: clear the screen and then move the mouse to the
+        -- home position.
         marshall_cap_to_terminal t clear_screen []
         return ()
 
@@ -319,29 +320,11 @@ ansi_color_index (Color240 v) = 16 + ( toEnum $ fromEnum v )
  -  4. If the display attribute state is being set then just update the arguments to that for any
  -  apply/remove.
  -
- -  The style diffs each imply either the enter/exit control code or a reset to defaults ; set state
- -  sequence. This mapping satisfies the communitive monoid properties:
- -      - no diff * diff == diff
- -      - diff * no diff == diff
- -      - (diff_0 * diff_1) * diff_2 == diff_0 * ( diff_1 * diff_2 )
- -      - diff_0 * diff_1 == diff_1 * diff_0
- -  so the mapping is a sequence of mappend's applied to mempty. Where the monoid points appended
- -  depend on the diff. The accumulated value is the monad point that represents the final sequence
- -  to apply. The application (*) operator assures all the rules are followed.
- -
- -  The diff implies an enter/exit control code if:
- -      - The current 
  -}
 
-data DisplayAttrSeq v
-    = EnterExitSeq [v]
+data DisplayAttrSeq
+    = EnterExitSeq [CapExpression]
     | SetState DisplayAttrState
-
-instance Monoid (DisplayAttrSeq v) where
-    mempty = EnterExitSeq []
-    SetState s `mappend` _ = SetState s
-    _ `mappend` SetState s = SetState s
-    (EnterExitSeq caps_0) `mappend` (EnterExitSeq caps_1) = EnterExitSeq (caps_0 `mappend` caps_1)
 
 data DisplayAttrState = DisplayAttrState
     { apply_standout :: Bool
@@ -365,59 +348,41 @@ sgr_args_for_state attr_state = map (\b -> if b then 1 else 0)
     , False -- alt char set
     ]
 
-req_display_cap_seq_for :: DisplayAttrCaps -> Style -> [StyleStateChange] -> DisplayAttrSeq CapExpression
-req_display_cap_seq_for caps s diffs =
-    -- First pass: concat the monoid points that are implied by the diffs
-    let base = mconcat $ map diff_point diffs
-    -- Second pass: Apply the capability restrictions. 
-    in apply_caps base
-    where 
-        set_state = SetState $ state_for_style s
-        diff_point ApplyStandout = EnterExitSeq [ApplyStandout]
-        diff_point ApplyUnderline = EnterExitSeq [ApplyUnderline] 
-        diff_point ApplyReverseVideo = EnterExitSeq [ApplyReverseVideo]
-        diff_point ApplyBlink = set_state
-        diff_point ApplyDim = EnterExitSeq [ApplyDim]
-        diff_point ApplyBold = EnterExitSeq [ApplyBold]
-        diff_point RemoveStandout = EnterExitSeq [RemoveStandout]
-        diff_point RemoveUnderline = EnterExitSeq [RemoveUnderline]
-        diff_point RemoveReverseVideo = set_state
-        diff_point RemoveBlink = set_state
-        diff_point RemoveDim = set_state
-        diff_point RemoveBold = set_state
-        apply_caps ( SetState _ )
-            = case set_attr_states caps of
-                Nothing -> EnterExitSeq []
-                Just _ -> set_state
-        apply_caps (EnterExitSeq []) 
-            = EnterExitSeq []
-        apply_caps (EnterExitSeq (diff : diffs'))
-            = case apply_caps' diff of
-                SetState _ -> set_state
-                p          -> p `mappend` apply_caps (EnterExitSeq diffs')
-        apply_caps' ApplyStandout = m $ enter_standout caps
-        apply_caps' ApplyUnderline = m $ enter_underline caps
-        apply_caps' ApplyReverseVideo = m $ enter_reverse_video caps
-        apply_caps' ApplyBlink = set_state
-        apply_caps' ApplyDim = m $ enter_dim_mode caps
-        apply_caps' ApplyBold = m $ enter_bold_mode caps
-        apply_caps' RemoveStandout = m $ exit_standout caps
-        apply_caps' RemoveUnderline = m $ exit_underline caps
-        apply_caps' RemoveReverseVideo = set_state
-        apply_caps' RemoveBlink = set_state
-        apply_caps' RemoveDim = set_state
-        apply_caps' RemoveBold = set_state
-        m = maybe set_state (EnterExitSeq . return)
-
-{-
-set_style_required_bytes caps style diffs reset_cap = 
-    let state = state_for_style style
-        req_seq = req_seq_for caps style diffs
-    in case req_seq of
-        EnterExitSeq caps -> sum $ map (\cap -> cap_expression_required_bytes cap []) caps
-        SetState -> cap_expression_required_bytes ( fromJust $ set_attr_states $ caps )
-                                                  ( sgr_args_for_state state )
--}
+req_display_cap_seq_for :: DisplayAttrCaps -> Style -> [StyleStateChange] -> DisplayAttrSeq
+req_display_cap_seq_for caps s diffs
+    -- if the state transition implied by any diff cannot be supported with an enter/exit mode cap
+    -- then either the state needs to be set or the attribute change ignored.
+    = case (any no_enter_exit_cap diffs, isJust $ set_attr_states caps) of
+        -- If all the diffs have an enter-exit cap then just use those
+        ( False, _    ) -> EnterExitSeq $ map enter_exit_cap diffs
+        -- If not all the diffs have an enter-exit cap and there is no set state cap then filter out
+        -- all unsupported diffs and just apply the rest
+        ( True, False ) -> EnterExitSeq $ map enter_exit_cap 
+                                        $ filter (not . no_enter_exit_cap) diffs
+        -- if not all the diffs have an enter-exit can and there is a set state cap then just use
+        -- the set state cap.
+        ( True, True  ) -> SetState $ state_for_style s
+    where
+        no_enter_exit_cap ApplyStandout = isNothing $ enter_standout caps
+        no_enter_exit_cap RemoveStandout = isNothing $ exit_standout caps
+        no_enter_exit_cap ApplyUnderline = isNothing $ enter_underline caps
+        no_enter_exit_cap RemoveUnderline = isNothing $ exit_underline caps
+        no_enter_exit_cap ApplyReverseVideo = isNothing $ enter_reverse_video caps
+        no_enter_exit_cap RemoveReverseVideo = True
+        no_enter_exit_cap ApplyBlink = True
+        no_enter_exit_cap RemoveBlink = True
+        no_enter_exit_cap ApplyDim = isNothing $ enter_dim_mode caps
+        no_enter_exit_cap RemoveDim = True
+        no_enter_exit_cap ApplyBold = isNothing $ enter_bold_mode caps
+        no_enter_exit_cap RemoveBold = True
+        enter_exit_cap ApplyStandout = fromJust $ enter_standout caps
+        enter_exit_cap RemoveStandout = fromJust $ exit_standout caps
+        enter_exit_cap ApplyUnderline = fromJust $ enter_underline caps
+        enter_exit_cap RemoveUnderline = fromJust $ exit_underline caps
+        enter_exit_cap ApplyReverseVideo = fromJust $ enter_reverse_video caps
+        enter_exit_cap ApplyDim = fromJust $ enter_dim_mode caps
+        enter_exit_cap ApplyBold = fromJust $ enter_bold_mode caps
+        enter_exit_cap _ = error "enter_exit_cap applied to diff that was known not to have one."
 
 state_for_style :: Style -> DisplayAttrState
 state_for_style s = DisplayAttrState
@@ -431,7 +396,7 @@ state_for_style s = DisplayAttrState
     where is_style_set = has_style s
 
 style_to_apply_seq :: Style -> [StyleStateChange]
-style_to_apply_seq s = mconcat
+style_to_apply_seq s = concat
     [ apply_if_required ApplyStandout standout
     , apply_if_required ApplyUnderline underline
     , apply_if_required ApplyReverseVideo reverse_video

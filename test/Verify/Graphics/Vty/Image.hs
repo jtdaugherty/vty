@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE DisambiguateRecordFields #-}
 module Verify.Graphics.Vty.Image ( module Verify.Graphics.Vty.Image
                                  , module Graphics.Vty.Image
                                  )
@@ -33,7 +35,12 @@ instance Arbitrary DefaultImage where
         i <- return $ char def_attr 'X' -- elements forward_image_ops >>= return . (\op -> op empty_image)
         return $ DefaultImage i []
 
-data SingleRowSingleAttrImage = SingleRowSingleAttrImage Attr Word Image
+data SingleRowSingleAttrImage 
+    = SingleRowSingleAttrImage 
+      { expected_attr :: Attr
+      , expected_columns :: Word
+      , row_image :: Image
+      }
 
 instance Show SingleRowSingleAttrImage where
     show (SingleRowSingleAttrImage attr columns image) 
@@ -41,13 +48,28 @@ instance Show SingleRowSingleAttrImage where
 
 instance Arbitrary SingleRowSingleAttrImage where
     arbitrary = do
-        single_column_row_text <- arbitrary
+        -- The text must contain at least one character. Otherwise the image simplifies to the
+        -- IdImage which has a height of 0. If this is to represent a single row then the height
+        -- must be 1
+        single_column_row_text <- listOf1 arbitrary
         attr <- arbitrary
         return $ SingleRowSingleAttrImage 
                     attr 
                     ( fromIntegral $ length single_column_row_text )
                     ( horiz_cat $ [ char attr c | SingleColumnChar c <- single_column_row_text ] )
 
+data SingleRowTwoAttrImage 
+    = SingleRowTwoAttrImage 
+    { part_0 :: SingleRowSingleAttrImage
+    , part_1 :: SingleRowSingleAttrImage
+    , join_image :: Image
+    } deriving Show
+
+instance Arbitrary SingleRowTwoAttrImage where
+    arbitrary = do
+        p0 <- arbitrary
+        p1 <- arbitrary
+        return $ SingleRowTwoAttrImage p0 p1 (row_image p0 <|> row_image p1)
 
 data SingleAttrSingleSpanStack = SingleAttrSingleSpanStack 
     { stack_image :: Image 

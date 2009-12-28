@@ -1,7 +1,7 @@
+-- Copyright 2009 Corey O'Connor
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ExistentialQuantification #-}
--- Copyright 2009 Corey O'Connor
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
 module Graphics.Vty.Terminal.Generic ( module Graphics.Vty.Terminal.Generic

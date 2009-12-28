@@ -32,7 +32,7 @@ print_intro = do
     putStr $ [$heredoc| 
 This is an interactive verification program for the terminal input and output
 support of the VTY library. This will ask a series of questions about what you
-see onscreen. The goal is to verify that VTY's output   and input support
+see on screen. The goal is to verify that VTY's output and input support
 performs as expected with your terminal.
 
 This program produces a file named 
@@ -43,7 +43,7 @@ support for your terminal. No personal information is contained in the report.
 
 Each test follows, more or less, the following format:
     0. A description of the test is printed which will include a detailed
-    description of what VTY is going to try and what the   expected results are.
+    description of what VTY is going to try and what the expected results are.
     Press return to move on.
     1. The program will produce some output or ask for you to press a key.
     2. You will then be asked to confirm if the behavior matched the provided
@@ -62,15 +62,24 @@ All the tests assume the following about the terminal display:
     a good range of the unicode characters. Each test involving unicode display
     describes the expected appearance of each glyph. 
 
-Thanks for the help! :-D
+Thanks for the help! :-D 
+To exit the test early enter "q" anytime at the following menu screen. Even if
+you exit the test early please email the test_results.list file to
+coreyoconnor@gmail.com. The results file will still contain information useful
+to debug terminal support.
+
 |]
     wait_for_return
     results <- do_test_menu 1
     env_attributes <- mapM ( \env_name -> catch ( Env.getEnv env_name >>= return . (,) env_name ) 
                                                 ( const $ return (env_name, "") ) 
                            ) 
-                           [ "TERM", "COLORTERM", "LANG" ]
-    let results_txt = show env_attributes ++ "\n" ++ show results ++ "\n"
+                           [ "TERM", "COLORTERM", "LANG", "TERM_PROGRAM", "XTERM_VERSION" ]
+    t <- terminal_handle
+    let results_txt = show env_attributes ++ "\n" 
+                      ++ terminal_ID t ++ "\n"
+                      ++ show results ++ "\n"
+    release_terminal t
     writeFile output_file_path results_txt
 
 wait_for_return = do
@@ -179,11 +188,11 @@ reserve_output_test = Test
     , print_summary = do
         putStr $ [$heredoc|
 Once return is pressed:
-The screen will be cleared. 
-The cursor should be visible and at the top left corner.
-Four lines of text should be visible.
+    0. The screen will be cleared. 
+    1. Four lines of text should be visible.
+    1. The cursor should be visible and at the start of the fifth line.
 
-After enter is pressed for the second time this test then:
+After return is pressed for the second time this test then:
     * The screen containing the test summary should be restored;
     * The cursor is visible.
 |]
@@ -377,6 +386,7 @@ unicode_single_width_0 = Test
     , test_action = do
         t <- terminal_handle
         reserve_display t
+        hide_cursor t
         withArrayLen (concat utf8_txt_0) (flip $ hPutBuf stdout)
         hPutStr stdout "\n"
         hPutStr stdout "0123456789\n"
@@ -458,6 +468,7 @@ unicode_double_width_0 = Test
     , test_action = do
         t <- terminal_handle
         reserve_display t
+        hide_cursor t
         withArrayLen (concat utf8_txt_1) (flip $ hPutBuf stdout)
         hPutStr stdout "\n"
         hPutStr stdout "012345\n"
@@ -517,8 +528,12 @@ After return is pressed for the second time:
     1. The cursor should be visible.
 |]
 
-all_colors = zip [ black, red, green, yellow, blue, magenta, cyan, white, def ]
-                 [ "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white", "default" ]
+all_colors = zip [ black, red, green, yellow, blue, magenta, cyan, white ]
+                 [ "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white" ]
+
+all_bright_colors 
+    = zip [ bright_black, bright_red, bright_green, bright_yellow, bright_blue, bright_magenta, bright_cyan, bright_white ]
+          [ "bright black", "bright red", "bright green", "bright yellow", "bright blue", "bright magenta", "bright cyan", "bright white" ]
 
 attributes_test_0 = Test 
     { test_name = "Character attributes: foreground colors."
@@ -531,7 +546,7 @@ attributes_test_0 = Test
             column_0 = vert_cat $ map line_with_color all_colors
             border = vert_cat $ replicate (length all_colors) $ string def_attr " | "
             column_1 = vert_cat $ map (string def_attr . snd) all_colors
-            line_with_color (c_value, c_name) = string (setFG c_value def_attr) c_name
+            line_with_color (c, c_name) = string (def_attr `with_fore_color` c) c_name
         d <- display_bounds t >>= display_context t
         output_picture d pic
         getLine
@@ -577,7 +592,7 @@ attributes_test_1 = Test
             column_0 = vert_cat $ map line_with_color all_colors
             border = vert_cat $ replicate (length all_colors) $ string def_attr " | "
             column_1 = vert_cat $ map (string def_attr . snd) all_colors
-            line_with_color (c_value, c_name) = string (setBG c_value def_attr) c_name
+            line_with_color (c, c_name) = string (def_attr `with_back_color` c) c_name
         d <- display_bounds t >>= display_context t
         output_picture d pic
         getLine
@@ -592,7 +607,7 @@ Once return is pressed:
     2. 9 lines of text in two columns will be drawn. The first column will
     contain be a name of a standard color for an 8 color terminal rendered with
     the default foreground color with a background the named color.  For
-    instance, one line will contain be the word "magenta" and that words should
+    instance, one line will contain be the word "magenta" and the word should
     be rendered in the default foreground color over a magenta background. The
     second column will be the name of a standard color rendered with the default
     attributes.
@@ -631,10 +646,10 @@ attributes_test_2 = Test
             image = horiz_cat [border, column_0, border, column_1, border, column_2, border]
             border = vert_cat $ replicate (length all_colors) $ string def_attr " | "
             column_0 = vert_cat $ map line_with_color_0 all_colors
-            column_1 = vert_cat $ map line_with_color_1 all_colors
+            column_1 = vert_cat $ map line_with_color_1 all_bright_colors
             column_2 = vert_cat $ map (string def_attr . snd) all_colors
-            line_with_color_0 (c_value, c_name) = string (setFG c_value def_attr) c_name
-            line_with_color_1 (c_value, c_name) = string (setFGVivid c_value def_attr) c_name
+            line_with_color_0 (c, c_name) = string (def_attr `with_fore_color` c) c_name
+            line_with_color_1 (c, c_name) = string (def_attr `with_fore_color` c) c_name
         d <- display_bounds t >>= display_context t
         output_picture d pic
         getLine
@@ -681,7 +696,7 @@ Did the test output match the description?
     }
 
 attributes_test_3 = Test 
-    { test_name = "Character attributes: vivid background colors."
+    { test_name = "Character attributes: Vivid background colors."
     , test_ID = "attributes_test_3"
     , test_action = do
         t <- terminal_handle
@@ -690,10 +705,10 @@ attributes_test_3 = Test
             image = horiz_cat [border, column_0, border, column_1, border, column_2, border]
             border = vert_cat $ replicate (length all_colors) $ string def_attr " | "
             column_0 = vert_cat $ map line_with_color_0 all_colors
-            column_1 = vert_cat $ map line_with_color_1 all_colors
+            column_1 = vert_cat $ map line_with_color_1 all_bright_colors
             column_2 = vert_cat $ map (string def_attr . snd) all_colors
-            line_with_color_0 (c_value, c_name) = string (setBG c_value def_attr) c_name
-            line_with_color_1 (c_value, c_name) = string (setBGVivid c_value def_attr) c_name
+            line_with_color_0 (c, c_name) = string (def_attr `with_back_color` c) c_name
+            line_with_color_1 (c, c_name) = string (def_attr `with_back_color` c) c_name
         d <- display_bounds t >>= display_context t
         output_picture d pic
         getLine
@@ -715,7 +730,7 @@ Once return is pressed:
         c. The third column will be the name of a standard color rendered with
         the default attributes.
         
-For instance, one line will contain be the word "magenta" and that words should
+For instance, one line will contain be the word "magenta" and the word should
 be rendered in the default foreground color over a magenta background. 
 
 I'm not actually sure exactly what "vivid" means in this context. For xterm the
@@ -748,14 +763,14 @@ Did the test output match the description?
     }
 
 attr_combos = 
-    [ ("default", id)
-    , ("bold", setBold)
-    , ("blink", setBlink)
-    , ("underline", setUnderline)
-    , ("bold + blink", setBlink . setBold)
-    , ("bold + underline", setUnderline . setBold)
-    , ("underline + blink", setBlink . setUnderline)
-    , ("bold + blink + underline", setUnderline . setBlink . setBold)
+    [ ( "default", id )
+    , ( "bold", flip with_style bold )
+    , ( "blink", flip with_style blink )
+    , ( "underline", flip with_style underline )
+    , ( "bold + blink", flip with_style (bold + blink) )
+    , ( "bold + underline", flip with_style (bold + underline) )
+    , ( "underline + blink", flip with_style (underline + blink) )
+    , ( "bold + blink + underline", flip with_style (bold + blink + underline) )
     ]
 
 attributes_test_4 = Test 

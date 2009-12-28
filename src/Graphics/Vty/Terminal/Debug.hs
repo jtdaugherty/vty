@@ -103,10 +103,10 @@ instance DisplayTerminal DebugDisplay where
         return $ ptr `plusPtr` 1
 
     -- | An attr change is always visualized as the single character 'A'
-    attr_required_bytes _d _fattr _attr = 1
+    attr_required_bytes _d _fattr _diffs _attr = 1
 
     -- | An attr change is always visualized as the single character 'A'
-    serialize_set_attr _d _fattr _attr ptr = do
+    serialize_set_attr _d _fattr _diffs _attr ptr = do
         liftIO $ poke ptr (toEnum $ fromEnum 'A')
         return $ ptr `plusPtr` 1
 

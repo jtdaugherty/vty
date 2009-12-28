@@ -92,52 +92,61 @@ cap_op_required_bytes (PushValue v) = do
     return 0
 cap_op_required_bytes (Conditional expr parts) = do
     c_expr <- cap_ops_required_bytes expr
-    c_parts <- foldM cond_parts_required_bytes 0 parts
+    c_parts <- cond_parts_required_bytes parts
     return $ c_expr + c_parts
     where 
-        cond_parts_required_bytes in_c (true_ops, false_ops) = do
+        cond_parts_required_bytes [] = return 0
+        cond_parts_required_bytes ( (true_ops, false_ops) : false_parts ) = do
             -- (man 5 terminfo)
             -- Usually the %? expr part pushes a value onto the stack, and %t pops  it  from  the
             -- stack, testing if it is nonzero (true).  If it is zero (false), control
             -- passes to the %e (else) part.
             v <- pop
-            c_branch <- if v /= 0
-                            then cap_ops_required_bytes true_ops
-                            else cap_ops_required_bytes false_ops
-            return $ in_c + c_branch
+            c_total <- if v /= 0
+                        then cap_ops_required_bytes true_ops
+                        else do
+                            c_false <- cap_ops_required_bytes false_ops
+                            c_remain <- cond_parts_required_bytes false_parts
+                            return $ c_false + c_remain
+            return c_total
 cap_op_required_bytes BitwiseOr = do
-    v_0 <- pop
     v_1 <- pop
+    v_0 <- pop
     push $ v_0 .|. v_1
     return 0
 cap_op_required_bytes BitwiseAnd = do
-    v_0 <- pop
     v_1 <- pop
+    v_0 <- pop
     push $ v_0 .&. v_1
     return 0
 cap_op_required_bytes BitwiseXOr = do
-    v_0 <- pop
     v_1 <- pop
+    v_0 <- pop
     push $ v_0 `xor` v_1
     return 0
 cap_op_required_bytes ArithPlus = do
-    v_0 <- pop
     v_1 <- pop
+    v_0 <- pop
     push $ v_0 + v_1
     return 0
-cap_op_required_bytes CompareEq = do
-    v_0 <- pop
+cap_op_required_bytes ArithMinus = do
     v_1 <- pop
+    v_0 <- pop
+    push $ v_0 - v_1
+    return 0
+cap_op_required_bytes CompareEq = do
+    v_1 <- pop
+    v_0 <- pop
     push $ if v_0 == v_1 then 1 else 0
     return 0
 cap_op_required_bytes CompareLt = do
-    v_0 <- pop
     v_1 <- pop
+    v_0 <- pop
     push $ if v_0 < v_1 then 1 else 0
     return 0
 cap_op_required_bytes CompareGt = do
-    v_0 <- pop
     v_1 <- pop
+    v_0 <- pop
     push $ if v_0 > v_1 then 1 else 0
     return 0
 
@@ -175,19 +184,23 @@ serialize_cap_op out_ptr (PushValue v) = do
     return out_ptr
 serialize_cap_op out_ptr (Conditional expr parts) = do
     out_ptr' <- serialize_cap_ops out_ptr expr
-    out_ptr'' <- foldM serialize_cond_parts out_ptr' parts
+    out_ptr'' <- serialize_cond_parts out_ptr' parts
     return out_ptr''
     where 
-        serialize_cond_parts ptr (true_ops, false_ops) = do
+        serialize_cond_parts ptr [] = return ptr
+        serialize_cond_parts ptr ( (true_ops, false_ops) : false_parts ) = do
             -- (man 5 terminfo)
             -- Usually the %? expr part pushes a value onto the stack, and %t pops  it  from  the
             -- stack, testing if it is nonzero (true).  If it is zero (false), control
             -- passes to the %e (else) part.
             v <- pop
-            ptr' <- if v /= 0
+            ptr'' <- if v /= 0
                         then serialize_cap_ops ptr true_ops
-                        else serialize_cap_ops ptr false_ops
-            return ptr'
+                        else do
+                            ptr' <- serialize_cap_ops ptr false_ops
+                            serialize_cond_parts ptr' false_parts
+            return ptr''
+
 serialize_cap_op out_ptr BitwiseOr = do
     v_0 <- pop
     v_1 <- pop
@@ -199,28 +212,33 @@ serialize_cap_op out_ptr BitwiseAnd = do
     push $ v_0 .&. v_1
     return out_ptr
 serialize_cap_op out_ptr BitwiseXOr = do
-    v_0 <- pop
     v_1 <- pop
+    v_0 <- pop
     push $ v_0 `xor` v_1
     return out_ptr
 serialize_cap_op out_ptr ArithPlus = do
-    v_0 <- pop
     v_1 <- pop
+    v_0 <- pop
     push $ v_0 + v_1
     return out_ptr
-serialize_cap_op out_ptr CompareEq = do
-    v_0 <- pop
+serialize_cap_op out_ptr ArithMinus = do
     v_1 <- pop
+    v_0 <- pop
+    push $ v_0 - v_1
+    return out_ptr
+serialize_cap_op out_ptr CompareEq = do
+    v_1 <- pop
+    v_0 <- pop
     push $ if v_0 == v_1 then 1 else 0
     return out_ptr
 serialize_cap_op out_ptr CompareLt = do
-    v_0 <- pop
     v_1 <- pop
+    v_0 <- pop
     push $ if v_0 < v_1 then 1 else 0
     return out_ptr
 serialize_cap_op out_ptr CompareGt = do
-    v_0 <- pop
     v_1 <- pop
+    v_0 <- pop
     push $ if v_0 > v_1 then 1 else 0
     return out_ptr
 
