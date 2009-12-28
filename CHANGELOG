@@ -1,4 +1,4 @@
-4.1.0.0
+4.2.1.0
     * API changes:
         * Attr record accessor fore_color changed to attr_fore_color
         * Attr record accessor back_color changed to attr_back_color
