@@ -97,13 +97,13 @@ cap_expression_parser = do
 
 param_escape_parser :: CapParser BuildResults
 param_escape_parser = do
-    char '%'
+    _ <- char '%'
     inc_offset 1
     literal_percent_parser <|> param_op_parser 
 
 literal_percent_parser :: CapParser BuildResults
 literal_percent_parser = do
-    char '%'
+    _ <- char '%'
     start_offset <- getState >>= return . next_offset
     inc_offset 1
     return $ BuildResults 0 [Bytes start_offset 1] []
@@ -123,32 +123,32 @@ param_op_parser
 
 increment_op_parser :: CapParser BuildResults
 increment_op_parser = do
-    char 'i'
+    _ <- char 'i'
     inc_offset 1
     return $ BuildResults 0 [] [ IncFirstTwo ]
 
 push_op_parser :: CapParser BuildResults
 push_op_parser = do
-    char 'p'
+    _ <- char 'p'
     param_n <- digit >>= return . (\d -> read [d])
     inc_offset 2
     return $ BuildResults param_n [ PushParam $ param_n - 1 ] []
 
 dec_out_parser :: CapParser BuildResults
 dec_out_parser = do
-    char 'd'
+    _ <- char 'd'
     inc_offset 1
     return $ BuildResults 0 [ DecOut ] []
 
 char_out_parser :: CapParser BuildResults
 char_out_parser = do
-    char 'c'
+    _ <- char 'c'
     inc_offset 1
     return $ BuildResults 0 [ CharOut ] []
 
 conditional_op_parser :: CapParser BuildResults
 conditional_op_parser = do
-    char '?'
+    _ <- char '?'
     inc_offset 1
     cond_part <- many_expr conditional_true_parser
     parts <- many_p 
@@ -191,17 +191,17 @@ conditional_op_parser = do
 
 conditional_true_parser :: CapParser ()
 conditional_true_parser = do
-    string "%t"
+    _ <- string "%t"
     inc_offset 2
 
 conditional_false_parser :: CapParser ()
 conditional_false_parser = do
-    string "%e"
+    _ <- string "%e"
     inc_offset 2
 
 conditional_end_parser :: CapParser ()
 conditional_end_parser = do
-    string "%;"
+    _ <- string "%;"
     inc_offset 2
 
 bitwise_op_parser :: CapParser BuildResults
@@ -212,19 +212,19 @@ bitwise_op_parser
 
 bitwise_or_parser :: CapParser BuildResults
 bitwise_or_parser = do
-    char '|'
+    _ <- char '|'
     inc_offset 1
     return $ BuildResults 0 [ BitwiseOr ] [ ]
 
 bitwise_and_parser :: CapParser BuildResults
 bitwise_and_parser = do
-    char '&'
+    _ <- char '&'
     inc_offset 1
     return $ BuildResults 0 [ BitwiseAnd ] [ ]
 
 bitwise_xor_parser :: CapParser BuildResults
 bitwise_xor_parser = do
-    char '^'
+    _ <- char '^'
     inc_offset 1
     return $ BuildResults 0 [ BitwiseXOr ] [ ]
 
@@ -234,22 +234,22 @@ arith_op_parser
     <|> minus_op 
     where
         plus_op = do
-            char '+'
+            _ <- char '+'
             inc_offset 1
             return $ BuildResults 0 [ ArithPlus ] [ ]
         minus_op = do
-            char '-'
+            _ <- char '-'
             inc_offset 1
             return $ BuildResults 0 [ ArithMinus ] [ ]
 
 literal_int_op_parser :: CapParser BuildResults
 literal_int_op_parser = do
-    char '{'
+    _ <- char '{'
     inc_offset 1
     n_str <- many1 digit
     inc_offset $ toEnum $ length n_str
     let n :: Word = read n_str
-    char '}'
+    _ <- char '}'
     inc_offset 1
     return $ BuildResults 0 [ PushValue n ] [ ]
 
@@ -260,15 +260,15 @@ compare_op_parser
     <|> compare_gt_op 
     where
         compare_eq_op = do
-            char '='
+            _ <- char '='
             inc_offset 1
             return $ BuildResults 0 [ CompareEq ] [ ]
         compare_lt_op = do
-            char '<'
+            _ <- char '<'
             inc_offset 1
             return $ BuildResults 0 [ CompareLt ] [ ]
         compare_gt_op = do
-            char '>'
+            _ <- char '>'
             inc_offset 1
             return $ BuildResults 0 [ CompareGt ] [ ]
 
@@ -284,9 +284,9 @@ bytes_op_parser = do
 
 char_const_parser :: CapParser BuildResults
 char_const_parser = do
-    char '\''
+    _ <- char '\''
     char_value <- liftM (toEnum . fromEnum) anyChar 
-    char '\''
+    _ <- char '\''
     inc_offset 3
     return $ BuildResults 0 [ PushValue char_value ] [ ]
 

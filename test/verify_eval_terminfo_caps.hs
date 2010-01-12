@@ -98,8 +98,8 @@ main = do
                         liftIO $ putStrLn $ "\tevaluating cap: " ++ cap_name
                         case Terminfo.getCapability ti (Terminfo.tiGetStr cap_name) of
                             Just cap_def -> do
-                                verify ( "\teval cap " ++ cap_name ++ " -> " ++ show cap_def )
-                                       ( verify_eval_cap cap_def )
+                                _ <- verify ( "\teval cap " ++ cap_name ++ " -> " ++ show cap_def )
+                                            ( verify_eval_cap cap_def )
                                 return ()
                             Nothing      -> do
                                 return ()
