@@ -82,7 +82,7 @@ cap_op_required_bytes DecOut = do
     p <- pop
     return $ toEnum $ length $ show p
 cap_op_required_bytes CharOut = do
-    pop
+    _ <- pop
     return 1
 cap_op_required_bytes (PushParam pn) = do
     read_param pn >>= push
