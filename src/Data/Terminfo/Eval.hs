@@ -19,6 +19,7 @@ module Data.Terminfo.Eval ( cap_expression_required_bytes
 import Data.Marshalling
 import Data.Terminfo.Parse
 
+import Control.DeepSeq
 import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.State.Strict
@@ -154,7 +155,7 @@ serialize_cap_expression :: MonadIO m => CapExpression -> [CapParam] -> OutputBu
 serialize_cap_expression cap params out_ptr = do
     let params' = apply_param_ops cap params
     (!out_ptr', _) <- runStateT (runReaderT (serialize_cap_ops out_ptr (cap_ops cap)) (cap, params')) []
-    return out_ptr'
+    return $! out_ptr'
 
 serialize_cap_ops :: MonadIO m => OutputBuffer -> CapOps -> EvalT m OutputBuffer
 serialize_cap_ops out_ptr ops = foldM serialize_cap_op out_ptr ops
