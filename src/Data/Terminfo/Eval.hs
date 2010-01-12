@@ -172,7 +172,7 @@ serialize_cap_op out_ptr DecOut = do
     serialize_bytes out_bytes out_ptr
 serialize_cap_op out_ptr CharOut = do
     W# p <- pop
-    -- todo? Truncate the character value to a single byte?
+    -- XXX Truncate the character value to a single byte?
     let !out_byte = W8# (and# p 0xFF##)
         !out_ptr' = out_ptr `plusPtr` 1
     liftIO $ poke out_ptr out_byte
