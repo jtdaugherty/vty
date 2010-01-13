@@ -85,7 +85,7 @@ parse_cap_expression cap_string =
                         , param_count = out_param_count build_results
                         , param_ops = out_param_ops build_results
                         } 
-                        `using` rnf
+                        `using` rdeepseq
                      )
 
 type CapParser a = GenParser Char BuildState a 
