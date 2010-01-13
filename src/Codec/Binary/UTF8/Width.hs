@@ -1,7 +1,6 @@
 -- Copyright 2009 Corey O'Connor
 {-# OPTIONS_GHC -D_XOPEN_SOURCE -fno-cse #-}
 {-# LANGUAGE ForeignFunctionInterface, BangPatterns #-}
-{-# INCLUDE <wchar.h> #-}
 module Codec.Binary.UTF8.Width ( wcwidth
                                , wcswidth
                                )
