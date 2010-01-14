@@ -29,9 +29,11 @@ import Data.Array.Unboxed
 import Data.Bits ( (.|.), (.&.), xor )
 import Data.List 
 
+import Foreign.C.Types
 import Foreign.Ptr
 
 import GHC.Prim
+import GHC.Types
 import GHC.Word
 
 type EvalT m a = ReaderT (CapExpression,[CapParam]) (StateT [CapParam] m) a
@@ -158,11 +160,12 @@ serialize_cap_ops :: MonadIO m => OutputBuffer -> CapOps -> EvalT m OutputBuffer
 serialize_cap_ops out_ptr ops = foldM serialize_cap_op out_ptr ops
 
 serialize_cap_op :: MonadIO m => OutputBuffer -> CapOp -> EvalT m OutputBuffer
-serialize_cap_op out_ptr (Bytes offset c) = do
+serialize_cap_op out_ptr ( Bytes offset ( W8# byte_count ) ) = do
     (cap, _) <- ask
     let src_ptr = ptr_at_offset cap offset
-    liftIO $! memcpy out_ptr src_ptr ( toEnum $! fromEnum c )
-    return $! out_ptr `plusPtr` ( fromEnum c) 
+    let !i = I# ( word2Int# byte_count )
+    liftIO $! memcpy out_ptr src_ptr ( toEnum $! i ) 
+    return $! out_ptr `plusPtr` i
 serialize_cap_op out_ptr DecOut = do
     p <- pop
     let out_str = show p
