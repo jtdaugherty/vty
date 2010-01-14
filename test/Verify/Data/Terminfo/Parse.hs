@@ -103,8 +103,8 @@ collect_bytes e = concat [ bytes
 
 verify_bytes_equal out_bytes expected_bytes 
     = if out_bytes == expected_bytes
-        then liftResult succeeded
-        else liftResult $ failed 
+        then succeeded
+        else failed 
              { reason = "out_bytes [" 
                        ++ hex_dump ( listArray (0, toEnum $ length out_bytes - 1) out_bytes )
                        ++ "] /= expected_bytes ["

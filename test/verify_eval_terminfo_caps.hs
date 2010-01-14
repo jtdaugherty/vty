@@ -101,7 +101,7 @@ main = do
                         liftIO $ putStrLn $ "\tevaluating cap: " ++ cap_name
                         case Terminfo.getCapability ti (Terminfo.tiGetStr cap_name) of
                             Just cap_def -> do
-                                let parse_result = parse_cap_expression cap_def
+                                parse_result <- parse_cap_expression cap_def
                                 let test_name = "\teval cap " ++ cap_name ++ " -> " ++ show cap_def
                                 _ <- case parse_result of
                                     Left error -> verify test_name ( liftResult $ failed { reason = "prase error " ++ show error } )

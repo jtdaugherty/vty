@@ -75,15 +75,19 @@ terminal_instance in_ID = do
     let require_cap str 
             = case Terminfo.getCapability ti (Terminfo.tiGetStr str) of
                 Nothing -> fail $ "Terminal does not define required capability \"" ++ str ++ "\""
-                Just cap_str -> case parse_cap_expression cap_str of
-                    Left e -> fail $ show e
-                    Right cap -> return cap
+                Just cap_str -> do
+                    parse_result <- parse_cap_expression cap_str 
+                    case parse_result of 
+                        Left e -> fail $ show e
+                        Right cap -> return cap
         probe_cap cap_name 
             = case Terminfo.getCapability ti (Terminfo.tiGetStr cap_name) of
                 Nothing -> return Nothing
-                Just cap_str -> case parse_cap_expression cap_str of
-                    Left e -> fail $ show e
-                    Right cap -> return $ Just cap
+                Just cap_str -> do
+                    parse_result <- parse_cap_expression cap_str
+                    case parse_result of
+                        Left e -> fail $ show e
+                        Right cap -> return $ Just cap
     pure Term
         <*> pure in_ID
         <*> pure ti
@@ -114,9 +118,11 @@ current_display_attr_caps ti
     where probe_cap cap_name 
             = case Terminfo.getCapability ti (Terminfo.tiGetStr cap_name) of
                 Nothing -> return Nothing
-                Just cap_str -> case parse_cap_expression cap_str of
-                    Left e -> fail $ show e
-                    Right cap -> return $ Just cap
+                Just cap_str -> do
+                    parse_result <- parse_cap_expression cap_str
+                    case parse_result of
+                        Left e -> fail $ show e
+                        Right cap -> return $ Just cap
 
 instance Terminal Term where
     terminal_ID t = term_info_ID t ++ " :: TerminfoBased"
