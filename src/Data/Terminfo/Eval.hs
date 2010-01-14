@@ -154,6 +154,7 @@ cap_op_required_bytes CompareGt = do
     push $ if v_0 > v_1 then 1 else 0
     return 0
 
+{-# SPECIALIZE serialize_cap_expression :: CapExpression -> [ CapParam ] -> OutputBuffer -> IO OutputBuffer #-}
 serialize_cap_expression :: MonadIO m => CapExpression -> [CapParam] -> OutputBuffer -> m OutputBuffer
 serialize_cap_expression cap params out_ptr = do
     let params' = apply_param_ops cap params
