@@ -155,13 +155,13 @@ serialize_cap_ops :: MonadIO m => OutputBuffer -> CapOps -> EvalT m OutputBuffer
 serialize_cap_ops out_ptr ops = foldM serialize_cap_op out_ptr ops
 
 serialize_cap_op :: MonadIO m => OutputBuffer -> CapOp -> EvalT m OutputBuffer
-serialize_cap_op out_ptr ( Bytes !offset !byte_count !next_offset ) = do
-    (cap, _) <- ask
+serialize_cap_op !out_ptr ( Bytes !offset !byte_count !next_offset ) = do
+    ( !cap, _) <- ask
     let ( !start_ptr, _ ) = cap_bytes cap
         !src_ptr = start_ptr `plusPtr` offset
         !out_ptr' = out_ptr `plusPtr` next_offset
     liftIO $! memcpy out_ptr src_ptr byte_count
-    return out_ptr'
+    return $! out_ptr'
 serialize_cap_op out_ptr DecOut = do
     p <- pop
     let out_str = show p
