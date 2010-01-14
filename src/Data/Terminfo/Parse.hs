@@ -18,14 +18,13 @@ import Data.Array.Unboxed
 import Data.Monoid
 import Data.Word
 
+import Foreign.C.Types
 import Foreign.Marshal.Array
 import Foreign.Ptr
 
 import Text.ParserCombinators.Parsec
 
-type BytesLength = Word8
-type BytesOffset = Word8
-type CapBytes = ( Ptr Word8, Word )
+type CapBytes = ( Ptr Word8, CSize )
 
 data CapExpression = CapExpression
     { cap_ops :: !CapOps
@@ -43,7 +42,7 @@ type CapParam = Word
 
 type CapOps = [CapOp]
 data CapOp = 
-      Bytes !BytesOffset !BytesLength
+      Bytes !Int !CSize !Int
     | DecOut | CharOut
     -- This stores a 0-based index to the parameter. However the operation that implies this op is
     -- 1-based
@@ -60,7 +59,7 @@ data CapOp =
     deriving ( Show )
 
 instance NFData CapOp where
-    rnf (Bytes offset c) = rnf offset >| rnf c
+    rnf ( Bytes offset count next_offset ) = rnf offset
     rnf (PushParam !_pn) = ()
     rnf (PushValue !_v) = ()
     rnf (Conditional c_expr c_parts) = rnf c_expr >| rnf c_parts
@@ -116,7 +115,7 @@ literal_percent_parser = do
     _ <- char '%'
     start_offset <- getState >>= return . next_offset
     inc_offset 1
-    return $ BuildResults 0 [Bytes start_offset 1] []
+    return $ BuildResults 0 [Bytes start_offset 1 1] []
 
 param_op_parser :: CapParser BuildResults
 param_op_parser
@@ -286,11 +285,11 @@ bytes_op_parser :: CapParser BuildResults
 bytes_op_parser = do
     bytes <- many1 $ satisfy (/= '%')
     start_offset <- getState >>= return . next_offset
-    let !c = toEnum $ length bytes
+    let !c = length bytes
     !s <- getState
     let s' = s { next_offset = start_offset + c }
     setState s'
-    return $ BuildResults 0 [Bytes start_offset c] []
+    return $ BuildResults 0 [Bytes start_offset ( toEnum c ) c ] []
 
 char_const_parser :: CapParser BuildResults
 char_const_parser = do
@@ -301,10 +300,10 @@ char_const_parser = do
     return $ BuildResults 0 [ PushValue char_value ] [ ]
 
 data BuildState = BuildState 
-    { next_offset :: Word8
+    { next_offset :: Int
     } 
 
-inc_offset :: Word8 -> CapParser ()
+inc_offset :: Int -> CapParser ()
 inc_offset n = do
     s <- getState
     let s' = s { next_offset = next_offset s + n }

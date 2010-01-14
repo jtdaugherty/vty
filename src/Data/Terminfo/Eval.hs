@@ -61,11 +61,6 @@ apply_param_ops cap params = foldl apply_param_op params (param_ops cap)
 apply_param_op :: [CapParam] -> ParamOp -> [CapParam]
 apply_param_op params IncFirstTwo = map (+ 1) params
 
--- | range is 0-based offset into cap_bytes and count
-{-# INLINE ptr_at_offset #-}
-ptr_at_offset :: CapExpression -> Word8 -> Ptr Word8
-ptr_at_offset cap !offset = fst ( cap_bytes cap ) `plusPtr` ( fromEnum offset )
-
 cap_expression_required_bytes :: CapExpression -> [CapParam] -> Word
 cap_expression_required_bytes cap params = 
     let params' = apply_param_ops cap params
@@ -77,7 +72,7 @@ cap_ops_required_bytes ops = do
     return $ sum counts
 
 cap_op_required_bytes :: CapOp -> Eval Word
-cap_op_required_bytes (Bytes _ c) = return $ toEnum $ fromEnum c
+cap_op_required_bytes (Bytes _ _ c) = return $ toEnum c
 cap_op_required_bytes DecOut = do
     p <- pop
     return $ toEnum $ length $ show p
@@ -160,12 +155,13 @@ serialize_cap_ops :: MonadIO m => OutputBuffer -> CapOps -> EvalT m OutputBuffer
 serialize_cap_ops out_ptr ops = foldM serialize_cap_op out_ptr ops
 
 serialize_cap_op :: MonadIO m => OutputBuffer -> CapOp -> EvalT m OutputBuffer
-serialize_cap_op out_ptr ( Bytes offset ( W8# byte_count ) ) = do
+serialize_cap_op out_ptr ( Bytes !offset !byte_count !next_offset ) = do
     (cap, _) <- ask
-    let src_ptr = ptr_at_offset cap offset
-    let !i = I# ( word2Int# byte_count )
-    liftIO $! memcpy out_ptr src_ptr ( toEnum $! i ) 
-    return $! out_ptr `plusPtr` i
+    let ( !start_ptr, _ ) = cap_bytes cap
+        !src_ptr = start_ptr `plusPtr` offset
+        !out_ptr' = out_ptr `plusPtr` next_offset
+    liftIO $! memcpy out_ptr src_ptr byte_count
+    return out_ptr'
 serialize_cap_op out_ptr DecOut = do
     p <- pop
     let out_str = show p
