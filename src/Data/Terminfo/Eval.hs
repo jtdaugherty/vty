@@ -5,7 +5,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# OPTIONS_GHC -funbox-strict-fields -O #-}
+{-# OPTIONS_GHC -funbox-strict-fields #-}
 {- Evaluates the paramaterized terminfo string capability with the given parameters.
  -
  - todo: This can be greatly simplified.

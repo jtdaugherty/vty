@@ -97,6 +97,6 @@ Extra-Source-Files: test/Makefile
                     cbits/set_term_timing.c
                     cbits/gwinsz.h
 
-ghc-options:         -funbox-strict-fields -Wall -fno-full-laziness -fspec-constr
-ghc-prof-options:    -funbox-strict-fields -caf-all -Wall -fno-full-laziness -fspec-constr
+ghc-options:         -O2 -funbox-strict-fields -Wall -fno-full-laziness -fspec-constr
+ghc-prof-options:    -O2 -funbox-strict-fields -caf-all -Wall -fno-full-laziness -fspec-constr
 
