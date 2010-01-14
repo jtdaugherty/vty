@@ -111,19 +111,19 @@ set_cursor_pos :: MonadIO m => TerminalHandle -> Word -> Word -> m ()
 set_cursor_pos t x y = do
     bounds <- display_bounds t
     d <- display_context t bounds
-    marshall_to_terminal t (move_cursor_required_bytes d x y) (serialize_move_cursor d x y)
+    liftIO $ marshall_to_terminal t (move_cursor_required_bytes d x y) (serialize_move_cursor d x y)
 
 -- | Hides the cursor
 hide_cursor :: MonadIO m => TerminalHandle -> m ()
 hide_cursor t = do
     bounds <- display_bounds t
     d <- display_context t bounds
-    marshall_to_terminal t (hide_cursor_required_bytes d) (serialize_hide_cursor d) 
+    liftIO $ marshall_to_terminal t (hide_cursor_required_bytes d) (serialize_hide_cursor d) 
     
 -- | Shows the cursor
 show_cursor :: MonadIO m => TerminalHandle -> m ()
 show_cursor t = do
     bounds <- display_bounds t
     d <- display_context t bounds
-    marshall_to_terminal t (show_cursor_required_bytes d) (serialize_show_cursor d) 
+    liftIO $ marshall_to_terminal t (show_cursor_required_bytes d) (serialize_show_cursor d) 
 

@@ -53,7 +53,7 @@ data DisplayAttrCaps = DisplayAttrCaps
     , enter_bold_mode :: Maybe CapExpression
     }
     
-marshall_cap_to_terminal :: MonadIO m => Term -> (Term -> CapExpression) -> [CapParam] -> m ()
+marshall_cap_to_terminal :: Term -> (Term -> CapExpression) -> [CapParam] -> IO ()
 marshall_cap_to_terminal t cap_selector cap_params = do
     marshall_to_terminal t ( cap_expression_required_bytes (cap_selector t) cap_params )
                            ( serialize_cap_expression (cap_selector t) cap_params )
@@ -128,25 +128,25 @@ instance Terminal Term where
     terminal_ID t = term_info_ID t ++ " :: TerminfoBased"
 
     release_terminal t = do 
-        marshall_cap_to_terminal t set_default_attr []
-        marshall_cap_to_terminal t cnorm []
+        liftIO $ marshall_cap_to_terminal t set_default_attr []
+        liftIO $ marshall_cap_to_terminal t cnorm []
         return ()
 
     reserve_display t = do
         if (isJust $ smcup t)
-            then marshall_cap_to_terminal t (fromJust . smcup) []
+            then liftIO $ marshall_cap_to_terminal t (fromJust . smcup) []
             else return ()
         -- Screen on OS X does not appear to support smcup?
         -- To approximate the expected behavior: clear the screen and then move the mouse to the
         -- home position.
-        marshall_cap_to_terminal t clear_screen []
+        liftIO $ marshall_cap_to_terminal t clear_screen []
         return ()
 
     release_display t = do
         if (isJust $ rmcup t)
-            then marshall_cap_to_terminal t (fromJust . rmcup) []
+            then liftIO $ marshall_cap_to_terminal t (fromJust . rmcup) []
             else return ()
-        marshall_cap_to_terminal t cnorm []
+        liftIO $ marshall_cap_to_terminal t cnorm []
         return ()
 
     display_terminal_instance t b c = do
@@ -166,8 +166,8 @@ instance Terminal Term where
     output_byte_buffer _t out_ptr out_byte_count = do
         if out_byte_count == 0
             then return ()
-            else liftIO $ hPutBuf stdout out_ptr (fromEnum out_byte_count) 
-        liftIO $ hFlush stdout
+            else hPutBuf stdout out_ptr (fromEnum out_byte_count) 
+        hFlush stdout
 
 foreign import ccall "gwinsz.h c_get_window_size" c_get_window_size :: IO CLong
 
@@ -190,17 +190,17 @@ instance DisplayTerminal DisplayContext where
     move_cursor_required_bytes d x y 
         = cap_expression_required_bytes (cup $ term d) [y, x]
     serialize_move_cursor d x y out_ptr 
-        = serialize_cap_expression (cup $ term d) [y, x] out_ptr
+        = liftIO $ serialize_cap_expression (cup $ term d) [y, x] out_ptr
 
     show_cursor_required_bytes d 
         = cap_expression_required_bytes (cnorm $ term d) []
     serialize_show_cursor d out_ptr 
-        = serialize_cap_expression (cnorm $ term d) [] out_ptr
+        = liftIO $ serialize_cap_expression (cnorm $ term d) [] out_ptr
 
     hide_cursor_required_bytes d 
         = cap_expression_required_bytes (civis $ term d) []
     serialize_hide_cursor d out_ptr 
-        = serialize_cap_expression (civis $ term d) [] out_ptr
+        = liftIO $ serialize_cap_expression (civis $ term d) [] out_ptr
 
     -- Instead of evaluating all the rules related to setting display attributes twice (once in
     -- required bytes and again in serialize) or some memoization scheme just return a size
@@ -242,16 +242,16 @@ instance DisplayTerminal DisplayContext where
                         EnterExitSeq caps 
                             -- only way to reset a color to the defaults
                             ->  serialize_default_attr d out_ptr
-                            >>= (\out_ptr' -> foldM (\ptr cap -> serialize_cap_expression cap [] ptr) out_ptr' caps)
+                            >>= (\out_ptr' -> liftIO $ foldM (\ptr cap -> serialize_cap_expression cap [] ptr) out_ptr' caps)
                             >>= set_colors
                         SetState state
                             -- implicitly resets the colors to the defaults
-                            ->  serialize_cap_expression ( fromJust $ set_attr_states 
+                            ->  liftIO $ serialize_cap_expression ( fromJust $ set_attr_states 
                                                                     $ display_attr_caps 
                                                                     $ term d 
-                                                         )
-                                                         ( sgr_args_for_state state )
-                                                         out_ptr
+                                                                  )
+                                                                  ( sgr_args_for_state state )
+                                                                  out_ptr
                             >>= set_colors
             -- Otherwise the display colors are not changing or changing between two non-default
             -- points.
@@ -268,28 +268,28 @@ instance DisplayTerminal DisplayContext where
                         -- Changes the style and color states according to the differences with the
                         -- currently applied states.
                         EnterExitSeq caps 
-                            ->   foldM (\ptr cap -> serialize_cap_expression cap [] ptr) out_ptr caps
+                            ->   liftIO ( foldM (\ptr cap -> serialize_cap_expression cap [] ptr) out_ptr caps )
                             >>=  apply_color_diff set_fore_color ( fore_color_diff diffs )
                             >>=  apply_color_diff set_back_color ( back_color_diff diffs )
                         SetState state
                             -- implicitly resets the colors to the defaults
-                            ->  serialize_cap_expression ( fromJust $ set_attr_states 
-                                                                    $ display_attr_caps
-                                                                    $ term d
-                                                         )
-                                                         ( sgr_args_for_state state )
-                                                         out_ptr
+                            ->  liftIO $ serialize_cap_expression ( fromJust $ set_attr_states 
+                                                                             $ display_attr_caps
+                                                                             $ term d
+                                                                  )
+                                                                  ( sgr_args_for_state state )
+                                                                  out_ptr
                             >>= set_colors
         where 
             attr = fix_display_attr prev_attr req_attr
             set_colors ptr = do
                 ptr' <- case fixed_fore_color attr of
-                    Just c -> serialize_cap_expression ( set_fore_color $ term d ) 
+                    Just c -> liftIO $ serialize_cap_expression ( set_fore_color $ term d ) 
                                                        [ ansi_color_index c ]
                                                        ptr
                     Nothing -> return ptr
                 ptr'' <- case fixed_back_color attr of
-                    Just c -> serialize_cap_expression ( set_back_color $ term d ) 
+                    Just c -> liftIO $ serialize_cap_expression ( set_back_color $ term d ) 
                                                        [ ansi_color_index c ]
                                                        ptr'
                     Nothing -> return ptr'
@@ -299,14 +299,14 @@ instance DisplayTerminal DisplayContext where
             apply_color_diff _f ColorToDefault _ptr
                 = fail "ColorToDefault is not a possible case for apply_color_diffs"
             apply_color_diff f ( SetColor c ) ptr
-                = serialize_cap_expression ( f $ term d ) 
-                                           [ ansi_color_index c ]
-                                           ptr
+                = liftIO $ serialize_cap_expression ( f $ term d ) 
+                                                    [ ansi_color_index c ]
+                                                    ptr
 
     default_attr_required_bytes d 
         = cap_expression_required_bytes (set_default_attr $ term d) []
     serialize_default_attr d out_ptr = do
-        serialize_cap_expression ( set_default_attr $ term d ) [] out_ptr
+        liftIO $ serialize_cap_expression ( set_default_attr $ term d ) [] out_ptr
 
 ansi_color_index :: Color -> Word
 ansi_color_index (ISOColor v) = toEnum $ fromEnum v

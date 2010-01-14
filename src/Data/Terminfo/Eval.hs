@@ -44,6 +44,7 @@ data EvalState = EvalState
 type EvalT m a = StateT EvalState m a
 type Eval a = EvalT Identity a
 
+{-# SPECIALIZE pop :: EvalT IO CapParam #-}
 pop :: Monad m => EvalT m CapParam
 pop = do
     s <- get
@@ -52,11 +53,13 @@ pop = do
     put s'
     return v
 
+{-# SPECIALIZE read_param :: Word -> EvalT IO CapParam #-}
 read_param :: Monad m => Word -> EvalT m CapParam
 read_param pn = do
     EvalState _ _ !params <- get
     return $! genericIndex params pn
 
+{-# SPECIALIZE push :: CapParam -> EvalT IO () #-}
 push :: Monad m => CapParam -> EvalT m ()
 push !v = do
     s <- get
@@ -154,8 +157,7 @@ cap_op_required_bytes CompareGt = do
     push $ if v_0 > v_1 then 1 else 0
     return 0
 
-{-# SPECIALIZE serialize_cap_expression :: CapExpression -> [ CapParam ] -> OutputBuffer -> IO OutputBuffer #-}
-serialize_cap_expression :: MonadIO m => CapExpression -> [CapParam] -> OutputBuffer -> m OutputBuffer
+serialize_cap_expression :: CapExpression -> [CapParam] -> OutputBuffer -> IO OutputBuffer
 serialize_cap_expression cap params out_ptr = do
     let params' = apply_param_ops cap params
         s_0 = EvalState [] cap params'

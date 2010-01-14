@@ -81,7 +81,7 @@ class Terminal t where
 
     -- | Output the byte buffer of the specified size to the terminal device.  The size is equal to
     -- end_ptr - start_ptr
-    output_byte_buffer :: MonadIO m => t -> OutputBuffer -> Word -> m ()
+    output_byte_buffer :: t -> OutputBuffer -> Word -> IO ()
 
 instance Terminal TerminalHandle where
     terminal_ID (TerminalHandle t _) = terminal_ID t
@@ -332,10 +332,10 @@ serialize_span_op _d (TextSpan _ _ str) out_ptr fattr = do
     out_ptr' <- serialize_utf8_text str out_ptr
     return (out_ptr', fattr)
 
-marshall_to_terminal :: ( MonadIO m, Terminal t )
-                     => t -> Word -> (Ptr Word8 -> m (Ptr Word8)) -> m ()
+marshall_to_terminal :: ( Terminal t )
+                     => t -> Word -> (Ptr Word8 -> IO (Ptr Word8)) -> IO ()
 marshall_to_terminal t c f = do
-    start_ptr <- liftIO $ mallocBytes (fromEnum c)
+    start_ptr <- mallocBytes (fromEnum c)
     -- 
     -- todo: capture exceptions?
     end_ptr <- f start_ptr
@@ -343,7 +343,7 @@ marshall_to_terminal t c f = do
         count | count < 0 -> fail "End pointer before start pointer."
               | toEnum count > c -> fail $ "End pointer past end of buffer by " ++ show (toEnum count - c)
               | otherwise -> output_byte_buffer t start_ptr (toEnum count)
-    liftIO $ free start_ptr
+    free start_ptr
     return ()
 
 data CursorOutputMap = CursorOutputMap
