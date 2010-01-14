@@ -2,6 +2,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -D_XOPEN_SOURCE=500 #-}
 module Graphics.Vty.Terminal.TerminfoBased ( terminal_instance
                                            )
     where
@@ -22,7 +23,8 @@ import Data.Bits ( (.&.) )
 import Data.Maybe ( isJust, isNothing, fromJust )
 import Data.Word
 
-import Foreign.C.Types ( CLong )
+import Foreign.Ptr
+import Foreign.C.Types ( CLong, CSize )
 
 import qualified System.Console.Terminfo as Terminfo
 import System.IO
@@ -164,12 +166,17 @@ instance Terminal Term where
 
     -- Output the byte buffer of the specified size to the terminal device.
     output_byte_buffer _t out_ptr out_byte_count = do
-        if out_byte_count == 0
-            then return ()
-            else hPutBuf stdout out_ptr (fromEnum out_byte_count) 
+        -- flush is required *before* the c_output_byte_buffer call
+        -- otherwise there may still be data in GHC's internal stdout buffer.
         hFlush stdout
+        if out_byte_count /= 0 
+            then c_output_byte_buffer out_ptr ( toEnum $! fromEnum out_byte_count )
+            else return ()
 
-foreign import ccall "gwinsz.h c_get_window_size" c_get_window_size :: IO CLong
+foreign import ccall unsafe "output_buffer.h stdout_output_buffer" c_output_byte_buffer 
+    :: Ptr Word8 -> CSize -> IO ()
+foreign import ccall "gwinsz.h c_get_window_size" c_get_window_size 
+    :: IO CLong
 
 get_window_size :: IO (Int,Int)
 get_window_size = do 

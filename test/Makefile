@@ -26,7 +26,7 @@ $(VERIF_TESTS)
 $(shell mkdir -p objects )
 
 # TODO: Tests should also be buildable referencing the currently installed vty
-GHC_ARGS=--make -i../src -package parallel -package deepseq-1.1.0.0 -hide-package transformers -hide-package monads-fd -hide-package monads-tf -package QuickCheck-2.1.0.2 -ignore-package vty ../cbits/gwinsz.c ../cbits/set_term_timing.c  ../cbits/mk_wcwidth.c -O -funbox-strict-fields -Wall -threaded -fno-full-laziness -fspec-constr -odir objects -hidir objects
+GHC_ARGS=--make -i../src -package parallel -package deepseq-1.1.0.0 -hide-package transformers -hide-package monads-fd -hide-package monads-tf -package QuickCheck-2.1.0.2 -ignore-package vty ../cbits/gwinsz.c ../cbits/output_buffer.c ../cbits/set_term_timing.c  ../cbits/mk_wcwidth.c -O -funbox-strict-fields -Wall -threaded -fno-full-laziness -fspec-constr -odir objects -hidir objects
 
 GHC_PROF_ARGS=-prof -auto-all $(GHC_ARGS)
 
