@@ -21,7 +21,6 @@ import Data.Terminfo.Parse
 
 import Control.DeepSeq
 import Control.Monad.Identity
-import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Control.Monad.Trans
 
@@ -36,24 +35,33 @@ import GHC.Prim
 import GHC.Types
 import GHC.Word
 
-type EvalT m a = ReaderT (CapExpression,[CapParam]) (StateT [CapParam] m) a
+data EvalState = EvalState
+    { eval_stack :: ![ CapParam ]
+    , eval_expression :: !CapExpression
+    , eval_params :: ![ CapParam ]
+    }
+
+type EvalT m a = StateT EvalState m a
 type Eval a = EvalT Identity a
 
-pop :: MonadState [CapParam] m => m CapParam
+pop :: Monad m => EvalT m CapParam
 pop = do
-    v : stack <- get
-    put stack
+    s <- get
+    let v : stack' = eval_stack s
+        s' = s { eval_stack = stack' }
+    put s'
     return v
 
-read_param :: MonadReader (CapExpression, [CapParam]) m => Word -> m CapParam
+read_param :: Monad m => Word -> EvalT m CapParam
 read_param pn = do
-    (_,params) <- ask
+    EvalState _ _ !params <- get
     return $! genericIndex params pn
 
-push :: MonadState [CapParam] m => CapParam -> m ()
+push :: Monad m => CapParam -> EvalT m ()
 push !v = do
-    stack <- get
-    put (v : stack)
+    s <- get
+    let s' = s { eval_stack = v : eval_stack s }
+    put s'
 
 apply_param_ops :: CapExpression -> [CapParam] -> [CapParam]
 apply_param_ops cap params = foldl apply_param_op params (param_ops cap)
@@ -64,7 +72,8 @@ apply_param_op params IncFirstTwo = map (+ 1) params
 cap_expression_required_bytes :: CapExpression -> [CapParam] -> Word
 cap_expression_required_bytes cap params = 
     let params' = apply_param_ops cap params
-    in fst $! runIdentity $ runStateT (runReaderT (cap_ops_required_bytes $ cap_ops cap) (cap, params')) []
+        s_0 = EvalState [] cap params'
+    in fst $! runIdentity $! runStateT ( cap_ops_required_bytes $! cap_ops cap ) s_0
 
 cap_ops_required_bytes :: CapOps -> Eval Word
 cap_ops_required_bytes ops = do
@@ -148,7 +157,8 @@ cap_op_required_bytes CompareGt = do
 serialize_cap_expression :: MonadIO m => CapExpression -> [CapParam] -> OutputBuffer -> m OutputBuffer
 serialize_cap_expression cap params out_ptr = do
     let params' = apply_param_ops cap params
-    (!out_ptr', _) <- runStateT (runReaderT (serialize_cap_ops out_ptr (cap_ops cap)) (cap, params')) []
+        s_0 = EvalState [] cap params'
+    (!out_ptr', _) <- runStateT ( serialize_cap_ops out_ptr (cap_ops cap) ) s_0
     return $! out_ptr'
 
 serialize_cap_ops :: MonadIO m => OutputBuffer -> CapOps -> EvalT m OutputBuffer
@@ -156,7 +166,7 @@ serialize_cap_ops out_ptr ops = foldM serialize_cap_op out_ptr ops
 
 serialize_cap_op :: MonadIO m => OutputBuffer -> CapOp -> EvalT m OutputBuffer
 serialize_cap_op !out_ptr ( Bytes !offset !byte_count !next_offset ) = do
-    ( !cap, _) <- ask
+    EvalState _ !cap _ <- get
     let ( !start_ptr, _ ) = cap_bytes cap
         !src_ptr = start_ptr `plusPtr` offset
         !out_ptr' = out_ptr `plusPtr` next_offset
