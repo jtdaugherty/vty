@@ -44,15 +44,15 @@ put_attr_change t c = do
     mfattr <- liftIO $ known_fattr <$> readIORef ( state_ref t )
     fattr <- case mfattr of
                 Nothing -> do
-                    marshall_to_terminal t (default_attr_required_bytes d) (serialize_default_attr d) 
+                    liftIO $ marshall_to_terminal t (default_attr_required_bytes d) (serialize_default_attr d) 
                     return $ FixedAttr default_style_mask Nothing Nothing
                 Just v -> return v
     let attr = execState c current_attr
         attr' = limit_attr_for_display d attr
         fattr' = fix_display_attr fattr attr'
         diffs = display_attr_diffs fattr fattr'
-    marshall_to_terminal t ( attr_required_bytes d fattr attr' diffs )
-                           ( serialize_set_attr d fattr attr' diffs )
+    liftIO $ marshall_to_terminal t ( attr_required_bytes d fattr attr' diffs )
+                                    ( serialize_set_attr d fattr attr' diffs )
     liftIO $ modifyIORef ( state_ref t ) $ \s -> s { known_fattr = Just fattr' }
     inline_hack d
 

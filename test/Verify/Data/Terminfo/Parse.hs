@@ -102,7 +102,7 @@ bytes_for_range cap offset c
 
 collect_bytes :: CapExpression -> [Word8]
 collect_bytes e = concat [ bytes 
-                         | Bytes offset c <- cap_ops e
+                         | Bytes offset c _ <- cap_ops e
                          , let bytes = bytes_for_range e offset c
                          ]
     
