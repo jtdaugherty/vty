@@ -164,10 +164,10 @@ serialize_cap_expression cap params out_ptr = do
     (!out_ptr', _) <- runStateT ( serialize_cap_ops out_ptr (cap_ops cap) ) s_0
     return $! out_ptr'
 
-serialize_cap_ops :: MonadIO m => OutputBuffer -> CapOps -> EvalT m OutputBuffer
+serialize_cap_ops :: OutputBuffer -> CapOps -> EvalT IO OutputBuffer
 serialize_cap_ops out_ptr ops = foldM serialize_cap_op out_ptr ops
 
-serialize_cap_op :: MonadIO m => OutputBuffer -> CapOp -> EvalT m OutputBuffer
+serialize_cap_op :: OutputBuffer -> CapOp -> EvalT IO OutputBuffer
 serialize_cap_op !out_ptr ( Bytes !offset !byte_count !next_offset ) = do
     EvalState _ !cap _ <- get
     let ( !start_ptr, _ ) = cap_bytes cap
