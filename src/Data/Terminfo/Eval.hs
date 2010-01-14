@@ -12,10 +12,10 @@
  -}
 module Data.Terminfo.Eval ( cap_expression_required_bytes
                           , serialize_cap_expression
-                          , bytes_for_range
                           )
     where
 
+import Data.ByteString.Internal ( memcpy ) 
 import Data.Marshalling
 import Data.Terminfo.Parse
 
@@ -28,6 +28,8 @@ import Control.Monad.Trans
 import Data.Array.Unboxed
 import Data.Bits ( (.|.), (.&.), xor )
 import Data.List 
+
+import Foreign.Ptr
 
 import GHC.Prim
 import GHC.Word
@@ -58,14 +60,9 @@ apply_param_op :: [CapParam] -> ParamOp -> [CapParam]
 apply_param_op params IncFirstTwo = map (+ 1) params
 
 -- | range is 0-based offset into cap_bytes and count
--- 
--- todo: The returned list is not assured to have a length st. length == count
-bytes_for_range :: CapExpression -> Word8 -> Word8 -> [Word8]
-bytes_for_range cap !offset !count 
-    = take (fromEnum count) 
-    $ drop (fromEnum offset) 
-    $ elems 
-    $ cap_bytes cap
+{-# INLINE ptr_at_offset #-}
+ptr_at_offset :: CapExpression -> Word8 -> Ptr Word8
+ptr_at_offset cap !offset = fst ( cap_bytes cap ) `plusPtr` ( fromEnum offset )
 
 cap_expression_required_bytes :: CapExpression -> [CapParam] -> Word
 cap_expression_required_bytes cap params = 
@@ -163,8 +160,9 @@ serialize_cap_ops out_ptr ops = foldM serialize_cap_op out_ptr ops
 serialize_cap_op :: MonadIO m => OutputBuffer -> CapOp -> EvalT m OutputBuffer
 serialize_cap_op out_ptr (Bytes offset c) = do
     (cap, _) <- ask
-    let out_bytes = bytes_for_range cap offset c
-    serialize_bytes out_bytes out_ptr
+    let src_ptr = ptr_at_offset cap offset
+    liftIO $! memcpy out_ptr src_ptr ( toEnum $! fromEnum c )
+    return $! out_ptr `plusPtr` ( fromEnum c) 
 serialize_cap_op out_ptr DecOut = do
     p <- pop
     let out_str = show p

@@ -4,8 +4,6 @@ module Main where
 
 import Prelude hiding ( catch )
 
-import Data.Terminfo.Eval ( bytes_for_range )
-
 import qualified System.Console.Terminfo as Terminfo
 
 import Verify.Data.Terminfo.Parse

@@ -9,6 +9,7 @@ module Data.Terminfo.Parse ( module Data.Terminfo.Parse
                            )
     where
 
+import Control.Applicative ( Applicative(..), pure, (<*>) )  
 import Control.Monad ( liftM )
 import Control.Monad.Trans
 import Control.Parallel.Strategies
@@ -17,11 +18,14 @@ import Data.Array.Unboxed
 import Data.Monoid
 import Data.Word
 
+import Foreign.Marshal.Array
+import Foreign.Ptr
+
 import Text.ParserCombinators.Parsec
 
 type BytesLength = Word8
 type BytesOffset = Word8
-type CapBytes = UArray Word8 Word8
+type CapBytes = ( Ptr Word8, Word )
 
 data CapExpression = CapExpression
     { cap_ops :: !CapOps
@@ -67,7 +71,11 @@ data ParamOp =
       IncFirstTwo
     deriving ( Show )
 
-parse_cap_expression :: MonadIO m => String -> m ( Either ParseError CapExpression )
+parse_cap_expression :: ( Applicative m
+                        , MonadIO m
+                        )
+                     => String 
+                     -> m ( Either ParseError CapExpression )
 parse_cap_expression cap_string = 
     let v = runParser cap_expression_parser
                            initial_build_state
@@ -75,21 +83,20 @@ parse_cap_expression cap_string =
                            cap_string 
     in case v of
         Left e -> return $ Left e
-        Right build_results -> 
-            return 
-                $! Right 
-                $! ( CapExpression
-                        { cap_ops = out_cap_ops build_results
-                        -- The cap bytes are the lower 8 bits of the input string's characters.
-                        -- \todo Verify the input string actually contains an 8bit byte per character.
-                        , cap_bytes = listArray (0, toEnum $ length cap_string - 1) 
-                                                $ map (toEnum . fromEnum) cap_string
-                        , source_string = cap_string
-                        , param_count = out_param_count build_results
-                        , param_ops = out_param_ops build_results
-                        } 
-                        `using` rdeepseq
-                   )
+        Right build_results -> pure Right <*> construct_cap_expression cap_string build_results
+
+construct_cap_expression cap_string build_results = do
+    byte_array <- liftIO $ newArray (map ( toEnum . fromEnum ) cap_string )
+    let expr = CapExpression
+                { cap_ops = out_cap_ops build_results
+                -- The cap bytes are the lower 8 bits of the input string's characters.
+                -- \todo Verify the input string actually contains an 8bit byte per character.
+                , cap_bytes = ( byte_array, toEnum $! length cap_string )
+                , source_string = cap_string
+                , param_count = out_param_count build_results
+                , param_ops = out_param_ops build_results
+                } 
+    return $! expr `using` rdeepseq
 
 type CapParser a = GenParser Char BuildState a 
 

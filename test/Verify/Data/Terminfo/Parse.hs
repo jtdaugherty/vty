@@ -16,11 +16,11 @@ import Numeric
 instance Show CapExpression where
     show c 
         = "CapExpression { " ++ show (cap_ops c) ++ " }"
-        ++ " <- [" ++ hex_dump (cap_bytes c) ++ "]"
+        ++ " <- [" ++ hex_dump ( map ( toEnum . fromEnum ) $! source_string c ) ++ "]"
         ++ " <= " ++ show (source_string c) 
 
-hex_dump :: CapBytes -> String
-hex_dump bytes = foldr (\b s -> showHex b s) "" $ elems bytes
+hex_dump :: [Word8] -> String
+hex_dump bytes = foldr (\b s -> showHex b s) "" bytes
 
 data NonParamCapString = NonParamCapString String
     deriving Show
@@ -95,20 +95,27 @@ is_bytes_op :: CapOp -> Bool
 is_bytes_op (Bytes {}) = True
 -- is_bytes_op _ = False
 
+bytes_for_range cap offset c
+    = take (fromEnum c)
+    $ drop (fromEnum offset)
+    $ ( map ( toEnum . fromEnum ) $! source_string cap )
+
 collect_bytes :: CapExpression -> [Word8]
 collect_bytes e = concat [ bytes 
                          | Bytes offset c <- cap_ops e
                          , let bytes = bytes_for_range e offset c
                          ]
+    
 
+verify_bytes_equal :: [Word8] -> [Word8] -> Result
 verify_bytes_equal out_bytes expected_bytes 
     = if out_bytes == expected_bytes
         then succeeded
         else failed 
              { reason = "out_bytes [" 
-                       ++ hex_dump ( listArray (0, toEnum $ length out_bytes - 1) out_bytes )
+                       ++ hex_dump out_bytes
                        ++ "] /= expected_bytes ["
-                       ++ hex_dump ( listArray (0, toEnum $ length expected_bytes - 1) expected_bytes )
+                       ++ hex_dump expected_bytes
                        ++ "]"
              }
 
