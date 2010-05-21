@@ -45,7 +45,7 @@ Library
                 Other-Modules:          System.Console.ANSI.Unix
         
         if flag(splitBase)
-                Build-Depends:          base >= 3
+                Build-Depends:          base >= 3 && < 5
         else
                 Build-Depends:          base < 3
         
