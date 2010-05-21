@@ -45,9 +45,11 @@ import Control.Exception (bracket)
 
 import Foreign.StablePtr
 
-import GHC.IOBase (Handle(..), Handle__(..), FD)
+import GHC.IOBase (Handle(..), Handle__(..))
+import qualified GHC.IOBase as IOBase (FD) -- Just an Int32
 
 #if __GLASGOW_HASKELL__ >= 612
+import GHC.IO.FD (FD(..)) -- A wrapper around an Int32
 import Data.Typeable
 #endif
 
@@ -285,7 +287,7 @@ scrollConsoleScreenBuffer handle scroll_rectangle mb_clip_rectangle destination_
 
 
 -- This essential function comes from msvcrt.  It's OK to depend on msvcrt since GHC's base package does.
-foreign import ccall unsafe "_get_osfhandle" cget_osfhandle :: FD -> IO HANDLE
+foreign import ccall unsafe "_get_osfhandle" cget_osfhandle :: IOBase.FD -> IO HANDLE
 
 -- | This bit is all highly dubious.  The problem is that we want to output ANSI to arbitrary Handles rather than forcing
 -- people to use stdout.  However, the Windows ANSI emulator needs a Windows HANDLE to work it's magic, so we need to be able
@@ -307,7 +309,8 @@ withHandleToHANDLE haskell_handle action =
 #if __GLASGOW_HASKELL__ < 612
         fd <- fmap haFD $ readMVar write_handle_mvar
 #else
-        Just fd <- fmap (\(Handle__ { haDevice = dev }) -> cast dev) $ readMVar write_handle_mvar
+        --readMVar write_handle_mvar >>= \(Handle__ { haDevice = dev }) -> print (typeOf dev)
+        Just fd <- fmap (\(Handle__ { haDevice = dev }) -> fmap fdFD (cast dev)) $ readMVar write_handle_mvar
 #endif
 
         -- Finally, turn that (C-land) FD into a HANDLE using msvcrt
