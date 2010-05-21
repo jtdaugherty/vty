@@ -47,6 +47,10 @@ import Foreign.StablePtr
 
 import GHC.IOBase (Handle(..), Handle__(..), FD)
 
+#if __GLASGOW_HASKELL__ >= 612
+import Data.Typeable
+#endif
+
 
 -- Some Windows types missing from System.Win32
 type SHORT = CShort
@@ -300,8 +304,12 @@ withHandleToHANDLE haskell_handle action =
                 DuplexHandle _ _ handle_mvar -> handle_mvar -- This is "write" MVar, we could also take the "read" one
         
         -- Get the FD from the algebraic data type
+#if __GLASGOW_HASKELL__ < 612
         fd <- fmap haFD $ readMVar write_handle_mvar
-        
+#else
+        Just fd <- fmap (\(Handle__ { haDevice = dev }) -> cast dev) $ readMVar write_handle_mvar
+#endif
+
         -- Finally, turn that (C-land) FD into a HANDLE using msvcrt
         windows_handle <- cget_osfhandle fd
         
