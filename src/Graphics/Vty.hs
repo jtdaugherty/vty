@@ -93,16 +93,20 @@ intMkVty kvar fend t = do
     let inner_update in_pic = do
             b <- display_bounds t
             let DisplayRegion w h = b
-                Cursor x y = pic_cursor in_pic
-                x'      = case x of
-                            _ | x >= 0x80000000 -> 0
-                              | x >= w          -> w - 1
-                              | otherwise       -> x
-                y'      = case y of
-                            _ | y >= 0x80000000 -> 0
-                              | y >= h          -> h - 1
-                              | otherwise       -> y
-                in_pic' = in_pic { pic_cursor = Cursor x' y' }
+                cursor  = pic_cursor in_pic
+                in_pic' = case cursor of
+                  Cursor x y ->
+                    let
+                       x'      = case x of
+                                   _ | x >= 0x80000000 -> 0
+                                     | x >= w          -> w - 1
+                                     | otherwise       -> x
+                       y'      = case y of
+                                   _ | y >= 0x80000000 -> 0
+                                     | y >= h          -> h - 1
+                                     | otherwise       -> y
+                     in in_pic { pic_cursor = Cursor x' y' }
+                  _          -> in_pic
             mlast_update <- readIORef last_update_ref
             update_data <- case mlast_update of
                 Nothing -> do
