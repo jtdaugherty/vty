@@ -92,23 +92,34 @@ intMkVty kvar fend t = do
 
     let inner_update in_pic = do
             b <- display_bounds t
+            let DisplayRegion w h = b
+                Cursor x y = pic_cursor in_pic
+                x'      = case x of
+                            _ | x >= 0x80000000 -> 0
+                              | x >= w          -> w - 1
+                              | otherwise       -> x
+                y'      = case y of
+                            _ | y >= 0x80000000 -> 0
+                              | y >= h          -> h - 1
+                              | otherwise       -> y
+                in_pic' = in_pic { pic_cursor = Cursor x' y' }
             mlast_update <- readIORef last_update_ref
             update_data <- case mlast_update of
                 Nothing -> do
                     d <- display_context t b
-                    output_picture d in_pic
+                    output_picture d in_pic'
                     return (b, d)
                 Just (last_bounds, last_context) -> do
                     if b /= last_bounds
                         then do
                             d <- display_context t b
-                            output_picture d in_pic
+                            output_picture d in_pic'
                             return (b, d)
                         else do
-                            output_picture last_context in_pic
+                            output_picture last_context in_pic'
                             return (b, last_context)
             writeIORef last_update_ref $ Just update_data
-            writeIORef last_pic_ref $ Just in_pic
+            writeIORef last_pic_ref $ Just in_pic'
 
     let inner_refresh 
             =   writeIORef last_update_ref Nothing
