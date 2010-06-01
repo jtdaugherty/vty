@@ -95,7 +95,7 @@ construct_cap_expression cap_string build_results = do
                 , param_count = out_param_count build_results
                 , param_ops = out_param_ops build_results
                 } 
-    return $! expr `using` rdeepseq
+    return (demanding expr (rnf expr))
 
 type CapParser a = GenParser Char BuildState a 
 
