@@ -224,8 +224,10 @@ output_picture (DisplayHandle d t s) pic = do
                 + required_bytes d initial_attr diffs ops 
                 + case pic_cursor pic of
                     NoCursor -> 0
-                    Cursor x y ->   show_cursor_required_bytes d
-                                  + move_cursor_required_bytes d x y
+                    Cursor x y -> let m = cursor_output_map ops $ pic_cursor pic
+		                      ( ox, oy ) = char_to_output_pos m ( x, y )
+		                   in show_cursor_required_bytes d
+                                      + move_cursor_required_bytes d ox oy
 
     -- ... then serialize
     liftIO $ allocaBytes (fromEnum total) $ \start_ptr -> do
