@@ -36,7 +36,7 @@ import System.Posix.IO ( stdInput
 
 -- |Representations of non-modifier keys.
 data Key = KEsc | KFun Int | KBackTab | KPrtScr | KPause | KASCII Char | KBS | KIns
-         | KHome | KPageUp | KDel | KEnd | KPageDown | KNP5 | KUp | KMenu
+         | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin |  KNP5 | KUp | KMenu
          | KLeft | KDown | KRight | KEnter 
     deriving (Eq,Show,Ord)
 
@@ -155,7 +155,16 @@ initTermInput escDelay terminal = do
       
       ansi_classify_table :: [[([Char], (Key, [Modifier]))]]
       ansi_classify_table =
-         [ let k c s = ("\ESC["++c,(s,[])) in [ k "G" KNP5, k "P" KPause,  k "A" KUp, k "B" KDown, k "C" KRight, k "D" KLeft ],
+         [ let k c s = ("\ESC["++c,(s,[])) in [ k "G" KNP5
+                                              , k "P" KPause
+                                              , k "A" KUp
+                                              , k "B" KDown
+                                              , k "C" KRight
+                                              , k "D" KLeft 
+                                              , k "H" KHome
+                                              , k "F" KEnd
+                                              , k "E" KBegin
+                                              ],
 
            -- Support for arrows
            [("\ESC[" ++ charCnt ++ show mc++c,(s,m)) 
@@ -165,7 +174,8 @@ initTermInput escDelay terminal = do
             (c,s) <- [("A", KUp), ("B", KDown), ("C", KRight), ("D", KLeft)] -- directions and their codes
            ],
            
-           let k n s = ("\ESC["++show n++"~",(s,[])) in zipWith k [2::Int,3,5,6] [KIns,KDel,KPageUp,KPageDown],
+           let k n s = ("\ESC["++show n++"~",(s,[])) in zipWith k [2::Int,3,5,6,1,4] 
+                                                                  [KIns,KDel,KPageUp,KPageDown,KHome,KEnd],
 
            -- Support for simple characters.
            [ (x:[],(KASCII x,[])) | x <- map toEnum [0..255] ],
