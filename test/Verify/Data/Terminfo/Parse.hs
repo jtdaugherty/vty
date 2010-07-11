@@ -111,7 +111,7 @@ verify_bytes_equal :: [Word8] -> [Word8] -> Result
 verify_bytes_equal out_bytes expected_bytes 
     = if out_bytes == expected_bytes
         then succeeded
-        else failed 
+        else failed $ result 
              { reason = "out_bytes [" 
                        ++ hex_dump out_bytes
                        ++ "] /= expected_bytes ["

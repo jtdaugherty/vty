@@ -104,7 +104,8 @@ main = do
                                 parse_result <- parse_cap_expression cap_def
                                 let test_name = "\teval cap " ++ cap_name ++ " -> " ++ show cap_def
                                 _ <- case parse_result of
-                                    Left error -> verify test_name ( liftResult $ failed { reason = "prase error " ++ show error } )
+                                    Left error -> verify test_name ( liftResult $ failed 
+                                                                                $ result { reason = "prase error " ++ show error } )
                                     Right !cap_expr -> verify test_name ( verify_eval_cap eval_buffer cap_expr )
                                 return ()
                             Nothing      -> do
@@ -123,11 +124,11 @@ verify_eval_cap eval_buffer expr !junk_int = do
             end_ptr <- serialize_cap_expression expr input_values start_ptr
             case end_ptr `minusPtr` start_ptr of
                 count | count < 0        -> 
-                            return $ failed { reason = "End pointer before start pointer." }
+                            return $ failed $ result { reason = "End pointer before start pointer." }
                       | toEnum count > byte_count -> 
-                            return $ failed { reason = "End pointer past end of buffer by " 
-                                                     ++ show (toEnum count - byte_count) 
-                                            }
+                            return $ failed $ result { reason = "End pointer past end of buffer by " 
+                                                              ++ show (toEnum count - byte_count) 
+                                                     }
                       | otherwise        -> 
                             return succeeded
 

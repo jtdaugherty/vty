@@ -20,10 +20,10 @@ is_attr_span_op _                  = False
 verify_all_spans_have_width i spans w
     = case all_spans_have_width spans w of
         True -> succeeded
-        False -> failed { reason = "Not all spans contained operations defining exactly " 
-                                 ++ show w
-                                 ++ " columns of output -\n"
-                                 ++ show i
-                                 ++ "\n->\n"
-                                 ++ show spans
-                        }
+        False -> failed $ result { reason = "Not all spans contained operations defining exactly " 
+                                          ++ show w
+                                          ++ " columns of output -\n"
+                                          ++ show i
+                                          ++ "\n->\n"
+                                          ++ show spans
+                                 }

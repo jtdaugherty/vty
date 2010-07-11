@@ -7,6 +7,7 @@ module Verify ( module Verify
               , module Test.QuickCheck
               , succeeded
               , failed
+              , result
               , Result(..)
               , monadicIO
               , liftIO
