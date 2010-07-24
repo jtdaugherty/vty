@@ -3,9 +3,13 @@ module System.Console.ANSI.Windows.Emulator (
     ) where
 
 import System.Console.ANSI.Common
+import qualified System.Console.ANSI.Unix as Unix
 import System.Console.ANSI.Windows.Foreign
 
 import System.IO
+
+import Control.Exception (SomeException, catchJust)
+import Control.Monad (guard)
 
 import Data.Bits
 import Data.List
@@ -23,6 +27,24 @@ withHandle handle action = do
     withHandleToHANDLE handle action
 
 
+-- Unfortunately, the emulator is not perfect. In particular, it has a tendency to die with exceptions about
+-- invalid handles when it is used with certain Windows consoles (e.g. mintty, terminator, or cygwin sshd).
+--
+-- This happens because in those environments the stdout family of handles are not actually associated with
+-- a real console.
+--
+-- My observation is that every time I've seen this in practice, the handle we have instead of the actual console
+-- handle is there so that the terminal supports ANSI escape codes. So 99% of the time, the correct thing to do is
+-- just to fall back on the Unix module to output the ANSI codes and hope for the best.
+emulatorFallback :: IO a -> IO a -> IO a
+emulatorFallback fallback first_try = catchJust (\e -> guard (isHandleIsInvalidException e) >> return ()) first_try (\() -> fallback)
+  where
+    -- NB: this is a pretty hacked-up way to find out if we have the right sort of exception, but System.Win32.Types.fail* call into
+    -- the fail :: String -> IO a function, and so we don't get any nice exception object we can extract information from.
+    isHandleIsInvalidException :: SomeException -> Bool
+    isHandleIsInvalidException e ="The handle is invalid" `isInfixOf` show e
+
+
 adjustCursorPosition :: HANDLE -> (SHORT -> SHORT -> SHORT) -> (SHORT -> SHORT -> SHORT) -> IO ()
 adjustCursorPosition handle change_x change_y = do
     screen_buffer_info <- getConsoleScreenBufferInfo handle
@@ -31,10 +53,10 @@ adjustCursorPosition handle change_x change_y = do
         cursor_pos' = COORD (change_x (rect_left window) x) (change_y (rect_top window) y)
     setConsoleCursorPosition handle cursor_pos'
 
-hCursorUp h n       = withHandle h $ \handle -> adjustCursorPosition handle (\_ x -> x) (\_ y -> y - fromIntegral n)
-hCursorDown h n     = withHandle h $ \handle -> adjustCursorPosition handle (\_ x -> x) (\_ y -> y + fromIntegral n)
-hCursorForward h n  = withHandle h $ \handle -> adjustCursorPosition handle (\_ x -> x + fromIntegral n) (\_ y -> y)
-hCursorBackward h n = withHandle h $ \handle -> adjustCursorPosition handle (\_ x -> x - fromIntegral n) (\_ y -> y)
+hCursorUp h n       = emulatorFallback (Unix.hCursorUp h n)       $ withHandle h $ \handle -> adjustCursorPosition handle (\_ x -> x) (\_ y -> y - fromIntegral n)
+hCursorDown h n     = emulatorFallback (Unix.hCursorDown h n)     $ withHandle h $ \handle -> adjustCursorPosition handle (\_ x -> x) (\_ y -> y + fromIntegral n)
+hCursorForward h n  = emulatorFallback (Unix.hCursorForward h n)  $ withHandle h $ \handle -> adjustCursorPosition handle (\_ x -> x + fromIntegral n) (\_ y -> y)
+hCursorBackward h n = emulatorFallback (Unix.hCursorBackward h n) $ withHandle h $ \handle -> adjustCursorPosition handle (\_ x -> x - fromIntegral n) (\_ y -> y)
 
 cursorUpCode _       = ""
 cursorDownCode _     = ""
@@ -45,19 +67,19 @@ cursorBackwardCode _ = ""
 adjustLine :: HANDLE -> (SHORT -> SHORT -> SHORT) -> IO ()
 adjustLine handle change_y = adjustCursorPosition handle (\window_left _ -> window_left) change_y
 
-hCursorDownLine h n = withHandle h $ \handle -> adjustLine handle (\_ y -> y + fromIntegral n)
-hCursorUpLine h n   = withHandle h $ \handle -> adjustLine handle (\_ y -> y - fromIntegral n)
+hCursorDownLine h n = emulatorFallback (Unix.hCursorDownLine h n) $ withHandle h $ \handle -> adjustLine handle (\_ y -> y + fromIntegral n)
+hCursorUpLine h n   = emulatorFallback (Unix.hCursorUpLine h n)   $ withHandle h $ \handle -> adjustLine handle (\_ y -> y - fromIntegral n)
 
 cursorDownLineCode _   = ""
 cursorUpLineCode _ = ""
 
 
-hSetCursorColumn h x = withHandle h $ \handle -> adjustCursorPosition handle (\window_left _ -> window_left + fromIntegral x) (\_ y -> y)
+hSetCursorColumn h x = emulatorFallback (Unix.hSetCursorColumn h x) $ withHandle h $ \handle -> adjustCursorPosition handle (\window_left _ -> window_left + fromIntegral x) (\_ y -> y)
 
 setCursorColumnCode _ = ""
 
 
-hSetCursorPosition h y x = withHandle h $ \handle -> adjustCursorPosition handle (\window_left _ -> window_left + fromIntegral x) (\window_top _ -> window_top + fromIntegral y)
+hSetCursorPosition h y x = emulatorFallback (Unix.hSetCursorPosition h y x) $ withHandle h $ \handle -> adjustCursorPosition handle (\window_left _ -> window_left + fromIntegral x) (\window_top _ -> window_top + fromIntegral y)
 
 setCursorPositionCode _ _ = ""
 
@@ -80,7 +102,7 @@ hClearScreenFraction handle fraction_finder = do
     fillConsoleOutputAttribute handle clearAttribute fill_length fill_cursor_pos
     return ()
 
-hClearFromCursorToScreenEnd h = withHandle h $ \handle -> hClearScreenFraction handle go
+hClearFromCursorToScreenEnd h = emulatorFallback (Unix.hClearFromCursorToScreenEnd h) $ withHandle h $ \handle -> hClearScreenFraction handle go
   where
     go window cursor_pos = (fromIntegral fill_length, cursor_pos)
       where
@@ -89,7 +111,7 @@ hClearFromCursorToScreenEnd h = withHandle h $ \handle -> hClearScreenFraction h
         line_remainder = size_x - coord_x cursor_pos
         fill_length = size_x * size_y + line_remainder
 
-hClearFromCursorToScreenBeginning h = withHandle h $ \handle -> hClearScreenFraction handle go
+hClearFromCursorToScreenBeginning h = emulatorFallback (Unix.hClearFromCursorToScreenBeginning h) $ withHandle h $ \handle -> hClearScreenFraction handle go
   where
     go window cursor_pos = (fromIntegral fill_length, rect_top_left window)
       where
@@ -98,7 +120,7 @@ hClearFromCursorToScreenBeginning h = withHandle h $ \handle -> hClearScreenFrac
         line_remainder = coord_x cursor_pos
         fill_length = size_x * size_y + line_remainder
 
-hClearScreen h = withHandle h $ \handle -> hClearScreenFraction handle go
+hClearScreen h = emulatorFallback (Unix.hClearScreen h) $ withHandle h $ \handle -> hClearScreenFraction handle go
   where
     go window _ = (fromIntegral fill_length, rect_top_left window)
       where
@@ -106,15 +128,15 @@ hClearScreen h = withHandle h $ \handle -> hClearScreenFraction handle go
         size_y = rect_height window
         fill_length = size_x * size_y
 
-hClearFromCursorToLineEnd h = withHandle h $ \handle -> hClearScreenFraction handle go
+hClearFromCursorToLineEnd h = emulatorFallback (Unix.hClearFromCursorToLineEnd h) $ withHandle h $ \handle -> hClearScreenFraction handle go
   where
     go window cursor_pos = (fromIntegral (rect_right window - coord_x cursor_pos), cursor_pos)
 
-hClearFromCursorToLineBeginning h = withHandle h $ \handle -> hClearScreenFraction handle go
+hClearFromCursorToLineBeginning h = emulatorFallback (Unix.hClearFromCursorToLineBeginning h) $ withHandle h $ \handle -> hClearScreenFraction handle go
   where
     go window cursor_pos = (fromIntegral (coord_x cursor_pos), cursor_pos { coord_x = rect_left window })
 
-hClearLine h = withHandle h $ \handle -> hClearScreenFraction handle go
+hClearLine h = emulatorFallback (Unix.hClearLine h) $ withHandle h $ \handle -> hClearScreenFraction handle go
   where
     go window cursor_pos = (fromIntegral (rect_width window), cursor_pos { coord_x = rect_left window })
 
@@ -134,8 +156,8 @@ hScrollPage handle new_origin_y = do
         origin = COORD (rect_left window) (rect_top window + fromIntegral new_origin_y)
     scrollConsoleScreenBuffer handle window Nothing origin fill
 
-hScrollPageUp h n = withHandle h $ \handle -> hScrollPage handle (negate n)
-hScrollPageDown h n = withHandle h $ \handle -> hScrollPage handle n
+hScrollPageUp   h n = emulatorFallback (Unix.hScrollPageUp   h n) $ withHandle h $ \handle -> hScrollPage handle (negate n)
+hScrollPageDown h n = emulatorFallback (Unix.hScrollPageDown h n) $ withHandle h $ \handle -> hScrollPage handle n
 
 scrollPageUpCode _   = ""
 scrollPageDownCode _ = ""
@@ -201,7 +223,7 @@ applyANSISGRToAttribute sgr attribute = case sgr of
   where
     iNTENSITY = fOREGROUND_INTENSITY .|. bACKGROUND_INTENSITY
 
-hSetSGR h sgr = withHandle h $ \handle -> do
+hSetSGR h sgr = emulatorFallback (Unix.hSetSGR h sgr) $ withHandle h $ \handle -> do
     screen_buffer_info <- getConsoleScreenBufferInfo handle
     let attribute = csbi_attributes screen_buffer_info
         attribute' = foldl' (flip applyANSISGRToAttribute) attribute sgr
@@ -215,8 +237,8 @@ hChangeCursorVisibility handle cursor_visible = do
     cursor_info <- getConsoleCursorInfo handle
     setConsoleCursorInfo handle (cursor_info { cci_cursor_visible = cursor_visible })
 
-hHideCursor h = withHandle h $ \handle -> hChangeCursorVisibility handle False
-hShowCursor h = withHandle h $ \handle -> hChangeCursorVisibility handle True
+hHideCursor h = emulatorFallback (Unix.hHideCursor h) $ withHandle h $ \handle -> hChangeCursorVisibility handle False
+hShowCursor h = emulatorFallback (Unix.hShowCursor h) $ withHandle h $ \handle -> hChangeCursorVisibility handle True
 
 hideCursorCode = ""
 showCursorCode = ""
@@ -225,6 +247,6 @@ showCursorCode = ""
 -- Windows only supports setting the terminal title on a process-wide basis, so for now we will
 -- assume that that is what the user intended. This will fail if they are sending the command
 -- over e.g. a network link... but that's not really what I'm designing for.
-hSetTitle _ title = withTString title $ setConsoleTitle
+hSetTitle h title = emulatorFallback (Unix.hSetTitle h title) $ withTString title $ setConsoleTitle
 
 setTitleCode _ = ""

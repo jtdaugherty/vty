@@ -3,5 +3,5 @@
 === Medium Priority ===
 
 === Low Priority ===
-* Detect use of handles that are not console handles and raise some error?
+* Detect use of handles that are not console handles and raise some error? I'm currently falling back on ANSI, which may not be ideal.
 * Provide API for hiding cursor in a region of IO using installHandler

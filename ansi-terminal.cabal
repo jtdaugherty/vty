@@ -1,5 +1,5 @@
 Name:                ansi-terminal
-Version:             0.5.2
+Version:             0.5.3
 Cabal-Version:       >= 1.2
 Category:            User Interfaces
 Synopsis:            Simple ANSI terminal support, with Windows compatibility
@@ -38,6 +38,8 @@ Library
                 Other-Modules:          System.Console.ANSI.Windows
                                         System.Console.ANSI.Windows.Foreign
                                         System.Console.ANSI.Windows.Emulator
+                                        -- NB: used for fallback by the emulator
+                                        System.Console.ANSI.Unix
         else
                 -- We assume any non-Windows platform is Unix
                 Build-Depends:          unix >= 2.3.0.0
