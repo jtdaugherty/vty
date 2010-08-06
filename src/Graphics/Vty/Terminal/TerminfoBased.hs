@@ -24,10 +24,12 @@ import Data.Maybe ( isJust, isNothing, fromJust )
 import Data.Word
 
 import Foreign.Ptr
-import Foreign.C.Types ( CLong, CSize )
+import Foreign.C.Types ( CLong, CSize, CInt )
 
 import qualified System.Console.Terminfo as Terminfo
 import System.IO
+import System.Posix.IO
+import System.Posix.Types ( Fd(..) )
 
 data Term = Term 
     { term_info_ID :: String
@@ -42,6 +44,7 @@ data Term = Term
     , set_default_attr :: CapExpression
     , clear_screen :: CapExpression
     , display_attr_caps :: DisplayAttrCaps
+    , term_fd :: Fd
     }
 
 data DisplayAttrCaps = DisplayAttrCaps
@@ -90,6 +93,7 @@ terminal_instance in_ID = do
                     case parse_result of
                         Left e -> fail $ show e
                         Right cap -> return $ Just cap
+    term_fd <- liftIO $ dup stdOutput
     pure Term
         <*> pure in_ID
         <*> pure ti
@@ -103,6 +107,7 @@ terminal_instance in_ID = do
         <*> require_cap "sgr0"
         <*> require_cap "clear"
         <*> current_display_attr_caps ti
+        <*> pure term_fd
 
 current_display_attr_caps :: ( Applicative m, MonadIO m ) 
                           => Terminfo.Terminal 
@@ -165,16 +170,17 @@ instance Terminal Term where
                         | otherwise      -> return $ DisplayRegion (toEnum w) (toEnum h)
 
     -- Output the byte buffer of the specified size to the terminal device.
-    output_byte_buffer _t out_ptr out_byte_count = do
+    output_byte_buffer t out_ptr out_byte_count = do
         -- flush is required *before* the c_output_byte_buffer call
         -- otherwise there may still be data in GHC's internal stdout buffer.
         hFlush stdout
+        let Fd c_fd = term_fd t
         if out_byte_count /= 0 
-            then c_output_byte_buffer out_ptr ( toEnum $! fromEnum out_byte_count )
+            then c_output_byte_buffer c_fd out_ptr ( toEnum $! fromEnum out_byte_count )
             else return ()
 
 foreign import ccall unsafe "output_buffer.h stdout_output_buffer" c_output_byte_buffer 
-    :: Ptr Word8 -> CSize -> IO ()
+    :: CInt -> Ptr Word8 -> CSize -> IO ()
 foreign import ccall "gwinsz.h c_get_window_size" c_get_window_size 
     :: IO CLong
 
