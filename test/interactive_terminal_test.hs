@@ -168,6 +168,7 @@ all_tests
       , attributes_test_5
       , inline_test_0
       , inline_test_1
+      , inline_test_2
       ]
 
 reserve_output_test = Test 
@@ -894,6 +895,24 @@ inline_test_1 = Test
         putStr " Styled! "
         put_attr_change t $ default_all
         putStrLn "Not styled."
+        release_terminal t
+        return ()
+    , print_summary = putStr $ [$heredoc|
+|]
+
+    , confirm_results = generic_output_match_confirm
+    }
+
+inline_test_2 = Test
+    { test_name = "Verify styled output can be performed without clearing the screen."
+    , test_ID = "inline_test_1"
+    , test_action = do
+        t <- terminal_handle
+        put_string t "Not styled. "
+        put_attr_change t $ back_color red >> apply_style underline
+        put_string t " Styled! "
+        put_attr_change t $ default_all
+        put_string t "Not styled.\n"
         release_terminal t
         return ()
     , print_summary = putStr $ [$heredoc|

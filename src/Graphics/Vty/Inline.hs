@@ -12,6 +12,7 @@ import Control.Monad.State.Strict
 import Control.Monad.Trans
 
 import Data.Bits ( (.&.), complement )
+import qualified Data.String.UTF8 as UTF8
 import Data.IORef
 import Data.Monoid ( mappend )
 
@@ -55,4 +56,10 @@ put_attr_change t c = do
                                     ( serialize_set_attr d fattr attr' diffs )
     liftIO $ modifyIORef ( state_ref t ) $ \s -> s { known_fattr = Just fattr' }
     inline_hack d
+
+put_string :: ( Applicative m, MonadIO m ) => TerminalHandle -> String -> m ()
+put_string t s = do
+    let s_utf8 = UTF8.fromString s
+    liftIO $ marshall_to_terminal t ( utf8_text_required_bytes s_utf8)
+                                    ( serialize_utf8_text s_utf8 )
 
