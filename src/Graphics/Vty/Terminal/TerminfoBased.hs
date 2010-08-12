@@ -146,6 +146,7 @@ instance Terminal Term where
         -- Screen on OS X does not appear to support smcup?
         -- To approximate the expected behavior: clear the screen and then move the mouse to the
         -- home position.
+        liftIO $ hFlush stdout
         liftIO $ marshall_cap_to_terminal t clear_screen []
         return ()
 
@@ -171,9 +172,10 @@ instance Terminal Term where
 
     -- Output the byte buffer of the specified size to the terminal device.
     output_byte_buffer t out_ptr out_byte_count = do
+        -- if the out fd is actually the same as stdout's then a
         -- flush is required *before* the c_output_byte_buffer call
         -- otherwise there may still be data in GHC's internal stdout buffer.
-        hFlush stdout
+        -- _ <- handleToFd stdout
         let Fd c_fd = term_fd t
         if out_byte_count /= 0 
             then c_output_byte_buffer c_fd out_ptr ( toEnum $! fromEnum out_byte_count )

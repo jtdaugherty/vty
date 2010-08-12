@@ -238,8 +238,10 @@ display_bounds_test_1 = Test
         forM_ [1 .. h - 2] $ \y -> do
             set_cursor_pos t 0 y
             putStr "X"
+            hFlush stdout
             set_cursor_pos t (w - 1) y
             putStr "X"
+            hFlush stdout
         set_cursor_pos t 0 (h - 1)
         let row_h = replicate (fromEnum w - 1) 'X'
         putStr row_h
@@ -289,8 +291,10 @@ display_bounds_test_3 = Test
         forM_ [1 .. h - 2] $ \y -> do
             set_cursor_pos t 0 y
             putStr "X"
+            hFlush stdout
             set_cursor_pos t (w - 1) y
             putStr "X"
+            hFlush stdout
         set_cursor_pos t 0 (h - 1)
         let row_h = row_0
         putStr row_h

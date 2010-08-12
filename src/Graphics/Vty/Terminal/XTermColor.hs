@@ -14,6 +14,8 @@ import qualified Graphics.Vty.Terminal.TerminfoBased as TerminfoBased
 import Control.Applicative
 import Control.Monad.Trans
 
+import qualified Data.String.UTF8 as UTF8
+
 import System.IO
 
 data XTermColor = XTermColor 
@@ -88,7 +90,10 @@ instance DisplayTerminal DisplayContext where
     -- I think xterm is broken: Reseting the background color as the first bytes serialized on a new
     -- line does not effect the background color xterm uses to clear the line. Which is used *after*
     -- the next newline.
-    inline_hack _d = do
-        liftIO $ hPutStr stdout "\ESC[K"
-        liftIO $ hFlush stdout
+    inline_hack d = do
+        let t = case super_display d of
+                    DisplayHandle _ t_ _ -> t_
+        let s_utf8 = UTF8.fromString "\ESC[K"
+        liftIO $ marshall_to_terminal t ( utf8_text_required_bytes s_utf8)
+                                        ( serialize_utf8_text s_utf8 )
 

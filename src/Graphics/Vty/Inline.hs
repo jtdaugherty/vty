@@ -16,6 +16,8 @@ import qualified Data.String.UTF8 as UTF8
 import Data.IORef
 import Data.Monoid ( mappend )
 
+import System.IO
+
 type InlineM v = State Attr v
 
 back_color :: Color -> InlineM ()
@@ -52,6 +54,7 @@ put_attr_change t c = do
         attr' = limit_attr_for_display d attr
         fattr' = fix_display_attr fattr attr'
         diffs = display_attr_diffs fattr fattr'
+    liftIO $ hFlush stdout
     liftIO $ marshall_to_terminal t ( attr_required_bytes d fattr attr' diffs )
                                     ( serialize_set_attr d fattr attr' diffs )
     liftIO $ modifyIORef ( state_ref t ) $ \s -> s { known_fattr = Just fattr' }
@@ -60,6 +63,7 @@ put_attr_change t c = do
 put_string :: ( Applicative m, MonadIO m ) => TerminalHandle -> String -> m ()
 put_string t s = do
     let s_utf8 = UTF8.fromString s
+    liftIO $ hFlush stdout
     liftIO $ marshall_to_terminal t ( utf8_text_required_bytes s_utf8)
                                     ( serialize_utf8_text s_utf8 )
 
