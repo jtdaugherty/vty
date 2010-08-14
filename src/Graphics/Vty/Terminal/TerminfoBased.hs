@@ -137,6 +137,7 @@ instance Terminal Term where
     release_terminal t = do 
         liftIO $ marshall_cap_to_terminal t set_default_attr []
         liftIO $ marshall_cap_to_terminal t cnorm []
+        liftIO $ closeFd $ term_fd t
         return ()
 
     reserve_display t = do
