@@ -24,8 +24,6 @@ import Data.Array.ST
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Internal as BInt
 import qualified Data.Foldable as Foldable
-import Data.Function
-import Data.List
 import Data.Word
 import qualified Data.ByteString.UTF8 as BSUTF8 
 import qualified Data.String.UTF8 as UTF8
@@ -153,7 +151,7 @@ ops_for_row mrow_ops bg region image y remaining_columns
                                     then remaining_columns
                                     else width
             forM_ [y .. y + actual_height - 1] $ \y' -> snoc_bg_fill mrow_ops bg actual_width y'
-        Translation v i -> ops_for_row mrow_ops bg region i y remaining_columns
+        Translation _offset i -> ops_for_row mrow_ops bg region i y remaining_columns
 
 snoc_text_span :: (Foldable.Foldable t) 
                 => Attr 

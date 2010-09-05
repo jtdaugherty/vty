@@ -27,10 +27,7 @@ import Graphics.Vty.LLInput
 
 import Data.IORef
 
-import Data.Maybe ( maybe )
-
 import qualified System.Console.Terminfo as Terminfo
-import System.IO
 
 -- | The main object.  At most one should be created.
 -- An alternative is to use unsafePerformIO to automatically create a singleton Vty instance when

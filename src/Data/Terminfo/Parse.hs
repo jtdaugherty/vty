@@ -12,9 +12,8 @@ module Data.Terminfo.Parse ( module Data.Terminfo.Parse
 import Control.Applicative ( Applicative(..), pure, (<*>) )  
 import Control.Monad ( liftM )
 import Control.Monad.Trans
-import Control.Parallel.Strategies
+import Control.DeepSeq
 
-import Data.Array.Unboxed
 import Data.Monoid
 import Data.Word
 
@@ -35,8 +34,8 @@ data CapExpression = CapExpression
     }
 
 instance NFData CapExpression where
-    rnf (CapExpression ops !_bytes !_str !_c !_p_ops) 
-        = rnf ops 
+    rnf (CapExpression ops !_bytes !str !c !p_ops) 
+        = rnf ops `seq` rnf str `seq` rnf c `seq` rnf p_ops
 
 type CapParam = Word
 
@@ -59,16 +58,28 @@ data CapOp =
     deriving ( Show )
 
 instance NFData CapOp where
-    rnf ( Bytes offset count next_offset ) = rnf offset
-    rnf (PushParam !_pn) = ()
-    rnf (PushValue !_v) = ()
-    rnf (Conditional c_expr c_parts) = rnf c_expr >| rnf c_parts
-    rnf _ = ()
+    rnf (Bytes offset _count next_offset) = rnf offset `seq` rnf next_offset
+    rnf (PushParam pn) = rnf pn
+    rnf (PushValue v) = rnf v 
+    rnf (Conditional c_expr c_parts) = rnf c_expr `seq` rnf c_parts 
+    rnf BitwiseOr = ()
+    rnf BitwiseXOr = ()
+    rnf BitwiseAnd = ()
+    rnf ArithPlus = ()
+    rnf ArithMinus = ()
+    rnf CompareEq = ()
+    rnf CompareLt = ()
+    rnf CompareGt = ()
+    rnf DecOut = ()
+    rnf CharOut = ()
 
 type ParamOps = [ParamOp]
 data ParamOp =
       IncFirstTwo
     deriving ( Show )
+
+instance NFData ParamOp where
+    rnf IncFirstTwo = ()
 
 parse_cap_expression :: ( Applicative m
                         , MonadIO m
@@ -84,6 +95,7 @@ parse_cap_expression cap_string =
         Left e -> return $ Left e
         Right build_results -> pure Right <*> construct_cap_expression cap_string build_results
 
+construct_cap_expression :: MonadIO m => [Char] -> BuildResults -> m CapExpression
 construct_cap_expression cap_string build_results = do
     byte_array <- liftIO $ newArray (map ( toEnum . fromEnum ) cap_string )
     let expr = CapExpression
@@ -95,7 +107,7 @@ construct_cap_expression cap_string build_results = do
                 , param_count = out_param_count build_results
                 , param_ops = out_param_ops build_results
                 } 
-    return (demanding expr (rnf expr))
+    return $! rnf expr `seq` expr
 
 type CapParser a = GenParser Char BuildState a 
 

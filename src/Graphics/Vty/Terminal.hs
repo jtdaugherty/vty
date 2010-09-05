@@ -32,7 +32,6 @@ import Control.Applicative
 import Control.Exception ( SomeException, try )
 import Control.Monad.Trans
 
-import Data.Either
 import Data.List ( isPrefixOf )
 import Data.Word
 

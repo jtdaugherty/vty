@@ -42,6 +42,7 @@ instance Monoid DisplayAttrDiff where
 simplify_style_diffs :: [ StyleStateChange ] -> [ StyleStateChange ] -> [ StyleStateChange ]
 simplify_style_diffs cs_0 cs_1 = cs_0 `mappend` cs_1
 
+simplify_color_diffs :: DisplayColorDiff -> DisplayColorDiff -> DisplayColorDiff
 simplify_color_diffs _cd             ColorToDefault  = ColorToDefault
 simplify_color_diffs cd              NoColorChange   = cd
 simplify_color_diffs _cd             ( SetColor !c ) = SetColor c

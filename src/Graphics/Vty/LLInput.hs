@@ -26,7 +26,6 @@ import Control.Exception
 import System.Console.Terminfo
 
 import System.Posix.Signals.Exts
-import System.Posix.Signals
 import System.Posix.Terminal
 import System.Posix.IO ( stdInput
                         ,fdRead
@@ -88,13 +87,13 @@ initTermInput escDelay terminal = do
                   setFdOption stdInput NonBlockingRead False
                   threadWaitRead stdInput
                   setFdOption stdInput NonBlockingRead True
-                  try readAll :: IO (Either IOException ())
+                  _ <- try readAll :: IO (Either IOException ())
                   when (escDelay == 0) finishAtomicInput
                   loop
               readAll = do
                   (bytes, bytes_read) <- fdRead stdInput 1
                   when (bytes_read > 0) $ do
-                      tryPutMVar hadInput () -- signal input
+                      _ <- tryPutMVar hadInput () -- signal input
                       writeChan inputChannel (head bytes)
                   readAll
       -- | If there is no input for some time, this thread puts '\xFFFE' in the
@@ -212,13 +211,13 @@ initTermInput escDelay terminal = do
   let pokeIO = (Catch $ do let e = error "(getsize in input layer)"
                            setTerminalAttributes stdInput nattr Immediately
                            writeChan eventChannel (EvResize e e))
-  installHandler windowChange pokeIO Nothing
-  installHandler continueProcess pokeIO Nothing
+  _ <- installHandler windowChange pokeIO Nothing
+  _ <- installHandler continueProcess pokeIO Nothing
   let uninit = do killThread eventThreadId
                   killThread inputThreadId
                   killThread noInputThreadId
-                  installHandler windowChange Ignore Nothing
-                  installHandler continueProcess Ignore Nothing
+                  _ <- installHandler windowChange Ignore Nothing
+                  _ <- installHandler continueProcess Ignore Nothing
                   setTerminalAttributes stdInput oattr Immediately
   return (readChan eventChannel, uninit)
 

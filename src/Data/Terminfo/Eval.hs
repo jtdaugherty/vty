@@ -19,20 +19,13 @@ import Data.ByteString.Internal ( memcpy )
 import Data.Marshalling
 import Data.Terminfo.Parse
 
-import Control.DeepSeq
 import Control.Monad.Identity
 import Control.Monad.State.Strict
-import Control.Monad.Trans
 
-import Data.Array.Unboxed
 import Data.Bits ( (.|.), (.&.), xor )
 import Data.List 
 
-import Foreign.C.Types
-import Foreign.Ptr
-
 import GHC.Prim
-import GHC.Types
 import GHC.Word
 
 data EvalState = EvalState
@@ -56,7 +49,7 @@ pop = do
 {-# SPECIALIZE read_param :: Word -> EvalT IO CapParam #-}
 read_param :: Monad m => Word -> EvalT m CapParam
 read_param pn = do
-    EvalState _ _ !params <- get
+    !params <- get >>= return . eval_params
     return $! genericIndex params pn
 
 {-# SPECIALIZE push :: CapParam -> EvalT IO () #-}
@@ -169,7 +162,7 @@ serialize_cap_ops out_ptr ops = foldM serialize_cap_op out_ptr ops
 
 serialize_cap_op :: OutputBuffer -> CapOp -> EvalT IO OutputBuffer
 serialize_cap_op !out_ptr ( Bytes !offset !byte_count !next_offset ) = do
-    EvalState _ !cap _ <- get
+    !cap <- get >>= return . eval_expression
     let ( !start_ptr, _ ) = cap_bytes cap
         !src_ptr = start_ptr `plusPtr` offset
         !out_ptr' = out_ptr `plusPtr` next_offset

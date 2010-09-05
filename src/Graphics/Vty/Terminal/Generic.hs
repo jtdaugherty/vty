@@ -24,7 +24,6 @@ import Data.Array
 import qualified Data.ByteString.Internal as BSCore
 import Data.Foldable
 import Data.IORef
-import Data.Word
 import Data.String.UTF8 hiding ( foldl )
 
 data TerminalHandle where

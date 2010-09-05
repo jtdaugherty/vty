@@ -16,7 +16,6 @@ import Data.Word
 import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.Marshal
-import Foreign.Marshal.Array
 import Foreign.Storable
 
 type OutputBuffer = Ptr Word8

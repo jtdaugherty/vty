@@ -93,7 +93,7 @@ terminal_instance in_ID = do
                     case parse_result of
                         Left e -> fail $ show e
                         Right cap -> return $ Just cap
-    term_fd <- liftIO $ dup stdOutput
+    the_fd <- liftIO $ dup stdOutput
     pure Term
         <*> pure in_ID
         <*> pure ti
@@ -107,7 +107,7 @@ terminal_instance in_ID = do
         <*> require_cap "sgr0"
         <*> require_cap "clear"
         <*> current_display_attr_caps ti
-        <*> pure term_fd
+        <*> pure the_fd
 
 current_display_attr_caps :: ( Applicative m, MonadIO m ) 
                           => Terminfo.Terminal 
@@ -186,8 +186,8 @@ foreign import ccall unsafe "output_buffer.h stdout_output_buffer" c_output_byte
     :: CInt -> Ptr Word8 -> CSize -> IO ()
 foreign import ccall "gwinsz.h c_get_window_size" c_get_window_size 
     :: IO CLong
-foreign import ccall "fdatasync" c_fdatasync 
-    :: CInt -> IO CInt
+-- foreign import ccall "fdatasync" c_fdatasync 
+--     :: CInt -> IO CInt
 
 get_window_size :: IO (Int,Int)
 get_window_size = do 

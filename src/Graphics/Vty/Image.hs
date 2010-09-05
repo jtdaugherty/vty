@@ -30,7 +30,6 @@ import Codec.Binary.UTF8.Width
 
 import Codec.Binary.UTF8.String ( decode )
 
-import Data.AffineSpace
 import qualified Data.ByteString as BS
 import Data.Monoid
 import qualified Data.Sequence as Seq
@@ -111,6 +110,8 @@ instance Show Image where
         = "HorizJoin " ++ show c ++ " ( " ++ show l ++ " <|> " ++ show r ++ " )"
     show ( VertJoin { part_top = t, part_bottom = b, output_width = c, output_height = r } ) 
         = "VertJoin (" ++ show c ++ ", " ++ show r ++ ") ( " ++ show t ++ " ) <-> ( " ++ show b ++ " )"
+    show ( Translation offset i )
+        = "Translation ( " ++ show offset ++ ", " ++ show i ++ " )"
     show ( EmptyImage ) = "EmptyImage"
 
 -- | Currently append in the Monoid instance is equivalent to <->. Future versions will just stack
