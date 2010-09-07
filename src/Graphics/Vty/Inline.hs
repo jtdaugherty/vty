@@ -20,6 +20,11 @@
 --      release_terminal t
 -- @
 --
+-- 'put_attr_change' outputs the control codes to the terminal device 'Handle'. This is a duplicate
+-- of the 'stdout' handle when the 'terminal_handle' was (first) acquired. If 'stdout' has since been
+-- changed then 'putStr', 'putStrLn', 'print' etc.. will output to a different 'Handle' than
+-- 'put_attr_change'
+--
 -- Copyright 2009-2010 Corey O'Connor
 {-# LANGUAGE BangPatterns #-}
 module Graphics.Vty.Inline ( module Graphics.Vty.Inline

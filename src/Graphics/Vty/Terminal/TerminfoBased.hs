@@ -178,6 +178,7 @@ instance Terminal Term where
         -- otherwise there may still be data in GHC's internal stdout buffer.
         -- _ <- handleToFd stdout
         hPutBuf (term_handle t) out_ptr (fromEnum out_byte_count)
+        hFlush (term_handle t)
 
     output_handle t = return (term_handle t)
 
