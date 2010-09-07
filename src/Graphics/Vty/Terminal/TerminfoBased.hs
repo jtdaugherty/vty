@@ -26,10 +26,10 @@ import Data.Word
 import Foreign.Ptr
 import Foreign.C.Types ( CLong, CSize, CInt )
 
+import GHC.Handle
+
 import qualified System.Console.Terminfo as Terminfo
 import System.IO
-import System.Posix.IO
-import System.Posix.Types ( Fd(..) )
 
 data Term = Term 
     { term_info_ID :: String
@@ -44,7 +44,7 @@ data Term = Term
     , set_default_attr :: CapExpression
     , clear_screen :: CapExpression
     , display_attr_caps :: DisplayAttrCaps
-    , term_fd :: Fd
+    , term_handle :: Handle
     }
 
 data DisplayAttrCaps = DisplayAttrCaps
@@ -93,7 +93,7 @@ terminal_instance in_ID = do
                     case parse_result of
                         Left e -> fail $ show e
                         Right cap -> return $ Just cap
-    the_fd <- liftIO $ dup stdOutput
+    the_handle <- liftIO $ hDuplicate stdout
     pure Term
         <*> pure in_ID
         <*> pure ti
@@ -107,7 +107,7 @@ terminal_instance in_ID = do
         <*> require_cap "sgr0"
         <*> require_cap "clear"
         <*> current_display_attr_caps ti
-        <*> pure the_fd
+        <*> pure the_handle
 
 current_display_attr_caps :: ( Applicative m, MonadIO m ) 
                           => Terminfo.Terminal 
@@ -137,7 +137,7 @@ instance Terminal Term where
     release_terminal t = do 
         liftIO $ marshall_cap_to_terminal t set_default_attr []
         liftIO $ marshall_cap_to_terminal t cnorm []
-        liftIO $ closeFd $ term_fd t
+        liftIO $ hClose $ term_handle t
         return ()
 
     reserve_display t = do
@@ -177,13 +177,12 @@ instance Terminal Term where
         -- flush is required *before* the c_output_byte_buffer call
         -- otherwise there may still be data in GHC's internal stdout buffer.
         -- _ <- handleToFd stdout
-        let Fd c_fd = term_fd t
-        if out_byte_count /= 0 
-            then c_output_byte_buffer c_fd out_ptr ( toEnum $! fromEnum out_byte_count )
-            else return ()
+        hPutBuf (term_handle t) out_ptr (fromEnum out_byte_count)
 
-foreign import ccall unsafe "output_buffer.h stdout_output_buffer" c_output_byte_buffer 
-    :: CInt -> Ptr Word8 -> CSize -> IO ()
+    output_handle t = return (term_handle t)
+
+-- foreign import ccall unsafe "output_buffer.h stdout_output_buffer" c_output_byte_buffer 
+--     :: CInt -> Ptr Word8 -> CSize -> IO ()
 foreign import ccall "gwinsz.h c_get_window_size" c_get_window_size 
     :: IO CLong
 -- foreign import ccall "fdatasync" c_fdatasync 

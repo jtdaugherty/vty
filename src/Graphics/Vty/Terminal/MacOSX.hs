@@ -70,6 +70,8 @@ instance Terminal Term where
         
     output_byte_buffer t = output_byte_buffer (super_term t)
 
+    output_handle t = output_handle (super_term t)
+
 data DisplayContext = DisplayContext
     { super_display :: DisplayHandle
     }

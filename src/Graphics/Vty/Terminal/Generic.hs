@@ -26,6 +26,8 @@ import Data.Foldable
 import Data.IORef
 import Data.String.UTF8 hiding ( foldl )
 
+import System.IO
+
 data TerminalHandle where
     TerminalHandle :: Terminal t => t -> IORef TerminalState -> TerminalHandle
 
@@ -82,6 +84,9 @@ class Terminal t where
     -- end_ptr - start_ptr
     output_byte_buffer :: t -> OutputBuffer -> Word -> IO ()
 
+    -- | Handle of output device
+    output_handle :: t -> IO Handle
+
 instance Terminal TerminalHandle where
     terminal_ID (TerminalHandle t _) = terminal_ID t
     release_terminal (TerminalHandle t _) = release_terminal t
@@ -90,6 +95,7 @@ instance Terminal TerminalHandle where
     display_bounds (TerminalHandle t _) = display_bounds t
     display_terminal_instance (TerminalHandle t _) = display_terminal_instance t
     output_byte_buffer (TerminalHandle t _) = output_byte_buffer t
+    output_handle (TerminalHandle t _) = output_handle t
 
 data DisplayHandle where
     DisplayHandle :: DisplayTerminal d => d -> TerminalHandle -> DisplayState -> DisplayHandle

@@ -26,6 +26,8 @@ import Foreign.Marshal.Array ( peekArray )
 import Foreign.Ptr ( plusPtr )
 import Foreign.Storable ( poke )
 
+import System.IO
+
 import Unsafe.Coerce
 
 -- | The debug display terminal produces a string representation of the requested picture.  There is
@@ -61,6 +63,8 @@ instance Terminal DebugTerminal where
             peekArray (fromEnum buffer_size) out_buffer 
             >>= return . UTF8.fromRep . BSCore.pack
             >>= writeIORef (debug_terminal_last_output t)
+
+    output_handle t = return stdout
 
 data DebugDisplay = DebugDisplay
     { debug_display_bounds :: DisplayRegion
