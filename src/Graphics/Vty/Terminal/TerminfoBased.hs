@@ -171,7 +171,7 @@ instance Terminal Term where
             ( w, h )    | w < 0 || h < 0 -> fail $ "getwinsize returned < 0 : " ++ show raw_size
                         | otherwise      -> return $ DisplayRegion (toEnum w) (toEnum h)
 
-    -- Output the byte buffer of the specified size to the terminal device.
+    -- | Output the byte buffer of the specified size to the terminal device.
     output_byte_buffer t out_ptr out_byte_count = do
         -- if the out fd is actually the same as stdout's then a
         -- flush is required *before* the c_output_byte_buffer call

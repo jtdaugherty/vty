@@ -1,17 +1,23 @@
+--  | Generic Terminal interface.
+--
+--  Defines the common interface supported by all terminals.
+--
+--  See also:
+--
+--  1. Graphics.Vty.Terminal: This instantiates an abtract interface to the terminal interface based
+--  on the TERM and COLORTERM environment variables. 
+--  
+--  2. Graphics.Vty.Terminal.Generic: Defines the generic interface all terminals need to implement.
+--
+--  3. Graphics.Vty.Terminal.TerminfoBased: Defines a terminal instance that uses terminfo for all
+--  control strings.  No attempt is made to change the character set to UTF-8 for these terminals.
+--  I don't know a way to reliably determine if that is required or how to do so.
+--
+--  4. Graphics.Vty.Terminal.XTermColor: This module contains an interface suitable for xterm-like
+--  terminals. These are the terminals where TERM == xterm. This does use terminfo for as many
+--  control codes as possible. 
+--
 -- Copyright 2009-2010 Corey O'Connor
---      * Graphics.Vty.Terminal: This instantiates an abtract interface to the terminal interface
---      based on the TERM and COLORTERM environment variables. 
---      * Graphics.Vty.Terminal.Generic: Defines the generic interface all terminals need to implement.
---      * Graphics.Vty.Terminal.TerminfoBased: Defines a terminal instance that uses terminfo for all
---      control strings. 
---          - No attempt is made to change the character set to UTF-8 for these terminals. I don't
---          know a way to reliably determine if that is required or how to do so.
---      * Graphics.Vty.Terminal.XTermColor: This module contains an interface suitable for
---      xterm-like terminals. These are the terminals where TERM == xterm. This does use terminfo
---      for as many control codes as possible. H: This should derive functionality from the
---      TerminfoBased terminal.
---
---
 {-# LANGUAGE ScopedTypeVariables #-}
 module Graphics.Vty.Terminal ( module Graphics.Vty.Terminal
                              , Terminal(..)
@@ -66,6 +72,9 @@ import System.Environment
 -- from an xterm under X11 on mac os x will likely be done via open. Since this does not propogate
 -- environment variables (I think?) this assumes that XTERM_VERSION will never be set for a true
 -- Terminal.app or iTerm.app session.
+--
+--
+-- The file descriptor used for output will a duplicate of the current stdout file descriptor.
 --
 -- todo: add an implementation for windows that does not depend on terminfo. Should be installable
 -- with only what is provided in the haskell platform.

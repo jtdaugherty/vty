@@ -1,3 +1,25 @@
+-- | The inline module provides a limited interface to changing the style of terminal output. The
+-- intention is for this interface to be used inline with other output systems. 
+--
+-- The changes specified by the InlineM monad are applied to the terminals display attributes. These
+-- display attributes effect the display of all following text output to the terminal file
+-- descriptor.
+--
+-- For example, in an IO monad the following code with print the text \"Not styled. \" Followed by the
+-- text \" Styled! \" drawn over a red background and underlined.
+--
+-- @
+--      t <- terminal_handle
+--      putStr \"Not styled. \"
+--      put_attr_change t $ do
+--          back_color red 
+--          apply_style underline
+--      putStr \" Styled! \"
+--      put_attr_change t $ default_all
+--      putStrLn \"Not styled.\"
+--      release_terminal t
+-- @
+--
 -- Copyright 2009-2010 Corey O'Connor
 {-# LANGUAGE BangPatterns #-}
 module Graphics.Vty.Inline ( module Graphics.Vty.Inline
@@ -20,15 +42,24 @@ import System.IO
 
 type InlineM v = State Attr v
 
+-- | Set the background color to the provided 'Color'
 back_color :: Color -> InlineM ()
 back_color c = modify $ flip mappend ( current_attr `with_back_color` c )
 
+-- | Set the foreground color to the provided 'Color'
 fore_color :: Color -> InlineM ()
 fore_color c = modify $ flip mappend ( current_attr `with_fore_color` c )
 
+-- | Attempt to change the 'Style' of the following text.
+--
+-- If the terminal does not support the style change no error is produced. The style can still be
+-- removed.
 apply_style :: Style -> InlineM ()
 apply_style s = modify $ flip mappend ( current_attr `with_style` s )
 
+-- | Attempt to remove the specified 'Style' from the display of the following text.
+--
+-- This will fail if apply_style for the given style has not been previously called. 
 remove_style :: Style -> InlineM ()
 remove_style s_mask = modify $ \attr -> 
     let style' = case attr_style attr of
@@ -37,9 +68,13 @@ remove_style s_mask = modify $ \attr ->
                     SetTo s -> s .&. complement s_mask
     in attr { attr_style = SetTo style' } 
 
+-- | Reset the display attributes
 default_all :: InlineM ()
 default_all = put def_attr
 
+-- | Apply the provided display attribute changes to the terminal.
+--
+-- This also flushes the 'stdout' handle.
 put_attr_change :: ( Applicative m, MonadIO m ) => TerminalHandle -> InlineM () -> m ()
 put_attr_change t c = do
     bounds <- display_bounds t
@@ -59,11 +94,4 @@ put_attr_change t c = do
                                     ( serialize_set_attr d fattr attr' diffs )
     liftIO $ modifyIORef ( state_ref t ) $ \s -> s { known_fattr = Just fattr' }
     inline_hack d
-
-put_string :: ( Applicative m, MonadIO m ) => TerminalHandle -> String -> m ()
-put_string t s = do
-    let s_utf8 = UTF8.fromString s
-    liftIO $ hFlush stdout
-    liftIO $ marshall_to_terminal t ( utf8_text_required_bytes s_utf8)
-                                    ( serialize_utf8_text s_utf8 )
 
