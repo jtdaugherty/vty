@@ -1,3 +1,4 @@
+-- Copyright 2009-2010 Corey O'Connor
 {-# LANGUAGE BangPatterns #-}
 module Graphics.Vty.Inline ( module Graphics.Vty.Inline
                            )

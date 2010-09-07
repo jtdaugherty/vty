@@ -1,4 +1,4 @@
--- Copyright 2009 Corey O'Connor
+-- Copyright 2009-2010 Corey O'Connor
 -- The standard Mac OS X terminals Terminal.app and iTerm both declare themselves to be
 -- "xterm-color" by default. However the terminfo database for xterm-color included with OS X is
 -- incomplete. 

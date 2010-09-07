@@ -1,4 +1,4 @@
--- Copyright 2009 Corey O'Connor
+-- Copyright 2009-2010 Corey O'Connor
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 module Graphics.Vty.LLInput ( Key(..)

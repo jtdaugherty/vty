@@ -24,7 +24,7 @@ Description:
   .
   &#169; 2006-2007 Stefan O'Rear; BSD3 license.
   .
-  &#169; 2008-2009 Corey O'Connor; BSD3 license.
+  &#169; 2008-2010 Corey O'Connor; BSD3 license.
 
 Build-Depends:       base >= 4 && < 5, bytestring, containers, unix
 Build-Depends:       terminfo >= 0.3 && < 0.4

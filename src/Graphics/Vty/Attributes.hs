@@ -1,4 +1,4 @@
--- Copyright 2009 Corey O'Connor
+-- Copyright 2009-2010 Corey O'Connor
 -- Display attributes
 --
 -- For efficiency this can be, in the future, encoded into a single 32 bit word. The 32 bit word is

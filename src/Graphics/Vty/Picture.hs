@@ -1,4 +1,4 @@
--- Copyright 2009 Corey O'Connor
+-- Copyright 2009-2010 Corey O'Connor
 module Graphics.Vty.Picture ( module Graphics.Vty.Picture
                             , Image
                             , image_width

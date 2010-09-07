@@ -1,4 +1,4 @@
--- Copyright 2009 Corey O'Connor
+-- Copyright 2009-2010 Corey O'Connor
 --      * Graphics.Vty.Terminal: This instantiates an abtract interface to the terminal interface
 --      based on the TERM and COLORTERM environment variables. 
 --      * Graphics.Vty.Terminal.Generic: Defines the generic interface all terminals need to implement.

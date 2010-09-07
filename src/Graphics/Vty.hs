@@ -1,4 +1,4 @@
--- Copyright 2009 Corey O'Connor
+-- Copyright 2009-2010 Corey O'Connor
 {-# LANGUAGE ForeignFunctionInterface, BangPatterns, UnboxedTuples #-}
 {-# CFILES gwinsz.c #-}
 
