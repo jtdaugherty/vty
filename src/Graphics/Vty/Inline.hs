@@ -39,7 +39,6 @@ import Control.Applicative
 import Control.Monad.State.Strict
 
 import Data.Bits ( (.&.), complement )
-import qualified Data.String.UTF8 as UTF8
 import Data.IORef
 import Data.Monoid ( mappend )
 

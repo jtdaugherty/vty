@@ -23,10 +23,9 @@ import Data.Bits ( (.&.) )
 import Data.Maybe ( isJust, isNothing, fromJust )
 import Data.Word
 
-import Foreign.Ptr
-import Foreign.C.Types ( CLong, CSize, CInt )
+import Foreign.C.Types ( CLong )
 
-import GHC.Handle
+import GHC.IO.Handle
 
 import qualified System.Console.Terminfo as Terminfo
 import System.IO
