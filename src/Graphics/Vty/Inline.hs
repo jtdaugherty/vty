@@ -94,4 +94,5 @@ put_attr_change t c = do
                                     ( serialize_set_attr d fattr attr' diffs )
     liftIO $ modifyIORef ( state_ref t ) $ \s -> s { known_fattr = Just fattr' }
     inline_hack d
+    liftIO $ hFlush stdout
 

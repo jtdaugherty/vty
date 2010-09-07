@@ -3,7 +3,6 @@
 module Main where
 
 import Graphics.Vty.Attributes
-import Graphics.Vty.Image
 import Graphics.Vty.Inline
 import Graphics.Vty.Picture
 import Graphics.Vty.Terminal
@@ -912,11 +911,11 @@ inline_test_2 = Test
     , test_ID = "inline_test_1"
     , test_action = do
         t <- terminal_handle
-        put_string t "Not styled. "
+        putStr "Not styled. "
         put_attr_change t $ back_color red >> apply_style underline
-        put_string t " Styled! "
+        putStr " Styled! "
         put_attr_change t $ default_all
-        put_string t "Not styled.\n"
+        putStr "Not styled.\n"
         release_terminal t
         return ()
     , print_summary = putStr $ [$heredoc|
@@ -924,3 +923,4 @@ inline_test_2 = Test
 
     , confirm_results = generic_output_match_confirm
     }
+
