@@ -12,6 +12,7 @@ import Control.Exception (SomeException, catchJust)
 import Control.Monad (guard)
 
 import Data.Bits
+import Data.Char (toLower)
 import Data.List
 
 
@@ -42,7 +43,8 @@ emulatorFallback fallback first_try = catchJust (\e -> guard (isHandleIsInvalidE
     -- NB: this is a pretty hacked-up way to find out if we have the right sort of exception, but System.Win32.Types.fail* call into
     -- the fail :: String -> IO a function, and so we don't get any nice exception object we can extract information from.
     isHandleIsInvalidException :: SomeException -> Bool
-    isHandleIsInvalidException e ="The handle is invalid" `isInfixOf` show e
+    isHandleIsInvalidException e = "the handle is invalid" `isInfixOf` e_string || "invalid handle" `isInfixOf` e_string
+      where e_string = map toLower (show e)
 
 
 adjustCursorPosition :: HANDLE -> (SHORT -> SHORT -> SHORT) -> (SHORT -> SHORT -> SHORT) -> IO ()
