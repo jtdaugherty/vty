@@ -29,11 +29,10 @@ Description:
 Build-Depends:       base >= 4 && < 5, bytestring, containers, unix
 Build-Depends:       terminfo >= 0.3 && < 0.4
 Build-Depends:       utf8-string >= 0.3 && < 0.4
-Build-Depends:       mtl >= 1.1.0.0 && < 1.2
-Build-Depends:       ghc-prim, parallel >= 2.2 && < 2.3, deepseq >= 1.1 && < 1.2
+Build-Depends:       mtl >= 1.1.1.0 && < 1.2
+Build-Depends:       ghc-prim, parallel == 3.1.0.1, deepseq >= 1.1 && < 1.2
 Build-Depends:       array
 Build-Depends:       parsec >= 2 && < 4
-Build-Depends:       vector-space >= 0.5 && < 0.6
 Build-Type:          Simple
 Data-Files:          README, TODO
 Exposed-Modules:     Graphics.Vty

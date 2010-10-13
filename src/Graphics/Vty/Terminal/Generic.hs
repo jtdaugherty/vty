@@ -1,6 +1,6 @@
 -- Copyright 2009-2010 Corey O'Connor
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -98,7 +98,7 @@ instance Terminal TerminalHandle where
     output_handle (TerminalHandle t _) = output_handle t
 
 data DisplayHandle where
-    DisplayHandle :: DisplayTerminal d => d -> TerminalHandle -> DisplayState -> DisplayHandle
+    DisplayHandle :: forall d . DisplayTerminal d => d -> TerminalHandle -> DisplayState -> DisplayHandle
 
 -- | Acquire display access to the given region of the display.
 -- Currently all regions have the upper left corner of (0,0) and the lower right corner at 
@@ -106,8 +106,7 @@ data DisplayHandle where
 display_context :: MonadIO m => TerminalHandle -> DisplayRegion -> m DisplayHandle
 display_context t b = do
     s <- initial_display_state
-    let c d = DisplayHandle d t s
-    display_terminal_instance t b c
+    display_terminal_instance t b (\ d -> DisplayHandle d t s)
 
 data DisplayState = DisplayState
     { previous_output_ref :: IORef (Maybe SpanOpSequence)
