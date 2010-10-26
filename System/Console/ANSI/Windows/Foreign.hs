@@ -286,7 +286,7 @@ scrollConsoleScreenBuffer handle scroll_rectangle mb_clip_rectangle destination_
     failIfFalse_ "scrollConsoleScreenBuffer" $ cScrollConsoleScreenBuffer handle ptr_scroll_rectangle ptr_clip_rectangle (unpackCOORD destination_origin) ptr_fill
 
 
--- This essential function comes from msvcrt.  It's OK to depend on msvcrt since GHC's base package does.
+-- This essential function comes from the C runtime system. It is certainly provided by msvcrt, and also seems to be provided by the mingw C library - hurrah!
 foreign import ccall unsafe "_get_osfhandle" cget_osfhandle :: IOBase.FD -> IO HANDLE
 
 -- | This bit is all highly dubious.  The problem is that we want to output ANSI to arbitrary Handles rather than forcing
