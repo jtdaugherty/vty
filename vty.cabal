@@ -58,7 +58,6 @@ other-modules:       Codec.Binary.UTF8.Width
 C-Sources:           cbits/gwinsz.c
                      cbits/set_term_timing.c
                      cbits/mk_wcwidth.c
-                     cbits/output_buffer.c
 
 Include-Dirs:        cbits
 hs-source-dirs:      src

@@ -181,12 +181,8 @@ instance Terminal Term where
 
     output_handle t = return (term_handle t)
 
--- foreign import ccall unsafe "output_buffer.h stdout_output_buffer" c_output_byte_buffer 
---     :: CInt -> Ptr Word8 -> CSize -> IO ()
 foreign import ccall "gwinsz.h c_get_window_size" c_get_window_size 
     :: IO CLong
--- foreign import ccall "fdatasync" c_fdatasync 
---     :: CInt -> IO CInt
 
 get_window_size :: IO (Int,Int)
 get_window_size = do 
