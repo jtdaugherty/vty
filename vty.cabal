@@ -100,7 +100,6 @@ Extra-Source-Files: test/Makefile
                     cbits/mk_wcwidth.c
                     cbits/set_term_timing.c
                     cbits/gwinsz.h
-                    cbits/output_buffer.h
 
 ghc-options:         -O2 -funbox-strict-fields -Wall -fno-full-laziness -fspec-constr
 ghc-prof-options:    -O2 -funbox-strict-fields -caf-all -Wall -fno-full-laziness -fspec-constr
