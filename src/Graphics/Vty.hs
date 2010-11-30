@@ -87,7 +87,7 @@ mkVtyEscDelay escDelay = do
 
 intMkVty :: IO Event -> IO () -> TerminalHandle -> IO Vty
 intMkVty kvar fend t = do
-    last_pic_ref <- newIORef undefined
+    last_pic_ref <- newIORef Nothing
     last_update_ref <- newIORef Nothing
 
     let inner_update in_pic = do
