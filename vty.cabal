@@ -1,10 +1,10 @@
 Name:                vty
-Version:             4.6.0.4
+Version:             4.6.0.6
 License:             BSD3
 License-file:        LICENSE
 Author:              Stefan O'Rear, Corey O'Connor
 Maintainer:          Corey O'Connor (coreyoconnor@gmail.com)
-Homepage:            http://trac.haskell.org/vty/
+Homepage:            https://github.com/coreyoconnor/vty
 Category:            User Interfaces
 Synopsis:            A simple terminal access library
 Description:
@@ -20,11 +20,11 @@ Description:
   Notable infelicities: Sometimes poor efficiency; Assumes UTF-8 character encoding support by the
   terminal;
   .
-  You can 'darcs get' it from <http://code.haskell.org/vty/>
+  You can 'git' it from <git://github.com/coreyoconnor/vty.git>
   .
   &#169; 2006-2007 Stefan O'Rear; BSD3 license.
   .
-  &#169; 2008-2010 Corey O'Connor; BSD3 license.
+  &#169; 2008-2011 Corey O'Connor; BSD3 license.
 
 Build-Depends:       base >= 4 && < 5, bytestring, containers, unix
 Build-Depends:       terminfo >= 0.3 && < 0.4
@@ -101,6 +101,6 @@ Extra-Source-Files: test/Makefile
                     cbits/set_term_timing.c
                     cbits/gwinsz.h
 
-ghc-options:         -O2 -funbox-strict-fields -Wall -fno-full-laziness -fspec-constr
-ghc-prof-options:    -O2 -funbox-strict-fields -caf-all -Wall -fno-full-laziness -fspec-constr
+ghc-options:         -O2 -funbox-strict-fields -Wall -fno-full-laziness -fspec-constr -fspec-constr-count=10
+ghc-prof-options:    -O2 -funbox-strict-fields -caf-all -Wall -fno-full-laziness -fspec-constr -fspec-constr-count=10
 
