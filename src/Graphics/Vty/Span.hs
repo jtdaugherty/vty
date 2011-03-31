@@ -24,6 +24,7 @@ import Data.Array.ST
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Internal as BInt
 import qualified Data.Foldable as Foldable
+import Data.List
 import Data.Word
 import qualified Data.ByteString.UTF8 as BSUTF8 
 import qualified Data.String.UTF8 as UTF8
@@ -110,7 +111,7 @@ build_spans pic region = do
             -- The ops builder recursively descends the image and outputs span ops that would
             -- display that image. The number of columns remaining in this row before exceeding the
             -- bounds is also provided. This is used to clip the span ops produced.
-            ops_for_row mrow_ops (pic_background pic) region (pic_image pic) 0 (region_width region)
+            ops_for_row mrow_ops (pic_background pic) region (pic_image pic) 0 0 0 (region_width region)
             -- Fill in any unspecified columns with the background pattern.
             forM_ [0 .. region_height region - 1] $ \row -> do
                 end_x <- readSTArray mrow_ops row >>= return . span_ops_effected_columns
@@ -122,8 +123,8 @@ build_spans pic region = do
 
 type MRowOps s = STArray s Word SpanOps
 
-ops_for_row :: MRowOps s -> Background -> DisplayRegion -> Image -> Word -> Word -> ST s ()
-ops_for_row mrow_ops bg region image y remaining_columns
+ops_for_row :: MRowOps s -> Background -> DisplayRegion -> Image -> Word -> Word -> Word -> Word -> ST s ()
+ops_for_row mrow_ops bg region image skip_row skip_col y remaining_columns
     | remaining_columns == 0 = return ()
     | y >= region_height region = return ()
     | otherwise = case image of
@@ -131,17 +132,19 @@ ops_for_row mrow_ops bg region image y remaining_columns
         -- The width provided is the number of columns this text span will occupy when displayed.
         -- if this is greater than the number of remaining columsn the output has to be produced a
         -- character at a time.
-        HorizText a text_str ow cw -> do
-            snoc_text_span a text_str ow cw mrow_ops y remaining_columns
+        HorizText a text_str _ _ -> do
+            if y < skip_row
+                then return ()
+                else snoc_text_span a text_str mrow_ops skip_col y remaining_columns
         VertJoin t b _ _ -> do
-            ops_for_row mrow_ops bg region t y remaining_columns
-            ops_for_row mrow_ops bg region b (y + image_height t) remaining_columns
+            ops_for_row mrow_ops bg region t skip_row skip_col y remaining_columns
+            ops_for_row mrow_ops bg region b skip_row skip_col (y + image_height t) remaining_columns
         HorizJoin l r _ _ -> do
-            ops_for_row mrow_ops bg region l y remaining_columns
+            ops_for_row mrow_ops bg region l skip_row skip_col y remaining_columns
             -- Don't output the right part unless there is at least a single column left after
             -- outputting the left part.
             if image_width l < remaining_columns
-                then ops_for_row mrow_ops bg region r y (remaining_columns - image_width l)
+                then ops_for_row mrow_ops bg region r skip_row skip_col y (remaining_columns - image_width l)
                 else return ()
         BGFill width height -> do
             let actual_height = if y + height > region_height region 
@@ -150,33 +153,45 @@ ops_for_row mrow_ops bg region image y remaining_columns
                 actual_width = if width > remaining_columns
                                     then remaining_columns
                                     else width
+            -- XXX: Do we need to notify this of skip_rows or skip_cols?
             forM_ [y .. y + actual_height - 1] $ \y' -> snoc_bg_fill mrow_ops bg actual_width y'
-        Translation _offset i -> ops_for_row mrow_ops bg region i y remaining_columns
+        Translation (dx,dy) i ->
+            if dx < 0
+                -- Translation left
+                -- Extract the delta and add it to skip_col.
+                then ops_for_row mrow_ops bg region (translate (0, dy) i) skip_row (skip_col + dw) y remaining_columns
+                -- Translation right
+                else if dy < 0
+                        -- Translation up
+                        -- Extract the delta and add it to skip_row.
+                        then ops_for_row mrow_ops bg region (translate (dx, 0) i) (skip_row + dh) skip_col y remaining_columns
+                        -- Translation down
+                        -- Pad the start of lines and above the image with a
+                        -- background_fill image.
+                        else ops_for_row mrow_ops bg region (background_fill ow dh <-> (background_fill dw ih <|> i)) skip_row skip_col y remaining_columns
+            where
+                dw = toEnum $ abs dx
+                dh = toEnum $ abs dy
+                ow = image_width image
+                ih = image_height i
 
 snoc_text_span :: (Foldable.Foldable t) 
                 => Attr 
                 -> t Char 
-                -> Word -- width of text span in output display columns
-                -> Word -- width of text span in characters
                 -> MRowOps s 
                 -> Word 
                 -> Word 
+                -> Word 
                 -> ST s ()
-snoc_text_span a text_str ow cw mrow_ops y remaining_columns = do
-    if ow > remaining_columns
-        then do
-            snoc_op mrow_ops y $ AttributeChange a
-            let (ow', cw', txt) = Foldable.foldl' 
-                                      build_cropped_txt
-                                      ( 0, 0, B.empty )
-                                      text_str
-            snoc_op mrow_ops y $ TextSpan ow' cw' (UTF8.fromRep txt)
-        else do
-            snoc_op mrow_ops y $ AttributeChange a
-            let utf8_bs = ({-# SCC "BSUTF8.fromString" #-} BSUTF8.fromString) $ Foldable.foldMap (\c -> [c]) text_str
-            snoc_op mrow_ops y $ TextSpan ow cw (UTF8.fromRep utf8_bs)
+snoc_text_span a text_str mrow_ops skip_col y remaining_columns = do
+    snoc_op mrow_ops y $ AttributeChange a
+    let (ow', _, cw', txt) = Foldable.foldl' 
+                                build_cropped_txt
+                                ( 0, 0, 0, B.empty )
+                                text_str
+    snoc_op mrow_ops y $ TextSpan ow' cw' (UTF8.fromRep txt)
     where
-        build_cropped_txt (ow', char_count', b0) c = {-# SCC "build_cropped_txt" #-}
+        build_cropped_txt (ow', dw', char_count', b0) c = {-# SCC "build_cropped_txt" #-}
             let w = wcwidth c
             -- Characters with unknown widths occupy 1 column.  
             -- 
@@ -185,9 +200,18 @@ snoc_text_span a text_str ow cw mrow_ops y remaining_columns = do
             -- the character. If so then this replacement process may need to be implemented
             -- manually for consistent behavior across terminals.
                 w' = toEnum $ if w < 0 then 1 else w
-            in if (w' + ow') > remaining_columns
-                then ( ow', char_count', b0 )
-                else ( ow' + w', char_count' + 1, B.append b0 $ B.pack $ encode [c] )
+            in if dw' == skip_col
+                then if ow' == remaining_columns
+                        then ( ow', dw', char_count', b0 )
+                        else if (w' + ow') > remaining_columns
+                            then ( remaining_columns, dw', char_count' + ooverflow, B.append b0 $ B.pack $ encode $ genericReplicate ooverflow '…' )
+                            else ( ow' + w', dw', char_count' + 1, B.append b0 $ B.pack $ encode [c] )
+                else if (w' + dw') > skip_col
+                        then ( doverflow, skip_col, doverflow, B.append b0 $ B.pack $ encode $ genericReplicate doverflow '…' )
+                        else ( ow', w' + dw', char_count', b0 )
+            where
+                doverflow = skip_col - dw'
+                ooverflow = remaining_columns - ow'
 
 snoc_bg_fill :: MRowOps s -> Background -> Word -> Word -> ST s ()
 snoc_bg_fill _row_ops _bg 0 _row 
