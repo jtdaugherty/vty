@@ -202,7 +202,7 @@ image_width HorizJoin { output_width = w } = w
 image_width VertJoin { output_width = w } = w
 image_width BGFill { output_width = w } = w
 image_width EmptyImage = 0
-image_width ( Translation _v i ) = image_width i
+image_width ( Translation _v i ) = toEnum $ max 0 $ (fst _v +) $ fromEnum $ image_width i
 
 -- | The height of an Image. This is the number of display rows the image will occupy.
 image_height :: Image -> Word
@@ -211,7 +211,7 @@ image_height HorizJoin { output_height = r } = r
 image_height VertJoin { output_height = r } = r
 image_height BGFill { output_height = r } = r
 image_height EmptyImage = 0
-image_height ( Translation _v i ) = image_height i
+image_height ( Translation _v i ) = toEnum $ max 0 $ (snd _v +) $ fromEnum $ image_height i
 
 -- | Combines two images side by side.
 --
