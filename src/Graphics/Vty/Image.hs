@@ -19,6 +19,7 @@ module Graphics.Vty.Image ( Image(..)
                           , char_fill
                           , empty_image
                           , translate
+                          , crop
                           -- | The possible display attributes used in constructing an `Image`.
                           , module Graphics.Vty.Attributes
                           )
@@ -99,6 +100,8 @@ data Image =
     -- Any image of zero size equals the empty image.
     | EmptyImage
     | Translation (Int, Int) Image
+    -- Crop an image to a size
+    | ImageCrop (Int, Int) Image
     deriving Eq
 
 instance Show Image where
@@ -112,6 +115,8 @@ instance Show Image where
         = "VertJoin (" ++ show c ++ ", " ++ show r ++ ") ( " ++ show t ++ " ) <-> ( " ++ show b ++ " )"
     show ( Translation offset i )
         = "Translation ( " ++ show offset ++ ", " ++ show i ++ " )"
+    show ( ImageCrop size i )
+        = "ImageCrop ( " ++ show size ++ ", " ++ show i ++ " )"
     show ( EmptyImage ) = "EmptyImage"
 
 -- | Currently append in the Monoid instance is equivalent to <->. Future versions will just stack
@@ -203,6 +208,7 @@ image_width VertJoin { output_width = w } = w
 image_width BGFill { output_width = w } = w
 image_width EmptyImage = 0
 image_width ( Translation _v i ) = image_width i
+image_width ( ImageCrop _v i ) = min (image_width i) (toEnum $ fst _v)
 
 -- | The height of an Image. This is the number of display rows the image will occupy.
 image_height :: Image -> Word
@@ -212,6 +218,7 @@ image_height VertJoin { output_height = r } = r
 image_height BGFill { output_height = r } = r
 image_height EmptyImage = 0
 image_height ( Translation _v i ) = image_height i
+image_height ( ImageCrop _v i ) = min (image_height i) (toEnum $ fst _v)
 
 -- | Combines two images side by side.
 --
@@ -327,4 +334,7 @@ empty_image = EmptyImage
 
 translate :: (Int, Int) -> Image -> Image
 translate v i = Translation v i
+
+crop :: (Int, Int) -> Image -> Image
+crop v i = ImageCrop v i
 
