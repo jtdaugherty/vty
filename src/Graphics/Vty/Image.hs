@@ -218,7 +218,7 @@ image_height VertJoin { output_height = r } = r
 image_height BGFill { output_height = r } = r
 image_height EmptyImage = 0
 image_height ( Translation _v i ) = image_height i
-image_height ( ImageCrop _v i ) = min (image_height i) (toEnum $ fst _v)
+image_height ( ImageCrop _v i ) = min (image_height i) (toEnum $ snd _v)
 
 -- | Combines two images side by side.
 --
