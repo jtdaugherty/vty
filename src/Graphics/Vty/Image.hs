@@ -20,6 +20,7 @@ module Graphics.Vty.Image ( Image(..)
                           , empty_image
                           , translate
                           , crop
+                          , pad
                           -- | The possible display attributes used in constructing an `Image`.
                           , module Graphics.Vty.Attributes
                           )
@@ -102,6 +103,8 @@ data Image =
     | Translation (Int, Int) Image
     -- Crop an image to a size
     | ImageCrop (Int, Int) Image
+    -- Pad an image up to a size
+    | ImagePad (Int, Int) Image
     deriving Eq
 
 instance Show Image where
@@ -117,6 +120,8 @@ instance Show Image where
         = "Translation ( " ++ show offset ++ ", " ++ show i ++ " )"
     show ( ImageCrop size i )
         = "ImageCrop " ++ show size ++ " ( " ++ show i ++ " )"
+    show ( ImagePad size i )
+        = "ImagePad " ++ show size ++ " ( " ++ show i ++ " )"
     show ( EmptyImage ) = "EmptyImage"
 
 -- | Currently append in the Monoid instance is equivalent to <->. Future versions will just stack
@@ -209,6 +214,7 @@ image_width BGFill { output_width = w } = w
 image_width EmptyImage = 0
 image_width ( Translation _v i ) = image_width i
 image_width ( ImageCrop _v i ) = min (image_width i) (toEnum $ fst _v)
+image_width ( ImagePad _v i ) = max (image_width i) (toEnum $ fst _v)
 
 -- | The height of an Image. This is the number of display rows the image will occupy.
 image_height :: Image -> Word
@@ -219,6 +225,7 @@ image_height BGFill { output_height = r } = r
 image_height EmptyImage = 0
 image_height ( Translation _v i ) = image_height i
 image_height ( ImageCrop _v i ) = min (image_height i) (toEnum $ snd _v)
+image_height ( ImagePad _v i ) = max (image_height i) (toEnum $ snd _v)
 
 -- | Combines two images side by side.
 --
@@ -338,3 +345,5 @@ translate v i = Translation v i
 crop :: (Int, Int) -> Image -> Image
 crop v i = ImageCrop v i
 
+pad :: (Int, Int) -> Image -> Image
+pad = ImagePad v i

@@ -156,6 +156,14 @@ ops_for_row mrow_ops bg region image y remaining_columns
             if y >= (toEnum $ snd _size)
                 then return ()
                 else ops_for_row mrow_ops bg region i y (min remaining_columns $ toEnum $ fst _size)
+        ImagePad (x,y) i -> do
+            let hpad = if image_width i < x
+                        then background_fill (x - image_width i) (image_height i)
+                        else empty_image
+            let vpad = if image_height i < y
+                        then background_fill (image_width i) (y - image_height i)
+                        else empty_image
+            ops_for_row mrow_ops bg region (vert_join (horiz_join i hpad) vpad) y remaining_columns
 
 snoc_text_span :: (Foldable.Foldable t) 
                 => Attr 
