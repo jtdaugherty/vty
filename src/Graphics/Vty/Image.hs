@@ -350,7 +350,7 @@ crop v (ImagePad _size i) = ImagePad (min (fst v) (fst _size), min (snd v) (snd 
 crop v i = ImagePad v i
 
 pad :: (Word, Word) -> Image -> Image
-pad v@(w,h) i
-    | w == 0    = EmptyImage
-    | h == 0    = EmptyImage
-    | otherwise = ImagePad v i
+pad (0,_) _ = EmptyImage
+pad (_,0) _ = EmptyImage
+pad v (ImagePad _size i) = ImagePad (max (fst v) (fst _size), max (snd v) (snd _size)) i
+pad v i = ImagePad v i
