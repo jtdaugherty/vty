@@ -111,7 +111,7 @@ instance Show Image where
     show ( VertJoin { part_top = t, part_bottom = b, output_width = c, output_height = r } ) 
         = "VertJoin (" ++ show c ++ ", " ++ show r ++ ") ( " ++ show t ++ " ) <-> ( " ++ show b ++ " )"
     show ( Translation offset i )
-        = "Translation ( " ++ show offset ++ ", " ++ show i ++ " )"
+        = "Translation " ++ show offset ++ " ( " ++ show i ++ " )"
     show ( EmptyImage ) = "EmptyImage"
 
 -- | Currently append in the Monoid instance is equivalent to <->. Future versions will just stack
