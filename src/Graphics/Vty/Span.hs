@@ -111,7 +111,7 @@ build_spans pic region = do
             -- The ops builder recursively descends the image and outputs span ops that would
             -- display that image. The number of columns remaining in this row before exceeding the
             -- bounds is also provided. This is used to clip the span ops produced.
-            ops_for_row mrow_ops (pic_background pic) region (pic_image pic) 0 0 0 (region_width region)
+            _ <- ops_for_row mrow_ops (pic_background pic) region (pic_image pic) 0 0 0 (region_width region)
             -- Fill in any unspecified columns with the background pattern.
             forM_ [0 .. region_height region - 1] $ \row -> do
                 end_x <- readSTArray mrow_ops row >>= return . span_ops_effected_columns
@@ -123,39 +123,51 @@ build_spans pic region = do
 
 type MRowOps s = STArray s Word SpanOps
 
-ops_for_row :: MRowOps s -> Background -> DisplayRegion -> Image -> Word -> Word -> Word -> Word -> ST s ()
+ops_for_row :: MRowOps s -> Background -> DisplayRegion -> Image -> Word -> Word -> Word -> Word -> ST s Word
 ops_for_row mrow_ops bg region image skip_row skip_col y remaining_columns
-    | remaining_columns == 0 = return ()
-    | y >= region_height region = return ()
+    | remaining_columns == 0 = return skip_row
+    | y >= region_height region = return skip_row
     | otherwise = case image of
-        EmptyImage -> return ()
+        EmptyImage -> return skip_row
         -- The width provided is the number of columns this text span will occupy when displayed.
         -- if this is greater than the number of remaining columsn the output has to be produced a
         -- character at a time.
         HorizText a text_str _ _ -> do
-            if y < skip_row
-                then return ()
-                else snoc_text_span a text_str mrow_ops skip_col y remaining_columns
+            if skip_row > 0
+                then return $ skip_row - 1
+                else do
+                    snoc_text_span a text_str mrow_ops skip_col y remaining_columns
+                    return skip_row
         VertJoin t b _ _ -> do
-            ops_for_row mrow_ops bg region t skip_row skip_col y remaining_columns
-            ops_for_row mrow_ops bg region b skip_row skip_col (y + image_height t) remaining_columns
+            skip_row' <- ops_for_row mrow_ops bg region t skip_row skip_col y remaining_columns
+            ops_for_row mrow_ops bg region b skip_row' skip_col (y + image_height t - (skip_row - skip_row')) remaining_columns
         HorizJoin l r _ _ -> do
-            ops_for_row mrow_ops bg region l skip_row skip_col y remaining_columns
+            skip_row' <- ops_for_row mrow_ops bg region l skip_row skip_col y remaining_columns
             -- Don't output the right part unless there is at least a single column left after
             -- outputting the left part.
-            if image_width l < remaining_columns
-                then ops_for_row mrow_ops bg region r skip_row skip_col y (remaining_columns - image_width l)
-                else return ()
+            if image_width l > remaining_columns
+                then return skip_row'
+                else do
+                    skip_row'' <- ops_for_row mrow_ops bg region r skip_row skip_col y (remaining_columns - image_width l)
+                    return $ min skip_row' skip_row''
         BGFill width height -> do
-            let actual_height = if y + height > region_height region 
-                                    then region_height region - y
-                                    else height
-                actual_width = if width > remaining_columns
-                                    then remaining_columns
-                                    else width
-            -- XXX: Do we need to notify this of skip_rows or skip_cols?
+            let min_height = if y + height > region_height region
+                                then region_height region - y
+                                else height
+                min_width = if width > remaining_columns
+                                then remaining_columns
+                                else width
+                actual_height = if skip_row > min_height
+                                    then 0
+                                    else min_height - skip_row
+                actual_width = if skip_col > min_width
+                                    then 0
+                                    else min_width - skip_col
             forM_ [y .. y + actual_height - 1] $ \y' -> snoc_bg_fill mrow_ops bg actual_width y'
-        Translation (dx,dy) i ->
+            if actual_height > skip_row
+                then return 0
+                else return $ skip_row - min_height
+        Translation (dx,dy) i -> do
             if dx < 0
                 -- Translation left
                 -- Extract the delta and add it to skip_col.
