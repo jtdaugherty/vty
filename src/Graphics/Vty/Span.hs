@@ -152,18 +152,18 @@ ops_for_row mrow_ops bg region image y remaining_columns
                                     else width
             forM_ [y .. y + actual_height - 1] $ \y' -> snoc_bg_fill mrow_ops bg actual_width y'
         Translation _offset i -> ops_for_row mrow_ops bg region i y remaining_columns
-        ImageCrop _size i ->
-            if y >= (toEnum $ snd _size)
+        ImageCrop (max_w,max_h) i ->
+            if y >= max_h
                 then return ()
-                else ops_for_row mrow_ops bg region i y (min remaining_columns $ toEnum $ fst _size)
-        ImagePad (x,y) i -> do
-            let hpad = if image_width i < x
-                        then background_fill (x - image_width i) (image_height i)
+                else ops_for_row mrow_ops bg region i y (min remaining_columns max_w)
+        ImagePad (min_w,min_h) i -> do
+            let hpad = if image_width i < min_w
+                        then background_fill (min_w - image_width i) (image_height i)
                         else empty_image
-            let vpad = if image_height i < y
-                        then background_fill (image_width i) (y - image_height i)
+            let vpad = if image_height i < min_h
+                        then background_fill (image_width i) (min_h - image_height i)
                         else empty_image
-            ops_for_row mrow_ops bg region (vert_join (horiz_join i hpad) vpad) y remaining_columns
+            ops_for_row mrow_ops bg region ((i <|> hpad) <-> vpad) y remaining_columns
 
 snoc_text_span :: (Foldable.Foldable t) 
                 => Attr 

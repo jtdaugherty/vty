@@ -102,9 +102,9 @@ data Image =
     | EmptyImage
     | Translation (Int, Int) Image
     -- Crop an image to a size
-    | ImageCrop (Int, Int) Image
+    | ImageCrop (Word, Word) Image
     -- Pad an image up to a size
-    | ImagePad (Int, Int) Image
+    | ImagePad (Word, Word) Image
     deriving Eq
 
 instance Show Image where
@@ -213,8 +213,8 @@ image_width VertJoin { output_width = w } = w
 image_width BGFill { output_width = w } = w
 image_width EmptyImage = 0
 image_width ( Translation _v i ) = image_width i
-image_width ( ImageCrop _v i ) = min (image_width i) (toEnum $ fst _v)
-image_width ( ImagePad _v i ) = max (image_width i) (toEnum $ fst _v)
+image_width ( ImageCrop _v i ) = min (image_width i) $ fst _v
+image_width ( ImagePad _v i ) = max (image_width i) $ fst _v
 
 -- | The height of an Image. This is the number of display rows the image will occupy.
 image_height :: Image -> Word
@@ -224,8 +224,8 @@ image_height VertJoin { output_height = r } = r
 image_height BGFill { output_height = r } = r
 image_height EmptyImage = 0
 image_height ( Translation _v i ) = image_height i
-image_height ( ImageCrop _v i ) = min (image_height i) (toEnum $ snd _v)
-image_height ( ImagePad _v i ) = max (image_height i) (toEnum $ snd _v)
+image_height ( ImageCrop _v i ) = min (image_height i) $ snd _v
+image_height ( ImagePad _v i ) = max (image_height i) $ snd _v
 
 -- | Combines two images side by side.
 --
@@ -342,8 +342,14 @@ empty_image = EmptyImage
 translate :: (Int, Int) -> Image -> Image
 translate v i = Translation v i
 
-crop :: (Int, Int) -> Image -> Image
-crop v i = ImageCrop v i
+crop :: (Word, Word) -> Image -> Image
+crop v@(w,h) i
+    | w == 0    = EmptyImage
+    | h == 0    = EmptyImage
+    | otherwise = ImagePad v i
 
-pad :: (Int, Int) -> Image -> Image
-pad = ImagePad v i
+pad :: (Word, Word) -> Image -> Image
+pad v@(w,h) i
+    | w == 0    = EmptyImage
+    | h == 0    = EmptyImage
+    | otherwise = ImagePad v i
