@@ -116,7 +116,7 @@ instance Show Image where
     show ( Translation offset i )
         = "Translation ( " ++ show offset ++ ", " ++ show i ++ " )"
     show ( ImageCrop size i )
-        = "ImageCrop ( " ++ show size ++ ", " ++ show i ++ " )"
+        = "ImageCrop " ++ show size ++ " ( " ++ show i ++ " )"
     show ( EmptyImage ) = "EmptyImage"
 
 -- | Currently append in the Monoid instance is equivalent to <->. Future versions will just stack
