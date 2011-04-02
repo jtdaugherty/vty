@@ -343,10 +343,11 @@ translate :: (Int, Int) -> Image -> Image
 translate v i = Translation v i
 
 crop :: (Word, Word) -> Image -> Image
-crop v@(w,h) i
-    | w == 0    = EmptyImage
-    | h == 0    = EmptyImage
-    | otherwise = ImagePad v i
+crop (0,_) _ = EmptyImage
+crop (_,0) _ = EmptyImage
+crop v (ImageCrop _size i) = ImagePad (min (fst v) (fst _size), min (snd v) (snd _size)) i
+crop v (ImagePad _size i) = ImagePad (min (fst v) (fst _size), min (snd v) (snd _size)) i
+crop v i = ImagePad v i
 
 pad :: (Word, Word) -> Image -> Image
 pad v@(w,h) i
