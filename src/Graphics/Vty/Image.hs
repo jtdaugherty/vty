@@ -19,6 +19,10 @@ module Graphics.Vty.Image ( Image(..)
                           , char_fill
                           , empty_image
                           , translate
+                          , safe_wcwidth
+                          , safe_wcswidth
+                          , wcwidth
+                          , wcswidth
                           -- | The possible display attributes used in constructing an `Image`.
                           , module Graphics.Vty.Attributes
                           )
