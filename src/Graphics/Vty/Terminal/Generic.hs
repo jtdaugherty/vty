@@ -1,4 +1,5 @@
--- Copyright 2009-2010 Corey O'Connor
+-- Copyright 2009-2011 Corey O'Connor
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ExistentialQuantification #-}
