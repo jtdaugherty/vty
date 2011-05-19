@@ -23,6 +23,8 @@ module Graphics.Vty.Image ( Image(..)
                           , safe_wcswidth
                           , wcwidth
                           , wcswidth
+                          , crop
+                          , pad
                           -- | The possible display attributes used in constructing an `Image`.
                           , module Graphics.Vty.Attributes
                           )
@@ -103,6 +105,10 @@ data Image =
     -- Any image of zero size equals the empty image.
     | EmptyImage
     | Translation (Int, Int) Image
+    -- Crop an image to a size
+    | ImageCrop (Word, Word) Image
+    -- Pad an image up to a size
+    | ImagePad (Word, Word) Image
     deriving Eq
 
 instance Show Image where
@@ -115,7 +121,11 @@ instance Show Image where
     show ( VertJoin { part_top = t, part_bottom = b, output_width = c, output_height = r } ) 
         = "VertJoin (" ++ show c ++ ", " ++ show r ++ ") ( " ++ show t ++ " ) <-> ( " ++ show b ++ " )"
     show ( Translation offset i )
-        = "Translation ( " ++ show offset ++ ", " ++ show i ++ " )"
+        = "Translation " ++ show offset ++ " ( " ++ show i ++ " )"
+    show ( ImageCrop size i )
+        = "ImageCrop " ++ show size ++ " ( " ++ show i ++ " )"
+    show ( ImagePad size i )
+        = "ImagePad " ++ show size ++ " ( " ++ show i ++ " )"
     show ( EmptyImage ) = "EmptyImage"
 
 -- | Currently append in the Monoid instance is equivalent to <->. Future versions will just stack
@@ -206,7 +216,9 @@ image_width HorizJoin { output_width = w } = w
 image_width VertJoin { output_width = w } = w
 image_width BGFill { output_width = w } = w
 image_width EmptyImage = 0
-image_width ( Translation _v i ) = image_width i
+image_width ( Translation _v i ) = toEnum $ max 0 $ (fst _v +) $ fromEnum $ image_width i
+image_width ( ImageCrop _v i ) = min (image_width i) $ fst _v
+image_width ( ImagePad _v i ) = max (image_width i) $ fst _v
 
 -- | The height of an Image. This is the number of display rows the image will occupy.
 image_height :: Image -> Word
@@ -215,7 +227,9 @@ image_height HorizJoin { output_height = r } = r
 image_height VertJoin { output_height = r } = r
 image_height BGFill { output_height = r } = r
 image_height EmptyImage = 0
-image_height ( Translation _v i ) = image_height i
+image_height ( Translation _v i ) = toEnum $ max 0 $ (snd _v +) $ fromEnum $ image_height i
+image_height ( ImageCrop _v i ) = min (image_height i) $ snd _v
+image_height ( ImagePad _v i ) = max (image_height i) $ snd _v
 
 -- | Combines two images side by side.
 --
@@ -332,3 +346,15 @@ empty_image = EmptyImage
 translate :: (Int, Int) -> Image -> Image
 translate v i = Translation v i
 
+crop :: (Word, Word) -> Image -> Image
+crop (0,_) _ = EmptyImage
+crop (_,0) _ = EmptyImage
+crop v (ImageCrop _size i) = ImagePad (min (fst v) (fst _size), min (snd v) (snd _size)) i
+crop v (ImagePad _size i) = ImagePad (min (fst v) (fst _size), min (snd v) (snd _size)) i
+crop v i = ImagePad v i
+
+pad :: (Word, Word) -> Image -> Image
+pad (0,_) _ = EmptyImage
+pad (_,0) _ = EmptyImage
+pad v (ImagePad _size i) = ImagePad (max (fst v) (fst _size), max (snd v) (snd _size)) i
+pad v i = ImagePad v i
