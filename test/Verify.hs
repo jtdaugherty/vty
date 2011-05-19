@@ -84,3 +84,4 @@ instance Arbitrary DoubleColumnChar where
 
 instance Arbitrary Word where
     arbitrary = choose (0, 1024) >>= return . toEnum
+

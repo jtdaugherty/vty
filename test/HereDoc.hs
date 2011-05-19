@@ -10,5 +10,5 @@ import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Lib
 
 heredoc :: QuasiQuoter
-heredoc = QuasiQuoter (litE . stringL) (litP . stringL)
+heredoc = QuasiQuoter (litE . stringL) (litP . stringL) undefined undefined
 
