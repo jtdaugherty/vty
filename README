@@ -40,7 +40,9 @@ Current disadvantages:
 * Uses the TIOCGWINSZ ioctl to find the current window size, which
   appears to be limited to Linux and *BSD.
 
-darcs get --tag=vty-4.0.0.1 http://code.haskell.org/vty/
+Project is hosted on github.com: https://github.com/coreyoconnor/vty
+
+git clone git://github.com/coreyoconnor/vty.git
 
 To compile the demonstration program: ghc --make test/Test.hs gwinsz.c
 

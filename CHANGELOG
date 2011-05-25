@@ -1,3 +1,10 @@
+4.7.0.0
+    * API changes:
+       * Added Graphics.Vty.Image.crop: Ensure an image is no larger than the specified size.
+       * Added Graphics.Vty.Image.pad: Ensure an image is no smaller than the specified size.
+       * Added Graphics.Vty.Image.translate: Offset an image.
+    * Thanks Ben Boeckel <MathStuf@gmail.com> for these features.
+
 4.3.0.0
 
 4.2.1.0

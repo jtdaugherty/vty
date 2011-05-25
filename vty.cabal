@@ -1,5 +1,5 @@
 Name:                vty
-Version:             4.6.0.6
+Version:             4.7.0.0
 License:             BSD3
 License-file:        LICENSE
 Author:              Stefan O'Rear, Corey O'Connor
@@ -20,7 +20,9 @@ Description:
   Notable infelicities: Sometimes poor efficiency; Assumes UTF-8 character encoding support by the
   terminal;
   .
-  You can 'git' it from <git://github.com/coreyoconnor/vty.git>
+  Project is hosted on github.com: https://github.com/coreyoconnor/vty
+  .
+  git clone git://github.com/coreyoconnor/vty.git
   .
   &#169; 2006-2007 Stefan O'Rear; BSD3 license.
   .
