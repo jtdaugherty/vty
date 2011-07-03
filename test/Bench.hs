@@ -1,6 +1,6 @@
 module Main where
 
-import Graphics.Vty
+import Graphics.Vty hiding ( pad )
 
 import Control.Concurrent( threadDelay )
 import Control.Monad( liftM2 )

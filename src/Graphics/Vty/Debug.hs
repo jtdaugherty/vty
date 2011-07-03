@@ -1,11 +1,12 @@
 -- Copyright 2009-2010 Corey O'Connor
 {-# LANGUAGE ScopedTypeVariables #-}
 module Graphics.Vty.Debug ( module Graphics.Vty.Debug
+                          , module Graphics.Vty.Debug.Image
                           )
 where
 
 import Graphics.Vty.Attributes
-import Graphics.Vty.Image
+import Graphics.Vty.Debug.Image
 import Graphics.Vty.Picture
 import Graphics.Vty.Span
 import Graphics.Vty.DisplayRegion
@@ -49,31 +50,5 @@ region_for_window (DebugWindow w h) = DisplayRegion w h
 
 type TestWindow = DebugWindow
 
-type ImageConstructLog = [ImageConstructEvent]
-data ImageConstructEvent = ImageConstructEvent
-    deriving ( Show, Eq )
-
-forward_image_ops = map forward_transform debug_image_ops
-
-forward_transform, reverse_transform :: ImageOp -> (Image -> Image)
-
-forward_transform (ImageOp f _) = f
-reverse_transform (ImageOp _ r) = r
-
-data ImageOp = ImageOp ImageEndo ImageEndo
-type ImageEndo = Image -> Image
-
-debug_image_ops = 
-    [ id_image_op
-    -- , render_single_column_char_op
-    -- , render_double_column_char_op
-    ]
-
-id_image_op :: ImageOp
-id_image_op = ImageOp id id
-
--- render_char_op :: ImageOp
--- render_char_op = ImageOp id id
-    
 instance Show Picture where
     show (Picture _ image _ ) = "Picture ?? " ++ show image ++ " ??"

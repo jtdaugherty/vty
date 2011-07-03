@@ -45,7 +45,10 @@ import Data.Word
 infixr 5 <|>
 infixr 4 <->
 
-type StringSeq = Seq.Seq Char
+-- | We pair each character with it's display length. This way we only compute the length once per
+-- character.
+-- * Though currently the width of some strings is still compute multiple times. 
+type DisplayString = Seq.Seq (Char, Word)
 
 -- | An image in VTY defines:
 --
@@ -69,8 +72,7 @@ data Image =
       HorizText
       { attr :: !Attr
       -- All character data is stored as Char sequences with the ISO-10646 encoding.
-      , text :: StringSeq
-      -- in columns
+      , text :: DisplayString
       , output_width :: !Word -- >= 0
       , char_width :: !Word -- >= 1
       }
@@ -113,7 +115,7 @@ data Image =
 
 instance Show Image where
     show ( HorizText { output_width = ow, text = txt } ) 
-        = "HorizText [" ++ show ow ++ "] (" ++ show txt ++ ")"
+        = "HorizText [" ++ show ow ++ "] (" ++ show (fmap fst txt) ++ ")"
     show ( BGFill { output_width = c, output_height = r } ) 
         = "BGFill (" ++ show c ++ "," ++ show r ++ ")"
     show ( HorizJoin { part_left = l, part_right = r, output_width = c } ) 
@@ -128,14 +130,13 @@ instance Show Image where
         = "ImagePad " ++ show size ++ " ( " ++ show i ++ " )"
     show ( EmptyImage ) = "EmptyImage"
 
--- | Currently append in the Monoid instance is equivalent to <->. Future versions will just stack
--- the images.
+-- | Currently append in the Monoid instance is equivalent to <->. 
 instance Monoid Image where
     mempty = empty_image
     mappend = (<->)
     
 -- A horizontal text image of 0 characters in width simplifies to the EmptyImage
-horiz_text :: Attr -> StringSeq -> Word -> Image
+horiz_text :: Attr -> DisplayString -> Word -> Image
 horiz_text a txt ow
     | ow == 0    = EmptyImage
     | otherwise = HorizText a txt ow (toEnum $ Seq.length txt)
@@ -288,7 +289,9 @@ vert_cat = foldr (<->) EmptyImage
 -- | an image of a single character. This is a standard Haskell 31-bit character assumed to be in
 -- the ISO-10646 encoding.
 char :: Attr -> Char -> Image
-char !a !c = HorizText a (Seq.singleton c) (safe_wcwidth c) 1
+char !a !c = 
+    let display_width = safe_wcwidth c
+    in HorizText a (Seq.singleton (c, display_width)) display_width 1
 
 -- | A string of characters layed out on a single row with the same display attribute. The string is
 -- assumed to be a sequence of ISO-10646 characters. 
@@ -300,7 +303,9 @@ char !a !c = HorizText a (Seq.singleton c) (safe_wcwidth c) 1
 -- directly to iso_10646_string or string.
 -- 
 iso_10646_string :: Attr -> String -> Image
-iso_10646_string !a !str = horiz_text a (Seq.fromList str) (safe_wcswidth str)
+iso_10646_string !a !str = 
+    let display_text = Seq.fromList $ map (\c -> (c, safe_wcwidth c)) str
+    in horiz_text a display_text (safe_wcswidth str)
 
 -- | Alias for iso_10646_string. Since the usual case is that a literal string like "foo" is
 -- represented internally as a list of ISO 10646 31 bit characters.  
@@ -316,14 +321,16 @@ string = iso_10646_string
 utf8_string :: Attr -> [Word8] -> Image
 utf8_string !a !str = string a ( decode str )
 
+-- | Returns the display width of a character. Assumes all characters with unknown widths are 0 width
 safe_wcwidth :: Char -> Word
 safe_wcwidth c = case wcwidth c of
-    i   | i < 0 -> 0 -- error "negative wcwidth"
+    i   | i < 0 -> 0 
         | otherwise -> toEnum i
 
+-- | Returns the display width of a string. Assumes all characters with unknown widths are 0 width
 safe_wcswidth :: String -> Word
 safe_wcswidth str = case wcswidth str of
-    i   | i < 0 -> 0 -- error "negative wcswidth"
+    i   | i < 0 -> 0 
         | otherwise -> toEnum i
 
 -- | Renders a UTF-8 encoded bytestring. 

@@ -21,7 +21,7 @@ instance Show EmptyWindow where
 
 instance Arbitrary DebugWindow where
     arbitrary = do
-        w <- suchThat arbitrary (/= 0)
-        h <- suchThat arbitrary (/= 0)
+        w <- choose (1,1024)
+        h <- choose (1,1024)
         return $ DebugWindow w h
 

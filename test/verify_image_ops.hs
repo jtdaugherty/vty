@@ -106,19 +106,19 @@ disjoint_width_vert_join_bg_fill (NonEmpty stack_0) (NonEmpty stack_1) =
         _           -> True
 
 main = run_test $ do
-    verify "two_sw_horiz_concat" two_sw_horiz_concat
-    verify "many_sw_horiz_concat" many_sw_horiz_concat
-    verify "two_sw_vert_concat" two_sw_vert_concat
-    verify "horiz_concat_sw_assoc" horiz_concat_sw_assoc
-    verify "many_dw_horiz_concat" many_dw_horiz_concat
-    verify "two_dw_horiz_concat" two_dw_horiz_concat
-    verify "two_dw_vert_concat" two_dw_vert_concat
-    verify "horiz_concat_dw_assoc" horiz_concat_dw_assoc
+    _ <- verify "two_sw_horiz_concat" two_sw_horiz_concat
+    _ <- verify "many_sw_horiz_concat" many_sw_horiz_concat
+    _ <- verify "two_sw_vert_concat" two_sw_vert_concat
+    _ <- verify "horiz_concat_sw_assoc" horiz_concat_sw_assoc
+    _ <- verify "many_dw_horiz_concat" many_dw_horiz_concat
+    _ <- verify "two_dw_horiz_concat" two_dw_horiz_concat
+    _ <- verify "two_dw_vert_concat" two_dw_vert_concat
+    _ <- verify "horiz_concat_dw_assoc" horiz_concat_dw_assoc
     liftIO $ putStrLn $ replicate 80 '-'
-    verify "single row vert concats to correct height" vert_contat_single_row
-    verify "disjoint_height_horiz_join" disjoint_height_horiz_join
-    verify "disjoint_height_horiz_join BG fill" disjoint_height_horiz_join_bg_fill
-    verify "disjoint_width_vert_join" disjoint_width_vert_join
-    verify "disjoint_width_vert_join BG fill" disjoint_width_vert_join_bg_fill
+    _ <- verify "single row vert concats to correct height" vert_contat_single_row
+    _ <- verify "disjoint_height_horiz_join" disjoint_height_horiz_join
+    _ <- verify "disjoint_height_horiz_join BG fill" disjoint_height_horiz_join_bg_fill
+    _ <- verify "disjoint_width_vert_join" disjoint_width_vert_join
+    _ <- verify "disjoint_width_vert_join BG fill" disjoint_width_vert_join_bg_fill
     return ()
 

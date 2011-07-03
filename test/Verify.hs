@@ -11,8 +11,6 @@ module Verify ( module Verify
               , Result(..)
               , monadicIO
               , liftIO
-              , liftIOResult
-              , liftResult
               , liftBool
               )
     where
@@ -82,6 +80,7 @@ instance Arbitrary DoubleColumnChar where
            [ toEnum 0x3040 .. toEnum 0x3098 ] 
         ++ [ toEnum 0x309B .. toEnum 0xA4CF]
 
-instance Arbitrary Word where
-    arbitrary = choose (0, 1024) >>= return . toEnum
+
+liftIOResult :: Testable prop => IO prop -> Property
+liftIOResult = morallyDubiousIOProperty
 
