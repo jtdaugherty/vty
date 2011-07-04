@@ -9,8 +9,6 @@
 module Graphics.Vty.Span
     where
 
-import Codec.Binary.UTF8.Width ( wcwidth )
-
 import Graphics.Vty.Image
 import Graphics.Vty.Picture
 import Graphics.Vty.DisplayRegion
@@ -25,9 +23,8 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Internal as BInt
 import qualified Data.Foldable as Foldable
 import Data.List
-import Data.Word
-import qualified Data.ByteString.UTF8 as BSUTF8 
 import qualified Data.String.UTF8 as UTF8
+import Data.Word
 
 import Foreign.Storable ( pokeByteOff )
 
@@ -52,6 +49,14 @@ data SpanOpSequence = SpanOpSequence
 
 type RowOps = Array Word SpanOps
 type SpanOps = [SpanOp]
+
+instance Show SpanOpSequence where
+    show (SpanOpSequence _ the_row_ops)
+        = concat $ ["{ "] ++ map (\ops -> show ops ++ "; " ) (elems the_row_ops) ++ [" }"]
+
+instance Show SpanOp where
+    show (AttributeChange attr) = show attr
+    show (TextSpan ow cw _) = "TextSpan " ++ show ow ++ " " ++ show cw
 
 span_ops_columns :: SpanOpSequence -> Word
 span_ops_columns ops = region_width $ effected_region ops
@@ -204,9 +209,8 @@ ops_for_row mrow_ops bg region image skip_dim@(skip_row,skip_col) y remaining_co
                         else empty_image
             ops_for_row mrow_ops bg region ((i <|> hpad) <-> vpad) skip_dim y remaining_columns
 
-snoc_text_span :: (Foldable.Foldable t) 
-                => Attr 
-                -> t Char 
+snoc_text_span :: Attr 
+                -> DisplayString
                 -> MRowOps s 
                 -> Word 
                 -> Word 
@@ -215,30 +219,22 @@ snoc_text_span :: (Foldable.Foldable t)
 snoc_text_span a text_str mrow_ops skip_col y remaining_columns = do
     snoc_op mrow_ops y $ AttributeChange a
     let (ow', dw', cw', txt) = Foldable.foldl'
-                                build_cropped_txt
+                                build_text_span
                                 ( 0, 0, 0, B.empty )
                                 text_str
     snoc_op mrow_ops y $ TextSpan ow' cw' (UTF8.fromRep txt)
     return $ skip_col - dw'
     where
-        build_cropped_txt (ow', dw', char_count', b0) c = {-# SCC "build_cropped_txt" #-}
-            let w = wcwidth c
-            -- Characters with unknown widths occupy 1 column.  
-            -- 
-            -- todo: Not sure if this is actually correct.
-            -- I presume there is a replacement character that is output by the terminal instead of
-            -- the character. If so then this replacement process may need to be implemented
-            -- manually for consistent behavior across terminals.
-                w' = toEnum $ if w < 0 then 1 else w
-            in if dw' == skip_col
+        build_text_span (ow', dw', char_count', b0) (c,w) = {-# SCC "build_text_span" #-}
+            if dw' == skip_col
                 then if ow' == remaining_columns
                         then ( ow', dw', char_count', b0 )
-                        else if (w' + ow') > remaining_columns
+                        else if (w + ow') > remaining_columns
                                 then ( remaining_columns, dw', char_count' + ooverflow, B.append b0 $ B.pack $ encode $ genericReplicate ooverflow '…' )
-                                else ( ow' + w', dw', char_count' + 1, B.append b0 $ B.pack $ encode [c] )
-                else if (w' + dw') > skip_col
+                                else ( ow' + w, dw', char_count' + 1, B.append b0 $ B.pack $ encode [c] )
+                else if (w + dw') > skip_col
                         then ( doverflow, skip_col, doverflow, B.append b0 $ B.pack $ encode $ genericReplicate doverflow '…' )
-                        else ( ow', w' + dw', char_count', b0 )
+                        else ( ow', w + dw', char_count', b0 )
             where
                 doverflow = skip_col - dw'
                 ooverflow = remaining_columns - ow'

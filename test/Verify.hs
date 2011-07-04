@@ -24,10 +24,8 @@ import qualified Codec.Binary.UTF8.String as UTF8
 
 import Control.Applicative
 import Control.Monad.State.Strict
-import Control.Monad.Trans ( liftIO )
 
 import Data.IORef
-import Data.Word
 
 import Numeric ( showHex )
 

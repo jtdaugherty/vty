@@ -150,30 +150,31 @@ single_attr_single_span_stack_op_coverage stack =
 
 main :: IO ()
 main = run_test $ do
-    verify "unit image is cropped when window size == (0,0) [0]" unit_image_and_zero_window_0
-    verify "unit image is cropped when window size == (0,0) [1]" unit_image_and_zero_window_1
-    verify "horiz span image is cropped when window size == (0,0) [0]" horiz_span_image_and_zero_window_0
-    verify "horiz span image is cropped when window size == (0,0) [1]" horiz_span_image_and_zero_window_1
-    verify "horiz span image is not cropped when window size == size of image [width]" horiz_span_image_and_equal_window_0
-    verify "horiz span image is not cropped when window size == size of image [height]" horiz_span_image_and_equal_window_1
-    verify "horiz span image is not cropped when window size < size of image [width]" horiz_span_image_and_lesser_window_0
-    verify "horiz span image is not cropped when window size > size of image [width]" horiz_span_image_and_greater_window_0
-    verify "arbitrary image is padded or cropped" arb_image_is_cropped
-    verify "The span ops actually define content for all the rows in the output region" span_ops_actually_fill_rows
-    verify "The span ops actually define content for all the columns in the output region" span_ops_actually_fill_columns
-    verify "first span op is always to set the text attribute" first_span_op_sets_attr
-    verify "a stack of single attr text spans should define content for all the columns [output region == size of stack]"
+    _ <- verify "unit image is cropped when window size == (0,0) [0]" unit_image_and_zero_window_0
+    _ <- verify "unit image is cropped when window size == (0,0) [1]" unit_image_and_zero_window_1
+    _ <- verify "horiz span image is cropped when window size == (0,0) [0]" horiz_span_image_and_zero_window_0
+    _ <- verify "horiz span image is cropped when window size == (0,0) [1]" horiz_span_image_and_zero_window_1
+    _ <- verify "horiz span image is not cropped when window size == size of image [width]" horiz_span_image_and_equal_window_0
+    _ <- verify "horiz span image is not cropped when window size == size of image [height]" horiz_span_image_and_equal_window_1
+    _ <- verify "horiz span image is not cropped when window size < size of image [width]" horiz_span_image_and_lesser_window_0
+    _ <- verify "horiz span image is not cropped when window size > size of image [width]" horiz_span_image_and_greater_window_0
+    _ <- verify "arbitrary image is padded or cropped" arb_image_is_cropped
+    _ <- verify "The span ops actually define content for all the rows in the output region" span_ops_actually_fill_rows
+    _ <- verify "The span ops actually define content for all the columns in the output region" span_ops_actually_fill_columns
+    _ <- verify "first span op is always to set the text attribute" first_span_op_sets_attr
+    _ <- verify "a stack of single attr text spans should define content for all the columns [output region == size of stack]"
            single_attr_single_span_stack_op_coverage
-    verify "a single attr text span is cropped when window size < size of stack image [width]"
+    _ <- verify "a single attr text span is cropped when window size < size of stack image [width]"
         single_attr_single_span_stack_cropped_0 
-    verify "a single attr text span is cropped when window size < size of stack image [height]"
+    _ <- verify "a single attr text span is cropped when window size < size of stack image [height]"
         single_attr_single_span_stack_cropped_1
-    verify "single attr text span <|> single attr text span cropped. [width]"
+    _ <- verify "single attr text span <|> single attr text span cropped. [width]"
         single_attr_single_span_stack_cropped_2
-    verify "single attr text span <|> single attr text span cropped. [height]"
+    _ <- verify "single attr text span <|> single attr text span cropped. [height]"
         single_attr_single_span_stack_cropped_3
-    verify "single attr text span <-> single attr text span cropped. [width]"
+    _ <- verify "single attr text span <-> single attr text span cropped. [width]"
         single_attr_single_span_stack_cropped_4
-    verify "single attr text span <-> single attr text span cropped. [height]"
+    _ <- verify "single attr text span <-> single attr text span cropped. [height]"
         single_attr_single_span_stack_cropped_5
     return ()
+

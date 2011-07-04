@@ -7,6 +7,7 @@ type ImageConstructLog = [ImageConstructEvent]
 data ImageConstructEvent = ImageConstructEvent
     deriving ( Show, Eq )
 
+forward_image_ops :: [Image -> Image]
 forward_image_ops = map forward_transform debug_image_ops
 
 forward_transform, reverse_transform :: ImageOp -> (Image -> Image)
@@ -17,6 +18,7 @@ reverse_transform (ImageOp _ r) = r
 data ImageOp = ImageOp ImageEndo ImageEndo
 type ImageEndo = Image -> Image
 
+debug_image_ops :: [ImageOp]
 debug_image_ops = 
     [ id_image_op
     -- , render_single_column_char_op

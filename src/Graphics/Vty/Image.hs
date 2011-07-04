@@ -3,7 +3,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# OPTIONS_GHC -funbox-strict-fields #-}
-module Graphics.Vty.Image ( Image(..)
+module Graphics.Vty.Image ( DisplayString
+                          , Image(..)
                           , image_width
                           , image_height
                           , (<|>)
@@ -321,16 +322,23 @@ string = iso_10646_string
 utf8_string :: Attr -> [Word8] -> Image
 utf8_string !a !str = string a ( decode str )
 
--- | Returns the display width of a character. Assumes all characters with unknown widths are 0 width
+-- XXX: Characters with unknown widths occupy 1 column?
+-- 
+-- Not sure if this is actually correct.  I presume there is a replacement character that is output
+-- by the terminal instead of the character and this replacement character is 1 column wide. If this
+-- is not true for all terminals then a per-terminal replacement character width needs to be
+-- implemented.
+
+-- | Returns the display width of a character. Assumes all characters with unknown widths are 1 width
 safe_wcwidth :: Char -> Word
 safe_wcwidth c = case wcwidth c of
-    i   | i < 0 -> 0 
+    i   | i < 0 -> 1 
         | otherwise -> toEnum i
 
--- | Returns the display width of a string. Assumes all characters with unknown widths are 0 width
+-- | Returns the display width of a string. Assumes all characters with unknown widths are 1 width
 safe_wcswidth :: String -> Word
 safe_wcswidth str = case wcswidth str of
-    i   | i < 0 -> 0 
+    i   | i < 0 -> 1 
         | otherwise -> toEnum i
 
 -- | Renders a UTF-8 encoded bytestring. 

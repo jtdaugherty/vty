@@ -1,6 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Verify.Graphics.Vty.DisplayRegion ( module Verify.Graphics.Vty.DisplayRegion
                                          , module Graphics.Vty.DisplayRegion
+                                         , DebugWindow(..)
                                          )
     where
 

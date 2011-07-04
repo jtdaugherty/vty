@@ -50,7 +50,7 @@ instance Arbitrary SingleRowSingleAttrImage where
         -- The text must contain at least one character. Otherwise the image simplifies to the
         -- IdImage which has a height of 0. If this is to represent a single row then the height
         -- must be 1
-        single_column_row_text <- resize 512 (listOf1 arbitrary)
+        single_column_row_text <- resize 128 (listOf1 arbitrary)
         attr <- arbitrary
         return $ SingleRowSingleAttrImage 
                     attr 
@@ -80,7 +80,7 @@ data SingleAttrSingleSpanStack = SingleAttrSingleSpanStack
 
 instance Arbitrary SingleAttrSingleSpanStack where
     arbitrary = do
-        image_list <- resize 512 (listOf1 arbitrary)
+        image_list <- resize 128 (listOf1 arbitrary)
         let image = vert_cat [ i | SingleRowSingleAttrImage { row_image = i } <- image_list ]
         return $ SingleAttrSingleSpanStack 
                     image 

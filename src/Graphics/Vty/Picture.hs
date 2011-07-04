@@ -37,6 +37,9 @@ data Picture = Picture
     , pic_background :: Background
     }
 
+instance Show Picture where
+    show (Picture _ image _ ) = "Picture ?? " ++ show image ++ " ??"
+
 -- | Create a picture for display for the given image. The picture will not have a displayed cursor
 -- and the background display attribute will be `current_attr`.
 pic_for_image :: Image -> Picture
