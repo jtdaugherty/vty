@@ -230,14 +230,16 @@ snoc_text_span a text_str mrow_ops skip_col y remaining_columns = do
                 then if ow' == remaining_columns
                         then ( ow', dw', char_count', b0 )
                         else if (w + ow') > remaining_columns
-                                then ( remaining_columns, dw', char_count' + ooverflow, B.append b0 $ B.pack $ encode $ genericReplicate ooverflow '…' )
+                                then ( remaining_columns, dw', char_count' + ooverflow, B.append b0 oelipses )
                                 else ( ow' + w, dw', char_count' + 1, B.append b0 $ B.pack $ encode [c] )
                 else if (w + dw') > skip_col
-                        then ( doverflow, skip_col, doverflow, B.append b0 $ B.pack $ encode $ genericReplicate doverflow '…' )
+                        then ( doverflow, skip_col, doverflow, B.append b0 delipses )
                         else ( ow', w + dw', char_count', b0 )
             where
                 doverflow = skip_col - dw'
+                delipses = B.pack $ encode $ genericReplicate doverflow '…'
                 ooverflow = remaining_columns - ow'
+                oelipses = B.pack $ encode $ genericReplicate ooverflow '…'
 
 snoc_bg_fill :: MRowOps s -> Background -> Word -> Word -> ST s ()
 snoc_bg_fill _row_ops _bg 0 _row 

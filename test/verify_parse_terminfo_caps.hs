@@ -111,7 +111,7 @@ main = do
 verify_parse_cap cap_string on_parse = liftIOResult $ do
     parse_result <- parse_cap_expression cap_string
     case parse_result of
-        Left error -> return $ failed $ result { reason = "parse error " ++ show error }
+        Left error -> return $ failed { reason = "parse error " ++ show error }
         Right e -> on_parse e
 
 non_paramaterized_caps (NonParamCapString cap) = do
@@ -140,7 +140,7 @@ push_param_caps (PushParamCap cap_string expected_param_count expected_bytes) = 
             out_param_count = param_count e
         in return $ if out_param_count == expected_param_count
             then verify_bytes_equal out_bytes expected_bytes
-            else failed $ result { reason = "out param count /= expected param count" }
+            else failed { reason = "out param count /= expected param count" }
 
 dec_print_param_caps (DecPrintCap cap_string expected_param_count expected_bytes) = do
     verify_parse_cap cap_string $ \e ->
@@ -149,7 +149,7 @@ dec_print_param_caps (DecPrintCap cap_string expected_param_count expected_bytes
             out_param_count = param_count e
         in return $ if out_param_count == expected_param_count
             then verify_bytes_equal out_bytes expected_bytes
-            else failed $ result { reason = "out param count /= expected param count" }
+            else failed { reason = "out param count /= expected param count" }
 
 print_cap ti cap_name = do
     putStrLn $ cap_name ++ ": " ++ show (from_capname ti cap_name)

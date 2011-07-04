@@ -35,7 +35,8 @@ GHC_ARGS=--make -i../src \
 		 -package QuickCheck-2.4 \
 		 -ignore-package vty \
 		 ../cbits/gwinsz.c ../cbits/set_term_timing.c  ../cbits/mk_wcwidth.c \
-		 -O -funbox-strict-fields -Wall -threaded -fno-full-laziness -fspec-constr -rtsopts \
+		 -O -funbox-strict-fields -Wall -threaded -fno-full-laziness -fspec-constr -fspec-constr-count=10 \
+		 -rtsopts \
 		 -odir objects -hidir objects
 
 GHC_PROF_ARGS=-prof -auto-all $(GHC_ARGS)

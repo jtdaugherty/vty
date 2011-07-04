@@ -7,7 +7,6 @@ where
 
 import Graphics.Vty.Attributes
 import Graphics.Vty.Debug.Image
-import Graphics.Vty.Picture
 import Graphics.Vty.Span
 import Graphics.Vty.DisplayRegion
 
