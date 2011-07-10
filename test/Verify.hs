@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -26,10 +28,12 @@ import Control.Applicative
 import Control.Monad.State.Strict
 
 import Data.IORef
+import Data.Word
 
 import Numeric ( showHex )
 
 import System.IO
+import System.Random
 
 type Test = StateT TestState IO
 
@@ -81,4 +85,14 @@ instance Arbitrary DoubleColumnChar where
 
 liftIOResult :: Testable prop => IO prop -> Property
 liftIOResult = morallyDubiousIOProperty
+
+#if __GLASGOW_HASKELL__ <= 701
+instance Random Word where
+    random g = 
+        let (i :: Int, g') = random g
+        in (toEnum i, g')
+    randomR (l,h) g =
+        let (i :: Int, g') = randomR (fromEnum l,fromEnum h) g
+        in (toEnum i, g')
+#endif
 
