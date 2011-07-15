@@ -105,4 +105,4 @@ Extra-Source-Files: test/Makefile
 
 ghc-options:         -O2 -funbox-strict-fields -Wall -fno-full-laziness -fspec-constr -fspec-constr-count=10
 ghc-prof-options:    -O2 -funbox-strict-fields -caf-all -Wall -fno-full-laziness -fspec-constr -fspec-constr-count=10
-
+cc-options:          -O2
