@@ -24,7 +24,6 @@ import Test.QuickCheck.Monadic ( monadicIO )
 
 import qualified Codec.Binary.UTF8.String as UTF8
 
-import Control.Applicative
 import Control.Monad.State.Strict
 
 import Data.IORef
@@ -36,10 +35,6 @@ import System.IO
 import System.Random
 
 type Test = StateT TestState IO
-
-instance Applicative Test where
-    pure = return
-    ( <*> ) = ap
 
 data TestState = TestState
     { results_ref :: IORef [QC.Result]

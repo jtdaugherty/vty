@@ -21,11 +21,10 @@ import Graphics.Vty.DisplayAttributes
 import Control.Monad ( liftM )
 import Control.Monad.Trans
 
-import Data.Array
 import qualified Data.ByteString.Internal as BSCore
-import Data.Foldable
 import Data.IORef
 import Data.String.UTF8 hiding ( foldl )
+import qualified Data.Vector as Vector 
 
 import System.IO
 
@@ -110,7 +109,7 @@ display_context t b = do
     display_terminal_instance t b (\ d -> DisplayHandle d t s)
 
 data DisplayState = DisplayState
-    { previous_output_ref :: IORef (Maybe SpanOpSequence)
+    { previous_output_ref :: IORef (Maybe DisplayOps)
     }
 
 initial_display_state :: MonadIO m => m DisplayState
@@ -220,8 +219,8 @@ output_picture (DisplayHandle d t s) pic = do
                     -> if effected_region previous_ops /= effected_region ops
                             then return $ replicate ( fromEnum $ region_height $ effected_region ops ) 
                                                     True
-                            else return $ zipWith (/=) ( elems $ row_ops previous_ops ) 
-                                                       ( elems $ row_ops ops )
+                            else return $ zipWith (/=) ( Vector.toList $ display_ops previous_ops ) 
+                                                       ( Vector.toList $ display_ops ops )
 
     -- determine the number of bytes required to completely serialize the output ops.
     let total =   hide_cursor_required_bytes d 
@@ -254,9 +253,9 @@ output_picture (DisplayHandle d t s) pic = do
         liftIO $ writeIORef (previous_output_ref s) (Just ops)
     return ()
 
-required_bytes :: DisplayTerminal d => d -> FixedAttr -> [Bool] -> SpanOpSequence -> Word
+required_bytes :: DisplayTerminal d => d -> FixedAttr -> [Bool] -> DisplayOps -> Word
 required_bytes d in_fattr diffs ops = 
-    let (_, n, _, _) = foldl' required_bytes' (0, 0, in_fattr, diffs) ( row_ops ops )
+    let (_, n, _, _) = Vector.foldl' required_bytes' (0, 0, in_fattr, diffs) ( display_ops ops )
     in n
     where 
         required_bytes' (y, current_sum, fattr, True : diffs') span_ops
@@ -272,11 +271,11 @@ span_ops_required_bytes d y in_fattr span_ops =
     -- The first operation is to set the cursor to the start of the row
     let header_required_bytes = move_cursor_required_bytes d 0 y
     -- then the span ops are serialized in the order specified
-    in foldl' ( \(current_sum, fattr) op -> let (c, fattr') = span_op_required_bytes d fattr op 
-                                            in (c + current_sum, fattr') 
-              ) 
-              (header_required_bytes, in_fattr)
-              span_ops
+    in Vector.foldl' ( \(current_sum, fattr) op -> let (c, fattr') = span_op_required_bytes d fattr op 
+                                                   in (c + current_sum, fattr') 
+                     ) 
+                     (header_required_bytes, in_fattr)
+                     span_ops
 
 span_op_required_bytes :: DisplayTerminal d => d -> FixedAttr -> SpanOp -> (Word, FixedAttr)
 span_op_required_bytes d fattr (AttributeChange attr) = 
@@ -292,12 +291,12 @@ serialize_output_ops :: ( MonadIO m, DisplayTerminal d )
                         -> OutputBuffer 
                         -> FixedAttr 
                         -> [Bool]
-                        -> SpanOpSequence 
+                        -> DisplayOps 
                         -> m OutputBuffer
 serialize_output_ops d start_ptr in_fattr diffs ops = do
-    (_, end_ptr, _, _) <- foldlM serialize_output_ops' 
+    (_, end_ptr, _, _) <- Vector.foldM' serialize_output_ops' 
                               ( 0, start_ptr, in_fattr, diffs ) 
-                              ( row_ops ops )
+                              ( display_ops ops )
     return end_ptr
     where 
         serialize_output_ops' ( y, out_ptr, fattr, True : diffs' ) span_ops
@@ -319,9 +318,9 @@ serialize_span_ops d y out_ptr in_fattr span_ops = do
     -- The first operation is to set the cursor to the start of the row
     out_ptr' <- serialize_move_cursor d 0 y out_ptr
     -- then the span ops are serialized in the order specified
-    foldlM ( \(out_ptr'', fattr) op -> serialize_span_op d op out_ptr'' fattr ) 
-           (out_ptr', in_fattr)
-           span_ops
+    Vector.foldM ( \(out_ptr'', fattr) op -> serialize_span_op d op out_ptr'' fattr ) 
+                 (out_ptr', in_fattr)
+                 span_ops
 
 serialize_span_op :: ( MonadIO m, DisplayTerminal d )
                      => d 
@@ -357,16 +356,16 @@ data CursorOutputMap = CursorOutputMap
     { char_to_output_pos :: (Word, Word) -> (Word, Word)
     } 
 
-cursor_output_map :: SpanOpSequence -> Cursor -> CursorOutputMap
+cursor_output_map :: DisplayOps -> Cursor -> CursorOutputMap
 cursor_output_map span_ops _cursor = CursorOutputMap
     { char_to_output_pos = \(cx, cy) -> (cursor_column_offset span_ops cx cy, cy)
     }
 
-cursor_column_offset :: SpanOpSequence -> Word -> Word -> Word
+cursor_column_offset :: DisplayOps -> Word -> Word -> Word
 cursor_column_offset span_ops cx cy =
-    let cursor_row_ops = row_ops span_ops ! cy
+    let cursor_row_ops = Vector.unsafeIndex (display_ops span_ops) (fromEnum cy)
         (out_offset, _, _) 
-            = foldl' ( \(d, current_cx, done) op -> 
+            = Vector.foldl' ( \(d, current_cx, done) op -> 
                         if done then (d, current_cx, done) else case span_op_has_width op of
                             Nothing -> (d, current_cx, False)
                             Just (cw, ow) -> case compare cx (current_cx + cw) of

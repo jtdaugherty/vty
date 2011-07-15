@@ -10,20 +10,20 @@ import Graphics.Vty.Debug.Image
 import Graphics.Vty.Span
 import Graphics.Vty.DisplayRegion
 
-import Data.Array
+import qualified Data.Vector as Vector 
 import Data.Word
 
-row_ops_effected_columns :: SpanOpSequence -> [Word]
+row_ops_effected_columns :: DisplayOps -> [Word]
 row_ops_effected_columns spans 
-    = map span_ops_effected_columns (elems $ row_ops spans)
+    = Vector.toList $ Vector.map span_ops_effected_columns $ display_ops spans
 
-all_spans_have_width :: SpanOpSequence -> Word -> Bool
+all_spans_have_width :: DisplayOps -> Word -> Bool
 all_spans_have_width spans expected
-    = all (== expected) ( map span_ops_effected_columns (elems $ row_ops spans) )
+    = all (== expected) $ Vector.toList $ Vector.map span_ops_effected_columns $ display_ops spans
 
-span_ops_effected_rows :: SpanOpSequence -> Word
-span_ops_effected_rows (SpanOpSequence _ the_row_ops) 
-    = toEnum $ length (filter (not . null) (elems the_row_ops))
+span_ops_effected_rows :: DisplayOps -> Word
+span_ops_effected_rows (DisplayOps _ the_row_ops) 
+    = toEnum $ length (filter (not . null . Vector.toList) (Vector.toList the_row_ops))
         
 type SpanConstructLog = [SpanConstructEvent]
 data SpanConstructEvent = SpanSetAttr Attr

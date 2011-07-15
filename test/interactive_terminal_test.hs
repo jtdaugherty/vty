@@ -13,10 +13,10 @@ import Control.Monad
 import Data.List ( lookup )
 import Data.Maybe ( isJust, fromJust )
 import Data.Monoid
+import Data.String.QQ
 import Data.Word
 
 import Foreign.Marshal.Array 
-import HereDoc
 
 import qualified System.Environment as Env
 
@@ -28,14 +28,14 @@ main = do
 output_file_path = "test_results.list"
 
 print_intro = do
-    putStr $ [$heredoc| 
+    putStr $ [s| 
 This is an interactive verification program for the terminal input and output
 support of the VTY library. This will ask a series of questions about what you
 see on screen. The goal is to verify that VTY's output and input support
 performs as expected with your terminal.
 
 This program produces a file named 
-    |] ++ output_file_path ++ [$heredoc| 
+    |] ++ output_file_path ++ [s| 
 in the current directory that contains the results for each test assertion. This
 can  be emailed to coreyoconnor@gmail.com and used by the VTY authors to improve
 support for your terminal. No personal information is contained in the report.
@@ -186,7 +186,7 @@ reserve_output_test = Test
         release_terminal t
         return ()
     , print_summary = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared. 
     1. Four lines of text should be visible.
@@ -197,7 +197,7 @@ After return is pressed for the second time this test then:
     * The cursor is visible.
 |]
     , confirm_results = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Did the test output match the description?
 |]
         default_success_confirm_results
@@ -308,14 +308,14 @@ display_bounds_test_3 = Test
     }
 
 display_bounds_test_summary has_cursor = do
-    putStr $ [$heredoc|
+    putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
 |]
     if has_cursor
         then putStr "    1. The cursor will be visible."
         else putStr "    1. The cursor will NOT be visible."
-    putStr [$heredoc|
+    putStr [s|
     2. The border of the display will be outlined in Xs. 
        So if - and | represented the edge of the terminal window:
          |-------------|
@@ -323,12 +323,12 @@ Once return is pressed:
          |X           X||]
 
     if has_cursor
-        then putStr $ [$heredoc|
+        then putStr $ [s|
          |XXXXXXXXXXXXC| |]
-        else putStr $ [$heredoc|
+        else putStr $ [s|
          |XXXXXXXXXXXXX| |]
 
-    putStr $ [$heredoc|
+    putStr $ [s|
          |-------------|
 
         ( Where C is the final position of the cursor. There may be an X drawn
@@ -341,7 +341,7 @@ After return is pressed for the second time:
 |]
 
 generic_output_match_confirm = do
-    putStr $ [$heredoc|
+    putStr $ [s|
 Did the test output match the description?
 |]
     default_success_confirm_results
@@ -423,7 +423,7 @@ unicode_single_width_1 = Test
     , confirm_results = generic_output_match_confirm
     }
 
-unicode_single_width_summary = putStr [$heredoc|
+unicode_single_width_summary = putStr [s|
 Once return is pressed:
     0. The screen will be cleared.
     1. The cursor will be hidden.
@@ -505,7 +505,7 @@ unicode_double_width_1 = Test
     , confirm_results = generic_output_match_confirm
     }
 
-unicode_double_width_summary = putStr [$heredoc|
+unicode_double_width_summary = putStr [s|
 Once return is pressed:
     0. The screen will be cleared.
     1. The cursor will be hidden.
@@ -558,7 +558,7 @@ attributes_test_0 = Test
         release_terminal t
         return ()
     , print_summary = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
     1. The cursor will be hidden.
@@ -579,7 +579,7 @@ After return is pressed for the second time:
     1. The cursor should be visible.
 |]
     , confirm_results = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Did the test output match the description?
 |]
         default_success_confirm_results
@@ -604,7 +604,7 @@ attributes_test_1 = Test
         release_terminal t
         return ()
     , print_summary = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
     1. The cursor will be hidden.
@@ -634,7 +634,7 @@ After return is pressed for the second time:
     1. The cursor should be visible.
 |]
     , confirm_results = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Did the test output match the description?
 |]
         default_success_confirm_results
@@ -661,7 +661,7 @@ attributes_test_2 = Test
         release_terminal t
         return ()
     , print_summary = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
     1. The cursor will be hidden.
@@ -693,7 +693,7 @@ After return is pressed for the second time:
     1. The cursor should be visible.
 |]
     , confirm_results = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Did the test output match the description?
 |]
         default_success_confirm_results
@@ -720,7 +720,7 @@ attributes_test_3 = Test
         release_terminal t
         return ()
     , print_summary = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
     1. The cursor will be hidden.
@@ -760,7 +760,7 @@ After return is pressed for the second time:
     1. The cursor should be visible.
 |]
     , confirm_results = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Did the test output match the description?
 |]
         default_success_confirm_results
@@ -796,7 +796,7 @@ attributes_test_4 = Test
         release_terminal t
         return ()
     , print_summary = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
     1. The cursor will be hidden.
@@ -823,7 +823,7 @@ After return is pressed for the second time:
     1. The cursor should be visible.
 |]
     , confirm_results = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Did the test output match the description?
 |]
         default_success_confirm_results
@@ -847,7 +847,7 @@ attributes_test_5 = Test
         release_terminal t
         return ()
     , print_summary = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
     1. The cursor will be hidden.
@@ -861,7 +861,7 @@ After return is pressed for the second time:
     1. The cursor should be visible.
 |]
     , confirm_results = do
-        putStr $ [$heredoc|
+        putStr $ [s|
 Did the test output match the description?
 |]
         default_success_confirm_results
@@ -879,7 +879,7 @@ inline_test_0 = Test
         putStrLn "line 3."
         release_terminal t
         return ()
-    , print_summary = putStr $ [$heredoc|
+    , print_summary = putStr $ [s|
 lines are in order.
 The second line "line 2" should have a red background and the text underline.
 The third line "line 3" should be drawn in the same style as the first line.
@@ -900,7 +900,7 @@ inline_test_1 = Test
         putStrLn "Not styled."
         release_terminal t
         return ()
-    , print_summary = putStr $ [$heredoc|
+    , print_summary = putStr $ [s|
 |]
 
     , confirm_results = generic_output_match_confirm
@@ -918,7 +918,7 @@ inline_test_2 = Test
         putStr "Not styled.\n"
         release_terminal t
         return ()
-    , print_summary = putStr $ [$heredoc|
+    , print_summary = putStr $ [s|
 |]
 
     , confirm_results = generic_output_match_confirm

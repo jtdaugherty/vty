@@ -50,7 +50,7 @@ single_T_row (DebugWindow w h) = liftIOResult $ do
                    ++ concat (replicate (fromEnum h - 1) $ "MA" ++ replicate (fromEnum w) 'B')
         expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected
     if out_bytes /=  expected_bytes
-        then return $ failed $ result { reason = "\n" ++ show out_bytes ++ "\n\n" ++ show expected_bytes }
+        then return $ failed { reason = "\n" ++ show out_bytes ++ "\n\n" ++ show expected_bytes }
         else return succeeded
     
 many_T_rows :: DebugWindow -> Property
@@ -67,7 +67,7 @@ many_T_rows (DebugWindow w h) = liftIOResult $ do
     let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
         expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected
     if out_bytes /=  expected_bytes
-        then return $ failed $ result { reason = "\n" ++ show out_bytes ++ "\n\n" ++ show expected_bytes }
+        then return $ failed { reason = "\n" ++ show out_bytes ++ "\n\n" ++ show expected_bytes }
         else return succeeded
 
 many_T_rows_cropped_width :: DebugWindow -> Property
@@ -84,7 +84,7 @@ many_T_rows_cropped_width (DebugWindow w h) = liftIOResult $ do
     let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
         expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected
     if out_bytes /=  expected_bytes
-        then return $ failed $ result { reason = "\n" ++ show out_bytes ++ "\n\n" ++ show expected_bytes }
+        then return $ failed { reason = "\n" ++ show out_bytes ++ "\n\n" ++ show expected_bytes }
         else return succeeded
 
 many_T_rows_cropped_height :: DebugWindow -> Property
@@ -101,7 +101,7 @@ many_T_rows_cropped_height (DebugWindow w h) = liftIOResult $ do
     let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
         expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected
     if out_bytes /=  expected_bytes
-        then return $ failed $ result { reason = "\n" ++ show out_bytes ++ "\n\n" ++ show expected_bytes }
+        then return $ failed { reason = "\n" ++ show out_bytes ++ "\n\n" ++ show expected_bytes }
         else return succeeded
 
 main = run_test $ do

@@ -1,5 +1,5 @@
 Name:                vty
-Version:             4.7.0.1
+Version:             4.7.0.3
 License:             BSD3
 License-file:        LICENSE
 Author:              Stefan O'Rear, Corey O'Connor
@@ -33,7 +33,7 @@ Build-Depends:       terminfo >= 0.3 && < 0.4
 Build-Depends:       utf8-string >= 0.3 && < 0.4
 Build-Depends:       mtl >= 1.1.1.0 && < 2.1
 Build-Depends:       ghc-prim, parallel >= 2.2 && < 3.2, deepseq >= 1.1 && < 1.2
-Build-Depends:       array
+Build-Depends:       vector >= 0.7
 Build-Depends:       parsec >= 2 && < 4
 Build-Type:          Simple
 Data-Files:          README, TODO

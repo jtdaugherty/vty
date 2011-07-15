@@ -11,7 +11,7 @@ import Graphics.Vty.Debug
 
 import Verify
 
-import Data.Array
+import qualified Data.Vector as Vector 
 
 unit_image_and_zero_window_0 :: UnitImage -> EmptyWindow -> Bool
 unit_image_and_zero_window_0 (UnitImage _ i) (EmptyWindow w) = 
@@ -139,7 +139,7 @@ span_ops_actually_fill_columns (DefaultPic pic win _) =
 first_span_op_sets_attr :: DefaultPic -> Bool
 first_span_op_sets_attr DefaultPic { default_pic = pic, default_win = win } = 
     let spans = spans_for_pic pic (region_for_window win)
-    in all ( is_attr_span_op . head ) ( elems $ row_ops spans )
+    in all ( is_attr_span_op . Vector.head ) ( Vector.toList $ display_ops spans )
 
 single_attr_single_span_stack_op_coverage ::  SingleAttrSingleSpanStack -> Result
 single_attr_single_span_stack_op_coverage stack =
