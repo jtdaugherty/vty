@@ -254,24 +254,24 @@ snoc_text_span :: Attr           -- the display attributes of the text span
                                  -- defined to the end of the display for the row.
                 -> ST s Word
 snoc_text_span a text_str mrow_ops columns_to_skip y remaining_columns = do
-    snoc_op mrow_ops y $ AttributeChange a
+    {-# SCC "snoc_text_span-pre" #-} snoc_op mrow_ops y $! AttributeChange a
     -- At most a text span will consist of remaining_columns characters
     -- we keep track of the position of the next character.
     let max_len :: Int = fromEnum remaining_columns
     mspan_chars <- Vector.new max_len
     ( used_display_columns, display_columns_skipped, used_char_count ) 
-        <- Foldable.foldlM (build_text_span mspan_chars) ( 0, 0, 0 ) text_str
+        <- {-# SCC "snoc_text_span-foldlM" #-} Foldable.foldlM (build_text_span mspan_chars) ( 0, 0, 0 ) text_str
     -- once all characters have been output to mspan_chars we grab the used head 
     out_text <- Vector.unsafeFreeze $! Vector.take used_char_count mspan_chars
     -- convert to UTF8 bytestring.
     -- This could be made faster. Hopefully the optimizer does a fair job at fusing the fold
     -- contained in fromString with the unfold in toList. No biggy right now then.
-    snoc_op mrow_ops y $! TextSpan used_display_columns (toEnum used_char_count)
+    {-# SCC "snoc_text_span-post" #-} snoc_op mrow_ops y $! TextSpan used_display_columns (toEnum used_char_count)
                        $! UTF8.fromString 
                        $! Vector.toList out_text
     return $ columns_to_skip - display_columns_skipped
     where
-        build_text_span mspan_chars (used_display_columns, display_columns_skipped, used_char_count) 
+        build_text_span mspan_chars (!used_display_columns, !display_columns_skipped, !used_char_count) 
                                     (out_char, char_display_width) = {-# SCC "build_text_span" #-}
             -- Only valid if the maximum width of a character is 2 display columns.
             -- XXX: Optimize into a skip pass then clipped fill pass
@@ -280,20 +280,20 @@ snoc_text_span a text_str mrow_ops columns_to_skip y remaining_columns = do
                         then return $! ( used_display_columns, display_columns_skipped, used_char_count )
                         else if ( used_display_columns + char_display_width ) > remaining_columns
                                 then do
-                                    Vector.write mspan_chars used_char_count '…'
+                                    Vector.unsafeWrite mspan_chars used_char_count '…'
                                     return $! ( used_display_columns
                                               , display_columns_skipped
                                               , used_char_count  + 1
                                               )
                                 else do
-                                    Vector.write mspan_chars used_char_count out_char
+                                    Vector.unsafeWrite mspan_chars used_char_count out_char
                                     return $! ( used_display_columns + char_display_width
                                               , display_columns_skipped
                                               , used_char_count + 1
                                               )
                 else if (display_columns_skipped + char_display_width) > columns_to_skip
                         then do
-                            Vector.write mspan_chars used_char_count '…'
+                            Vector.unsafeWrite mspan_chars used_char_count '…'
                             return $! ( used_display_columns + 1
                                       , columns_to_skip
                                       , used_char_count + 1
