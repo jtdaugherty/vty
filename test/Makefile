@@ -60,3 +60,7 @@ $(TESTS) :
 interactive_terminal_test : 
 	ghc $(GHC_ARGS) $@ && ./$@
 
+.PHONY: core
+core :
+	ghc-core --no-asm --no-cast -- $(GHC_ARGS) Bench
+
