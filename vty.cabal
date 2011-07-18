@@ -28,7 +28,7 @@ Description:
   .
   &#169; 2008-2011 Corey O'Connor; BSD3 license.
 
-Build-Depends:       base >= 4 && < 5, bytestring, containers, unix
+Build-Depends:       base >= 4 && < 5, ghc-prim, bytestring, containers, unix
 Build-Depends:       terminfo >= 0.3 && < 0.4
 Build-Depends:       utf8-string >= 0.3 && < 0.4
 Build-Depends:       mtl >= 1.1.1.0 && < 2.1
