@@ -283,7 +283,7 @@ snoc_text_span a text_str mrow_ops columns_to_skip y remaining_columns = do
                         else if ( used_display_columns + char_display_width ) > remaining_columns
                                 then do
                                     Vector.unsafeWrite mspan_chars used_char_count '…'
-                                    return $! ( used_display_columns
+                                    return $! ( used_display_columns + 1
                                               , display_columns_skipped
                                               , used_char_count  + 1
                                               )
