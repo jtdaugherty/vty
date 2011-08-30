@@ -187,7 +187,7 @@ int mk_wcwidth(wchar_t ucs)
 
   /* if we arrive here, ucs is not a combining or C0/C1 control character */
 
-  return 1 + 
+  return 1 +
     (ucs >= 0x1100 &&
      (ucs <= 0x115f ||                    /* Hangul Jamo init. consonants */
       ucs == 0x2329 || ucs == 0x232a ||
@@ -208,7 +208,7 @@ int mk_wcswidth(const wchar_t *pwcs, size_t n)
 {
   int w, width = 0;
 
-  for (;*pwcs && n-- > 0; pwcs++)
+  for (;n-- > 0; pwcs++)
     if ((w = mk_wcwidth(*pwcs)) < 0)
       return -1;
     else
@@ -299,7 +299,7 @@ int mk_wcswidth_cjk(const wchar_t *pwcs, size_t n)
 {
   int w, width = 0;
 
-  for (;*pwcs && n-- > 0; pwcs++)
+  for (;n-- > 0; pwcs++)
     if ((w = mk_wcwidth_cjk(*pwcs)) < 0)
       return -1;
     else
