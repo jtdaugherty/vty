@@ -136,6 +136,7 @@ build_spans pic region = do
                                    (0,0) 
                                    0 
                                    (region_width region)
+                                   (fromEnum $ region_height region)
             -- Fill in any unspecified columns with the background pattern.
             forM_ [0 .. (fromEnum $ region_height region - 1)] $! \row -> do
                 end_x <- Vector.read mrow_ops row >>= return . span_ops_effected_columns
@@ -145,7 +146,7 @@ build_spans pic region = do
         else return ()
     return mrow_ops
 
-row_ops_for_image :: MRowOps s -> Image -> Background -> DisplayRegion -> (Word, Word) -> Int -> Word -> ST s (Word, Word)
+row_ops_for_image :: MRowOps s -> Image -> Background -> DisplayRegion -> (Word, Word) -> Int -> Word -> Int -> ST s (Word, Word)
 row_ops_for_image mrow_ops                      -- the image to output the ops to
                   image                         -- the image to rasterize in column order to mrow_ops
                   bg                            -- the background fill
@@ -153,7 +154,9 @@ row_ops_for_image mrow_ops                      -- the image to output the ops t
                   skip_dim@(skip_row,skip_col)  -- the number of rows 
                   y                             -- ???
                   remaining_columns             -- ???
+                  remain_rows
     | remaining_columns == 0 = return skip_dim
+    | remain_rows == 0  = return skip_dim
     | y >= fromEnum (region_height region) = return skip_dim
     | otherwise = case image of
         EmptyImage -> return skip_dim
@@ -174,30 +177,31 @@ row_ops_for_image mrow_ops                      -- the image to output the ops t
                                                        skip_dim 
                                                        y 
                                                        remaining_columns
+                                                       remain_rows
+            let top_height = (fromEnum $! image_height top_image) - (fromEnum $! skip_row - skip_row')
             (skip_row'',skip_col'') <- row_ops_for_image mrow_ops 
                                                          bottom_image
                                                          bg 
                                                          region 
                                                          (skip_row', skip_col) 
-                                                         (y + (fromEnum $! image_height top_image) - (fromEnum $! skip_row - skip_row')) 
+                                                         (y + top_height)
                                                          remaining_columns
+                                                         (remain_rows - top_height)
             return (skip_row'', min skip_col' skip_col'')
         HorizJoin l r _ _ -> do
-            (skip_row',skip_col') <- row_ops_for_image mrow_ops l bg region skip_dim y remaining_columns
+            (skip_row',skip_col') <- row_ops_for_image mrow_ops l bg region skip_dim y remaining_columns remain_rows
             -- Don't output the right part unless there is at least a single column left after
             -- outputting the left part.
             if image_width l - (skip_col - skip_col') > remaining_columns
                 then return (skip_row,skip_col')
                 else do
-                    (skip_row'',skip_col'') <- row_ops_for_image mrow_ops r bg region (skip_row, skip_col') y (remaining_columns - image_width l + (skip_col - skip_col'))
+                    (skip_row'',skip_col'') <- row_ops_for_image mrow_ops r bg region (skip_row, skip_col') y (remaining_columns - image_width l + (skip_col - skip_col')) remain_rows
                     return (min skip_row' skip_row'', skip_col'')
         BGFill width height -> do
             let min_height = if y + (fromEnum height) > (fromEnum $! region_height region)
                                 then region_height region - (toEnum y)
-                                else height
-                min_width = if width > remaining_columns
-                                then remaining_columns
-                                else width
+                                else min height (toEnum remain_rows)
+                min_width = min width remaining_columns
                 actual_height = if skip_row > min_height
                                     then 0
                                     else min_height - skip_row
@@ -216,25 +220,23 @@ row_ops_for_image mrow_ops                      -- the image to output the ops t
             if dx < 0
                 -- Translation left
                 -- Extract the delta and add it to skip_col.
-                then row_ops_for_image mrow_ops (translate (0, dy) i) bg region (skip_row, skip_col + dw) y remaining_columns
+                then row_ops_for_image mrow_ops (translate (0, dy) i) bg region (skip_row, skip_col + dw) y remaining_columns remain_rows
                 -- Translation right
                 else if dy < 0
                         -- Translation up
                         -- Extract the delta and add it to skip_row.
-                        then row_ops_for_image mrow_ops (translate (dx, 0) i) bg region (skip_row + dh, skip_col) y remaining_columns
+                        then row_ops_for_image mrow_ops (translate (dx, 0) i) bg region (skip_row + dh, skip_col) y remaining_columns remain_rows
                         -- Translation down
                         -- Pad the start of lines and above the image with a
-                        -- background_fill image.
-                        else row_ops_for_image mrow_ops (background_fill ow dh <-> (background_fill dw ih <|> i)) bg region skip_dim y remaining_columns
+                        -- background_fill image
+                        else row_ops_for_image mrow_ops (background_fill ow dh <-> (background_fill dw ih <|> i)) bg region skip_dim y remaining_columns remain_rows
             where
                 dw = toEnum $ abs dx
                 dh = toEnum $ abs dy
                 ow = image_width image
                 ih = image_height i
         ImageCrop (max_w,max_h) i ->
-            if y >= fromEnum max_h
-                then return skip_dim
-                else row_ops_for_image mrow_ops i bg region skip_dim y (min remaining_columns max_w)
+            row_ops_for_image mrow_ops i bg region skip_dim y (min remaining_columns max_w) (min remain_rows $ fromEnum max_h)
         ImagePad (min_w,min_h) i -> do
             let hpad = if image_width i < min_w
                         then background_fill (min_w - image_width i) (image_height i)
@@ -242,7 +244,7 @@ row_ops_for_image mrow_ops                      -- the image to output the ops t
             let vpad = if image_height i < min_h
                         then background_fill (image_width i) (min_h - image_height i)
                         else empty_image
-            row_ops_for_image mrow_ops ((i <|> hpad) <-> vpad) bg region skip_dim y remaining_columns
+            row_ops_for_image mrow_ops ((i <|> hpad) <-> vpad) bg region skip_dim y remaining_columns remain_rows
 
 snoc_text_span :: Attr           -- the display attributes of the text span
                 -> DisplayString -- the text to output
@@ -281,7 +283,7 @@ snoc_text_span a text_str mrow_ops columns_to_skip y remaining_columns = do
                         else if ( used_display_columns + char_display_width ) > remaining_columns
                                 then do
                                     Vector.unsafeWrite mspan_chars used_char_count '…'
-                                    return $! ( used_display_columns
+                                    return $! ( used_display_columns + 1
                                               , display_columns_skipped
                                               , used_char_count  + 1
                                               )
