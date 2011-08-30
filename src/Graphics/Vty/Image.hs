@@ -366,11 +366,10 @@ translate v i = Translation v i
 crop :: (Word, Word) -> Image -> Image
 crop (0,_) _ = EmptyImage
 crop (_,0) _ = EmptyImage
-crop v (ImageCrop _size i) = ImagePad (min (fst v) (fst _size), min (snd v) (snd _size)) i
-crop v (ImagePad _size i) = ImagePad (min (fst v) (fst _size), min (snd v) (snd _size)) i
-crop v i = ImagePad v i
+crop v (ImageCrop _size i) = ImageCrop (min (fst v) (fst _size), min (snd v) (snd _size)) i
+crop v i = ImageCrop v i
 
--- | Ensure an image is at least the provided size. If the image is smaler then pad.
+-- | Ensure an image is at least the provided size. If the image is smaller then pad.
 pad :: (Word, Word) -> Image -> Image
 pad (0,_) _ = EmptyImage
 pad (_,0) _ = EmptyImage
