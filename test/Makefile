@@ -30,7 +30,6 @@ GHC_ARGS=--make -i../src \
 		 -package parallel \
 		 -package deepseq-1.1.0.2 \
 		 -hide-package transformers \
-		 -hide-package monads-fd \
 		 -hide-package monads-tf \
 		 -package QuickCheck-2.4 \
 		 -ignore-package vty \
