@@ -1,3 +1,6 @@
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
 -- Copyright 2009-2010 Corey O'Connor
 -- Display attributes
 --
@@ -69,8 +72,13 @@ data FixedAttr = FixedAttr
 
 -- | The style and color attributes can either be the terminal defaults. Or be equivalent to the
 -- previously applied style. Or be a specific value.
-data Eq v => MaybeDefault v = Default | KeepCurrent | SetTo !v
-    deriving ( Eq, Show )
+data MaybeDefault v where
+    Default :: MaybeDefault v
+    KeepCurrent :: MaybeDefault v
+    SetTo :: forall v . ( Eq v, Show v ) => !v -> MaybeDefault v
+
+deriving instance Eq v => Eq (MaybeDefault v)
+deriving instance Eq v => Show (MaybeDefault v)
 
 instance Eq v => Monoid ( MaybeDefault v ) where
     mempty = KeepCurrent
