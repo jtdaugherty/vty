@@ -165,15 +165,19 @@ initTermInput escDelay terminal = do
                                               , k "E" KBegin
                                               ],
 
-           -- Support for arrows
+           -- Support for arrows and KHome/KEnd
            [("\ESC[" ++ charCnt ++ show mc++c,(s,m))
             | charCnt <- ["1;", ""], -- we can have a count or not
             (m,mc) <- [([MShift],2::Int), ([MCtrl],5), ([MMeta],3),
                        ([MShift, MCtrl],6), ([MShift, MMeta],4)], -- modifiers and their codes
-            (c,s) <- [("A", KUp), ("B", KDown), ("C", KRight), ("D", KLeft)] -- directions and their codes
+            (c,s) <- [("A", KUp), ("B", KDown), ("C", KRight), ("D", KLeft), ("H", KHome), ("F", KEnd)] -- directions and their codes
            ],
 
            let k n s = ("\ESC["++show n++"~",(s,[]))
+           in zipWith k [2::Int,3,5,6,1,4]
+                        [KIns,KDel,KPageUp,KPageDown,KHome,KEnd],
+
+           let k n s = ("\ESC["++show n++";5~",(s,[MCtrl]))
            in zipWith k [2::Int,3,5,6,1,4]
                         [KIns,KDel,KPageUp,KPageDown,KHome,KEnd],
 
