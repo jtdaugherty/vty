@@ -5,12 +5,12 @@ module Graphics.Vty.LLInput ( Key(..)
                             , Modifier(..)
                             , Button(..)
                             , Event(..)
-                            , initTermInput 
-                            ) 
+                            , initTermInput
+                            )
     where
 
 import Data.Char
-import Data.Maybe ( mapMaybe 
+import Data.Maybe ( mapMaybe
                   )
 import Data.List( inits )
 import Data.Word
@@ -36,22 +36,22 @@ import System.Posix.IO ( stdInput
 -- |Representations of non-modifier keys.
 data Key = KEsc | KFun Int | KBackTab | KPrtScr | KPause | KASCII Char | KBS | KIns
          | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin |  KNP5 | KUp | KMenu
-         | KLeft | KDown | KRight | KEnter 
+         | KLeft | KDown | KRight | KEnter
     deriving (Eq,Show,Ord)
 
 -- |Modifier keys.  Key codes are interpreted such that users are more likely to
 -- have Meta than Alt; for instance on the PC Linux console, 'MMeta' will
 -- generally correspond to the physical Alt key.
-data Modifier = MShift | MCtrl | MMeta | MAlt 
+data Modifier = MShift | MCtrl | MMeta | MAlt
     deriving (Eq,Show,Ord)
 
 -- |Mouse buttons.  Not yet used.
-data Button = BLeft | BMiddle | BRight 
+data Button = BLeft | BMiddle | BRight
     deriving (Eq,Show,Ord)
 
 -- |Generic events.
 data Event = EvKey Key [Modifier] | EvMouse Int Int Button [Modifier]
-           | EvResize Int Int 
+           | EvResize Int Int
     deriving (Eq,Show,Ord)
 
 data KClass = Valid Key [Modifier] | Invalid | Prefix | MisPfx Key [Modifier] [Char]
@@ -70,7 +70,7 @@ initTermInput escDelay terminal = do
   setTerminalAttributes stdInput nattr Immediately
   set_term_timing
   let inputToEventThread :: IO ()
-      inputToEventThread = loop [] 
+      inputToEventThread = loop []
           where loop kb = case (classify kb) of
                               Prefix       -> do c <- readChan inputChannel
                                                  loop (kb ++ [c])
@@ -82,7 +82,7 @@ initTermInput escDelay terminal = do
 
       inputThread :: IO ()
       inputThread = loop
-          where 
+          where
               loop = do
                   setFdOption stdInput NonBlockingRead False
                   threadWaitRead stdInput
@@ -97,7 +97,7 @@ initTermInput escDelay terminal = do
                       writeChan inputChannel (head bytes)
                   readAll
       -- | If there is no input for some time, this thread puts '\xFFFE' in the
-      -- inputChannel. 
+      -- inputChannel.
       noInputThread :: IO ()
       noInputThread = when (escDelay > 0) loop
             where loop = do
@@ -107,7 +107,7 @@ initTermInput escDelay terminal = do
                     when hadNoInput $ do
                         finishAtomicInput
                     loop
-      
+
 
       compile :: [[([Char],(Key,[Modifier]))]] -> [Char] -> KClass
       compile lst = cl' where
@@ -120,25 +120,25 @@ initTermInput escDelay terminal = do
                                  Just (k,m) -> Valid k m
                                  Nothing -> case head $ mapMaybe (\s -> (,) s `fmap` M.lookup s mlst) $ init $ inits str of
                                               (s,(k,m)) -> MisPfx k m (drop (length s) str)
-      
+
       -- ANSI specific bits
 
 
       classify, classifyTab :: [Char] -> KClass
-      
+
       -- As soon as
       classify "\xFFFE" = Invalid
-      classify s@(c:_) | ord c >= 0xC2 = 
+      classify s@(c:_) | ord c >= 0xC2 =
           if utf8Length (ord c) > length s then Prefix else classifyUtf8 s -- beginning of an utf8 sequence
       classify other = classifyTab other
 
       classifyUtf8 s = case decode ((map (fromIntegral . ord) s) :: [Word8]) of
           Just (unicodeChar, _) -> Valid (KASCII unicodeChar) []
           _ -> Invalid -- something bad happened; just ignore and continue.
-         
+
       classifyTab = compile (caps_classify_table : ansi_classify_table)
-   
-      caps_tabls = [("khome", (KHome, [])), 
+
+      caps_tabls = [("khome", (KHome, [])),
                     ("kend",  (KEnd,  [])),
                     ("cbt",   (KBackTab, [])),
                     ("kcud1", (KDown,  [])),
@@ -149,9 +149,9 @@ initTermInput escDelay terminal = do
                     ("kLFT", (KLeft, [MShift])),
                     ("kRIT", (KRight, [MShift]))
                    ]
-   
+
       caps_classify_table = [(x,y) | (Just x,y) <- map (first (getCapability terminal . tiGetStr)) $ caps_tabls]
-      
+
       ansi_classify_table :: [[([Char], (Key, [Modifier]))]]
       ansi_classify_table =
          [ let k c s = ("\ESC["++c,(s,[])) in [ k "G" KNP5
@@ -159,22 +159,27 @@ initTermInput escDelay terminal = do
                                               , k "A" KUp
                                               , k "B" KDown
                                               , k "C" KRight
-                                              , k "D" KLeft 
+                                              , k "D" KLeft
                                               , k "H" KHome
                                               , k "F" KEnd
                                               , k "E" KBegin
                                               ],
 
-           -- Support for arrows
-           [("\ESC[" ++ charCnt ++ show mc++c,(s,m)) 
+           -- Support for arrows and KHome/KEnd
+           [("\ESC[" ++ charCnt ++ show mc++c,(s,m))
             | charCnt <- ["1;", ""], -- we can have a count or not
-            (m,mc) <- [([MShift],2::Int), ([MCtrl],5), ([MMeta],3), 
+            (m,mc) <- [([MShift],2::Int), ([MCtrl],5), ([MMeta],3),
                        ([MShift, MCtrl],6), ([MShift, MMeta],4)], -- modifiers and their codes
-            (c,s) <- [("A", KUp), ("B", KDown), ("C", KRight), ("D", KLeft)] -- directions and their codes
+            (c,s) <- [("A", KUp), ("B", KDown), ("C", KRight), ("D", KLeft), ("H", KHome), ("F", KEnd)] -- directions and their codes
            ],
-           
-           let k n s = ("\ESC["++show n++"~",(s,[])) in zipWith k [2::Int,3,5,6,1,4] 
-                                                                  [KIns,KDel,KPageUp,KPageDown,KHome,KEnd],
+
+           let k n s = ("\ESC["++show n++"~",(s,[]))
+           in zipWith k [2::Int,3,5,6,1,4]
+                        [KIns,KDel,KPageUp,KPageDown,KHome,KEnd],
+
+           let k n s = ("\ESC["++show n++";5~",(s,[MCtrl]))
+           in zipWith k [2::Int,3,5,6,1,4]
+                        [KIns,KDel,KPageUp,KPageDown,KHome,KEnd],
 
            -- Support for simple characters.
            [ (x:[],(KASCII x,[])) | x <- map toEnum [0..255] ],
@@ -186,25 +191,25 @@ initTermInput escDelay terminal = do
            [ ('\ESC':[x],(KASCII x,[MMeta])) | x <- '\ESC':'\t':[' ' .. '\DEL'] ],
 
            -- Ctrl+Char
-           [ ([toEnum x],(KASCII y,[MCtrl])) 
+           [ ([toEnum x],(KASCII y,[MCtrl]))
               | (x,y) <- zip ([0..31]) ('@':['a'..'z']++['['..'_']),
                 y /= 'i' -- Resolve issue #3 where CTRL-i hides TAB.
            ],
-           
+
            -- Ctrl+Meta+Char
            [ ('\ESC':[toEnum x],(KASCII y,[MMeta,MCtrl])) | (x,y) <- zip [0..31] ('@':['a'..'z']++['['..'_']) ],
 
            -- Special support
-           [ -- special support for ESC 
-             ("\ESC",(KEsc,[])) , ("\ESC\ESC",(KEsc,[MMeta])), 
+           [ -- special support for ESC
+             ("\ESC",(KEsc,[])) , ("\ESC\ESC",(KEsc,[MMeta])),
 
              -- Special support for backspace
              ("\DEL",(KBS,[])), ("\ESC\DEL",(KBS,[MMeta])),
-             
+
              -- Special support for Enter
-             ("\ESC\^J",(KEnter,[MMeta])), ("\^J",(KEnter,[])) ] 
+             ("\ESC\^J",(KEnter,[MMeta])), ("\^J",(KEnter,[])) ]
          ]
-   
+
   eventThreadId <- forkIO $ inputToEventThread
   inputThreadId <- forkIO $ inputThread
   noInputThreadId <- forkIO $ noInputThread
@@ -225,11 +230,10 @@ first :: (a -> b) -> (a,c) -> (b,c)
 first f (x,y) = (f x, y)
 
 utf8Length :: (Num t, Ord a, Num a) => a -> t
-utf8Length c 
+utf8Length c
     | c < 0x80 = 1
     | c < 0xE0 = 2
     | c < 0xF0 = 3
     | otherwise = 4
 
 foreign import ccall "set_term_timing" set_term_timing :: IO ()
-
