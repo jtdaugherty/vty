@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-void set_term_timing(void)
+void vty_set_term_timing(void)
 {
     struct termios trm;
     tcgetattr(STDIN_FILENO, &trm);

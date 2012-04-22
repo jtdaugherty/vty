@@ -1,6 +1,6 @@
 #include <sys/ioctl.h>
 
-unsigned long c_get_window_size(void) {
+unsigned long vty_c_get_window_size(void) {
 	struct winsize w;
 	if (ioctl (0, TIOCGWINSZ, &w) >= 0)
 		return (w.ws_row << 16) + w.ws_col;
