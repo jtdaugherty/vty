@@ -25,7 +25,7 @@ wcwidth c = unsafePerformIO (withCWString [c] $! \ws -> do
     )
 {-# NOINLINE wcwidth #-}
 
-foreign import ccall unsafe "mk_wcwidth" wcwidth' :: CWchar -> CInt
+foreign import ccall unsafe "vty_mk_wcwidth" wcwidth' :: CWchar -> CInt
 
 wcswidth :: String -> Int
 wcswidth str = unsafePerformIO (withCWStringLen str $! \(ws, ws_len) -> do
@@ -36,4 +36,4 @@ wcswidth str = unsafePerformIO (withCWStringLen str $! \(ws, ws_len) -> do
     )
 {-# NOINLINE wcswidth #-}
 
-foreign import ccall unsafe "mk_wcswidth" wcswidth' :: Ptr CWchar -> CSize -> CInt
+foreign import ccall unsafe "vty_mk_wcswidth" wcswidth' :: Ptr CWchar -> CSize -> CInt

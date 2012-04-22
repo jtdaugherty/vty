@@ -181,7 +181,7 @@ instance Terminal Term where
 
     output_handle t = return (term_handle t)
 
-foreign import ccall "gwinsz.h c_get_window_size" c_get_window_size 
+foreign import ccall "gwinsz.h vty_c_get_window_size" c_get_window_size 
     :: IO CLong
 
 get_window_size :: IO (Int,Int)
