@@ -236,4 +236,4 @@ utf8Length c
     | c < 0xF0 = 3
     | otherwise = 4
 
-foreign import ccall "set_term_timing" set_term_timing :: IO ()
+foreign import ccall "vty_set_term_timing" set_term_timing :: IO ()
