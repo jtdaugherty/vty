@@ -28,10 +28,12 @@ import System.Console.Terminfo
 import System.Posix.Signals.Exts
 import System.Posix.Terminal
 import System.Posix.IO ( stdInput
-                        ,fdRead
+                        ,fdReadBuf
                         ,setFdOption
                         ,FdOption(..)
                        )
+
+import Foreign ( malloc, poke, peek, free )
 
 -- |Representations of non-modifier keys.
 data Key = KEsc | KFun Int | KBackTab | KPrtScr | KPause | KASCII Char | KBS | KIns
@@ -91,7 +93,11 @@ initTermInput escDelay terminal = do
                   when (escDelay == 0) finishAtomicInput
                   loop
               readAll = do
-                  (bytes, bytes_read) <- fdRead stdInput 1
+                  ptr <- malloc
+                  poke ptr 0
+                  bytes_read <- fdReadBuf stdInput ptr 1
+                  bytes <- fmap ((: "") . chr . fromIntegral) $ peek ptr
+                  free ptr
                   when (bytes_read > 0) $ do
                       _ <- tryPutMVar hadInput () -- signal input
                       writeChan inputChannel (head bytes)
