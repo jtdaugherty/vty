@@ -186,7 +186,7 @@ row_ops_for_image mrow_ops                      -- the image to output the ops t
                                                          (skip_row', skip_col) 
                                                          (y + top_height)
                                                          remaining_columns
-                                                         (remain_rows - top_height)
+                                                         (max 0 $ remain_rows - top_height)
             return (skip_row'', min skip_col' skip_col'')
         HorizJoin l r _ _ -> do
             (skip_row',skip_col') <- row_ops_for_image mrow_ops l bg region skip_dim y remaining_columns remain_rows
