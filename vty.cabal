@@ -41,6 +41,7 @@ Exposed-Modules:     Graphics.Vty
                      Graphics.Vty.Terminal
                      Graphics.Vty.LLInput
                      Graphics.Vty.Attributes
+                     Graphics.Vty.Image
                      Graphics.Vty.Inline
                      Graphics.Vty.Picture
                      Graphics.Vty.DisplayRegion
@@ -50,7 +51,6 @@ other-modules:       Codec.Binary.UTF8.Width
                      Data.Terminfo.Parse
                      Data.Terminfo.Eval
                      Graphics.Vty.DisplayAttributes
-                     Graphics.Vty.Image
                      Graphics.Vty.Span
                      Graphics.Vty.Terminal.Generic
                      Graphics.Vty.Terminal.MacOSX
