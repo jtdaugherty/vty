@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Main where
+module VerifyMockTerminal where
 
 import Verify.Graphics.Vty.DisplayRegion
 import Verify.Graphics.Vty.Picture
@@ -104,12 +104,12 @@ many_T_rows_cropped_height (DebugWindow w h) = liftIOResult $ do
         then return $ failed { reason = "\n" ++ show out_bytes ++ "\n\n" ++ show expected_bytes }
         else return succeeded
 
-main = run_test $ do
-    verify "unit_image_unit_bounds" unit_image_unit_bounds
-    verify "unit_image_arb_bounds" unit_image_arb_bounds
-    verify "single_T_row" single_T_row
-    verify "many_T_rows" many_T_rows
-    verify "many_T_rows_cropped_width" many_T_rows_cropped_width
-    verify "many_T_rows_cropped_height" many_T_rows_cropped_height
-    return ()
+tests :: IO [Test]
+tests = return [ verify "unit_image_unit_bounds" unit_image_unit_bounds
+               , verify "unit_image_arb_bounds" unit_image_arb_bounds
+               , verify "single_T_row" single_T_row
+               , verify "many_T_rows" many_T_rows
+               , verify "many_T_rows_cropped_width" many_T_rows_cropped_width
+               , verify "many_T_rows_cropped_height" many_T_rows_cropped_height
+               ]
 

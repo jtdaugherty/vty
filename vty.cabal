@@ -1,13 +1,13 @@
-Name:                vty
-Version:             4.7.0.15
-License:             BSD3
-License-file:        LICENSE
-Author:              Stefan O'Rear, Corey O'Connor
-Maintainer:          Corey O'Connor (coreyoconnor@gmail.com)
-Homepage:            https://github.com/coreyoconnor/vty
-Category:            User Interfaces
-Synopsis:            A simple terminal access library
-Description:
+name:                vty
+version:             4.7.0.17
+license:             BSD3
+license-file:        LICENSE
+author:              AUTHORS
+maintainer:          Corey O'Connor (coreyoconnor@gmail.com)
+homepage:            https://github.com/coreyoconnor/vty
+category:            User Interfaces
+synopsis:            A simple terminal UI library
+description:
   vty is terminal GUI library in the niche of ncurses.  It is intended to be easy to use, have no
   confusing corner cases, and good support for common terminal types.
   .
@@ -26,83 +26,167 @@ Description:
   .
   &#169; 2006-2007 Stefan O'Rear; BSD3 license.
   .
-  &#169; 2008-2011 Corey O'Connor; BSD3 license.
+  &#169; 2008-2012 Corey O'Connor; BSD3 license.
+-- the test suites require >= 1.17.0
+cabal-version:        >= 1.14.0
+build-type:           Simple
+data-files:          README,
+                     TODO,
+                     AUTHORS,
+                     CHANGELOG,
+                     LICENSE
 
-Build-Depends:       base >= 4 && < 5, ghc-prim, bytestring, containers, unix
-Build-Depends:       terminfo >= 0.3 && < 0.4
-Build-Depends:       utf8-string >= 0.3 && < 0.4
-Build-Depends:       mtl >= 1.1.1.0 && < 2.2
-Build-Depends:       parallel >= 2.2 && < 3.3, deepseq >= 1.1 && < 1.4
-Build-Depends:       vector >= 0.7
-Build-Depends:       parsec >= 2 && < 4
-Build-Type:          Simple
-Data-Files:          README, TODO
-Exposed-Modules:     Graphics.Vty
-                     Graphics.Vty.Terminal
-                     Graphics.Vty.LLInput
-                     Graphics.Vty.Attributes
-                     Graphics.Vty.Image
-                     Graphics.Vty.Inline
-                     Graphics.Vty.Picture
-                     Graphics.Vty.DisplayRegion
 
-other-modules:       Codec.Binary.UTF8.Width
-                     Data.Marshalling
-                     Data.Terminfo.Parse
-                     Data.Terminfo.Eval
-                     Graphics.Vty.DisplayAttributes
-                     Graphics.Vty.Span
-                     Graphics.Vty.Terminal.Generic
-                     Graphics.Vty.Terminal.MacOSX
-                     Graphics.Vty.Terminal.XTermColor
-                     Graphics.Vty.Terminal.TerminfoBased
+library
+  default-language:    Haskell2010
+  build-depends:       base >= 4 && < 5,
+                       bytestring,
+                       containers,
+                       deepseq >= 1.1 && < 1.4,
+                       ghc-prim,
+                       mtl >= 1.1.1.0 && < 2.2,
+                       parallel >= 2.2 && < 3.3,
+                       parsec >= 2 && < 4,
+                       terminfo >= 0.3 && < 0.4,
+                       unix,
+                       utf8-string >= 0.3 && < 0.4,
+                       vector >= 0.7
 
-C-Sources:           cbits/gwinsz.c
-                     cbits/set_term_timing.c
-                     cbits/mk_wcwidth.c
+  exposed-modules:     Graphics.Vty
+                       Graphics.Vty.Terminal
+                       Graphics.Vty.LLInput
+                       Graphics.Vty.Attributes
+                       Graphics.Vty.Image
+                       Graphics.Vty.Inline
+                       Graphics.Vty.Picture
+                       Graphics.Vty.DisplayRegion
 
-Include-Dirs:        cbits
-hs-source-dirs:      src
-Extra-Source-Files: test/Makefile
-                    test/Bench.hs
-                    test/Bench2.hs
-                    test/BenchRenderChar.hs
-                    test/ControlTable.hs
-                    test/HereDoc.hs
-                    test/Test.hs
-                    test/Test2.hs
-                    test/Verify.hs
-                    test/Verify/Data/Terminfo/Parse.hs
-                    test/Verify/Graphics/Vty/Attributes.hs
-                    test/Verify/Graphics/Vty/DisplayRegion.hs
-                    test/Verify/Graphics/Vty/Image.hs
-                    test/Verify/Graphics/Vty/Picture.hs
-                    test/Verify/Graphics/Vty/Span.hs
-                    test/interactive_terminal_test.hs
-                    test/verify_attribute_ops.hs
-                    test/verify_debug_terminal.hs
-                    test/verify_display_attributes.hs
-                    test/verify_empty_image_props.hs
-                    test/verify_eval_terminfo_caps.hs
-                    test/verify_image_ops.hs
-                    test/verify_image_trans.hs
-                    test/verify_inline.hs
-                    test/verify_parse_terminfo_caps.hs
-                    test/verify_picture_ops.hs
-                    test/verify_picture_to_span.hs
-                    test/verify_span_ops.hs
-                    test/verify_utf8_width.hs
-                    test/vty_inline_example.hs
-                    test/vty_issue_18.hs
-                    test/yi_issue_264.hs
-                    src/Codec/Binary/UTF8/Debug.hs
-                    src/Graphics/Vty/Terminal/Debug.hs
-                    src/Graphics/Vty/Debug.hs
-                    cbits/gwinsz.c
-                    cbits/mk_wcwidth.c
-                    cbits/set_term_timing.c
-                    cbits/gwinsz.h
+  other-modules:       Codec.Binary.UTF8.Width
+                       Data.Marshalling
+                       Data.Terminfo.Parse
+                       Data.Terminfo.Eval
+                       Graphics.Vty.DisplayAttributes
+                       Graphics.Vty.Span
+                       Graphics.Vty.Terminal.Generic
+                       Graphics.Vty.Terminal.MacOSX
+                       Graphics.Vty.Terminal.XTermColor
+                       Graphics.Vty.Terminal.TerminfoBased
 
-ghc-options:         -O2 -funbox-strict-fields -Wall -fno-full-laziness -fspec-constr -fspec-constr-count=10
-ghc-prof-options:    -O2 -funbox-strict-fields -caf-all -Wall -fno-full-laziness -fspec-constr -fspec-constr-count=10
-cc-options:          -O2
+  c-sources:           cbits/gwinsz.c
+                       cbits/set_term_timing.c
+                       cbits/mk_wcwidth.c
+
+  include-dirs:        cbits
+
+  hs-source-dirs:      src
+
+  ghc-options:         -O2 -funbox-strict-fields -Wall -fno-full-laziness -fspec-constr -fspec-constr-count=10
+
+  ghc-prof-options:    -O2 -funbox-strict-fields -caf-all -Wall -fno-full-laziness -fspec-constr -fspec-constr-count=10
+
+  cc-options:          -O2
+
+test-suite verify-attribute-ops
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      src test
+  test-module:         VerifyAttributeOps
+  build-depends:       Cabal == 1.17.*,
+                       QuickCheck == 2.4.*,
+                       random == 1.0.*,
+                       base >= 4 && < 5,
+                       bytestring,
+                       containers,
+                       deepseq >= 1.1 && < 1.4,
+                       ghc-prim,
+                       mtl >= 1.1.1.0 && < 2.2,
+                       parallel >= 2.2 && < 3.3,
+                       parsec >= 2 && < 4,
+                       terminfo >= 0.3 && < 0.4,
+                       unix,
+                       utf8-string >= 0.3 && < 0.4,
+                       vector >= 0.7
+
+test-suite verify-using-mock-terminal
+  default-language:    Haskell2010
+
+  type:                detailed-0.9
+
+  hs-source-dirs:      src test
+
+  test-module:         VerifyMockTerminal
+
+  other-modules:       Graphics.Vty
+                       Graphics.Vty.Attributes
+                       Graphics.Vty.DisplayAttributes
+                       Graphics.Vty.DisplayRegion
+                       Graphics.Vty.Image
+                       Graphics.Vty.Picture
+                       Graphics.Vty.Span
+                       Graphics.Vty.Terminal
+                       Graphics.Vty.Terminal.Generic
+                       Graphics.Vty.Terminal.Debug
+                       Graphics.Vty.Debug
+                       Graphics.Vty.Debug.Image
+                       Codec.Binary.UTF8.Width
+                       Verify
+                       Verify.Graphics.Vty.Attributes
+                       Verify.Graphics.Vty.DisplayRegion
+                       Verify.Graphics.Vty.Picture
+                       Verify.Graphics.Vty.Image
+                       Verify.Graphics.Vty.Span
+
+  c-sources:           cbits/gwinsz.c
+                       cbits/set_term_timing.c
+                       cbits/mk_wcwidth.c
+
+  include-dirs:        cbits
+
+  build-depends:       Cabal == 1.17.*,
+                       QuickCheck == 2.4.*,
+                       random == 1.0.*,
+                       base >= 4 && < 5,
+                       bytestring,
+                       containers,
+                       deepseq >= 1.1 && < 1.4,
+                       ghc-prim,
+                       mtl >= 1.1.1.0 && < 2.2,
+                       parallel >= 2.2 && < 3.3,
+                       parsec >= 2 && < 4,
+                       terminfo >= 0.3 && < 0.4,
+                       unix,
+                       utf8-string >= 0.3 && < 0.4,
+                       vector >= 0.7
+
+-- verify_debug_terminal.hs
+-- verify_display_attributes.hs
+-- verify_empty_image_props.hs
+-- verify_eval_terminfo_caps.hs
+-- verify_image_ops.hs
+-- verify_image_trans.hs
+-- verify_inline.hs
+-- verify_parse_terminfo_caps.hs
+-- verify_picture_ops.hs
+-- verify_picture_to_span.hs
+-- verify_span_ops.hs
+-- verify_utf8_width.hs
+-- test suites
+-- Bench.hs
+-- Bench2.hs
+-- BenchRenderChar.hs
+-- ControlTable.hs
+-- HereDoc.hs
+-- Test.hs
+-- Test2.hs
+-- Verify.hs
+-- Verify/Data/Terminfo/Parse.hs
+-- Verify/Graphics/Vty/Attributes.hs
+-- Verify/Graphics/Vty/DisplayRegion.hs
+-- Verify/Graphics/Vty/Image.hs
+-- Verify/Graphics/Vty/Picture.hs
+-- Verify/Graphics/Vty/Span.hs
+-- interactive_terminal_test.hs
+-- vty_inline_example.hs
+-- vty_issue_18.hs
+-- yi_issue_264.hs
+

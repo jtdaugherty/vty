@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -10,16 +11,21 @@ module Verify ( module Verify
               , succeeded
               , failed
               , result
-              , Result(..)
               , monadicIO
               , liftIO
               , liftBool
+              , Test(..)
+              , Prop.Result(..)
               )
     where
 
+import Distribution.TestSuite hiding ( Result(..) )
+import qualified Distribution.TestSuite as TS
+
 import Test.QuickCheck hiding ( Result(..) )
 import qualified Test.QuickCheck as QC
-import Test.QuickCheck.Property 
+import Test.QuickCheck.Property hiding ( Result(..) )
+import qualified Test.QuickCheck.Property as Prop
 import Test.QuickCheck.Monadic ( monadicIO ) 
 
 import qualified Codec.Binary.UTF8.String as UTF8
@@ -34,31 +40,18 @@ import Numeric ( showHex )
 import System.IO
 import System.Random
 
-type Test = StateT TestState IO
-
-data TestState = TestState
-    { results_ref :: IORef [QC.Result]
-    }
-
-run_test :: Test () -> IO ()
-run_test t = do
-    s <- newIORef [] >>= return . TestState
-    s' <- runStateT t s >>= return . snd
-    results <- readIORef $ results_ref s'
-    let fail_results = [ fail_result | fail_result@(QC.Failure {}) <- results ]
-    case fail_results of
-        [] -> putStrLn "state: PASS"
-        rs  -> do
-            putStrLn "state: FAIL"
-            putStrLn $ "fail_count: " ++ show (length rs)
-
-verify :: Testable prop => String -> prop -> Test QC.Result
-verify prop_name prop = do
-    liftIO $ putStrLn $ "verify " ++ prop_name
-    get >>= \s -> do
-        r <- liftIO $ quickCheckResult prop 
-        liftIO $ modifyIORef (results_ref s) (\rs -> r : rs)
-        return r
+verify :: Testable t => String -> t -> Test
+verify test_name p = Test $ TestInstance
+  { name = test_name
+  , run = do
+    qc_result <- quickCheckResult p
+    case qc_result of
+      QC.Success {..} -> return $ Finished TS.Pass
+      _               -> return $ Finished $ TS.Fail "TODO(corey): add failure message"
+  , tags = []
+  , options = []
+  , setOption = \_ _ -> Left "no options supported"
+  }
 
 data SingleColumnChar = SingleColumnChar Char
     deriving (Show, Eq)
@@ -73,10 +66,9 @@ instance Show DoubleColumnChar where
     show (DoubleColumnChar c) = "(0x" ++ showHex (fromEnum c) "" ++ ") ->" ++ UTF8.encodeString [c]
 
 instance Arbitrary DoubleColumnChar where
-    arbitrary = elements $ map DoubleColumnChar $ 
-           [ toEnum 0x3040 .. toEnum 0x3098 ] 
-        ++ [ toEnum 0x309B .. toEnum 0xA4CF]
-
+    arbitrary = elements $ map DoubleColumnChar $
+           [ toEnum 0x3040 .. toEnum 0x3098 ]
+        ++ [ toEnum 0x309B .. toEnum 0xA4CF ]
 
 liftIOResult :: Testable prop => IO prop -> Property
 liftIOResult = morallyDubiousIOProperty

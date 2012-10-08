@@ -23,7 +23,7 @@ import Data.Bits ( (.&.) )
 import Data.Maybe ( isJust, isNothing, fromJust )
 import Data.Word
 
-import Foreign.C.Types ( CLong )
+import Foreign.C.Types ( CLong(..) )
 
 import GHC.IO.Handle
 
