@@ -158,7 +158,57 @@ test-suite verify-using-mock-terminal
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
 
--- verify_debug_terminal.hs
+test-suite verify-display-attributes
+  default-language:    Haskell2010
+
+  type:                detailed-0.9
+
+  hs-source-dirs:      src test
+
+  test-module:         VerifyDisplayAttributes
+
+  other-modules:       Graphics.Vty
+                       Graphics.Vty.Attributes
+                       Graphics.Vty.DisplayAttributes
+                       Graphics.Vty.DisplayRegion
+                       Graphics.Vty.Image
+                       Graphics.Vty.Picture
+                       Graphics.Vty.Span
+                       Graphics.Vty.Terminal
+                       Graphics.Vty.Terminal.Generic
+                       Graphics.Vty.Terminal.Debug
+                       Graphics.Vty.Debug
+                       Graphics.Vty.Debug.Image
+                       Codec.Binary.UTF8.Width
+                       Verify
+                       Verify.Graphics.Vty.Attributes
+                       Verify.Graphics.Vty.DisplayRegion
+                       Verify.Graphics.Vty.Picture
+                       Verify.Graphics.Vty.Image
+                       Verify.Graphics.Vty.Span
+
+  c-sources:           cbits/gwinsz.c
+                       cbits/set_term_timing.c
+                       cbits/mk_wcwidth.c
+
+  include-dirs:        cbits
+
+  build-depends:       Cabal == 1.17.*,
+                       QuickCheck == 2.4.*,
+                       random == 1.0.*,
+                       base >= 4 && < 5,
+                       bytestring,
+                       containers,
+                       deepseq >= 1.1 && < 1.4,
+                       ghc-prim,
+                       mtl >= 1.1.1.0 && < 2.2,
+                       parallel >= 2.2 && < 3.3,
+                       parsec >= 2 && < 4,
+                       terminfo >= 0.3 && < 0.4,
+                       unix,
+                       utf8-string >= 0.3 && < 0.4,
+                       vector >= 0.7
+
 -- verify_display_attributes.hs
 -- verify_empty_image_props.hs
 -- verify_eval_terminfo_caps.hs
