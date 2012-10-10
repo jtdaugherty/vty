@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NamedFieldPuns #-}
-module Main where
+module VerifyEvalTerminfoCaps where
 
 import Data.Marshalling
 
@@ -13,11 +13,11 @@ import qualified System.Console.Terminfo as Terminfo
 
 import Verify
 
+import Control.Applicative ( (<$>) )
 import Control.Exception ( try, SomeException(..) )
 
-import Control.Monad ( mapM_, forM_ )
+import Control.Monad ( mapM_, forM, forM_ )
 
-import Data.Array.Unboxed
 import Data.Maybe ( fromJust )
 import Data.Word
 
@@ -87,30 +87,27 @@ caps_of_interest =
 
 from_capname ti name = fromJust $ Terminfo.getCapability ti (Terminfo.tiGetStr name)
 
-main = do
-    run_test $ do
-        eval_buffer :: Ptr Word8 <- liftIO $ mallocBytes (1024 * 1024) -- Should be big enough for all termcaps ;-)
-        forM_ terminals_of_interest $ \term_name -> do
-            liftIO $ putStrLn $ "testing parsing of caps for terminal: " ++ term_name
-            mti <- liftIO $ try $ Terminfo.setupTerm term_name
-            case mti of
-                Left (_e :: SomeException) 
-                    -> return ()
-                Right ti -> do
-                    forM_ caps_of_interest $ \cap_name -> do
-                        liftIO $ putStrLn $ "\tevaluating cap: " ++ cap_name
-                        case Terminfo.getCapability ti (Terminfo.tiGetStr cap_name) of
-                            Just cap_def -> do
-                                parse_result <- parse_cap_expression cap_def
-                                let test_name = "\teval cap " ++ cap_name ++ " -> " ++ show cap_def
-                                _ <- case parse_result of
-                                    Left error -> verify test_name ( failed { reason = "prase error " ++ show error } )
-                                    Right !cap_expr -> verify test_name ( verify_eval_cap eval_buffer cap_expr )
-                                return ()
-                            Nothing      -> do
-                                return ()
-        return ()
-    return ()
+tests :: IO [Test]
+tests = do
+    eval_buffer :: Ptr Word8 <- mallocBytes (1024 * 1024) -- Should be big enough for any termcaps ;-)
+    fmap concat $ forM terminals_of_interest $ \term_name -> do
+        putStrLn $ "adding tests for terminal: " ++ term_name
+        mti <- try $ Terminfo.setupTerm term_name
+        case mti of
+            Left (_e :: SomeException) 
+                -> return []
+            Right ti -> do
+                fmap concat $ forM caps_of_interest $ \cap_name -> do
+                    case Terminfo.getCapability ti (Terminfo.tiGetStr cap_name) of
+                        Just cap_def -> do
+                            putStrLn $ "\tadding test for cap: " ++ cap_name
+                            let test_name = term_name ++ "(" ++ cap_name ++ ")"
+                            parse_result <- parse_cap_expression cap_def
+                            case parse_result of
+                                Left error -> return [ verify test_name ( failed { reason = "parse error " ++ show error } ) ]
+                                Right !cap_expr -> return [ verify test_name ( verify_eval_cap eval_buffer cap_expr ) ]
+                        Nothing      -> do
+                            return []
 
 {-# NOINLINE verify_eval_cap #-}
 verify_eval_cap :: Ptr Word8 -> CapExpression -> Int -> Property

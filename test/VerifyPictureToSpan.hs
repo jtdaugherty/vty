@@ -1,4 +1,4 @@
-module Main where
+module VerifyPictureToSpan where
 
 import Graphics.Vty.Picture
 import Graphics.Vty.Span
@@ -6,5 +6,5 @@ import Graphics.Vty.PictureToSpans
 
 import Verify
 
-main = run_test $ do
-    return ()
+tests :: IO [Test]
+tests = return []

@@ -8,7 +8,6 @@ import Data.Terminfo.Parse
 import Data.Terminfo.Eval
 import Verify
 
-import Data.Array.Unboxed
 import Data.Word
 
 import Numeric

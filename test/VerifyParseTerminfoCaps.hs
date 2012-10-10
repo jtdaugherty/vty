@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NamedFieldPuns #-}
-module Main where
+module VerifyParseTerminfoCaps where
 
 import Prelude hiding ( catch )
 
@@ -9,11 +9,11 @@ import qualified System.Console.Terminfo as Terminfo
 import Verify.Data.Terminfo.Parse
 import Verify
 
+import Control.Applicative ( (<$>) )
 import Control.Exception ( try, SomeException(..) )
-import Control.Monad ( mapM_, forM_ )
+import Control.Monad ( mapM_, forM, forM_ )
 
-import Data.Array.Unboxed
-import Data.Maybe ( fromJust )
+import Data.Maybe ( catMaybes, fromJust )
 import Data.Word
 
 import Numeric
@@ -82,31 +82,31 @@ caps_of_interest =
 
 from_capname ti name = fromJust $ Terminfo.getCapability ti (Terminfo.tiGetStr name)
 
-main = do
-    run_test $ do
-        forM_ terminals_of_interest $ \term_name -> do
-            liftIO $ putStrLn $ "testing parsing of caps for terminal: " ++ term_name
-            mti <- liftIO $ try $ Terminfo.setupTerm term_name
-            case mti of
-                Left (_e :: SomeException) 
-                    -> return ()
-                Right ti -> do
-                    forM_ caps_of_interest $ \cap_name -> do
-                        liftIO $ putStrLn $ "\tparsing cap: " ++ cap_name
-                        case Terminfo.getCapability ti (Terminfo.tiGetStr cap_name) of
-                            Just cap_def -> do
-                                verify ( "\tparse cap " ++ cap_name ++ " -> " ++ show cap_def )
-                                       ( verify_parse_cap cap_def $ const ( return succeeded ) ) 
-                                return ()
-                            Nothing      -> do
-                                return ()
-        -- The quickcheck tests
-        verify "parse_non_paramaterized_caps" non_paramaterized_caps
-        verify "parse cap string with literal %" literal_percent_caps
-        verify "parse cap string with %i op" inc_first_two_caps
-        verify "parse cap string with %pN op" push_param_caps
-        return ()
-    return ()
+tests :: IO [Test]
+tests = do
+    parse_tests <- concat <$> forM terminals_of_interest ( \term_name -> do
+        putStrLn $ "testing parsing of caps for terminal: " ++ term_name
+        mti <- liftIO $ try $ Terminfo.setupTerm term_name
+        case mti of
+            Left (_e :: SomeException)
+                -> return []
+            Right ti -> do
+                concat <$> forM caps_of_interest ( \cap_name -> do
+                    liftIO $ putStrLn $ "\tparsing cap: " ++ cap_name
+                    case Terminfo.getCapability ti (Terminfo.tiGetStr cap_name) of
+                        Just cap_def -> do
+                            return [ verify ( "\tparse cap " ++ cap_name ++ " -> " ++ show cap_def )
+                                            ( verify_parse_cap cap_def $ const (return succeeded)  ) ]
+                        Nothing      -> do
+                            return []
+                    )
+        )
+    -- The quickcheck tests
+    return $ [ verify "parse_non_paramaterized_caps" non_paramaterized_caps
+             , verify "parse cap string with literal %" literal_percent_caps
+             , verify "parse cap string with %i op" inc_first_two_caps
+             , verify "parse cap string with %pN op" push_param_caps
+             ] ++ parse_tests
 
 verify_parse_cap cap_string on_parse = liftIOResult $ do
     parse_result <- parse_cap_expression cap_string

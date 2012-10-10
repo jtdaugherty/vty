@@ -1,5 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
-module Main where
+module VerifyImageTrans where
 
 import Verify.Graphics.Vty.Image
 
@@ -24,8 +24,9 @@ verify_horiz_contat_w_attr_change_simplifies ( SingleRowTwoAttrImage (SingleRowS
     | char_count0 == 0 || char_count1 == 0 || attr0 == attr1 = is_horiz_text_of_columns i (char_count0 + char_count1)
     | otherwise = False == is_horiz_text_of_columns i (char_count0 + char_count1)
 
-main :: IO ()
-main = run_test $ do
-    _ <- verify "verify_horiz_contat_wo_attr_change_simplifies" verify_horiz_contat_wo_attr_change_simplifies
-    _ <- verify "verify_horiz_contat_w_attr_change_simplifies" verify_horiz_contat_w_attr_change_simplifies
-    return ()
+tests :: IO [Test]
+tests = return
+    [ verify "verify_horiz_contat_wo_attr_change_simplifies" verify_horiz_contat_wo_attr_change_simplifies
+    , verify "verify_horiz_contat_w_attr_change_simplifies" verify_horiz_contat_w_attr_change_simplifies
+    ]
+
