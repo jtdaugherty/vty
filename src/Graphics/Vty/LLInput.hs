@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 -- Copyright 2009-2010 Corey O'Connor
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
@@ -33,7 +34,7 @@ import System.Posix.IO ( stdInput
                         ,FdOption(..)
                        )
 
-import Foreign ( malloc, poke, peek, free )
+import Foreign ( alloca, poke, peek, Ptr )
 
 -- |Representations of non-modifier keys.
 data Key = KEsc | KFun Int | KBackTab | KPrtScr | KPause | KASCII Char | KBS | KIns
@@ -76,32 +77,34 @@ initTermInput escDelay terminal = do
           where loop kb = case (classify kb) of
                               Prefix       -> do c <- readChan inputChannel
                                                  loop (kb ++ [c])
-                              Invalid      -> loop ""
+                              Invalid      -> do c <- readChan inputChannel
+                                                 loop [c]
                               MisPfx k m s -> writeChan eventChannel (EvKey k m) >> loop s
                               Valid k m    -> writeChan eventChannel (EvKey k m) >> loop ""
 
       finishAtomicInput = writeChan inputChannel '\xFFFE'
 
       inputThread :: IO ()
-      inputThread = loop
-          where
-              loop = do
-                  setFdOption stdInput NonBlockingRead False
-                  threadWaitRead stdInput
-                  setFdOption stdInput NonBlockingRead True
-                  _ <- try readAll :: IO (Either IOException ())
-                  when (escDelay == 0) finishAtomicInput
-                  loop
-              readAll = do
-                  ptr <- malloc
-                  poke ptr 0
-                  bytes_read <- fdReadBuf stdInput ptr 1
-                  bytes <- fmap ((: "") . chr . fromIntegral) $ peek ptr
-                  free ptr
-                  when (bytes_read > 0) $ do
-                      _ <- tryPutMVar hadInput () -- signal input
-                      writeChan inputChannel (head bytes)
-                  readAll
+      inputThread = do
+        _ <- alloca $ \(input_buffer :: Ptr Word8) -> do
+            let loop = do
+                    setFdOption stdInput NonBlockingRead False
+                    threadWaitRead stdInput
+                    setFdOption stdInput NonBlockingRead True
+                    _ <- try readAll :: IO (Either IOException ())
+                    when (escDelay == 0) finishAtomicInput
+                    loop
+                readAll = do
+                    poke input_buffer 0
+                    bytes_read <- fdReadBuf stdInput input_buffer 1
+                    input_char <- fmap (chr . fromIntegral) $ peek input_buffer
+                    when (bytes_read > 0) $ do
+                        _ <- tryPutMVar hadInput () -- signal input
+                        writeChan inputChannel input_char
+                        readAll
+            loop
+        return ()
+
       -- | If there is no input for some time, this thread puts '\xFFFE' in the
       -- inputChannel.
       noInputThread :: IO ()
@@ -110,6 +113,7 @@ initTermInput escDelay terminal = do
                     takeMVar hadInput -- wait for some input
                     threadDelay escDelay -- microseconds
                     hadNoInput <- isEmptyMVar hadInput -- no input yet?
+                    -- TODO(corey): there is a race between here and the inputThread.
                     when hadNoInput $ do
                         finishAtomicInput
                     loop
@@ -224,6 +228,7 @@ initTermInput escDelay terminal = do
                            writeChan eventChannel (EvResize e e))
   _ <- installHandler windowChange pokeIO Nothing
   _ <- installHandler continueProcess pokeIO Nothing
+  -- TODO(corey): killThread is a bit risky for my tastes.
   let uninit = do killThread eventThreadId
                   killThread inputThreadId
                   killThread noInputThreadId
