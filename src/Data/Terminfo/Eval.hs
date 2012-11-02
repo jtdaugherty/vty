@@ -166,7 +166,7 @@ serialize_cap_op !out_ptr ( Bytes !offset !byte_count !next_offset ) = do
     let ( !start_ptr, _ ) = cap_bytes cap
         !src_ptr = start_ptr `plusPtr` offset
         !out_ptr' = out_ptr `plusPtr` next_offset
-    liftIO $! memcpy out_ptr src_ptr byte_count
+    liftIO $! memcpy out_ptr src_ptr (fromIntegral byte_count)
     return $! out_ptr'
 serialize_cap_op out_ptr DecOut = do
     p <- pop
