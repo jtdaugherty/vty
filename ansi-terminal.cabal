@@ -29,7 +29,7 @@ Library
         
         Other-Modules:          System.Console.ANSI.Common
         
-        Cpp-Options:            -Iincludes
+        Include-Dirs:           includes
         
         if os(windows)
                 Build-Depends:          Win32 >= 2.0
