@@ -28,6 +28,7 @@ import Data.List
 import GHC.Prim
 import GHC.Word
 
+-- | capability evaluator state
 data EvalState = EvalState
     { eval_stack :: ![ CapParam ]
     , eval_expression :: !CapExpression
