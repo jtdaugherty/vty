@@ -22,12 +22,16 @@ import Control.Monad.Trans
 
 import System.IO
 
+-- | A Mac terminal is assumed to be an xterm based terminal.
 data Term = Term 
     { super_term :: TerminalHandle
     , term_app :: String
     }
 
--- for Terminal.app use "xterm". For iTerm.app use "xterm-256color"
+-- | for Terminal.app the terminal identifier "xterm" is used. For iTerm.app the terminal identifier
+-- "xterm-256color" is used.
+--
+-- This effects the terminfo lookup.
 terminal_instance :: ( Applicative m, MonadIO m ) => String -> m Term
 terminal_instance v = do
     let base_term "iTerm.app" = "xterm-256color"
@@ -40,12 +44,13 @@ flushed_put str = do
     liftIO $ hPutStr stdout str
     liftIO $ hFlush stdout
 
--- Terminal.app really does want the xterm-color smcup and rmcup caps. Not the generic xterm ones.
+-- | Terminal.app requires the xterm-color smcup and rmcup caps. Not the generic xterm ones.
+-- Otherwise, Terminal.app expects the xterm caps.
 smcup_str, rmcup_str :: String
 smcup_str = "\ESC7\ESC[?47h"
 rmcup_str = "\ESC[2J\ESC[?47l\ESC8"
 
--- iTerm needs a clear screen after smcup as well?
+-- | iTerm needs a clear screen after smcup as well.
 clear_screen_str :: String
 clear_screen_str = "\ESC[H\ESC[2J"
 

@@ -1,12 +1,11 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
--- Copyright 2009-2010 Corey O'Connor
--- Display attributes
+-- | Display attributes
 --
--- For efficiency this can be, in the future, encoded into a single 32 bit word. The 32 bit word is
--- first divided into 4 groups of 8 bits where:
---  The first group codes what action should be taken with regards to the other groups.
+-- For efficiency, this could be encoded into a single 32 bit word. The 32 bit word is first divided
+-- into 4 groups of 8 bits where: The first group codes what action should be taken with regards to
+-- the other groups.
 --      XXYYZZ__
 --      XX - style action
 --          00 => reset to default

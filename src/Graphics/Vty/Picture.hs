@@ -28,7 +28,7 @@ import Graphics.Vty.Image hiding ( attr )
 
 import Data.Word
 
--- |The type of images to be displayed using 'update'.  
+-- | The type of images to be displayed using 'update'.  
 -- Can be constructed directly or using `pic_for_image`. Which provides an initial instance with
 -- reasonable defaults for pic_cursor and pic_background.
 data Picture = Picture

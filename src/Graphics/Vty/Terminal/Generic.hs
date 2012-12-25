@@ -28,6 +28,7 @@ import qualified Data.Vector as Vector
 
 import System.IO
 
+-- | An handle to a terminal that hides the implementation.
 data TerminalHandle where
     TerminalHandle :: Terminal t => t -> IORef TerminalState -> TerminalHandle
 
@@ -39,11 +40,12 @@ new_terminal_handle t = do
     s_ref <- liftIO $ newIORef initial_terminal_state
     return $ TerminalHandle t s_ref
 
+-- | The current terminal state. This may not exactly be known.
 data TerminalState = TerminalState
-    { -- | The current terminal display attributes or Nothing if they are not known.
-      known_fattr :: Maybe FixedAttr
+    { known_fattr :: Maybe FixedAttr
     }
 
+-- | Initially we know nothing about a terminal's state.
 initial_terminal_state :: TerminalState
 initial_terminal_state = TerminalState Nothing
 
@@ -352,6 +354,8 @@ marshall_to_terminal t c f = do
     free start_ptr
     return ()
 
+-- | The cursor position is given in X,Y character offsets. Due to multi-column characters this
+-- needs to be translated to column, row positions.
 data CursorOutputMap = CursorOutputMap
     { char_to_output_pos :: (Word, Word) -> (Word, Word)
     } 
@@ -386,6 +390,8 @@ cursor_column_offset span_ops cx cy =
                       cursor_row_ops
     in out_offset
 
+-- | Not all terminals support all display attributes. This filters a display attribute to what the
+-- given terminal can display.
 limit_attr_for_display :: DisplayTerminal d => d -> Attr -> Attr
 limit_attr_for_display d attr 
     = attr { attr_fore_color = clamp_color $ attr_fore_color attr

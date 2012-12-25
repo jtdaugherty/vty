@@ -25,6 +25,12 @@ fix_display_attr fattr attr
         fix_color c KeepCurrent = c
         fix_color _c (SetTo c) = Just c
 
+-- | difference between two display attributes. Used in the calculation of the operations required
+-- to go from one display attribute to the next.
+--
+-- Previously, vty would reset display attributes to default then apply the new display attributes.
+-- This turned out to be very expensive: A *lot* more data would be sent to the terminal than
+-- required.
 data DisplayAttrDiff = DisplayAttrDiff
     { style_diffs :: [ StyleStateChange ]
     , fore_color_diff :: DisplayColorDiff
@@ -40,20 +46,30 @@ instance Monoid DisplayAttrDiff where
             bcd = simplify_color_diffs ( back_color_diff d_0 ) ( back_color_diff d_1 )
         in DisplayAttrDiff ds fcd bcd
 
+-- | Used in the computation of a final style attribute change.
+--
+-- TODO(corey): not really a simplify but a monoid instance.
 simplify_style_diffs :: [ StyleStateChange ] -> [ StyleStateChange ] -> [ StyleStateChange ]
 simplify_style_diffs cs_0 cs_1 = cs_0 `mappend` cs_1
 
+-- | Consider two display color attributes diffs. What display color attribute diff are these
+-- equivalent to?
+--
+-- TODO(corey): not really a simplify but a monoid instance.
 simplify_color_diffs :: DisplayColorDiff -> DisplayColorDiff -> DisplayColorDiff
 simplify_color_diffs _cd             ColorToDefault  = ColorToDefault
 simplify_color_diffs cd              NoColorChange   = cd
 simplify_color_diffs _cd             ( SetColor !c ) = SetColor c
 
+-- | Difference between two display color attribute changes.
 data DisplayColorDiff 
     = ColorToDefault
     | NoColorChange
     | SetColor !Color
     deriving ( Show, Eq )
 
+-- | Style attribute changes are transformed into a sequence of apply/removes of the individual
+-- attributes.
 data StyleStateChange 
     = ApplyStandout
     | RemoveStandout
@@ -69,6 +85,8 @@ data StyleStateChange
     | RemoveBold
     deriving ( Show, Eq )
 
+-- | Determines the diff between two display&color attributes. This diff determines the operations
+-- that actually get output to the terminal.
 display_attr_diffs :: FixedAttr -> FixedAttr -> DisplayAttrDiff
 display_attr_diffs attr attr' = DisplayAttrDiff
     { style_diffs = diff_styles ( fixed_style attr ) ( fixed_style attr' )

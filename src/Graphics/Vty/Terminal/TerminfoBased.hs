@@ -215,7 +215,7 @@ instance DisplayTerminal DisplayContext where
     serialize_hide_cursor d out_ptr 
         = liftIO $ serialize_cap_expression (civis $ term d) [] out_ptr
 
-    -- Instead of evaluating all the rules related to setting display attributes twice (once in
+    -- | Instead of evaluating all the rules related to setting display attributes twice (once in
     -- required bytes and again in serialize) or some memoization scheme just return a size
     -- requirement as big the longest possible control string.
     -- 
@@ -224,14 +224,16 @@ instance DisplayTerminal DisplayContext where
     -- \todo Not verified as safe and wastes memory.
     attr_required_bytes _d _prev_attr _req_attr _diffs = 512
 
-    -- Portably setting the display attributes is a giant pain in the ass.
+    -- | Portably setting the display attributes is a giant pain in the ass.
+    --
     -- If the terminal supports the sgr capability (which sets the on/off state of each style
-    -- directly ; and, for no good reason, resets the colors to the default) this always works:
+    -- directly ; and, for no good reason, resets the colors to the default) this procedure is used: 
+    --
     --  0. set the style attributes. This resets the fore and back color.
     --  1, If a foreground color is to be set then set the foreground color
     --  2. likewise with the background color
     -- 
-    -- If the terminal does not support the sgr then 
+    -- If the terminal does not support the sgr cap then:
     --  if there is a change from an applied color to the default (in either the fore or back color)
     --  then:
     --      0. reset all display attributes (sgr0)
@@ -242,7 +244,7 @@ instance DisplayTerminal DisplayContext where
     -- Entering the required style modes could require a reset of the display attributes. If this is
     -- the case then the back and fore colors always need to be set if not default.
     --
-    -- All this (I think) is satisfied by the following logic:
+    -- This equation implements the above logic.
     serialize_set_attr d prev_attr req_attr diffs out_ptr = do
         case (fore_color_diff diffs == ColorToDefault) || (back_color_diff diffs == ColorToDefault) of
             -- The only way to reset either color, portably, to the default is to use either the set
@@ -321,11 +323,16 @@ instance DisplayTerminal DisplayContext where
     serialize_default_attr d out_ptr = do
         liftIO $ serialize_cap_expression ( set_default_attr $ term d ) [] out_ptr
 
+-- | The color table used by a terminal is a 16 color set followed by a 240 color set that might not
+-- be supported by the terminal.
+--
+-- This takes a Color which clearly identifies which pallete to use and computes the index
+-- into the full 256 color pallete.
 ansi_color_index :: Color -> Word
 ansi_color_index (ISOColor v) = toEnum $ fromEnum v
 ansi_color_index (Color240 v) = 16 + ( toEnum $ fromEnum v )
 
-{- The sequence of terminfo caps to apply a given style are determined according to these rules.
+{- | The sequence of terminfo caps to apply a given style are determined according to these rules.
  -
  -  1. The assumption is that it's preferable to use the simpler enter/exit mode capabilities than
  -  the full set display attribute state capability. 
@@ -340,7 +347,6 @@ ansi_color_index (Color240 v) = 16 + ( toEnum $ fromEnum v )
  -  apply/remove.
  -
  -}
-
 data DisplayAttrSeq
     = EnterExitSeq [CapExpression]
     | SetState DisplayAttrState

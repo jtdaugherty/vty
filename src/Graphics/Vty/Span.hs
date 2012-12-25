@@ -116,11 +116,14 @@ columns_to_char_offset _cx _ = error "columns_to_char_offset applied to span op 
 spans_for_pic :: Picture -> DisplayRegion -> DisplayOps
 spans_for_pic pic r = DisplayOps r $ Vector.create (build_spans pic r)
 
+-- | Builds a vector of row operations that will output the given picture to the terminal.
+--
+-- Crops to the given display region.
 build_spans :: Picture -> DisplayRegion -> ST s (MRowOps s)
 build_spans pic region = do
-    -- m for mutable! ;-)
+    -- First we create a mutable vector for each rows output operations.
     mrow_ops <- Vector.replicate (fromEnum $ region_height region) Vector.empty
-    -- XXX: I think building the span operations in display order would provide better performance.
+    -- \todo I think building the span operations in display order would provide better performance.
     -- However, I got stuck trying to implement an algorithm that did this. This will be considered
     -- as a possible future optimization. 
     --
@@ -154,6 +157,7 @@ build_spans pic region = do
         else return ()
     return mrow_ops
 
+-- | Add the operations required to build a given image to the current set of row operations.
 row_ops_for_image :: MRowOps s -> Image -> Background -> DisplayRegion -> (Word, Word) -> Int -> Word -> Int -> ST s (Word, Word)
 row_ops_for_image mrow_ops                      -- the image to output the ops to
                   image                         -- the image to rasterize in column order to mrow_ops
@@ -313,6 +317,11 @@ snoc_text_span a text_str mrow_ops columns_to_skip y remaining_columns = do
                                       , used_char_count
                                       )
 
+-- | Add a background fill of the given column width to the row display operations.
+--
+-- This has a fast path for background characters that are a single column and a single byte.
+-- Otherwise this has to compute the width of the background character and replicate a sequence of
+-- bytes to fill in the required width.
 snoc_bg_fill :: MRowOps s -> Background -> Word -> Int -> ST s ()
 snoc_bg_fill _row_ops _bg 0 _row 
     = return ()
@@ -336,6 +345,7 @@ snoc_bg_fill mrow_ops (Background c back_attr) fill_length row
                                                 $ zip [0 .. fromEnum (fill_length - 1)] (cycle c_bytes)
         snoc_op mrow_ops row $ TextSpan fill_length fill_length (UTF8.fromRep utf8_bs)
 
+-- | snocs the operation to the operations for the given row.
 snoc_op :: MRowOps s -> Int -> SpanOp -> ST s ()
 snoc_op !mrow_ops !row !op = do
     ops <- Vector.read mrow_ops row
