@@ -2,12 +2,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Main where
 
+import Graphics.Vty
 import Graphics.Vty.Attributes
 import Graphics.Vty.Inline
 import Graphics.Vty.Picture
 import Graphics.Vty.Terminal
 import Graphics.Vty.DisplayRegion
 
+import Control.Exception
 import Control.Monad
 
 import Data.List ( lookup )
@@ -71,7 +73,7 @@ to debug terminal support.
     wait_for_return
     results <- do_test_menu 1
     env_attributes <- mapM ( \env_name -> catch ( Env.getEnv env_name >>= return . (,) env_name ) 
-                                                ( const $ return (env_name, "") ) 
+                                                ( \ (_ :: SomeException) -> return (env_name, "") ) 
                            ) 
                            [ "TERM", "COLORTERM", "LANG", "TERM_PROGRAM", "XTERM_VERSION" ]
     t <- terminal_handle
@@ -168,6 +170,7 @@ all_tests
       , inline_test_0
       , inline_test_1
       , inline_test_2
+      , cursor_hide_test_0
       ]
 
 reserve_output_test = Test 
@@ -920,7 +923,29 @@ inline_test_2 = Test
         return ()
     , print_summary = putStr $ [s|
 |]
+    , confirm_results = generic_output_match_confirm
+    }
 
+cursor_hide_test_0 :: Test
+cursor_hide_test_0 = Test
+    { test_name = "Verify the cursor is hid and re-shown. issue #7"
+    , test_ID = "cursor_hide_test_0"
+    , test_action = do
+        vty <- mkVty
+        show_cursor $ terminal vty
+        set_cursor_pos (terminal vty) 5 5
+        next_event vty
+        hide_cursor $ terminal vty
+        next_event vty
+        shutdown vty
+        return ()
+    , print_summary = putStr $ [s|
+    1. verify the cursor is displayed.
+    2. press enter
+    3. verify the cursor is hid.
+    4. press enter.
+    5. the display should return to the state before the test.
+|]
     , confirm_results = generic_output_match_confirm
     }
 
