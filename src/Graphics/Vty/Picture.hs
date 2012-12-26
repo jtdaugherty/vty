@@ -66,10 +66,10 @@ data Cursor =
 -- be used for a background fill then use `current_attr` for the background attribute. This is the
 -- default background display attribute.
 --
--- (tofix) The current attribute is always set to the default attributes at the start of updating the
+-- \todo The current attribute is always set to the default attributes at the start of updating the
 -- screen to a picture.
 --
--- (tofix) The background character *must* occupy a single column and no more.  
+-- \todo The background character *must* occupy a single column and no more.
 data Background = Background 
     { background_char :: Char 
     , background_attr :: Attr

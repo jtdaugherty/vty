@@ -63,12 +63,14 @@ All the tests assume the following about the terminal display:
     a good range of the unicode characters. Each test involving unicode display
     describes the expected appearance of each glyph. 
 
-Thanks for the help! :-D 
-To exit the test early enter "q" anytime at the following menu screen. Even if
-you exit the test early please email the test_results.list file to
-coreyoconnor@gmail.com. The results file will still contain information useful
-to debug terminal support.
+Thanks for the help! :-D
+To exit the test early enter "q" anytime at the following menu screen.
 
+If any test failed then please post an issue to
+    https://github.com/coreyoconnor/vty/issues
+with the test_results.list file pasted into the issue. The issue summary can
+mention the specific tests that failed or just say "interactive terminal test
+failure".
 |]
     wait_for_return
     results <- do_test_menu 1
