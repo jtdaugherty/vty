@@ -1,5 +1,5 @@
 name:                vty
-version:             4.7.0.20
+version:             4.7.1
 license:             BSD3
 license-file:        LICENSE
 author:              AUTHORS
@@ -35,7 +35,6 @@ data-files:          README,
                      AUTHORS,
                      CHANGELOG,
                      LICENSE
-
 
 library
   default-language:    Haskell2010
