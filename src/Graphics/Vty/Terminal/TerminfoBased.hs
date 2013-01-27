@@ -1,4 +1,4 @@
--- Copyright 2009-2010 Corey O'Connor
+-- Copyright Corey O'Connor (coreyoconnor@gmail.com)
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -133,28 +133,28 @@ current_display_attr_caps ti
 instance Terminal Term where
     terminal_ID t = term_info_ID t ++ " :: TerminfoBased"
 
-    release_terminal t = do 
-        liftIO $ marshall_cap_to_terminal t set_default_attr []
-        liftIO $ marshall_cap_to_terminal t cnorm []
-        liftIO $ hClose $ term_handle t
+    release_terminal t = liftIO $ do
+        marshall_cap_to_terminal t set_default_attr []
+        marshall_cap_to_terminal t cnorm []
+        hClose $ term_handle t
         return ()
 
-    reserve_display t = do
+    reserve_display t = liftIO $ do
         if (isJust $ smcup t)
-            then liftIO $ marshall_cap_to_terminal t (fromJust . smcup) []
+            then marshall_cap_to_terminal t (fromJust . smcup) []
             else return ()
         -- Screen on OS X does not appear to support smcup?
         -- To approximate the expected behavior: clear the screen and then move the mouse to the
         -- home position.
-        liftIO $ hFlush stdout
-        liftIO $ marshall_cap_to_terminal t clear_screen []
+        hFlush stdout
+        marshall_cap_to_terminal t clear_screen []
         return ()
 
-    release_display t = do
+    release_display t = liftIO $ do
         if (isJust $ rmcup t)
-            then liftIO $ marshall_cap_to_terminal t (fromJust . rmcup) []
+            then marshall_cap_to_terminal t (fromJust . rmcup) []
             else return ()
-        liftIO $ marshall_cap_to_terminal t cnorm []
+        marshall_cap_to_terminal t cnorm []
         return ()
 
     display_terminal_instance t b c = do

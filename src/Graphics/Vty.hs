@@ -66,6 +66,7 @@ data Vty = Vty
       -- might want to force a refresh.
     , refresh :: IO ()
       -- | Clean up after vty.
+      -- The above methods will throw an exception if executed after this is executed.
     , shutdown :: IO () 
     }
 

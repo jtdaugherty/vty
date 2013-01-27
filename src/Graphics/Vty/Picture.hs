@@ -1,3 +1,7 @@
+-- | The Picture data structure is representative of the final terminal view.
+--
+-- This module re-exports most of the Graphics.Vty.Image and Graphics.Vty.Attributes modules.
+--
 -- Copyright 2009-2010 Corey O'Connor
 module Graphics.Vty.Picture ( module Graphics.Vty.Picture
                             , Image
