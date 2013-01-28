@@ -2,3 +2,6 @@
 *.swp
 *.hi
 *.prof
+Setup
+dist
+test/benchmark

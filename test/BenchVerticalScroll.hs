@@ -13,7 +13,7 @@ import System.IO
 import System.Random
 
 
-main = do 
+bench_0 = do 
     let fixed_gen = mkStdGen 0
     setStdGen fixed_gen
     mkVty >>= liftM2 (>>) run shutdown

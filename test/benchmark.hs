@@ -4,8 +4,9 @@ module Main where
 
 import Graphics.Vty
 
-import qualified BenchVerticalScroll
+import qualified BenchNoDiffOpt
 import qualified BenchRenderChar
+import qualified BenchVerticalScroll
 
 import Control.Monad
 
@@ -17,9 +18,10 @@ import System.Posix.Process
 
 main = do
     args <- getArgs
-    let benches = [ ("vertical-scroll-0", BenchVerticalScroll.main)
+    let benches = [ ("no-diff-opt-0", BenchNoDiffOpt.bench_0)
                   , ("render-char-0", BenchRenderChar.bench_0)
-                  , ("render-char-1", BenchRenderChar.bench_1)]
+                  , ("render-char-1", BenchRenderChar.bench_1)
+                  , ("vertical-scroll-0", BenchVerticalScroll.bench_0)]
         help = forM_ benches $ \(b,_) -> putStrLn $ "--" ++ b
     case args of
         ["--help"] -> help
@@ -28,7 +30,8 @@ main = do
             let args' = if args /= []
                         then args
                         else map fst benches
-            results <- forM args' $ \b -> do
+            -- drop the dash-dash "--"
+            results <- forM args' $ \(_ : _ : b) -> do
                 case lookup b benches of
                     Just f  -> bench b f
                     Nothing -> fail $ "No benchmark named " ++ b
