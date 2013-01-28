@@ -1,4 +1,4 @@
-module Main where
+module BenchVerticalScroll where
 
 import Graphics.Vty hiding ( pad )
 
@@ -16,15 +16,9 @@ import System.Random
 main = do 
     let fixed_gen = mkStdGen 0
     setStdGen fixed_gen
-    args <- getArgs
-    case args of
-        []         -> mkVty >>= liftM2 (>>) (run $ Just 0) shutdown
-        ["--delay"]         -> mkVty >>= liftM2 (>>) (run $ Just 1000000) shutdown
-        ["--slow"] -> mkVty >>= liftM2 (>>) (run Nothing ) shutdown
-        _          -> fail "usage: ./Bench [--slow|--delay]"
+    mkVty >>= liftM2 (>>) run shutdown
 
-run (Just delay) vt  = mapM_ (\p -> update vt p >> threadDelay delay) . benchgen =<< display_bounds (terminal vt)
-run Nothing vt = mapM_ (update vt) (benchgen $ DisplayRegion 200 100)
+run vt  = mapM_ (\p -> update vt p) . benchgen =<< display_bounds (terminal vt)
 
 -- Currently, we just do scrolling.
 takem :: (a -> Word) -> Word -> [a] -> ([a],[a])
@@ -54,9 +48,13 @@ pad :: Word -> Image -> Image
 pad ml img = img <|> char_fill def_attr ' ' (ml - image_width img) 1
 
 clines :: StdGen -> Word -> [Image]
-clines g maxll = map (pad maxll . horiz_cat . map (uncurry string)) $ fold (toEnum . length . snd) (lengths maxll g1) (nums g2)
+clines g maxll = map (pad maxll . horiz_cat . map (uncurry string)) 
+                 $ fold (toEnum . length . snd) (lengths maxll g1) (nums g2)
   where (g1,g2)  = split g
 
 benchgen :: DisplayRegion -> [Picture]
-benchgen (DisplayRegion w h) = take 500 $ map ((\i -> pic_for_image i) . vert_cat . take (fromEnum h)) $ tails $ clines (mkStdGen 42) w
+benchgen (DisplayRegion w h) 
+    = take 2000 $ map ((\i -> pic_for_image i) . vert_cat . take (fromEnum h))
+        $ tails
+        $ clines (mkStdGen 80) w
 
