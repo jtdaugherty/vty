@@ -321,6 +321,7 @@ Once return is pressed:
         then putStr "    1. The cursor will be visible."
         else putStr "    1. The cursor will NOT be visible."
     putStr [s|
+
     2. The border of the display will be outlined in Xs. 
        So if - and | represented the edge of the terminal window:
          |-------------|
@@ -329,11 +330,14 @@ Once return is pressed:
 
     if has_cursor
         then putStr $ [s|
+
          |XXXXXXXXXXXXC| |]
         else putStr $ [s|
+
          |XXXXXXXXXXXXX| |]
 
     putStr $ [s|
+
          |-------------|
 
         ( Where C is the final position of the cursor. There may be an X drawn
