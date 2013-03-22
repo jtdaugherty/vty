@@ -1,6 +1,10 @@
 vty is a terminal interface library.
 
-Vty currently provides:
+Project is hosted on github.com: https://github.com/coreyoconnor/vty
+
+git clone git://github.com/coreyoconnor/vty.git
+
+# Features
 
 * Automatic handling of window resizes.
 
@@ -29,7 +33,7 @@ Vty currently provides:
 
 * Properly handles cleanup.
 
-Current disadvantages:
+# Known Issues
 
 * The character encoding of the output terminal is assumed to be UTF-8.
 
@@ -40,11 +44,13 @@ Current disadvantages:
 * Uses the TIOCGWINSZ ioctl to find the current window size, which
   appears to be limited to Linux and *BSD.
 
-Project is hosted on github.com: https://github.com/coreyoconnor/vty
+# Platform Support
 
-git clone git://github.com/coreyoconnor/vty.git
+## Posix Terminals
 
-To compile the demonstration program: ghc --make test/Test.hs gwinsz.c
+Uses terminfo to determine terminal protocol. Some special rules for Mac terminal applications. The
+special rules might be invalid on newer Mac OS.
 
-The main documentation consists of the haddock-comments and the demonstration
-program
+## Windows
+
+None!
