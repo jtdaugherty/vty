@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 -- | The Picture data structure is representative of the final terminal view.
 --
 -- This module re-exports most of the Graphics.Vty.Image and Graphics.Vty.Attributes modules.
@@ -30,6 +31,7 @@ module Graphics.Vty.Picture ( module Graphics.Vty.Picture
 import Graphics.Vty.Attributes
 import Graphics.Vty.Image hiding ( attr )
 
+import Control.DeepSeq
 import Data.Word
 
 -- | The type of images to be displayed using 'update'.  
@@ -43,6 +45,9 @@ data Picture = Picture
 
 instance Show Picture where
     show (Picture _ image _ ) = "Picture ?? " ++ show image ++ " ??"
+
+instance NFData Picture where
+    rnf (Picture c i b) = c `deepseq` i `deepseq` b `deepseq` ()
 
 -- | Create a picture for display for the given image. The picture will not have a displayed cursor
 -- and the background display attribute will be `current_attr`.
@@ -65,6 +70,10 @@ data Cursor =
       NoCursor
     | Cursor Word Word
 
+instance NFData Cursor where
+    rnf NoCursor = ()
+    rnf (Cursor !w !h) = ()
+
 -- | Unspecified regions are filled with the picture's background pattern.  The background pattern
 -- can specify a character and a display attribute. If the display attribute used previously should
 -- be used for a background fill then use `current_attr` for the background attribute. This is the
@@ -78,4 +87,7 @@ data Background = Background
     { background_char :: Char 
     , background_attr :: Attr
     }
+
+instance NFData Background where
+    rnf (Background !c !a) = ()
 

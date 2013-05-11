@@ -18,7 +18,8 @@ data UnitImage = UnitImage Char Image
 instance Arbitrary UnitImage where
     arbitrary = do
         SingleColumnChar c <- arbitrary
-        return $ UnitImage c (char def_attr c)
+        a <- arbitrary
+        return $ UnitImage c (char a c)
 
 instance Show UnitImage where
     show (UnitImage c _) = "UnitImage " ++ show c
@@ -51,11 +52,11 @@ instance Arbitrary SingleRowSingleAttrImage where
         -- IdImage which has a height of 0. If this is to represent a single row then the height
         -- must be 1
         single_column_row_text <- resize 128 (listOf1 arbitrary)
-        attr <- arbitrary
+        a <- arbitrary
         return $ SingleRowSingleAttrImage 
-                    attr 
+                    a
                     ( fromIntegral $ length single_column_row_text )
-                    ( horiz_cat $ [ char attr c | SingleColumnChar c <- single_column_row_text ] )
+                    ( horiz_cat $ [ char attr c | (SingleColumnChar c, attr) <- single_column_row_text ] )
 
 data SingleRowTwoAttrImage 
     = SingleRowTwoAttrImage 

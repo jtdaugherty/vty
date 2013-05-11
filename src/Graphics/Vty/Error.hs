@@ -8,4 +8,4 @@ import Control.Exception
 --
 -- These have fully qualified names by default since, IMO, exception handling requires this.
 data VtyException
-    =  VtyFailure String -- | Uncategorized failure specific to vty.
+    =  VtyFailure String -- ^ Uncategorized failure specific to vty.

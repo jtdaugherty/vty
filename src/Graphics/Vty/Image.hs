@@ -37,6 +37,8 @@ import Codec.Binary.UTF8.Width
 
 import Codec.Binary.UTF8.String ( decode )
 
+import Control.DeepSeq
+
 import qualified Data.ByteString as BS
 import Data.Monoid
 import qualified Data.Sequence as Seq
@@ -69,7 +71,7 @@ type DisplayString = Seq.Seq (Char, Word)
 --
 -- todo: increase the number of encoded bytestring formats supported.
 data Image = 
-    -- A horizontal text span is always >= 1 column and has a row height of 1.
+    -- | A horizontal text span is always >= 1 column and has a row height of 1.
       HorizText
       { attr :: !Attr
       -- All character data is stored as Char sequences with the ISO-10646 encoding.
@@ -77,7 +79,7 @@ data Image =
       , output_width :: !Word -- >= 0
       , char_width :: !Word -- >= 1
       }
-    -- A horizontal join can be constructed between any two images. However a HorizJoin instance is
+    -- | A horizontal join can be constructed between any two images. However a HorizJoin instance is
     -- required to be between two images of equal height. The horiz_join constructor adds background
     -- filles to the provided images that assure this is true for the HorizJoin value produced.
     | HorizJoin
@@ -86,7 +88,7 @@ data Image =
       , output_width :: !Word -- >= 1
       , output_height :: !Word -- >= 1
       }
-    -- A veritical join can be constructed between any two images. However a VertJoin instance is
+    -- | A veritical join can be constructed between any two images. However a VertJoin instance is
     -- required to be between two images of equal width. The vert_join constructor adds background
     -- fills to the provides images that assure this is true for the VertJoin value produced.
     | VertJoin
@@ -95,13 +97,13 @@ data Image =
       , output_width :: !Word -- >= 1
       , output_height :: !Word -- >= 1
       }
-    -- A background fill will be filled with the background pattern. The background pattern is
+    -- | A background fill will be filled with the background pattern. The background pattern is
     -- defined as a property of the Picture this Image is used to form. 
     | BGFill
       { output_width :: !Word -- >= 1
       , output_height :: !Word -- >= 1
       }
-    -- The combining operators identity constant. 
+    -- | The combining operators identity constant. 
     -- EmptyImage <|> a = a
     -- EmptyImage <-> a = a
     -- 
@@ -135,7 +137,17 @@ instance Show Image where
 instance Monoid Image where
     mempty = empty_image
     mappend = (<->)
-    
+
+instance NFData Image where
+    rnf EmptyImage = ()
+    rnf (Translation s i) = s `deepseq` i `deepseq` ()
+    rnf (ImagePad s i) = s `deepseq` i `deepseq` ()
+    rnf (ImageCrop s i) = s `deepseq` i `deepseq` ()
+    rnf (BGFill !w !h) = ()
+    rnf (VertJoin t b !w !h) = t `deepseq` b `deepseq` ()
+    rnf (HorizJoin l r !w !h) = l `deepseq` r `deepseq` ()
+    rnf (HorizText !a s !w !cw) = s `deepseq` ()
+
 -- A horizontal text image of 0 characters in width simplifies to the EmptyImage
 horiz_text :: Attr -> DisplayString -> Word -> Image
 horiz_text a txt ow

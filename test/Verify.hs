@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE CPP #-}
@@ -7,6 +8,7 @@
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 module Verify ( module Verify
+              , module Control.DeepSeq
               , module Test.QuickCheck
               , succeeded
               , failed
@@ -30,6 +32,7 @@ import Test.QuickCheck.Monadic ( monadicIO )
 
 import qualified Codec.Binary.UTF8.String as UTF8
 
+import Control.DeepSeq
 import Control.Monad.State.Strict
 
 import Data.IORef
@@ -82,4 +85,7 @@ instance Random Word where
         let (i :: Int, g') = randomR (fromEnum l,fromEnum h) g
         in (toEnum i, g')
 #endif
+
+data Bench where
+    Bench :: forall v . NFData v => IO v -> (v -> IO ()) -> Bench
 

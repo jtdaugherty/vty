@@ -14,9 +14,7 @@ verify_inline \
 
 
 TESTS :=\
-Bench \
-Bench2 \
-BenchRenderChar \
+benchmark \
 Test \
 Test2 \
 yi_issue_264 \
@@ -28,9 +26,8 @@ $(shell mkdir -p objects )
 # TODO: Tests should also be buildable referencing the currently installed vty
 GHC_ARGS=--make -i../src \
 		 -package parallel \
-		 -package deepseq-1.3.0.0 \
+		 -package deepseq-1.3.0.1 \
 		 -hide-package transformers \
-		 -hide-package monads-tf \
 		 -package QuickCheck \
 		 -ignore-package vty \
 		 ../cbits/gwinsz.c ../cbits/set_term_timing.c  ../cbits/mk_wcwidth.c \
