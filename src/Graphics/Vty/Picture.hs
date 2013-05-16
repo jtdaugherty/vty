@@ -83,8 +83,10 @@ instance NFData Cursor where
 -- screen to a picture.
 --
 -- \todo The background character *must* occupy a single column and no more.
+--
+-- \todo background char should be optional
 data Background = Background 
-    { background_char :: Char 
+    { background_char :: Char
     , background_attr :: Attr
     }
 

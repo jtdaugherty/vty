@@ -2,294 +2,140 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
-{-# OPTIONS_GHC -funbox-strict-fields #-}
-module Graphics.Vty.Image ( DisplayString
-                          , Image(..)
+module Graphics.Vty.Image ( DisplayText
+                          , Image
                           , image_width
                           , image_height
+                          , horiz_join
                           , (<|>)
+                          , vert_join
                           , (<->)
                           , horiz_cat
                           , vert_cat
                           , background_fill
+                          , text
+                          , strict_text
                           , char
                           , string
                           , iso_10646_string
                           , utf8_string
                           , utf8_bytestring
+                          , utf8_strict_bytestring
                           , char_fill
                           , empty_image
-                          , translate
                           , safe_wcwidth
                           , safe_wcswidth
                           , wcwidth
                           , wcswidth
                           , crop
+                          , crop_right
+                          , crop_left
+                          , crop_bottom
+                          , crop_top
                           , pad
+                          , resize
+                          , translate
                           -- | The possible display attributes used in constructing an `Image`.
                           , module Graphics.Vty.Attributes
                           )
     where
 
 import Graphics.Vty.Attributes
+import Graphics.Vty.Image.Internal
+import Graphics.Text.Width
 
-import Codec.Binary.UTF8.Width
-
-import Codec.Binary.UTF8.String ( decode )
-
-import Control.DeepSeq
-
-import qualified Data.ByteString as BS
-import Data.Monoid
-import qualified Data.Sequence as Seq
-import qualified Data.String.UTF8 as UTF8
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TL
 import Data.Word
 
 infixr 5 <|>
 infixr 4 <->
 
--- | We pair each character with it's display length. This way we only compute the length once per
--- character.
--- * Though currently the width of some strings is still compute multiple times. 
-type DisplayString = Seq.Seq (Char, Word)
-
--- | An image in VTY defines:
+-- | combines two images side by side
 --
---  * properties required to display the image. These are properties that effect the output image
---    but are independent of position 
+-- Combines text chunks where possible. Assures output_width and output_height properties are not
+-- violated.
 --
---  * A set of position-dependent text and attribute regions. The possible regions are:
+-- The result image will have a width equal to the sum of the two images width.  And the height will
+-- equal the largest height of the two images.  The area not defined in one image due to a height
+-- missmatch will be filled with the background pattern.
 --
---      * a point. ( char )
+-- TODO: the bg fill is biased towards top to bottom languages(?)
+horiz_join :: Image -> Image -> Image
+horiz_join EmptyImage i          = i
+horiz_join i          EmptyImage = i
+horiz_join i_0@(HorizText a_0 t_0 w_0 cw_0) i_1@(HorizText a_1 t_1 w_1 cw_1)
+    | a_0 == a_1 = HorizText a_0 (TL.append t_0 t_1) (w_0 + w_1) (cw_0 + cw_1)
+    | otherwise  = HorizJoin i_0 i_1 (w_0 + w_1) (image_height i_0 + image_height i_1)
+horiz_join i_0 i_1
+    -- If the images are of the same height then no padding is required
+    | h_0 == h_1 = HorizJoin i_0 i_1 w h_0
+    -- otherwise one of the images needs to be padded to the right size.
+    | h_0 < h_1  -- Pad i_0
+        = let pad_amount = h_1 - h_0
+          in HorizJoin (VertJoin i_0 (BGFill w_0 pad_amount) w_0 h_1) i_1 w h_1
+    | h_0 > h_1  -- Pad i_1
+        = let pad_amount = h_0 - h_1
+          in HorizJoin i_0 (VertJoin i_1 (BGFill w_1 pad_amount) w_1 h_0) w h_0
+    where
+        w_0 = image_width i_0
+        w_1 = image_width i_1
+        w   = w_0 + w_1
+        h_0 = image_height i_0
+        h_1 = image_height i_1
+horiz_join _ _ = error "horiz_join applied to undefined values."
+
+-- | combines two images vertically
 --
---      * a horizontal line of characters with a single attribute. (string, utf8_string,
---      utf8_bytestring )
+-- The result image will have a height equal to the sum of the heights of both images.
+-- The width will equal the largest width of the two images.
+-- The area not defined in one image due to a width missmatch will be filled with the background
+-- pattern.
 --
---      * a fill of a single character. (char_fill)
---
---      * a fill of the picture's background. (background_fill)
---
--- todo: increase the number of encoded bytestring formats supported.
-data Image = 
-    -- | A horizontal text span is always >= 1 column and has a row height of 1.
-      HorizText
-      { attr :: !Attr
-      -- All character data is stored as Char sequences with the ISO-10646 encoding.
-      , text :: DisplayString
-      , output_width :: !Word -- >= 0
-      , char_width :: !Word -- >= 1
-      }
-    -- | A horizontal join can be constructed between any two images. However a HorizJoin instance is
-    -- required to be between two images of equal height. The horiz_join constructor adds background
-    -- filles to the provided images that assure this is true for the HorizJoin value produced.
-    | HorizJoin
-      { part_left :: Image 
-      , part_right :: Image
-      , output_width :: !Word -- >= 1
-      , output_height :: !Word -- >= 1
-      }
-    -- | A veritical join can be constructed between any two images. However a VertJoin instance is
-    -- required to be between two images of equal width. The vert_join constructor adds background
-    -- fills to the provides images that assure this is true for the VertJoin value produced.
-    | VertJoin
-      { part_top :: Image
-      , part_bottom :: Image
-      , output_width :: !Word -- >= 1
-      , output_height :: !Word -- >= 1
-      }
-    -- | A background fill will be filled with the background pattern. The background pattern is
-    -- defined as a property of the Picture this Image is used to form. 
-    | BGFill
-      { output_width :: !Word -- >= 1
-      , output_height :: !Word -- >= 1
-      }
-    -- | The combining operators identity constant. 
-    -- EmptyImage <|> a = a
-    -- EmptyImage <-> a = a
-    -- 
-    -- Any image of zero size equals the empty image.
-    | EmptyImage
-    | Translation (Int, Int) Image
-    -- Crop an image to a size
-    | ImageCrop (Word, Word) Image
-    -- Pad an image up to a size
-    | ImagePad (Word, Word) Image
-    deriving Eq
-
-instance Show Image where
-    show ( HorizText { output_width = ow, text = txt } ) 
-        = "HorizText [" ++ show ow ++ "] (" ++ show (fmap fst txt) ++ ")"
-    show ( BGFill { output_width = c, output_height = r } ) 
-        = "BGFill (" ++ show c ++ "," ++ show r ++ ")"
-    show ( HorizJoin { part_left = l, part_right = r, output_width = c } ) 
-        = "HorizJoin " ++ show c ++ " ( " ++ show l ++ " <|> " ++ show r ++ " )"
-    show ( VertJoin { part_top = t, part_bottom = b, output_width = c, output_height = r } ) 
-        = "VertJoin (" ++ show c ++ ", " ++ show r ++ ") ( " ++ show t ++ " ) <-> ( " ++ show b ++ " )"
-    show ( Translation offset i )
-        = "Translation " ++ show offset ++ " ( " ++ show i ++ " )"
-    show ( ImageCrop size i )
-        = "ImageCrop " ++ show size ++ " ( " ++ show i ++ " )"
-    show ( ImagePad size i )
-        = "ImagePad " ++ show size ++ " ( " ++ show i ++ " )"
-    show ( EmptyImage ) = "EmptyImage"
-
--- | Currently append in the Monoid instance is equivalent to <->. 
-instance Monoid Image where
-    mempty = empty_image
-    mappend = (<->)
-
-instance NFData Image where
-    rnf EmptyImage = ()
-    rnf (Translation s i) = s `deepseq` i `deepseq` ()
-    rnf (ImagePad s i) = s `deepseq` i `deepseq` ()
-    rnf (ImageCrop s i) = s `deepseq` i `deepseq` ()
-    rnf (BGFill !w !h) = ()
-    rnf (VertJoin t b !w !h) = t `deepseq` b `deepseq` ()
-    rnf (HorizJoin l r !w !h) = l `deepseq` r `deepseq` ()
-    rnf (HorizText !a s !w !cw) = s `deepseq` ()
-
--- A horizontal text image of 0 characters in width simplifies to the EmptyImage
-horiz_text :: Attr -> DisplayString -> Word -> Image
-horiz_text a txt ow
-    | ow == 0    = EmptyImage
-    | otherwise = HorizText a txt ow (toEnum $ Seq.length txt)
-
-horiz_join :: Image -> Image -> Word -> Word -> Image
-horiz_join i_0 i_1 w h
-    -- A horiz join of two 0 width images simplifies to the EmptyImage
-    | w == 0 = EmptyImage
-    -- A horizontal join where either part is 0 columns in width simplifies to the other part.
-    -- This covers the case where one part is the EmptyImage.
-    | image_width i_0 == 0 = i_1
-    | image_width i_1 == 0 = i_0
-    -- If the images are of the same height then no BG padding is required
-    | image_height i_0 == image_height i_1 = HorizJoin i_0 i_1 w h
-    -- otherwise one of the imagess needs to be padded to the right size.
-    | image_height i_0 < image_height i_1  -- Pad i_0
-        = let pad_amount = image_height i_1 - image_height i_0
-          in horiz_join ( vert_join i_0 
-                                    ( BGFill ( image_width i_0 ) pad_amount ) 
-                                    ( image_width i_0 )
-                                    ( image_height i_1 )
-                        ) 
-                        i_1 
-                        w h
-    | image_height i_0 > image_height i_1  -- Pad i_1
-        = let pad_amount = image_height i_0 - image_height i_1
-          in horiz_join i_0 
-                        ( vert_join i_1 
-                                    ( BGFill ( image_width i_1 ) pad_amount ) 
-                                    ( image_width i_1 )
-                                    ( image_height i_0 )
-                        )
-                        w h
-horiz_join _ _ _ _ = error "horiz_join applied to undefined values."
-
-vert_join :: Image -> Image -> Word -> Word -> Image
-vert_join i_0 i_1 w h
-    -- A vertical join of two 0 height images simplifies to the EmptyImage
-    | h == 0                = EmptyImage
-    -- A vertical join where either part is 0 rows in height simplifies to the other part.
-    -- This covers the case where one part is the EmptyImage
-    | image_height i_0 == 0 = i_1
-    | image_height i_1 == 0 = i_0
+-- TODO: the bg fill is biased towards right to left languages(?)
+vert_join :: Image -> Image -> Image
+vert_join EmptyImage i          = i
+vert_join i          EmptyImage = i
+vert_join i_0 i_1
     -- If the images are of the same height then no background padding is required
-    | image_width i_0 == image_width i_1 = VertJoin i_0 i_1 w h
+    | w_0 == w_1 = VertJoin i_0 i_1 w_0 h
     -- Otherwise one of the images needs to be padded to the size of the other image.
-    | image_width i_0 < image_width i_1
-        = let pad_amount = image_width i_1 - image_width i_0
-          in vert_join ( horiz_join i_0
-                                    ( BGFill pad_amount ( image_height i_0 ) )
-                                    ( image_width i_1 )
-                                    ( image_height i_0 )
-                       )
-                       i_1
-                       w h
-    | image_width i_0 > image_width i_1
-        = let pad_amount = image_width i_0 - image_width i_1
-          in vert_join i_0
-                       ( horiz_join i_1
-                                    ( BGFill pad_amount ( image_height i_1 ) )
-                                    ( image_width i_0 )
-                                    ( image_height i_1 )
-                       )
-                       w h
-vert_join _ _ _ _ = error "vert_join applied to undefined values."
+    | w_0 < w_1
+        = let pad_amount = w_1 - w_0
+          in VertJoin (HorizJoin i_0 (BGFill pad_amount h_0) w_1 h_0) i_1 w_1 h
+    | w_0 > w_1
+        = let pad_amount = w_0 - w_1
+          in VertJoin i_0 (HorizJoin i_1 (BGFill pad_amount h_1) w_0 h_1) w_0 h
+    where
+        w_0 = image_width i_0
+        w_1 = image_width i_1
+        h_0 = image_height i_0
+        h_1 = image_height i_1
+        h   = h_0 + h_1
+vert_join _ _ = error "vert_join applied to undefined values."
 
 -- | An area of the picture's bacground (See Background) of w columns and h rows.
-background_fill :: Word -> Word -> Image
+background_fill :: Int -> Int -> Image
 background_fill w h 
     | w == 0    = EmptyImage
     | h == 0    = EmptyImage
     | otherwise = BGFill w h
 
--- | The width of an Image. This is the number display columns the image will occupy.
-image_width :: Image -> Word
-image_width HorizText { output_width = w } = w
-image_width HorizJoin { output_width = w } = w
-image_width VertJoin { output_width = w } = w
-image_width BGFill { output_width = w } = w
-image_width EmptyImage = 0
-image_width ( Translation v i ) = toEnum $ max 0 $ (fst v +) $ fromEnum $ image_width i
-image_width ( ImageCrop v i ) = min (image_width i) $ fst v
-image_width ( ImagePad v i ) = max (image_width i) $ fst v
-
--- | The height of an Image. This is the number of display rows the image will occupy.
-image_height :: Image -> Word
-image_height HorizText {} = 1
-image_height HorizJoin { output_height = r } = r
-image_height VertJoin { output_height = r } = r
-image_height BGFill { output_height = r } = r
-image_height EmptyImage = 0
-image_height ( Translation v i ) = toEnum $ max 0 $ (snd v +) $ fromEnum $ image_height i
-image_height ( ImageCrop v i ) = min (image_height i) $ snd v
-image_height ( ImagePad v i ) = max (image_height i) $ snd v
-
--- | Combines two images side by side.
+-- | Combines two images horizontally. Alias for horiz_join
 --
--- The result image will have a width equal to the sum of the two images width.  And the height will
--- equal the largest height of the two images.  The area not defined in one image due to a height
--- missmatch will be filled with the background pattern.
+-- infixr 5
 (<|>) :: Image -> Image -> Image
+(<|>) = horiz_join
 
--- Two horizontal text spans with the same attributes can be merged.
-h0@(HorizText attr_0 text_0 ow_0 _) <|> h1@(HorizText attr_1 text_1 ow_1 _)  
-    | attr_0 == attr_1  = horiz_text attr_0 (text_0 Seq.>< text_1) (ow_0 + ow_1)
-    | otherwise         = horiz_join h0 h1 (ow_0 + ow_1) 1
-
--- Anything placed to the right of a join wil be joined to the right sub image.
--- The total columns for the join is the sum of the two arguments columns
-h0@( HorizJoin {} ) <|> h1 
-    = horiz_join ( part_left h0 ) 
-                 ( part_right h0 <|> h1 )
-                 ( image_width h0 + image_width h1 )
-                 ( max (image_height h0) (image_height h1) )
-
--- Anything but a join placed to the left of a join wil be joined to the left sub image.
--- The total columns for the join is the sum of the two arguments columns
-h0 <|> h1@( HorizJoin {} ) 
-    = horiz_join ( h0 <|> part_left h1 ) 
-                 ( part_right h1 )
-                 ( image_width h0 + image_width h1 )
-                 ( max (image_height h0) (image_height h1) )
-
-h0 <|> h1 
-    = horiz_join h0 
-                 h1 
-                 ( image_width h0 + image_width h1 )
-                 ( max (image_height h0) (image_height h1) )
-
--- | Combines two images vertically.
--- The result image will have a height equal to the sum of the heights of both images.
--- The width will equal the largest width of the two images.
--- The area not defined in one image due to a width missmatch will be filled with the background
--- pattern.
+-- | Combines two images vertically. Alias for vert_join
+--
+-- infixr 4
 (<->) :: Image -> Image -> Image
-im_t <-> im_b 
-    = vert_join im_t 
-                im_b 
-                ( max (image_width im_t) (image_width im_b) ) 
-                ( image_height im_t + image_height im_b )
+(<->) = vert_join
 
 -- | Compose any number of images horizontally.
 horiz_cat :: [Image] -> Image
@@ -299,12 +145,26 @@ horiz_cat = foldr (<|>) EmptyImage
 vert_cat :: [Image] -> Image
 vert_cat = foldr (<->) EmptyImage
 
+-- | A Data.Text.Lazy value
+text :: Attr -> TL.Text -> Image
+text a txt
+    | TL.length txt == 0 = EmptyImage
+    | otherwise          = let display_width = safe_wcswidth (TL.unpack txt)
+                           in HorizText a txt display_width (fromIntegral $! TL.length txt)
+
+-- | A Data.Text value
+strict_text :: Attr -> T.Text -> Image
+strict_text a txt
+    | T.length txt == 0 = EmptyImage
+    | otherwise         = let display_width = safe_wcswidth (T.unpack txt)
+                          in HorizText a (TL.fromStrict txt) display_width (T.length txt)
+
 -- | an image of a single character. This is a standard Haskell 31-bit character assumed to be in
 -- the ISO-10646 encoding.
 char :: Attr -> Char -> Image
-char !a !c = 
+char a c = 
     let display_width = safe_wcwidth c
-    in HorizText a (Seq.singleton (c, display_width)) display_width 1
+    in HorizText a (TL.singleton c) display_width 1
 
 -- | A string of characters layed out on a single row with the same display attribute. The string is
 -- assumed to be a sequence of ISO-10646 characters. 
@@ -316,9 +176,9 @@ char !a !c =
 -- directly to iso_10646_string or string.
 -- 
 iso_10646_string :: Attr -> String -> Image
-iso_10646_string !a !str = 
-    let display_text = Seq.fromList $ map (\c -> (c, safe_wcwidth c)) str
-    in horiz_text a display_text (safe_wcswidth str)
+iso_10646_string a str = 
+    let display_width = safe_wcswidth str
+    in HorizText a (TL.pack str) display_width (length str)
 
 -- | Alias for iso_10646_string. Since the usual case is that a literal string like "foo" is
 -- represented internally as a list of ISO 10646 31 bit characters.  
@@ -329,62 +189,110 @@ iso_10646_string !a !str =
 string :: Attr -> String -> Image
 string = iso_10646_string
 
--- | A string of characters layed out on a single row. The string is assumed to be a sequence of
--- UTF-8 characters.
+-- | A string of characters layed out on a single row. The input is assumed to be the bytes for
+-- UTF-8 encoded text.
 utf8_string :: Attr -> [Word8] -> Image
-utf8_string !a !str = string a ( decode str )
+utf8_string a bytes = utf8_bytestring a (BL.pack bytes)
 
--- XXX: Characters with unknown widths occupy 1 column?
--- 
--- Not sure if this is actually correct.  I presume there is a replacement character that is output
--- by the terminal instead of the character and this replacement character is 1 column wide. If this
--- is not true for all terminals then a per-terminal replacement character width needs to be
--- implemented.
+-- | Renders a UTF-8 encoded lazy bytestring. 
+utf8_bytestring :: Attr -> BL.ByteString -> Image
+utf8_bytestring a bs = text a (TL.decodeUtf8 bs)
 
--- | Returns the display width of a character. Assumes all characters with unknown widths are 1 width
-safe_wcwidth :: Char -> Word
-safe_wcwidth c = case wcwidth c of
-    i   | i < 0 -> 1 
-        | otherwise -> toEnum i
-
--- | Returns the display width of a string. Assumes all characters with unknown widths are 1 width
-safe_wcswidth :: String -> Word
-safe_wcswidth str = case wcswidth str of
-    i   | i < 0 -> 1 
-        | otherwise -> toEnum i
-
--- | Renders a UTF-8 encoded bytestring. 
-utf8_bytestring :: Attr -> BS.ByteString -> Image
-utf8_bytestring !a !bs = string a (UTF8.toString $ UTF8.fromRep bs)
+-- | Renders a UTF-8 encoded strict bytestring. 
+utf8_strict_bytestring :: Attr -> B.ByteString -> Image
+utf8_strict_bytestring a bs = strict_text a (T.decodeUtf8 bs)
 
 -- | creates a fill of the specified character. The dimensions are in number of characters wide and
 -- number of rows high.
 --
 -- Unlike the Background fill character this character can have double column display width.
-char_fill :: Enum d => Attr -> Char -> d -> d -> Image
-char_fill !a !c w h = 
-    vert_cat $ replicate (fromEnum h) $ horiz_cat $ replicate (fromEnum w) $ char a c
+char_fill :: Integral d => Attr -> Char -> d -> d -> Image
+char_fill _a _c 0  _h = EmptyImage
+char_fill _a _c _w 0  = EmptyImage
+char_fill a c w h =
+    vert_cat $ replicate (fromIntegral h) $ HorizText a txt display_width char_width
+    where 
+        txt = TL.replicate (fromIntegral w) (TL.singleton c)
+        display_width = safe_wcwidth c * (fromIntegral w)
+        char_width = fromIntegral w
 
 -- | The empty image. Useful for fold combinators. These occupy no space nor define any display
 -- attributes.
 empty_image :: Image 
 empty_image = EmptyImage
 
--- | Apply the given offset to the image.
-translate :: (Int, Int) -> Image -> Image
-translate v i = Translation v i
+-- | pad the given image. This adds background character fills to the left, top, right, bottom.
+pad :: Int -> Int -> Int -> Int -> Image -> Image
+pad 0 0 0 0 i = i
+pad in_l in_t in_r in_b in_image
+    | in_l < 0 || in_t < 0 || in_r < 0 || in_b < 0 = error "cannot pad by negative amount"
+    | otherwise = go in_l in_t in_r in_b in_image
+        where 
+            -- TODO: uh.
+            go 0 0 0 0 i = i
+            go 0 0 0 b i = VertJoin i (BGFill w b) w h
+                where w = image_width  i
+                      h = image_height i + b
+            go 0 0 r b i = go 0 0 0 b $ HorizJoin i (BGFill r h) w h
+                where w = image_width  i + r
+                      h = image_height i
+            go 0 t r b i = go 0 0 r b $ VertJoin (BGFill w t) i w h
+                where w = image_width  i
+                      h = image_height i + t
+            go l t r b i = go 0 t r b $ HorizJoin (BGFill l h) i w h
+                where w = image_width  i + l
+                      h = image_height i
 
--- | Ensure an image is no larger than the provided size. If the image is larger then crop.
-crop :: (Word, Word) -> Image -> Image
-crop (0,_) _ = EmptyImage
-crop (_,0) _ = EmptyImage
-crop v (ImageCrop _size i) = ImageCrop (min (fst v) (fst _size), min (snd v) (snd _size)) i
-crop v i = ImageCrop v i
+-- | "translates" an image by padding the top and left.
+translate :: Int -> Int -> Image -> Image
+translate x y i = pad x y 0 0 i
 
--- | Ensure an image is at least the provided size. If the image is smaller then pad.
-pad :: (Word, Word) -> Image -> Image
-pad (0,_) _ = EmptyImage
-pad (_,0) _ = EmptyImage
-pad v (ImagePad _size i) = ImagePad (max (fst v) (fst _size), max (snd v) (snd _size)) i
-pad v i = ImagePad v i
+-- | Ensure an image is no larger than the provided size. If the image is larger then crop the right
+-- or bottom.
+--
+-- This is transformed to a vertical crop from the bottom followed by horizontal crop from the
+-- right.
+crop :: Int -> Int -> Image -> Image
+crop 0 _ _ = EmptyImage
+crop _ 0 _ = EmptyImage
+crop w h i = crop_bottom h (crop_right w i)
+
+-- | crop the display height. If the image is less than or equal in height then this operation has
+-- no effect. Otherwise the image is cropped from the bottom.
+crop_bottom :: Int -> Image -> Image
+crop_bottom 0 _ = EmptyImage
+crop_bottom h in_i
+    | h < 0     = error "cannot crop height to less than zero"
+    | otherwise = go in_i
+        where
+            go EmptyImage = EmptyImage
+            go (CropBottom {cropped_image, output_width, output_height}) =
+                CropBottom cropped_image output_width (min h output_height)
+            go i
+                | h >= image_height i = i
+                | otherwise           = CropBottom i (image_width i) h
+
+crop_right :: Int -> Image -> Image
+crop_right 0 _ = EmptyImage
+crop_right w in_i
+    | w < 0     = error "cannot crop width to less than zero"
+    | otherwise = go in_i
+        where
+            go EmptyImage = EmptyImage
+            go (CropRight {cropped_image, output_width, output_height}) =
+                CropRight cropped_image (min w output_width) output_height
+            go i
+                | w >= image_width i = i
+                | otherwise          = CropRight i w (image_height i)
+
+crop_left :: Int -> Image -> Image
+crop_left _ _ = error "not implemented"
+
+crop_top :: Int -> Image -> Image
+crop_top _ _ = error "not implemented"
+
+-- | Generic resize. Pads and crops as required to assure the given display width and height.
+-- This is biased to pad the right and bottom.
+resize :: Int -> Int -> Image -> Image
+resize _w _h _i = error "not implemented yet"
 
