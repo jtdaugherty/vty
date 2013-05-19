@@ -48,6 +48,7 @@ library
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -105,6 +106,7 @@ test-suite verify-attribute-ops
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -157,6 +159,7 @@ test-suite verify-using-mock-terminal
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -209,6 +212,7 @@ test-suite verify-display-attributes
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -238,6 +242,7 @@ test-suite verify-empty-image-props
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -270,6 +275,7 @@ test-suite verify-eval-terminfo-caps
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -314,6 +320,7 @@ test-suite verify-image-ops
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -352,6 +359,7 @@ test-suite verify-image-trans
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -400,6 +408,7 @@ test-suite verify-inline
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -432,6 +441,7 @@ test-suite verify-parse-terminfo-caps
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -463,6 +473,7 @@ test-suite verify-picture-ops
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -515,6 +526,7 @@ test-suite verify-picture-to-span
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -567,6 +579,7 @@ test-suite verify-span-ops
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -602,6 +615,7 @@ test-suite verify-utf8-width
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -630,6 +644,7 @@ executable vty-interactive-terminal-test
                        parsec >= 2 && < 4,
                        string-qq,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -661,6 +676,7 @@ executable vty-benchmark
                        random == 1.0.*,
                        string-qq,
                        terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7

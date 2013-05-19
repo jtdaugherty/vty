@@ -19,7 +19,7 @@ import Graphics.Text.Width
 
 import Control.Lens
 import Control.Monad ( forM_ )
-import Control.Monad.Reader.Strict
+import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Control.Monad.ST.Strict hiding ( unsafeIOToST )
 import Control.Monad.ST.Unsafe ( unsafeIOToST )
@@ -208,14 +208,32 @@ is_out_of_bounds image s
     | s ^. remain_rows       <= 0 = True
     | otherwise                   = False
 
+add_unclipped :: Image -> BlitM s ()
+add_unclipped EmptyImage = return ()
+add_unclipped (HorizText text_str _ow _cw) = do
+    use row_offset >>= snoc_op (AttributeChange a)
+    add_unclipped_text text_str
+add_unclipped (HorizJoin part_left part_right _ow _oh) = do
+    -- TODO: push into env and use
+    y <- use row_offset
+    add_unclipped part_left
+    row_offset .= y
+    add_unclipped part_right
+add_unclipped (VertJoin part_top part_bottom _ow _oh) = do
+    y <- use row_offset
+    add_unclipped part_top
+    row_offset .= y + image_height part_top
+    add_unclipped part_bottom
+    -- TODO: assumes background character is 1 column
+add_unclipped (BGFill ow oh) = do
+    Background c a <- view bg
+    let op = TextSpan ow ow (TL.replicate (fromIntegral ow) c)
+    forM_ [y..y+oh] $ snoc_op op
+
+-- TODO: prove this cannot be called in fully clipped case
 add_maybe_clipped :: Image -> BlitM s ()
 add_maybe_clipped EmptyImage = return ()
--- The width provided is the number of columns this text span will occupy when displayed.
--- if this is greater than the number of remaining columsn the output has to be produced a
--- character at a time.
---
--- TODO: prove this cannot be called in fully clipped case
-add_maybe_clipped (HorizText text_str _ow _cw) =
+add_maybe_clipped (HorizText text_str ow _cw) = do
     use row_offset >>= snoc_op (AttributeChange a)
     left_clip <- use skip_columns
     right_clip <- use remaining_columns
@@ -223,37 +241,25 @@ add_maybe_clipped (HorizText text_str _ow _cw) =
         right_clipped = (ow - left_clip) > right_clip
     if left_clipped || right_clipped
         then let text_str' = clip_text left_clip right_clip
-             in render_unclipped_text_span text_str'
-        else render_unclipped_text_span text_str
-process_image (VertJoin top_image bottom_image _ _) = do
-            (skip_row',skip_col') <- row_ops_for_image mrow_ops 
-                                                       top_image
-                                                       bg 
-                                                       region 
-                                                       skip_dim 
-                                                       y 
-                                                       remaining_columns
-                                                       remain_rows
-            let top_height = (image_height top_image) - (skip_row - skip_row')
-            (skip_row'',skip_col'') <- row_ops_for_image mrow_ops 
-                                                         bottom_image
-                                                         bg 
-                                                         region 
-                                                         (skip_row', skip_col) 
-                                                         (y + top_height)
-                                                         remaining_columns
-                                                         (max 0 $ remain_rows - top_height)
-            return (skip_row'', min skip_col' skip_col'')
-        HorizJoin l r _ _ -> do
-            (skip_row',skip_col') <- row_ops_for_image mrow_ops l bg region skip_dim y remaining_columns remain_rows
-            -- Don't output the right part unless there is at least a single column left after
-            -- outputting the left part.
-            if image_width l - (skip_col - skip_col') > remaining_columns
-                then return (skip_row,skip_col')
-                else do
-                    (skip_row'',skip_col'') <- row_ops_for_image mrow_ops r bg region (skip_row, skip_col') y (remaining_columns - image_width l + (skip_col - skip_col')) remain_rows
+             in add_unclipped_text text_str'
+        else add_unclipped_text text_str
+add_maybe_clipped (VertJoin top_image bottom_image ow oh) = do
+    add_maybe_clipped top_image
+    row_offset += image_height top_image
+    add_maybe_clipped bottom_image
+add_maybe_clipped (HorizJoin left_image right_image ow oh) -> do
+    add_maybe_clipped left_image
+    add_maybe_clipped right_image
+
+    (skip_row',skip_col') <- row_ops_for_image mrow_ops l bg region skip_dim y remaining_columns remain_rows
+    -- Don't output the right part unless there is at least a single column left after
+    -- outputting the left part.
+    if image_width l - (skip_col - skip_col') > remaining_columns
+        then return (skip_row,skip_col')
+        else do
+            (skip_row'',skip_col'') <- row_ops_for_image mrow_ops r bg region (skip_row, skip_col') y (remaining_columns - image_width l + (skip_col - skip_col')) remain_rows
                     return (min skip_row' skip_row'', skip_col'')
-        BGFill width height -> do
+add_maybe_clipped (BGFill width height) -> do
             let min_height = if y + height > (region_height region)
                                 then region_height region - y
                                 else min height remain_rows
@@ -275,24 +281,27 @@ process_image (VertJoin top_image bottom_image _ _) = do
         ImageCrop (max_w,max_h) i ->
             row_ops_for_image mrow_ops i bg region skip_dim y (min remaining_columns max_w) (min remain_rows max_h)
 
-render_clipped_text_span :: DisplayString -> Int -> Int -> BlitM ()
-render_clipped_text_span txt left_skip right_clip = do
-    use row_offset >>= snoc_op (AttributeChange a)
-    -- TODO: store a skip list in HorizText
+-- TODO: store a skip list in HorizText
+-- TODO: represent display strings containing chars that are not 1 column chars as a separate
+-- display string value?
+-- TODO: assumes max column width is 2
+clip_text :: DisplayString -> Int -> Int -> DisplayString
+clip_text txt left_skip right_clip =
+    -- CPS would clarify this I think
     let (to_drop,pad_prefix) = clip_for_char_width left_skip txt 0
-        txt' = TL.append (if pad_prefix then TL.singleton '…' else TL.empty) (TL.drop to_drop txt)
+        txt' = if pad_prefix then TL.cons '…' (TL.drop (to_drop+1) txt) else TL.drop to_drop txt
         (to_take,pad_suffix) = clip_for_char_width right_clip txt' 0
         txt'' = TL.append (TL.take to_take txt') (if pad_suffix then TL.singleton '…' else TL.empty)
         clip_for_char_width 0 _ n = (n, False)
-        clip_for_char_width 1 t n
-            | wcwidth (TL.head t) == 1 = (n+1, False)
-            | otherwise                = (n, True)
-        clip_for_char_width lc t n
-            = apply_left_clip (lc - wcwidth (TL.head t)) (TL.rest t) (n + 1)
-    render_unclipped_text_span a txt''
+        clip_for_char_width w t n
+            | w <  cw = (n, True)
+            | w == cw = (n+1, False)
+            | w >  cw = clip_for_char_width (w - cw) (TL.rest t) (n + 1)
+            where cw = safe_wcwidth (TL.head t)
+    in txt''
 
-render_unclipped_text_span :: DisplayString -> BlitM ()
-render_unclipped_text_span txt = do
+add_unclipped_text :: DisplayString -> BlitM ()
+add_unclipped_text txt = do
     let op = TextSpan used_display_columns (TL.length txt) (TL.encodeUtf8 txt)
         used_display_columns = wcswidth $ TL.unpack txt
     use row_offset >>= snoc_op op
