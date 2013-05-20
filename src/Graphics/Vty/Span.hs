@@ -208,6 +208,9 @@ is_out_of_bounds image s
     | s ^. remain_rows       <= 0 = True
     | otherwise                   = False
 
+-- TODO: prove skip_columns, skip_rows == 0
+-- TODO: prove remaining_columns >= image_width
+-- TODO: prove remaining_rows >= image_height
 add_unclipped :: Image -> BlitM s ()
 add_unclipped EmptyImage = return ()
 add_unclipped (HorizText text_str _ow _cw) = do
@@ -227,59 +230,78 @@ add_unclipped (VertJoin part_top part_bottom _ow _oh) = do
     -- TODO: assumes background character is 1 column
 add_unclipped (BGFill ow oh) = do
     Background c a <- view bg
+    y <- use row_offset
     let op = TextSpan ow ow (TL.replicate (fromIntegral ow) c)
     forM_ [y..y+oh] $ snoc_op op
+-- TODO: we know it's clipped actually, the equations that are exposed that introduce a
+-- Crop all assure the image exceeds the crop in the relevant direction.
+add_unclipped CropRight {cropped_image, output_width} = do
+    remaining_columns .= output_width
+    add_maybe_clipped cropped_image
+add_unclipped CropLeft {cropped_image, left_skip} = do
+    skip_columns .= left_skip
+    add_maybe_clipped cropped_image
+add_unclipped CropBottom {cropped_image, output_height} = do
+    remaining_rows .= output_height
+    add_maybe_clipped cropped_image
+add_unclipped CropTop {cropped_image, top_skip} = do
+    skip_rows .= top_skip
+    add_maybe_clipped cropped_image
 
--- TODO: prove this cannot be called in fully clipped case
+-- TODO: prove this cannot be called in an out of bounds case.
 add_maybe_clipped :: Image -> BlitM s ()
 add_maybe_clipped EmptyImage = return ()
 add_maybe_clipped (HorizText text_str ow _cw) = do
-    use row_offset >>= snoc_op (AttributeChange a)
-    left_clip <- use skip_columns
-    right_clip <- use remaining_columns
-    let left_clipped = left_clip > 0
-        right_clipped = (ow - left_clip) > right_clip
-    if left_clipped || right_clipped
-        then let text_str' = clip_text left_clip right_clip
-             in add_unclipped_text text_str'
-        else add_unclipped_text text_str
-add_maybe_clipped (VertJoin top_image bottom_image ow oh) = do
-    add_maybe_clipped top_image
-    row_offset += image_height top_image
-    add_maybe_clipped bottom_image
-add_maybe_clipped (HorizJoin left_image right_image ow oh) -> do
-    add_maybe_clipped left_image
-    add_maybe_clipped right_image
-
-    (skip_row',skip_col') <- row_ops_for_image mrow_ops l bg region skip_dim y remaining_columns remain_rows
-    -- Don't output the right part unless there is at least a single column left after
-    -- outputting the left part.
-    if image_width l - (skip_col - skip_col') > remaining_columns
-        then return (skip_row,skip_col')
-        else do
-            (skip_row'',skip_col'') <- row_ops_for_image mrow_ops r bg region (skip_row, skip_col') y (remaining_columns - image_width l + (skip_col - skip_col')) remain_rows
-                    return (min skip_row' skip_row'', skip_col'')
-add_maybe_clipped (BGFill width height) -> do
-            let min_height = if y + height > (region_height region)
-                                then region_height region - y
-                                else min height remain_rows
-                min_width = min width remaining_columns
-                actual_height = if skip_row > min_height
-                                    then 0
-                                    else min_height - skip_row
-                actual_width = if skip_col > min_width
-                                    then 0
-                                    else min_width - skip_col
-            forM_ [y .. y + actual_height - 1] $! \y' -> snoc_bg_fill mrow_ops bg actual_width y'
-            let skip_row' = if actual_height > skip_row
-                                then 0
-                                else skip_row - min_height
-                skip_col' = if actual_width > skip_col
-                                then 0
-                                else skip_col - min_width
-            return (skip_row',skip_col')
-        ImageCrop (max_w,max_h) i ->
-            row_ops_for_image mrow_ops i bg region skip_dim y (min remaining_columns max_w) (min remain_rows max_h)
+    -- TODO: assumption that text spans are only 1 row high.
+    s <- use skip_rows
+    when (s < 1) $ do
+        use row_offset >>= snoc_op (AttributeChange a)
+        left_clip <- use skip_columns
+        right_clip <- use remaining_columns
+        let left_clipped = left_clip > 0
+            right_clipped = (ow - left_clip) > right_clip
+        if left_clipped || right_clipped
+            then let text_str' = clip_text left_clip right_clip
+                 in add_unclipped_text text_str'
+            else add_unclipped_text text_str
+add_maybe_clipped (VertJoin top_image bottom_image _ow oh) = do
+    add_maybe_clipped_join "vert_join" skip_rows remaining_rows row_offset
+                           (image_height top_image)
+                           top_image
+                           bottom_image
+                           oh
+add_maybe_clipped (HorizJoin left_image right_image ow _oh) = do
+    add_maybe_clipped_join "horiz_join" skip_columns remaining_columns devoid
+                           (image_width right_image)
+                           left_image
+                           right_image
+                           ow
+add_maybe_clipped BGFill {output_width, output_height} = do
+    s <- get
+    let output_width'  = min (output_width  - s.^skip_columns) s.^remaining_columns
+        output_height' = min (output_height - s.^skip_rows   ) s.^remaining_rows
+    add_unclipped (BGFill output_width' output_height')
+add_maybe_clipped_join name skip remaining offset i0_dim i0 i1 size = do
+    state <- get
+    when (state^.remaining == 0) $ fail $ name ++ " with remaining == 0"
+    case state^.skip of
+        s | s >= size -> fail $ name ++ " on fully clipped"
+          -- TODO: check if clipped in other dim. if not use add_unclipped
+          | s == 0    -> case state^.remaining of
+                r | r > i0_dim -> do
+                        add_maybe_clipped i0
+                        put $ state & offset +~ i0_dim & remaining -~ i0_dim
+                        add_maybe_clipped i1
+                  | otherwise  -> add_maybe_clipped i0
+          | s >= i0_dim -> do
+                put $ state & skip -~ i0_dim
+                add_maybe_clipped i1
+          | otherwise  -> case i0_dim - s of
+                i0_dim' | state^.remaining <= i0_dim' -> add_maybe_clipped i0
+                        | otherwise                   -> do
+                            add_maybe_clipped i0
+                            put $ state & offset +~ i0_dim' & remaining -~ i0_dim'
+                            add_maybe_clipped i1
 
 -- TODO: store a skip list in HorizText
 -- TODO: represent display strings containing chars that are not 1 column chars as a separate
