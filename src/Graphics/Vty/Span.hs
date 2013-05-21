@@ -1,11 +1,9 @@
-{-# LANGUAGE MultiWayIf #-}
+-- Copyright Corey O'Connor
 {-# LANGUAGE TemplateHaskell #-}
--- Copyright 2009-2010 Corey O'Connor
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -- The ops to define the content for an output region. 
 module Graphics.Vty.Span
@@ -281,6 +279,19 @@ add_maybe_clipped BGFill {output_width, output_height} = do
     let output_width'  = min (output_width  - s.^skip_columns) s.^remaining_columns
         output_height' = min (output_height - s.^skip_rows   ) s.^remaining_rows
     add_unclipped (BGFill output_width' output_height')
+add_maybe_clipped CropRight {cropped_image, output_width} = do
+    remaining_columns .= output_width
+    add_maybe_clipped cropped_image
+add_maybe_clipped CropLeft {cropped_image, left_skip} = do
+    skip_columns += left_skip
+    add_maybe_clipped cropped_image
+add_maybe_clipped CropBottom {cropped_image, output_height} = do
+    remaining_rows .= output_height
+    add_maybe_clipped cropped_image
+add_maybe_clipped CropTop {cropped_image, top_skip} = do
+    skip_rows += top_skip
+    add_maybe_clipped cropped_image
+
 add_maybe_clipped_join name skip remaining offset i0_dim i0 i1 size = do
     state <- get
     when (state^.remaining == 0) $ fail $ name ++ " with remaining == 0"
@@ -327,34 +338,6 @@ add_unclipped_text txt = do
     let op = TextSpan used_display_columns (TL.length txt) (TL.encodeUtf8 txt)
         used_display_columns = wcswidth $ TL.unpack txt
     use row_offset >>= snoc_op op
-
--- | Add a background fill of the given column width to the row display operations.
---
--- This has a fast path for background characters that are a single column and a single byte.
--- Otherwise this has to compute the width of the background character and replicate a sequence of
--- bytes to fill in the required width.
-snoc_bg_fill :: MRowOps s -> Background -> Int -> Int -> ST s ()
-snoc_bg_fill _row_ops _bg 0 _row 
-    = return ()
-snoc_bg_fill mrow_ops (Background c back_attr) fill_length row 
-    = do
-        snoc_op mrow_ops row $ AttributeChange back_attr
-        -- By all likelyhood the background character will be an ASCII character. Which is a single
-        -- byte in utf8. Optimize for this special case.
-        utf8_bs <- if c <= (toEnum 255 :: Char)
-            then
-                let !(c_byte :: Word8) = BInt.c2w c
-                in unsafeIOToST $ do
-                    BInt.create fill_length
-                                $ \ptr -> mapM_ (\i -> pokeByteOff ptr i c_byte)
-                                                [0 .. (fill_length - 1)]
-            else 
-                let !(c_bytes :: [Word8]) = encode [c]
-                in unsafeIOToST $ do
-                    BInt.create (fill_length * length c_bytes) 
-                                $ \ptr -> mapM_ (\(i,b) -> pokeByteOff ptr i b)
-                                                $ zip [0 .. (fill_length - 1)] (cycle c_bytes)
-        snoc_op mrow_ops row $ TextSpan fill_length fill_length (UTF8.fromRep utf8_bs)
 
 -- | snocs the operation to the operations for the given row.
 snoc_op :: SpanOp -> Int -> BlitM s ()
