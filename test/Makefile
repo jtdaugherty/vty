@@ -4,11 +4,11 @@ verify_display_attributes \
 verify_parse_terminfo_caps \
 verify_eval_terminfo_caps \
 verify_utf8_width \
-verify_image_ops \
+VerifyImageOps \
 verify_image_trans \
 verify_empty_image_props \
 verify_picture_ops \
-verify_span_ops \
+VerifySpanOps \
 verify_debug_terminal \
 verify_inline \
 
@@ -28,6 +28,7 @@ GHC_ARGS=--make -i../src \
 		 -package parallel \
 		 -package deepseq-1.3.0.1 \
 		 -hide-package transformers \
+		 -hide-package monads-tf \
 		 -package QuickCheck \
 		 -ignore-package vty \
 		 ../cbits/gwinsz.c ../cbits/set_term_timing.c  ../cbits/mk_wcwidth.c \

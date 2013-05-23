@@ -5,7 +5,17 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
--- The ops to define the content for an output region. 
+{- | A picture is translated into a sequences of state changes and character spans.
+ - State changes are currently limited to new attribute values. The attribute is applied to all
+ - following spans. Including spans of the next row.  The nth element of the sequence represents the
+ - nth row (from top to bottom) of the picture to render.
+ -
+ - A span op sequence will be defined for all rows and columns (and no more) of the region provided
+ - with the picture to spans_for_pic.
+ -
+ - todo: Partition attribute changes into multiple categories according to the serialized
+ - representation of the various attributes.
+ -}
 module Graphics.Vty.Span
     where
 
@@ -32,26 +42,31 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Lazy.Internal as BLInt
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TL
 import Data.Word
 
 import Foreign.Storable ( pokeByteOff )
 
--- | Currently append in the Monoid instance is equivalent to <->. 
-instance Monoid Image where
-    mempty = EmptyImage
-    mappend = (<->)
+-- | This represents an operation on the terminal. Either an attribute change or the output of a
+-- text string.
+--
+-- todo: This type may need to be restructured to increase sharing in the bytestring
+--
+-- todo: Make foldable
+data SpanOp =
+      AttributeChange !Attr
+    -- | a span of UTF-8 text occupies a specific number of screen space columns. A single UTF
+    -- character does not necessarially represent 1 colunm. See Codec.Binary.UTF8.Width
+    -- TextSpan [output width in columns] [number of characters] [data]
+    | TextSpan !Int !Int BL.ByteString
+    deriving Eq
 
-{- | A picture is translated into a sequences of state changes and character spans.
- - State changes are currently limited to new attribute values. The attribute is applied to all
- - following spans. Including spans of the next row.  The nth element of the sequence represents the
- - nth row (from top to bottom) of the picture to render.
- -
- - A span op sequence will be defined for all rows and columns (and no more) of the region provided
- - with the picture to spans_for_pic.
- - 
- - todo: Partition attribute changes into multiple categories according to the serialized
- - representation of the various attributes.
- -}
+-- | vector of span operations. executed in succession. This represents the operations required to
+-- render a row of the terminal. The operations in one row may effect subsequent rows.
+-- EG: Setting the foreground color in one row will effect all subsequent rows until the foreground
+-- color is changed.
+type SpanOps = Vector SpanOp
+
 
 data DisplayOps = DisplayOps
     { effected_region :: DisplayRegion 
@@ -63,12 +78,6 @@ type RowOps = Vector SpanOps
 
 type MRowOps s = MVector s SpanOps
 
--- | vector of span operations. executed in succession. This represents the operations required to
--- render a row of the terminal. The operations in one row may effect subsequent rows.
--- EG: Setting the foreground color in one row will effect all subsequent rows until the foreground
--- color is changed.
-type SpanOps = Vector SpanOp
-
 type MSpanOps s = MVector s SpanOp
 
 instance Show DisplayOps where
@@ -78,6 +87,34 @@ instance Show DisplayOps where
 instance Show SpanOp where
     show (AttributeChange attr) = show attr
     show (TextSpan ow cw _) = "TextSpan " ++ show ow ++ " " ++ show cw
+
+-- transform plus clip. More or less.
+data BlitState = BlitState
+    -- we always snoc to the operation vectors. Thus the column_offset = length of row at row_offset
+    {  _row_offset :: Int
+    -- clip coordinate space is in image space. Which means it's >= 0 and < image_width.
+    , _skip_columns :: Int
+    -- >= 0 and < image_height
+    , _skip_rows :: Int
+    -- includes consideration of skip_columns. In display space.
+    -- The number of columns from the next column to be defined to the end of the display for the
+    -- row.
+    , _remaining_columns :: Int
+    -- includes consideration of skip_rows. In display space.
+    , _remaining_rows :: Int
+    }
+
+makeLenses ''BlitState
+
+data BlitEnv s = BlitEnv
+    { _bg :: Background
+    , _region :: DisplayRegion
+    , _mrow_ops :: MRowOps s
+    }
+
+makeLenses ''BlitEnv
+
+type BlitM s a = ReaderT (BlitEnv s) (StateT BlitState (ST s)) a
 
 -- | Number of columns the DisplayOps are defined for
 span_ops_columns :: DisplayOps -> Word
@@ -93,20 +130,6 @@ span_ops_effected_columns in_ops = Vector.foldl' span_ops_effected_columns' 0 in
     where 
         span_ops_effected_columns' t (TextSpan w _ _ ) = t + w
         span_ops_effected_columns' t _ = t
-
--- | This represents an operation on the terminal. Either an attribute change or the output of a
--- text string.
--- 
--- todo: This type may need to be restructured to increase sharing in the bytestring
--- 
--- todo: Make foldable
-data SpanOp =
-      AttributeChange !Attr
-    -- | a span of UTF-8 text occupies a specific number of screen space columns. A single UTF
-    -- character does not necessarially represent 1 colunm. See Codec.Binary.UTF8.Width
-    -- TextSpan [output width in columns] [number of characters] [data]
-    | TextSpan !Int !Int BL.ByteString
-    deriving Eq
 
 -- | The width of a single SpanOp in columns
 span_op_has_width :: SpanOp -> Maybe (Int, Int)
@@ -124,34 +147,6 @@ columns_to_char_offset _cx _ = error "columns_to_char_offset applied to span op 
 -- specified region.
 spans_for_pic :: Picture -> DisplayRegion -> DisplayOps
 spans_for_pic pic r = DisplayOps r $ Vector.create (build_spans pic r)
-
--- transform plus clip. More or less.
-newtype BlitState = BlitState
-    -- we always snoc to the operation vectors. Thus the column_offset = length of row at row_offset
-    {  _row_offset :: Int
-    -- clip coordinate space is in image space. Which means it's >= 0 and < image_width.
-    , _skip_columns :: Int
-    -- >= 0 and < image_height
-    , _skip_rows :: Int
-    -- includes consideration of skip_columns. In display space.
-    -- The number of columns from the next column to be defined to the end of the display for the
-    -- row.
-    , _remaining_columns :: Int
-    -- includes consideration of skip_rows. In display space.
-    , _remaining_rows :: Int
-    }
-
-makeLenses ''BlitState
-
-newtype BlitEnv s = BlitEnv
-    { _bg :: Background
-    , _region :: DisplayRegion
-    , _mrow_ops :: MRowOps s
-    }
-
-makeLenses ''BlitEnv
-
-type BlitM s a = ReaderT (BlitEnv s) (StateT BlitState (ST s)) a
 
 -- | Builds a vector of row operations that will output the given picture to the terminal.
 --

@@ -46,6 +46,7 @@ import Graphics.Text.Width
 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
+import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
@@ -54,6 +55,11 @@ import Data.Word
 
 infixr 5 <|>
 infixr 4 <->
+
+-- | Currently append in the Monoid instance is equivalent to <->. 
+instance Monoid Image where
+    mempty = EmptyImage
+    mappend = (<->)
 
 -- | combines two images side by side
 --

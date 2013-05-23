@@ -29,7 +29,7 @@ module Graphics.Vty.Picture ( module Graphics.Vty.Picture
     where
 
 import Graphics.Vty.Attributes
-import Graphics.Vty.Image hiding ( attr )
+import Graphics.Vty.Image
 
 import Control.DeepSeq
 import Data.Word
@@ -72,7 +72,7 @@ data Cursor =
 
 instance NFData Cursor where
     rnf NoCursor = ()
-    rnf (Cursor !w !h) = ()
+    rnf (Cursor w h) = w `seq` h `seq` ()
 
 -- | Unspecified regions are filled with the picture's background pattern.  The background pattern
 -- can specify a character and a display attribute. If the display attribute used previously should
@@ -91,5 +91,5 @@ data Background = Background
     }
 
 instance NFData Background where
-    rnf (Background !c !a) = ()
+    rnf (Background c a) = c `seq` a `seq` ()
 
