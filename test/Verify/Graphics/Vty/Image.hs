@@ -54,7 +54,7 @@ instance Arbitrary SingleRowSingleAttrImage where
         return $ SingleRowSingleAttrImage 
                     a
                     ( fromIntegral $ length single_column_row_text )
-                    ( horiz_cat $ [ char attr c | (SingleColumnChar c, attr) <- single_column_row_text ] )
+                    ( horiz_cat $ [ char a c | SingleColumnChar c <- single_column_row_text ] )
 
 data SingleRowTwoAttrImage 
     = SingleRowTwoAttrImage 

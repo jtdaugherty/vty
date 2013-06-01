@@ -101,10 +101,10 @@ data Image =
 
 instance Show Image where
     show ( HorizText { attr, display_text, output_width, char_width } )
-        = "HorizText \"" ++ show display_text ++ "\""
-                         ++ "@(" ++ show attr ++ ","
-                                 ++ show output_width ++ ","
-                                 ++ show char_width ++ ")"
+        = "HorizText " ++ show display_text
+                       ++ "@(" ++ show attr ++ ","
+                               ++ show output_width ++ ","
+                               ++ show char_width ++ ")"
     show ( BGFill { output_width, output_height } )
         = "BGFill (" ++ show output_width ++ "," ++ show output_height ++ ")"
     show ( HorizJoin { part_left = l, part_right = r, output_width = c } )

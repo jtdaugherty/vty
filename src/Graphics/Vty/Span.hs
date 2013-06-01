@@ -167,7 +167,7 @@ build_spans pic out_region = do
         let full_build = do
                 start_image_build $ pic_image pic
                 -- Fill in any unspecified columns with the background pattern.
-                forM_ [0 .. (region_height out_region - 1)] add_row_completion
+                forM_ [0 .. (region_height out_region - 1)] (add_row_completion out_region)
             init_env   = BlitEnv (pic_background pic) out_region out_ops
             init_state = BlitState 0 0 0 0 (region_width out_region) (region_height out_region)
         _ <- runStateT (runReaderT full_build init_env) init_state
@@ -211,7 +211,7 @@ add_unclipped (BGFill ow oh) = do
     Background c a <- view bg
     y <- use row_offset
     let op = TextSpan ow ow (T.encodeUtf8 $ T.replicate (fromIntegral ow) (T.singleton c))
-    forM_ [y..y+oh] $ \row -> do
+    forM_ [y..y+oh-1] $ \row -> do
         snoc_op (AttributeChange a) row
         snoc_op op row
 -- TODO: we know it's clipped actually, the equations that are exposed that introduce a
@@ -253,7 +253,7 @@ add_maybe_clipped (VertJoin top_image bottom_image _ow oh) = do
                            oh
 add_maybe_clipped (HorizJoin left_image right_image ow _oh) = do
     add_maybe_clipped_join "horiz_join" skip_columns remaining_columns column_offset
-                           (image_width right_image)
+                           (image_width left_image)
                            left_image
                            right_image
                            ow
@@ -336,11 +336,10 @@ add_unclipped_text txt = do
 
 -- todo: If there is no background pattern defined then skip to next line.
 -- todo: assumes background character is 1 column
-add_row_completion :: Int -> BlitM s ()
-add_row_completion row = do
+add_row_completion :: DisplayRegion -> Int -> BlitM s ()
+add_row_completion display_region row = do
     all_row_ops <- view mrow_ops
     Background c a <- view bg
-    display_region <- view region
     row_ops <- lift $ lift $ Vector.read all_row_ops row
     let end_x = span_ops_effected_columns row_ops
     when (end_x < region_width display_region) $ do

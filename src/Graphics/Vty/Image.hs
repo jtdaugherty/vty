@@ -76,7 +76,8 @@ horiz_join EmptyImage i          = i
 horiz_join i          EmptyImage = i
 horiz_join i_0@(HorizText a_0 t_0 w_0 cw_0) i_1@(HorizText a_1 t_1 w_1 cw_1)
     | a_0 == a_1 = HorizText a_0 (TL.append t_0 t_1) (w_0 + w_1) (cw_0 + cw_1)
-    | otherwise  = HorizJoin i_0 i_1 (w_0 + w_1) (image_height i_0 + image_height i_1)
+    -- TODO: assumes horiz text height is always 1
+    | otherwise  = HorizJoin i_0 i_1 (w_0 + w_1) 1
 horiz_join i_0 i_1
     -- If the images are of the same height then no padding is required
     | h_0 == h_1 = HorizJoin i_0 i_1 w h_0
@@ -107,7 +108,7 @@ vert_join :: Image -> Image -> Image
 vert_join EmptyImage i          = i
 vert_join i          EmptyImage = i
 vert_join i_0 i_1
-    -- If the images are of the same height then no background padding is required
+    -- If the images are of the same width then no background padding is required
     | w_0 == w_1 = VertJoin i_0 i_1 w_0 h
     -- Otherwise one of the images needs to be padded to the size of the other image.
     | w_0 < w_1

@@ -41,7 +41,6 @@ import Control.Monad
 import Control.Monad.Trans
 
 import Data.List ( isPrefixOf )
-import Data.Word
 
 import System.Environment
 
