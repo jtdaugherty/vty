@@ -66,11 +66,11 @@ apply_param_ops cap params = foldl apply_param_op params (param_ops cap)
 apply_param_op :: [CapParam] -> ParamOp -> [CapParam]
 apply_param_op params IncFirstTwo = map (+ 1) params
 
-cap_expression_required_bytes :: CapExpression -> [CapParam] -> Word
+cap_expression_required_bytes :: CapExpression -> [CapParam] -> Int
 cap_expression_required_bytes cap params = 
     let params' = apply_param_ops cap params
         s_0 = EvalState [] cap params'
-    in fst $! runIdentity $! runStateT ( cap_ops_required_bytes $! cap_ops cap ) s_0
+    in fromEnum $! fst $! runIdentity $! runStateT ( cap_ops_required_bytes $! cap_ops cap ) s_0
 
 cap_ops_required_bytes :: CapOps -> Eval Word
 cap_ops_required_bytes ops = do

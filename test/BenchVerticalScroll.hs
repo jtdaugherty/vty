@@ -21,21 +21,21 @@ bench_0 = do
 run vt  = mapM_ (\p -> update vt p) . benchgen =<< display_bounds (terminal vt)
 
 -- Currently, we just do scrolling.
-takem :: (a -> Word) -> Word -> [a] -> ([a],[a])
+takem :: (a -> Int) -> Int -> [a] -> ([a],[a])
 takem len n [] = ([],[])
 takem len n (x:xs) | lx > n = ([], x:xs)
                    | True = let (tk,dp) = takem len (n - lx) xs in (x:tk,dp)
     where lx = len x
 
-fold :: (a -> Word) -> [Word] -> [a] -> [[a]]
+fold :: (a -> Int) -> [Int] -> [a] -> [[a]]
 fold len [] xs = []
 fold len (ll:lls) xs = let (tk,dp) = takem len ll xs in tk : fold len lls dp
 
-lengths :: Word -> StdGen -> [Word]
-lengths ml g = 
-    let (x,g2) = randomR (0,fromEnum ml) g 
-        (y,g3) = randomR (0,x) g2 
-    in (toEnum y) : lengths ml g3
+lengths :: Int -> StdGen -> [Int]
+lengths ml g =
+    let (x,g2) = randomR (0,ml) g
+        (y,g3) = randomR (0,x) g2
+    in y : lengths ml g3
 
 nums :: StdGen -> [(Attr, String)]
 nums g = let (x,g2) = (random g :: (Int, StdGen))
@@ -44,12 +44,12 @@ nums g = let (x,g2) = (random g :: (Int, StdGen))
             , shows x " "
             ) : nums g3
 
-pad :: Word -> Image -> Image
+pad :: Int -> Image -> Image
 pad ml img = img <|> char_fill def_attr ' ' (ml - image_width img) 1
 
-clines :: StdGen -> Word -> [Image]
+clines :: StdGen -> Int -> [Image]
 clines g maxll = map (pad maxll . horiz_cat . map (uncurry string)) 
-                 $ fold (toEnum . length . snd) (lengths maxll g1) (nums g2)
+                 $ fold (length . snd) (lengths maxll g1) (nums g2)
   where (g1,g2)  = split g
 
 benchgen :: DisplayRegion -> [Picture]

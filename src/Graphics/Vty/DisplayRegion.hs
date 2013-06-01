@@ -6,7 +6,7 @@ import Data.Word
 
 -- | Region of the terminal that vty will output to. Units are columns not characters.
 data DisplayRegion = DisplayRegion 
-    { region_width :: !Word
-    , region_height :: !Word
+    { region_width :: !Int
+    , region_height :: !Int
     } deriving ( Show, Eq )
 

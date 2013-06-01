@@ -13,15 +13,15 @@ import Graphics.Vty.DisplayRegion
 import qualified Data.Vector as Vector 
 import Data.Word
 
-row_ops_effected_columns :: DisplayOps -> [Word]
+row_ops_effected_columns :: DisplayOps -> [Int]
 row_ops_effected_columns spans 
     = Vector.toList $ Vector.map span_ops_effected_columns $ display_ops spans
 
-all_spans_have_width :: DisplayOps -> Word -> Bool
+all_spans_have_width :: DisplayOps -> Int -> Bool
 all_spans_have_width spans expected
     = all (== expected) $ Vector.toList $ Vector.map span_ops_effected_columns $ display_ops spans
 
-span_ops_effected_rows :: DisplayOps -> Word
+span_ops_effected_rows :: DisplayOps -> Int
 span_ops_effected_rows (DisplayOps _ the_row_ops) 
     = toEnum $ length (filter (not . null . Vector.toList) (Vector.toList the_row_ops))
         
@@ -33,7 +33,7 @@ is_set_attr expected_attr (SpanSetAttr in_attr)
     | in_attr == expected_attr = True
 is_set_attr _attr _event = False
 
-data DebugWindow = DebugWindow Word Word
+data DebugWindow = DebugWindow Int Int
     deriving (Show, Eq)
 
 region_for_window :: DebugWindow -> DisplayRegion

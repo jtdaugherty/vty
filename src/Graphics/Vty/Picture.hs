@@ -68,7 +68,7 @@ pic_for_image i = Picture
 -- output region. In this case the cursor will not be shown.
 data Cursor = 
       NoCursor
-    | Cursor Word Word
+    | Cursor Int Int
 
 instance NFData Cursor where
     rnf NoCursor = ()

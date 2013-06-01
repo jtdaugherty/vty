@@ -192,7 +192,7 @@ get_window_size = do
 data DisplayContext = DisplayContext
     { bounds :: DisplayRegion
     , term :: Term
-    , supported_colors :: Word
+    , supported_colors :: Int
     }
 
 instance DisplayTerminal DisplayContext where
@@ -201,9 +201,9 @@ instance DisplayTerminal DisplayContext where
     context_color_count d = supported_colors d
 
     move_cursor_required_bytes d x y 
-        = cap_expression_required_bytes (cup $ term d) [y, x]
+        = cap_expression_required_bytes (cup $ term d) [toEnum y, toEnum x]
     serialize_move_cursor d x y out_ptr 
-        = liftIO $ serialize_cap_expression (cup $ term d) [y, x] out_ptr
+        = liftIO $ serialize_cap_expression (cup $ term d) [toEnum y, toEnum x] out_ptr
 
     show_cursor_required_bytes d 
         = cap_expression_required_bytes (cnorm $ term d) []
@@ -300,12 +300,12 @@ instance DisplayTerminal DisplayContext where
             set_colors ptr = do
                 ptr' <- case fixed_fore_color attr of
                     Just c -> liftIO $ serialize_cap_expression ( set_fore_color $ term d ) 
-                                                       [ ansi_color_index c ]
+                                                       [ toEnum $ ansi_color_index c ]
                                                        ptr
                     Nothing -> return ptr
                 ptr'' <- case fixed_back_color attr of
                     Just c -> liftIO $ serialize_cap_expression ( set_back_color $ term d ) 
-                                                       [ ansi_color_index c ]
+                                                       [ toEnum $ ansi_color_index c ]
                                                        ptr'
                     Nothing -> return ptr'
                 return ptr''
@@ -315,7 +315,7 @@ instance DisplayTerminal DisplayContext where
                 = fail "ColorToDefault is not a possible case for apply_color_diffs"
             apply_color_diff f ( SetColor c ) ptr
                 = liftIO $ serialize_cap_expression ( f $ term d ) 
-                                                    [ ansi_color_index c ]
+                                                    [ toEnum $ ansi_color_index c ]
                                                     ptr
 
     default_attr_required_bytes d 
@@ -328,9 +328,9 @@ instance DisplayTerminal DisplayContext where
 --
 -- This takes a Color which clearly identifies which pallete to use and computes the index
 -- into the full 256 color pallete.
-ansi_color_index :: Color -> Word
-ansi_color_index (ISOColor v) = toEnum $ fromEnum v
-ansi_color_index (Color240 v) = 16 + ( toEnum $ fromEnum v )
+ansi_color_index :: Color -> Int
+ansi_color_index (ISOColor v) = fromEnum v
+ansi_color_index (Color240 v) = 16 + fromEnum v
 
 {- | The sequence of terminfo caps to apply a given style are determined according to these rules.
  -

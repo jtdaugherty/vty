@@ -21,9 +21,8 @@ import Graphics.Vty.DisplayAttributes
 import Control.Monad ( liftM )
 import Control.Monad.Trans
 
-import qualified Data.ByteString.Internal as BSCore
+import qualified Data.ByteString.Internal as BS
 import Data.IORef
-import Data.String.UTF8 hiding ( foldl )
 import qualified Data.Vector as Vector 
 
 import System.IO
@@ -84,7 +83,7 @@ class Terminal t where
 
     -- | Output the byte buffer of the specified size to the terminal device.  The size is equal to
     -- end_ptr - start_ptr
-    output_byte_buffer :: t -> OutputBuffer -> Word -> IO ()
+    output_byte_buffer :: t -> OutputBuffer -> Int -> IO ()
 
     -- | Handle of output device
     output_handle :: t -> IO Handle
@@ -122,17 +121,17 @@ class DisplayTerminal d where
     context_region :: d -> DisplayRegion
 
     -- | Maximum number of colors supported by the context.
-    context_color_count :: d -> Word
+    context_color_count :: d -> Int
 
     --  | sets the output position to the specified row and column. Where the number of bytes
     --  required for the control codes can be specified seperate from the actual byte sequence.
-    move_cursor_required_bytes :: d -> Word -> Word -> Word
-    serialize_move_cursor :: MonadIO m => d -> Word -> Word -> OutputBuffer -> m OutputBuffer
+    move_cursor_required_bytes :: d -> Int -> Int -> Int
+    serialize_move_cursor :: MonadIO m => d -> Int -> Int -> OutputBuffer -> m OutputBuffer
 
-    show_cursor_required_bytes :: d -> Word
+    show_cursor_required_bytes :: d -> Int
     serialize_show_cursor :: MonadIO m => d -> OutputBuffer -> m OutputBuffer
 
-    hide_cursor_required_bytes :: d -> Word
+    hide_cursor_required_bytes :: d -> Int
     serialize_hide_cursor :: MonadIO m => d -> OutputBuffer -> m OutputBuffer
 
     --  | Assure the specified output attributes will be applied to all the following text until the
@@ -146,11 +145,11 @@ class DisplayTerminal d where
     --  attributes. In order to support this the currently applied display attributes are required.
     --  In addition it may be possible to optimize the state changes based off the currently applied
     --  display attributes.
-    attr_required_bytes :: d -> FixedAttr -> Attr -> DisplayAttrDiff -> Word
+    attr_required_bytes :: d -> FixedAttr -> Attr -> DisplayAttrDiff -> Int
     serialize_set_attr :: MonadIO m => d -> FixedAttr -> Attr -> DisplayAttrDiff -> OutputBuffer -> m OutputBuffer
 
     -- | Reset the display attributes to the default display attributes
-    default_attr_required_bytes :: d -> Word
+    default_attr_required_bytes :: d -> Int
     serialize_default_attr :: MonadIO m => d -> OutputBuffer -> m OutputBuffer
 
     -- | See Graphics.Vty.Terminal.XTermColor.inline_hack
@@ -174,18 +173,18 @@ instance DisplayTerminal DisplayHandle where
     inline_hack (DisplayHandle d _ _) = inline_hack d 
     
 -- | All terminals serialize UTF8 text to the terminal device exactly as serialized in memory.
-utf8_text_required_bytes ::  UTF8 BSCore.ByteString -> Word
+utf8_text_required_bytes ::  BS.ByteString -> Int
 utf8_text_required_bytes str =
-    let (_, _, src_bytes_length) = BSCore.toForeignPtr (toRep str)
-    in toEnum src_bytes_length
+    let (_, _, src_bytes_length) = BS.toForeignPtr str
+    in src_bytes_length
 
 -- | All terminals serialize UTF8 text to the terminal device exactly as serialized in memory.
-serialize_utf8_text  :: MonadIO m => UTF8 BSCore.ByteString -> OutputBuffer -> m OutputBuffer
-serialize_utf8_text str dest_ptr = 
-    let (src_fptr, src_ptr_offset, src_bytes_length) = BSCore.toForeignPtr (toRep str)
+serialize_utf8_text  :: MonadIO m => BS.ByteString -> OutputBuffer -> m OutputBuffer
+serialize_utf8_text str dest_ptr =
+    let (src_fptr, src_ptr_offset, src_bytes_length) = BS.toForeignPtr str
     in liftIO $ withForeignPtr src_fptr $ \src_ptr -> do
         let src_ptr' = src_ptr `plusPtr` src_ptr_offset
-        BSCore.memcpy dest_ptr src_ptr' (toEnum src_bytes_length) 
+        BS.memcpy dest_ptr src_ptr' (toEnum src_bytes_length) 
         return (dest_ptr `plusPtr` src_bytes_length)
 
 
@@ -255,7 +254,7 @@ output_picture (DisplayHandle d t s) pic = do
         liftIO $ writeIORef (previous_output_ref s) (Just ops)
     return ()
 
-required_bytes :: DisplayTerminal d => d -> FixedAttr -> [Bool] -> DisplayOps -> Word
+required_bytes :: DisplayTerminal d => d -> FixedAttr -> [Bool] -> DisplayOps -> Int
 required_bytes d in_fattr diffs ops = 
     let (_, n, _, _) = Vector.foldl' required_bytes' (0, 0, in_fattr, diffs) ( display_ops ops )
     in n
@@ -268,7 +267,7 @@ required_bytes d in_fattr diffs ops =
         required_bytes' (_y, _current_sum, _fattr, [] ) _span_ops
             = error "shouldn't be possible"
 
-span_ops_required_bytes :: DisplayTerminal d => d -> Word -> FixedAttr -> SpanOps -> (Word, FixedAttr)
+span_ops_required_bytes :: DisplayTerminal d => d -> Int -> FixedAttr -> SpanOps -> (Int, FixedAttr)
 span_ops_required_bytes d y in_fattr span_ops = 
     -- The first operation is to set the cursor to the start of the row
     let header_required_bytes = move_cursor_required_bytes d 0 y
@@ -279,7 +278,7 @@ span_ops_required_bytes d y in_fattr span_ops =
                      (header_required_bytes, in_fattr)
                      span_ops
 
-span_op_required_bytes :: DisplayTerminal d => d -> FixedAttr -> SpanOp -> (Word, FixedAttr)
+span_op_required_bytes :: DisplayTerminal d => d -> FixedAttr -> SpanOp -> (Int, FixedAttr)
 span_op_required_bytes d fattr (AttributeChange attr) = 
     let attr' = limit_attr_for_display d attr
         diffs = display_attr_diffs fattr fattr'
@@ -311,7 +310,7 @@ serialize_output_ops d start_ptr in_fattr diffs ops = do
 
 serialize_span_ops :: ( MonadIO m, DisplayTerminal d )
                       => d 
-                      -> Word 
+                      -> Int 
                       -> OutputBuffer 
                       -> FixedAttr 
                       -> SpanOps 
@@ -341,7 +340,7 @@ serialize_span_op _d (TextSpan _ _ str) out_ptr fattr = do
     return (out_ptr', fattr)
 
 marshall_to_terminal :: ( Terminal t )
-                     => t -> Word -> (Ptr Word8 -> IO (Ptr Word8)) -> IO ()
+                     => t -> Int -> (Ptr Word8 -> IO (Ptr Word8)) -> IO ()
 marshall_to_terminal t c f = do
     start_ptr <- mallocBytes (fromEnum c)
     -- 
@@ -357,7 +356,7 @@ marshall_to_terminal t c f = do
 -- | The cursor position is given in X,Y character offsets. Due to multi-column characters this
 -- needs to be translated to column, row positions.
 data CursorOutputMap = CursorOutputMap
-    { char_to_output_pos :: (Word, Word) -> (Word, Word)
+    { char_to_output_pos :: (Int, Int) -> (Int, Int)
     } 
 
 cursor_output_map :: DisplayOps -> Cursor -> CursorOutputMap
@@ -365,7 +364,7 @@ cursor_output_map span_ops _cursor = CursorOutputMap
     { char_to_output_pos = \(cx, cy) -> (cursor_column_offset span_ops cx cy, cy)
     }
 
-cursor_column_offset :: DisplayOps -> Word -> Word -> Word
+cursor_column_offset :: DisplayOps -> Int -> Int -> Int
 cursor_column_offset span_ops cx cy =
     let cursor_row_ops = Vector.unsafeIndex (display_ops span_ops) (fromEnum cy)
         (out_offset, _, _) 

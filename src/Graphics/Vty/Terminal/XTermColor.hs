@@ -14,7 +14,8 @@ import qualified Graphics.Vty.Terminal.TerminfoBased as TerminfoBased
 import Control.Applicative
 import Control.Monad.Trans
 
-import qualified Data.String.UTF8 as UTF8
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 
 import System.IO
 
@@ -103,7 +104,7 @@ instance DisplayTerminal DisplayContext where
     inline_hack d = do
         let t = case super_display d of
                     DisplayHandle _ t_ _ -> t_
-        let s_utf8 = UTF8.fromString "\ESC[K"
+        let s_utf8 = T.encodeUtf8 $ T.pack "\ESC[K"
         liftIO $ marshall_to_terminal t ( utf8_text_required_bytes s_utf8)
                                         ( serialize_utf8_text s_utf8 )
 

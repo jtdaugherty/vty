@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 -- Copyright Corey O'Connor
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE BangPatterns #-}
@@ -25,6 +26,7 @@ import Graphics.Vty.Picture
 import Graphics.Vty.DisplayRegion
 import Graphics.Text.Width
 
+import Control.Applicative
 import Control.Lens
 import Control.Monad ( forM_ )
 import Control.Monad.Reader
@@ -38,9 +40,12 @@ import qualified Data.Vector as Vector hiding ( take, replicate )
 import Data.Vector.Mutable ( MVector(..))
 import qualified Data.Vector.Mutable as Vector
 
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Lazy.Internal as BLInt
+import qualified Data.ByteString.Lazy.Internal as BL
 import qualified Data.Foldable as Foldable
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
 import Data.Word
@@ -58,7 +63,7 @@ data SpanOp =
     -- | a span of UTF-8 text occupies a specific number of screen space columns. A single UTF
     -- character does not necessarially represent 1 colunm. See Codec.Binary.UTF8.Width
     -- TextSpan [output width in columns] [number of characters] [data]
-    | TextSpan !Int !Int BL.ByteString
+    | TextSpan !Int !Int BS.ByteString
     deriving Eq
 
 -- | vector of span operations. executed in succession. This represents the operations required to
@@ -66,7 +71,6 @@ data SpanOp =
 -- EG: Setting the foreground color in one row will effect all subsequent rows until the foreground
 -- color is changed.
 type SpanOps = Vector SpanOp
-
 
 data DisplayOps = DisplayOps
     { effected_region :: DisplayRegion 
@@ -91,7 +95,8 @@ instance Show SpanOp where
 -- transform plus clip. More or less.
 data BlitState = BlitState
     -- we always snoc to the operation vectors. Thus the column_offset = length of row at row_offset
-    {  _row_offset :: Int
+    { _column_offset :: Int
+    , _row_offset :: Int
     -- clip coordinate space is in image space. Which means it's >= 0 and < image_width.
     , _skip_columns :: Int
     -- >= 0 and < image_height
@@ -117,15 +122,15 @@ makeLenses ''BlitEnv
 type BlitM s a = ReaderT (BlitEnv s) (StateT BlitState (ST s)) a
 
 -- | Number of columns the DisplayOps are defined for
-span_ops_columns :: DisplayOps -> Word
+span_ops_columns :: DisplayOps -> Int
 span_ops_columns ops = region_width $ effected_region ops
 
 -- | Number of rows the DisplayOps are defined for
-span_ops_rows :: DisplayOps -> Word
+span_ops_rows :: DisplayOps -> Int
 span_ops_rows ops = region_height $ effected_region ops
 
 -- | The number of columns a SpanOps effects.
-span_ops_effected_columns :: SpanOps -> Word
+span_ops_effected_columns :: SpanOps -> Int
 span_ops_effected_columns in_ops = Vector.foldl' span_ops_effected_columns' 0 in_ops
     where 
         span_ops_effected_columns' t (TextSpan w _ _ ) = t + w
@@ -139,7 +144,7 @@ span_op_has_width _ = Nothing
 -- | returns the number of columns to the character at the given position in the span op
 columns_to_char_offset :: Int -> SpanOp -> Int
 columns_to_char_offset cx (TextSpan _ _ utf8_str) =
-    let str = TL.unpack (TL.decodeUtf8 utf8_str)
+    let str = T.unpack (T.decodeUtf8 utf8_str)
     in wcswidth (take cx str)
 columns_to_char_offset _cx _ = error "columns_to_char_offset applied to span op without width"
 
@@ -166,24 +171,18 @@ build_spans pic region = do
     --
     -- The images are made into span operations from left to right. It's possible that this could
     -- easily be made to assure top to bottom output as well. 
-    if region_height region > 0
-        then do 
-            -- The ops builder recursively descends the image and outputs span ops that would
-            -- display that image. The number of columns remaining in this row before exceeding the
-            -- bounds is also provided. This is used to clip the span ops produced to the display.
-            -- The skip dimensions provided do....???
-            _ <- runStateT (runReaderT (start_image_build $ pic_image pic)
-                                       (BlitEnv (pic_background pic) region mrow_ops)
-                           )
-                           (BlitState 0 0 0 0 (region_width region) (region_height region))
-            -- Fill in any unspecified columns with the background pattern.
-            -- todo: If there is no background pattern defined then skip
-            forM_ [0 .. (region_height region - 1)] $! \row -> do
-                end_x <- Vector.read mrow_ops row >>= return . span_ops_effected_columns
-                if end_x < region_width region 
-                    then snoc_bg_fill mrow_ops (pic_background pic) (region_width region - end_x) row
-                    else return ()
-        else return ()
+    when (region_height region > 0 && region_width region > 0) $ do
+        -- The ops builder recursively descends the image and outputs span ops that would
+        -- display that image. The number of columns remaining in this row before exceeding the
+        -- bounds is also provided. This is used to clip the span ops produced to the display.
+        let full_build = do
+                start_image_build $ pic_image pic
+                -- Fill in any unspecified columns with the background pattern.
+                forM_ [0 .. (region_height region - 1)] add_row_completion
+            init_env   = BlitEnv (pic_background pic) region mrow_ops
+            init_state = BlitState 0 0 0 0 (region_width region) (region_height region)
+        _ <- runStateT (runReaderT full_build init_env) init_state
+        return ()
     return mrow_ops
 
 -- | Add the operations required to build a given image to the current set of row operations
@@ -191,14 +190,12 @@ build_spans pic region = do
 start_image_build :: Image -> BlitM s ()
 start_image_build image = do
     out_of_bounds <- is_out_of_bounds image <$> get
-    if out_of_bounds
-        then return (0,0)
-        else add_maybe_clipped image
+    when (not out_of_bounds) $ add_maybe_clipped image
 
 is_out_of_bounds :: Image -> BlitState -> Bool
 is_out_of_bounds image s
     | s ^. remaining_columns <= 0 = True
-    | s ^. remain_rows       <= 0 = True
+    | s ^. remaining_rows    <= 0 = True
     | otherwise                   = False
 
 -- TODO: prove skip_columns, skip_rows == 0
@@ -206,7 +203,7 @@ is_out_of_bounds image s
 -- TODO: prove remaining_rows >= image_height
 add_unclipped :: Image -> BlitM s ()
 add_unclipped EmptyImage = return ()
-add_unclipped (HorizText text_str _ow _cw) = do
+add_unclipped (HorizText a text_str _ow _cw) = do
     use row_offset >>= snoc_op (AttributeChange a)
     add_unclipped_text text_str
 add_unclipped (HorizJoin part_left part_right _ow _oh) = do
@@ -224,8 +221,10 @@ add_unclipped (VertJoin part_top part_bottom _ow _oh) = do
 add_unclipped (BGFill ow oh) = do
     Background c a <- view bg
     y <- use row_offset
-    let op = TextSpan ow ow (TL.replicate (fromIntegral ow) c)
-    forM_ [y..y+oh] $ snoc_op op
+    let op = TextSpan ow ow (T.encodeUtf8 $ T.replicate (fromIntegral ow) (T.singleton c))
+    forM_ [y..y+oh] $ \row -> do
+        snoc_op (AttributeChange a) row
+        snoc_op op row
 -- TODO: we know it's clipped actually, the equations that are exposed that introduce a
 -- Crop all assure the image exceeds the crop in the relevant direction.
 add_unclipped CropRight {cropped_image, output_width} = do
@@ -242,9 +241,9 @@ add_unclipped CropTop {cropped_image, top_skip} = do
     add_maybe_clipped cropped_image
 
 -- TODO: prove this cannot be called in an out of bounds case.
-add_maybe_clipped :: Image -> BlitM s ()
+add_maybe_clipped :: forall s . Image -> BlitM s ()
 add_maybe_clipped EmptyImage = return ()
-add_maybe_clipped (HorizText text_str ow _cw) = do
+add_maybe_clipped (HorizText a text_str ow _cw) = do
     -- TODO: assumption that text spans are only 1 row high.
     s <- use skip_rows
     when (s < 1) $ do
@@ -254,7 +253,7 @@ add_maybe_clipped (HorizText text_str ow _cw) = do
         let left_clipped = left_clip > 0
             right_clipped = (ow - left_clip) > right_clip
         if left_clipped || right_clipped
-            then let text_str' = clip_text left_clip right_clip
+            then let text_str' = clip_text text_str left_clip right_clip
                  in add_unclipped_text text_str'
             else add_unclipped_text text_str
 add_maybe_clipped (VertJoin top_image bottom_image _ow oh) = do
@@ -264,15 +263,15 @@ add_maybe_clipped (VertJoin top_image bottom_image _ow oh) = do
                            bottom_image
                            oh
 add_maybe_clipped (HorizJoin left_image right_image ow _oh) = do
-    add_maybe_clipped_join "horiz_join" skip_columns remaining_columns devoid
+    add_maybe_clipped_join "horiz_join" skip_columns remaining_columns column_offset
                            (image_width right_image)
                            left_image
                            right_image
                            ow
 add_maybe_clipped BGFill {output_width, output_height} = do
     s <- get
-    let output_width'  = min (output_width  - s.^skip_columns) s.^remaining_columns
-        output_height' = min (output_height - s.^skip_rows   ) s.^remaining_rows
+    let output_width'  = min (output_width  - s^.skip_columns) (s^.remaining_columns)
+        output_height' = min (output_height - s^.skip_rows   ) (s^.remaining_rows)
     add_unclipped (BGFill output_width' output_height')
 add_maybe_clipped CropRight {cropped_image, output_width} = do
     remaining_columns .= output_width
@@ -287,6 +286,15 @@ add_maybe_clipped CropTop {cropped_image, top_skip} = do
     skip_rows += top_skip
     add_maybe_clipped cropped_image
 
+add_maybe_clipped_join :: forall s . String 
+                       -> Lens BlitState BlitState Int Int
+                       -> Lens BlitState BlitState Int Int
+                       -> Lens BlitState BlitState Int Int
+                       -> Int
+                       -> Image
+                       -> Image
+                       -> Int
+                       -> BlitM s ()
 add_maybe_clipped_join name skip remaining offset i0_dim i0 i1 size = do
     state <- get
     when (state^.remaining == 0) $ fail $ name ++ " with remaining == 0"
@@ -313,7 +321,7 @@ add_maybe_clipped_join name skip remaining offset i0_dim i0 i1 size = do
 -- TODO: represent display strings containing chars that are not 1 column chars as a separate
 -- display string value?
 -- TODO: assumes max column width is 2
-clip_text :: DisplayString -> Int -> Int -> DisplayString
+clip_text :: DisplayText -> Int -> Int -> DisplayText
 clip_text txt left_skip right_clip =
     -- CPS would clarify this I think
     let (to_drop,pad_prefix) = clip_for_char_width left_skip txt 0
@@ -324,21 +332,38 @@ clip_text txt left_skip right_clip =
         clip_for_char_width w t n
             | w <  cw = (n, True)
             | w == cw = (n+1, False)
-            | w >  cw = clip_for_char_width (w - cw) (TL.rest t) (n + 1)
+            | w >  cw = clip_for_char_width (w - cw) (TL.tail t) (n + 1)
             where cw = safe_wcwidth (TL.head t)
     in txt''
 
-add_unclipped_text :: DisplayString -> BlitM ()
+add_unclipped_text :: DisplayText -> BlitM s ()
 add_unclipped_text txt = do
-    let op = TextSpan used_display_columns (TL.length txt) (TL.encodeUtf8 txt)
+    let op = TextSpan used_display_columns
+                      (fromIntegral $ TL.length txt)
+                      (T.encodeUtf8 $ TL.toStrict txt)
         used_display_columns = wcswidth $ TL.unpack txt
     use row_offset >>= snoc_op op
+
+-- todo: If there is no background pattern defined then skip to next line.
+-- todo: assumes background character is 1 column
+add_row_completion :: Int -> BlitM s ()
+add_row_completion row = do
+    all_row_ops <- view mrow_ops
+    Background c a <- view bg
+    display_region <- view region
+    row_ops <- lift $ lift $ Vector.read all_row_ops row
+    let end_x = span_ops_effected_columns row_ops
+    when (end_x < region_width display_region) $ do
+        let ow = region_width display_region - end_x
+            op = TextSpan ow ow (T.encodeUtf8 $ T.replicate (fromIntegral ow) (T.singleton c))
+        snoc_op (AttributeChange a) row
+        snoc_op op row
 
 -- | snocs the operation to the operations for the given row.
 snoc_op :: SpanOp -> Int -> BlitM s ()
 snoc_op !op !row = do
     the_mrow_ops <- view mrow_ops
-    lift $ do
+    lift $ lift $ do
         ops <- Vector.read the_mrow_ops row
         let ops' = Vector.snoc ops op
         Vector.write the_mrow_ops row ops'

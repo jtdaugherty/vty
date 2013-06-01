@@ -29,6 +29,7 @@ module Graphics.Vty.Terminal ( module Graphics.Vty.Terminal
     where
 
 
+import Graphics.Vty.DisplayRegion
 import Graphics.Vty.Terminal.Generic
 import Graphics.Vty.Terminal.MacOSX as MacOSX
 import Graphics.Vty.Terminal.XTermColor as XTermColor
@@ -36,6 +37,7 @@ import Graphics.Vty.Terminal.TerminfoBased as TerminfoBased
 
 import Control.Applicative
 import Control.Exception ( SomeException, try )
+import Control.Monad
 import Control.Monad.Trans
 
 import Data.List ( isPrefixOf )
@@ -115,11 +117,12 @@ terminal_handle = do
 --
 -- Currently, the only way to set the cursor position to a given character coordinate is to specify
 -- the coordinate in the Picture instance provided to output_picture or refresh.
-set_cursor_pos :: MonadIO m => TerminalHandle -> Word -> Word -> m ()
+set_cursor_pos :: MonadIO m => TerminalHandle -> Int -> Int -> m ()
 set_cursor_pos t x y = do
     bounds <- display_bounds t
-    d <- display_context t bounds
-    liftIO $ marshall_to_terminal t (move_cursor_required_bytes d x y) (serialize_move_cursor d x y)
+    when (x >= 0 && x < region_width bounds && y >= 0 && y < region_height bounds) $ do
+        d <- display_context t bounds
+        liftIO $ marshall_to_terminal t (move_cursor_required_bytes d x y) (serialize_move_cursor d x y)
 
 -- | Hides the cursor
 hide_cursor :: MonadIO m => TerminalHandle -> m ()
