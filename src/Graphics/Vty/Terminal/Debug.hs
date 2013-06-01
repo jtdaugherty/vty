@@ -82,6 +82,9 @@ instance DisplayTerminal DebugDisplay where
     -- | Provide the current bounds of the output terminal.
     context_region d = debug_display_bounds d
 
+    -- | Assume 16 colors
+    context_color_count d = 16
+
     -- | A cursor move is always visualized as the single character 'M'
     move_cursor_required_bytes _d _x _y = 1
 

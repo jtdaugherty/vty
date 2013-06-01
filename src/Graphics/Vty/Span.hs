@@ -24,33 +24,22 @@ import Graphics.Vty.Image
 import Graphics.Vty.Image.Internal
 import Graphics.Vty.Picture
 import Graphics.Vty.DisplayRegion
-import Graphics.Text.Width
 
 import Control.Applicative
-import Control.Lens
-import Control.Monad ( forM_ )
+import Control.Lens hiding ( op )
 import Control.Monad.Reader
-import Control.Monad.State.Strict
+import Control.Monad.State.Strict hiding ( state )
 import Control.Monad.ST.Strict hiding ( unsafeIOToST )
-import Control.Monad.ST.Unsafe ( unsafeIOToST )
 
-import Data.Monoid
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector hiding ( take, replicate )
 import Data.Vector.Mutable ( MVector(..))
 import qualified Data.Vector.Mutable as Vector
 
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Lazy.Internal as BL
-import qualified Data.Foldable as Foldable
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Encoding as TL
-import Data.Word
-
-import Foreign.Storable ( pokeByteOff )
 
 -- | This represents an operation on the terminal. Either an attribute change or the output of a
 -- text string.
@@ -157,9 +146,9 @@ spans_for_pic pic r = DisplayOps r $ Vector.create (build_spans pic r)
 --
 -- Crops to the given display region.
 build_spans :: Picture -> DisplayRegion -> ST s (MRowOps s)
-build_spans pic region = do
+build_spans pic out_region = do
     -- First we create a mutable vector for each rows output operations.
-    mrow_ops <- Vector.replicate (region_height region) Vector.empty
+    out_ops <- Vector.replicate (region_height out_region) Vector.empty
     -- \todo I think building the span operations in display order would provide better performance.
     -- However, I got stuck trying to implement an algorithm that did this. This will be considered
     -- as a possible future optimization. 
@@ -171,29 +160,29 @@ build_spans pic region = do
     --
     -- The images are made into span operations from left to right. It's possible that this could
     -- easily be made to assure top to bottom output as well. 
-    when (region_height region > 0 && region_width region > 0) $ do
+    when (region_height out_region > 0 && region_width out_region > 0) $ do
         -- The ops builder recursively descends the image and outputs span ops that would
         -- display that image. The number of columns remaining in this row before exceeding the
         -- bounds is also provided. This is used to clip the span ops produced to the display.
         let full_build = do
                 start_image_build $ pic_image pic
                 -- Fill in any unspecified columns with the background pattern.
-                forM_ [0 .. (region_height region - 1)] add_row_completion
-            init_env   = BlitEnv (pic_background pic) region mrow_ops
-            init_state = BlitState 0 0 0 0 (region_width region) (region_height region)
+                forM_ [0 .. (region_height out_region - 1)] add_row_completion
+            init_env   = BlitEnv (pic_background pic) out_region out_ops
+            init_state = BlitState 0 0 0 0 (region_width out_region) (region_height out_region)
         _ <- runStateT (runReaderT full_build init_env) init_state
         return ()
-    return mrow_ops
+    return out_ops
 
 -- | Add the operations required to build a given image to the current set of row operations
 -- returns the number of columns and rows contributed to the output.
 start_image_build :: Image -> BlitM s ()
 start_image_build image = do
-    out_of_bounds <- is_out_of_bounds image <$> get
+    out_of_bounds <- is_out_of_bounds <$> get
     when (not out_of_bounds) $ add_maybe_clipped image
 
-is_out_of_bounds :: Image -> BlitState -> Bool
-is_out_of_bounds image s
+is_out_of_bounds :: BlitState -> Bool
+is_out_of_bounds s
     | s ^. remaining_columns <= 0 = True
     | s ^. remaining_rows    <= 0 = True
     | otherwise                   = False
@@ -334,6 +323,7 @@ clip_text txt left_skip right_clip =
             | w == cw = (n+1, False)
             | w >  cw = clip_for_char_width (w - cw) (TL.tail t) (n + 1)
             where cw = safe_wcwidth (TL.head t)
+        clip_for_char_width _ _ _ = error "clip_for_char_width applied to undefined"
     in txt''
 
 add_unclipped_text :: DisplayText -> BlitM s ()

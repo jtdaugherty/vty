@@ -62,12 +62,13 @@ library
                        Graphics.Vty.LLInput
                        Graphics.Vty.Picture
                        Graphics.Vty.Terminal
-                       Codec.Binary.UTF8.Width
+                       Graphics.Text.Width
 
   other-modules:       Data.Marshalling
                        Data.Terminfo.Parse
                        Data.Terminfo.Eval
                        Graphics.Vty.DisplayAttributes
+                       Graphics.Vty.Image.Internal
                        Graphics.Vty.Span
                        Graphics.Vty.Terminal.Generic
                        Graphics.Vty.Terminal.MacOSX
@@ -125,6 +126,7 @@ test-suite verify-using-mock-terminal
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.DisplayRegion
                        Graphics.Vty.Image
+                       Graphics.Vty.Image.Internal
                        Graphics.Vty.Picture
                        Graphics.Vty.Span
                        Graphics.Vty.Terminal
@@ -132,7 +134,7 @@ test-suite verify-using-mock-terminal
                        Graphics.Vty.Terminal.Debug
                        Graphics.Vty.Debug
                        Graphics.Vty.Debug.Image
-                       Codec.Binary.UTF8.Width
+                       Graphics.Text.Width
                        Verify
                        Verify.Graphics.Vty.Attributes
                        Verify.Graphics.Vty.DisplayRegion
@@ -178,6 +180,7 @@ test-suite verify-display-attributes
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.DisplayRegion
                        Graphics.Vty.Image
+                       Graphics.Vty.Image.Internal
                        Graphics.Vty.Picture
                        Graphics.Vty.Span
                        Graphics.Vty.Terminal
@@ -185,7 +188,7 @@ test-suite verify-display-attributes
                        Graphics.Vty.Terminal.Debug
                        Graphics.Vty.Debug
                        Graphics.Vty.Debug.Image
-                       Codec.Binary.UTF8.Width
+                       Graphics.Text.Width
                        Verify
                        Verify.Graphics.Vty.Attributes
                        Verify.Graphics.Vty.DisplayRegion
@@ -259,7 +262,7 @@ test-suite verify-eval-terminfo-caps
   other-modules:       Data.Terminfo.Parse
                        Data.Terminfo.Eval
                        Data.Marshalling
-                       Codec.Binary.UTF8.Width
+                       Graphics.Text.Width
                        Verify
 
   build-depends:       Cabal == 1.17.*,
@@ -293,10 +296,11 @@ test-suite verify-image-ops
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.DisplayRegion
                        Graphics.Vty.Image
+                       Graphics.Vty.Image.Internal
                        Graphics.Vty.Picture
                        Graphics.Vty.Span
                        Graphics.Vty.Debug.Image
-                       Codec.Binary.UTF8.Width
+                       Graphics.Text.Width
                        Verify
                        Verify.Graphics.Vty.Attributes
                        Verify.Graphics.Vty.Image
@@ -337,7 +341,8 @@ test-suite verify-image-trans
   other-modules:       Graphics.Vty.Attributes
                        Graphics.Vty.Debug.Image
                        Graphics.Vty.Image
-                       Codec.Binary.UTF8.Width
+                       Graphics.Vty.Image.Internal
+                       Graphics.Text.Width
                        Verify
                        Verify.Graphics.Vty.Attributes
                        Verify.Graphics.Vty.Image
@@ -373,7 +378,7 @@ test-suite verify-inline
 
   test-module:         VerifyInline
 
-  other-modules:       Codec.Binary.UTF8.Width
+  other-modules:       Graphics.Text.Width
                        Data.Terminfo.Eval
                        Data.Terminfo.Parse
                        Data.Marshalling
@@ -381,7 +386,9 @@ test-suite verify-inline
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.DisplayRegion
                        Graphics.Vty.Image
+                       Graphics.Vty.Image.Internal
                        Graphics.Vty.Inline
+                       Graphics.Vty.Picture
                        Graphics.Vty.Span
                        Graphics.Vty.Terminal
                        Graphics.Vty.Terminal.Generic
@@ -492,6 +499,7 @@ test-suite verify-picture-to-span
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.DisplayRegion
                        Graphics.Vty.Image
+                       Graphics.Vty.Image.Internal
                        Graphics.Vty.Picture
                        Graphics.Vty.Span
                        Graphics.Vty.Terminal
@@ -499,7 +507,7 @@ test-suite verify-picture-to-span
                        Graphics.Vty.Terminal.Debug
                        Graphics.Vty.Debug
                        Graphics.Vty.Debug.Image
-                       Codec.Binary.UTF8.Width
+                       Graphics.Text.Width
                        Verify
                        Verify.Graphics.Vty.Attributes
                        Verify.Graphics.Vty.DisplayRegion
@@ -545,6 +553,7 @@ test-suite verify-span-ops
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.DisplayRegion
                        Graphics.Vty.Image
+                       Graphics.Vty.Image.Internal
                        Graphics.Vty.Picture
                        Graphics.Vty.Span
                        Graphics.Vty.Terminal
@@ -552,7 +561,7 @@ test-suite verify-span-ops
                        Graphics.Vty.Terminal.Debug
                        Graphics.Vty.Debug
                        Graphics.Vty.Debug.Image
-                       Codec.Binary.UTF8.Width
+                       Graphics.Text.Width
                        Verify
                        Verify.Graphics.Vty.Attributes
                        Verify.Graphics.Vty.DisplayRegion
@@ -593,9 +602,10 @@ test-suite verify-utf8-width
 
   test-module:         VerifyUtf8Width
 
-  other-modules:       Codec.Binary.UTF8.Width
+  other-modules:       Graphics.Text.Width
                        Graphics.Vty.Attributes
                        Graphics.Vty.Image
+                       Graphics.Vty.Image.Internal
                        Verify
 
   c-sources:           cbits/mk_wcwidth.c

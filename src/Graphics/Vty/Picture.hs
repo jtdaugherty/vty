@@ -32,7 +32,6 @@ import Graphics.Vty.Attributes
 import Graphics.Vty.Image
 
 import Control.DeepSeq
-import Data.Word
 
 -- | The type of images to be displayed using 'update'.  
 -- Can be constructed directly or using `pic_for_image`. Which provides an initial instance with

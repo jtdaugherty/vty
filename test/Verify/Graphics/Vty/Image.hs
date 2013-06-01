@@ -11,8 +11,6 @@ import Graphics.Vty.Image
 
 import Verify
 
-import Data.Word
-
 data UnitImage = UnitImage Char Image
 
 instance Arbitrary UnitImage where
@@ -38,7 +36,7 @@ instance Arbitrary DefaultImage where
 data SingleRowSingleAttrImage 
     = SingleRowSingleAttrImage 
       { expected_attr :: Attr
-      , expected_columns :: Word
+      , expected_columns :: Int
       , row_image :: Image
       }
 
@@ -74,8 +72,8 @@ instance Arbitrary SingleRowTwoAttrImage where
 data SingleAttrSingleSpanStack = SingleAttrSingleSpanStack 
     { stack_image :: Image 
     , stack_source_images :: [SingleRowSingleAttrImage]
-    , stack_width :: Word
-    , stack_height :: Word
+    , stack_width :: Int
+    , stack_height :: Int
     }
     deriving Show
 

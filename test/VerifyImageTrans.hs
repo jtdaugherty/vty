@@ -3,11 +3,13 @@ module VerifyImageTrans where
 
 import Verify.Graphics.Vty.Image
 
+import Graphics.Vty.Image.Internal
+
 import Verify
 
 import Data.Word
 
-is_horiz_text_of_columns :: Image -> Word -> Bool
+is_horiz_text_of_columns :: Image -> Int -> Bool
 is_horiz_text_of_columns (HorizText { output_width = in_w }) expected_w = in_w == expected_w
 is_horiz_text_of_columns (BGFill { output_width = in_w }) expected_w = in_w == expected_w
 is_horiz_text_of_columns _image _expected_w = False

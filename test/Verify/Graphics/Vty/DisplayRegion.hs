@@ -10,12 +10,10 @@ import Graphics.Vty.DisplayRegion
 
 import Verify
 
-import Data.Word
-
 data EmptyWindow = EmptyWindow DebugWindow
 
 instance Arbitrary EmptyWindow where
-    arbitrary = return $ EmptyWindow (DebugWindow (0 :: Word) (0 :: Word))
+    arbitrary = return $ EmptyWindow (DebugWindow (0 :: Int) (0 :: Int))
 
 instance Show EmptyWindow where
     show (EmptyWindow _) = "EmptyWindow"

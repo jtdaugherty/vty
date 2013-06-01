@@ -2,11 +2,10 @@
 module VerifyImageOps where
 
 import Graphics.Vty.Attributes
+import Graphics.Vty.Image.Internal
 import Verify.Graphics.Vty.Image
 
 import Verify
-
-import Data.Word
 
 two_sw_horiz_concat :: SingleColumnChar -> SingleColumnChar -> Bool
 two_sw_horiz_concat (SingleColumnChar c1) (SingleColumnChar c2) = 
@@ -50,7 +49,7 @@ horiz_concat_dw_assoc (DoubleColumnChar c0) (DoubleColumnChar c1) (DoubleColumnC
 
 vert_contat_single_row :: NonEmptyList SingleRowSingleAttrImage -> Bool
 vert_contat_single_row (NonEmpty stack) =
-    let expected_height :: Word = fromIntegral $ length stack
+    let expected_height :: Int = length stack
         stack_image = vert_cat [ i | SingleRowSingleAttrImage { row_image = i } <- stack ]
     in image_height stack_image == expected_height
 
@@ -58,7 +57,7 @@ disjoint_height_horiz_join :: NonEmptyList SingleRowSingleAttrImage
                               -> NonEmptyList SingleRowSingleAttrImage
                               -> Bool
 disjoint_height_horiz_join (NonEmpty stack_0) (NonEmpty stack_1) =
-    let expected_height :: Word = fromIntegral $ max (length stack_0) (length stack_1)
+    let expected_height :: Int = max (length stack_0) (length stack_1)
         stack_image_0 = vert_cat [ i | SingleRowSingleAttrImage { row_image = i } <- stack_0 ]
         stack_image_1 = vert_cat [ i | SingleRowSingleAttrImage { row_image = i } <- stack_1 ]
     in image_height (stack_image_0 <|> stack_image_1) == expected_height
