@@ -32,7 +32,7 @@ GHC_ARGS=--make -i../src \
 		 -package QuickCheck \
 		 -ignore-package vty \
 		 ../cbits/gwinsz.c ../cbits/set_term_timing.c  ../cbits/mk_wcwidth.c \
-		 -O -funbox-strict-fields -Wall -threaded -fno-full-laziness -fspec-constr -fspec-constr-count=10 \
+		 -O2 -funbox-strict-fields -Wall -threaded -fno-full-laziness -fspec-constr -fspec-constr-count=10 \
 		 -rtsopts \
 		 -odir objects -hidir objects
 
@@ -59,5 +59,5 @@ interactive_terminal_test :
 
 .PHONY: core
 core :
-	ghc-core --no-asm --no-cast -- $(GHC_ARGS) Bench
+	ghc-core --no-asm --no-cast -- $(GHC_ARGS) benchmark
 
