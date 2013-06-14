@@ -74,7 +74,7 @@ failure".
 |]
     wait_for_return
     results <- do_test_menu 1
-    env_attributes <- mapM ( \env_name -> catch ( Env.getEnv env_name >>= return . (,) env_name ) 
+    env_attributes <- mapM ( \env_name -> Control.Exception.catch ( Env.getEnv env_name >>= return . (,) env_name ) 
                                                 ( \ (_ :: SomeException) -> return (env_name, "") ) 
                            ) 
                            [ "TERM", "COLORTERM", "LANG", "TERM_PROGRAM", "XTERM_VERSION" ]
