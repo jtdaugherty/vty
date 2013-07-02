@@ -1,3 +1,6 @@
+5.0.0
+    * API changes:
+
 4.7.0.0
     * API changes:
        * Added Graphics.Vty.Image.crop: Ensure an image is no larger than the specified size.

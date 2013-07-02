@@ -11,7 +11,6 @@ import Graphics.Vty.Span
 import Graphics.Vty.DisplayRegion
 
 import qualified Data.Vector as Vector 
-import Data.Word
 
 row_ops_effected_columns :: DisplayOps -> [Int]
 row_ops_effected_columns spans 

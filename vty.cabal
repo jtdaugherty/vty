@@ -55,7 +55,6 @@ library
 
   exposed-modules:     Graphics.Vty
                        Graphics.Vty.Attributes
-                       Graphics.Vty.DisplayRegion
                        Graphics.Vty.Error
                        Graphics.Vty.Image
                        Graphics.Vty.Inline
@@ -63,13 +62,19 @@ library
                        Graphics.Vty.Picture
                        Graphics.Vty.Terminal
                        Graphics.Text.Width
-
-  other-modules:       Data.Marshalling
+                       -- the modules below are only meant to be used by the tests.
+                       Codec.Binary.UTF8.Debug
                        Data.Terminfo.Parse
                        Data.Terminfo.Eval
+                       Data.Marshalling
+                       Graphics.Vty.Debug
+                       Graphics.Vty.Debug.Image
+                       Graphics.Vty.DisplayRegion
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.Image.Internal
+                       Graphics.Vty.PictureToSpans
                        Graphics.Vty.Span
+                       Graphics.Vty.Terminal.Debug
                        Graphics.Vty.Terminal.Generic
                        Graphics.Vty.Terminal.MacOSX
                        Graphics.Vty.Terminal.XTermColor
@@ -92,9 +97,10 @@ library
 test-suite verify-attribute-ops
   default-language:    Haskell2010
   type:                detailed-0.9
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
   test-module:         VerifyAttributeOps
-  build-depends:       Cabal == 1.17.*,
+  build-depends:       vty,
+                       Cabal == 1.17.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -111,44 +117,26 @@ test-suite verify-attribute-ops
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 test-suite verify-using-mock-terminal
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
   test-module:         VerifyMockTerminal
 
-  other-modules:       Graphics.Vty
-                       Graphics.Vty.Attributes
-                       Graphics.Vty.DisplayAttributes
-                       Graphics.Vty.DisplayRegion
-                       Graphics.Vty.Image
-                       Graphics.Vty.Image.Internal
-                       Graphics.Vty.Picture
-                       Graphics.Vty.Span
-                       Graphics.Vty.Terminal
-                       Graphics.Vty.Terminal.Generic
-                       Graphics.Vty.Terminal.Debug
-                       Graphics.Vty.Debug
-                       Graphics.Vty.Debug.Image
-                       Graphics.Text.Width
-                       Verify
+  other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
                        Verify.Graphics.Vty.DisplayRegion
                        Verify.Graphics.Vty.Picture
                        Verify.Graphics.Vty.Image
                        Verify.Graphics.Vty.Span
 
-  c-sources:           cbits/gwinsz.c
-                       cbits/set_term_timing.c
-                       cbits/mk_wcwidth.c
-
-  include-dirs:        cbits
-
-  build-depends:       Cabal == 1.17.*,
+  build-depends:       vty,
+                       Cabal == 1.17.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -165,44 +153,26 @@ test-suite verify-using-mock-terminal
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 test-suite verify-display-attributes
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
   test-module:         VerifyDisplayAttributes
 
-  other-modules:       Graphics.Vty
-                       Graphics.Vty.Attributes
-                       Graphics.Vty.DisplayAttributes
-                       Graphics.Vty.DisplayRegion
-                       Graphics.Vty.Image
-                       Graphics.Vty.Image.Internal
-                       Graphics.Vty.Picture
-                       Graphics.Vty.Span
-                       Graphics.Vty.Terminal
-                       Graphics.Vty.Terminal.Generic
-                       Graphics.Vty.Terminal.Debug
-                       Graphics.Vty.Debug
-                       Graphics.Vty.Debug.Image
-                       Graphics.Text.Width
-                       Verify
+  other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
                        Verify.Graphics.Vty.DisplayRegion
                        Verify.Graphics.Vty.Picture
                        Verify.Graphics.Vty.Image
                        Verify.Graphics.Vty.Span
 
-  c-sources:           cbits/gwinsz.c
-                       cbits/set_term_timing.c
-                       cbits/mk_wcwidth.c
-
-  include-dirs:        cbits
-
-  build-depends:       Cabal == 1.17.*,
+  build-depends:       vty,
+                       Cabal == 1.17.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -219,20 +189,21 @@ test-suite verify-display-attributes
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 test-suite verify-empty-image-props
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
   test-module:         VerifyEmptyImageProps
 
-  other-modules:       Graphics.Vty.Picture
-                       Verify
+  other-modules:       Verify
 
-  build-depends:       Cabal == 1.17.*,
+  build-depends:       vty,
+                       Cabal == 1.17.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -249,23 +220,21 @@ test-suite verify-empty-image-props
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 test-suite verify-eval-terminfo-caps
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
   test-module:         VerifyEvalTerminfoCaps
 
-  other-modules:       Data.Terminfo.Parse
-                       Data.Terminfo.Eval
-                       Data.Marshalling
-                       Graphics.Text.Width
-                       Verify
+  other-modules:       Verify
 
-  build-depends:       Cabal == 1.17.*,
+  build-depends:       vty,
+                       Cabal == 1.17.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -282,36 +251,23 @@ test-suite verify-eval-terminfo-caps
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 test-suite verify-image-ops
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
   test-module:         VerifyImageOps
 
-  other-modules:       Graphics.Vty.Attributes
-                       Graphics.Vty.DisplayAttributes
-                       Graphics.Vty.DisplayRegion
-                       Graphics.Vty.Image
-                       Graphics.Vty.Image.Internal
-                       Graphics.Vty.Picture
-                       Graphics.Vty.Span
-                       Graphics.Vty.Debug.Image
-                       Graphics.Text.Width
-                       Verify
+  other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
                        Verify.Graphics.Vty.Image
 
-  c-sources:           cbits/gwinsz.c
-                       cbits/set_term_timing.c
-                       cbits/mk_wcwidth.c
-
-  include-dirs:        cbits
-
-  build-depends:       Cabal == 1.17.*,
+  build-depends:       vty,
+                       Cabal == 1.17.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -328,30 +284,23 @@ test-suite verify-image-ops
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 test-suite verify-image-trans
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
   test-module:         VerifyImageTrans
 
-  other-modules:       Graphics.Vty.Attributes
-                       Graphics.Vty.Debug.Image
-                       Graphics.Vty.Image
-                       Graphics.Vty.Image.Internal
-                       Graphics.Text.Width
-                       Verify
+  other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
                        Verify.Graphics.Vty.Image
 
-  c-sources:           cbits/mk_wcwidth.c
-
-  include-dirs:        cbits
-
-  build-depends:       Cabal == 1.17.*,
+  build-depends:       vty,
+                       Cabal == 1.17.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -368,41 +317,19 @@ test-suite verify-image-trans
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 test-suite verify-inline
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
   test-module:         VerifyInline
 
-  other-modules:       Graphics.Text.Width
-                       Data.Terminfo.Eval
-                       Data.Terminfo.Parse
-                       Data.Marshalling
-                       Graphics.Vty.Attributes
-                       Graphics.Vty.DisplayAttributes
-                       Graphics.Vty.DisplayRegion
-                       Graphics.Vty.Image
-                       Graphics.Vty.Image.Internal
-                       Graphics.Vty.Inline
-                       Graphics.Vty.Picture
-                       Graphics.Vty.Span
-                       Graphics.Vty.Terminal
-                       Graphics.Vty.Terminal.Generic
-                       Graphics.Vty.Terminal.MacOSX
-                       Graphics.Vty.Terminal.TerminfoBased
-                       Graphics.Vty.Terminal.XTermColor
-
-  c-sources:           cbits/gwinsz.c
-                       cbits/set_term_timing.c
-                       cbits/mk_wcwidth.c
-
-  include-dirs:        cbits
-
-  build-depends:       Cabal == 1.17.*,
+  build-depends:       vty,
+                       Cabal == 1.17.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -419,23 +346,22 @@ test-suite verify-inline
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 test-suite verify-parse-terminfo-caps
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
   test-module:         VerifyParseTerminfoCaps
 
-  other-modules:       Data.Terminfo.Parse
-                       Verify
+  other-modules:       Verify
                        Verify.Data.Terminfo.Parse
 
-  include-dirs:        cbits
-
-  build-depends:       Cabal == 1.17.*,
+  build-depends:       vty,
+                       Cabal == 1.17.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -452,22 +378,21 @@ test-suite verify-parse-terminfo-caps
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 test-suite verify-picture-ops
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
   test-module:         VerifyPictureOps
 
-  other-modules:       Graphics.Vty.Picture
-                       Verify
+  other-modules:       Verify
 
-  include-dirs:        cbits
-
-  build-depends:       Cabal == 1.17.*,
+  build-depends:       vty,
+                       Cabal == 1.17.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -484,44 +409,26 @@ test-suite verify-picture-ops
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 test-suite verify-picture-to-span
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
   test-module:         VerifyPictureToSpan
 
-  other-modules:       Graphics.Vty
-                       Graphics.Vty.Attributes
-                       Graphics.Vty.DisplayAttributes
-                       Graphics.Vty.DisplayRegion
-                       Graphics.Vty.Image
-                       Graphics.Vty.Image.Internal
-                       Graphics.Vty.Picture
-                       Graphics.Vty.Span
-                       Graphics.Vty.Terminal
-                       Graphics.Vty.Terminal.Generic
-                       Graphics.Vty.Terminal.Debug
-                       Graphics.Vty.Debug
-                       Graphics.Vty.Debug.Image
-                       Graphics.Text.Width
-                       Verify
+  other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
                        Verify.Graphics.Vty.DisplayRegion
                        Verify.Graphics.Vty.Picture
                        Verify.Graphics.Vty.Image
                        Verify.Graphics.Vty.Span
 
-  c-sources:           cbits/gwinsz.c
-                       cbits/set_term_timing.c
-                       cbits/mk_wcwidth.c
-
-  include-dirs:        cbits
-
-  build-depends:       Cabal == 1.17.*,
+  build-depends:       vty,
+                       Cabal == 1.17.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -538,44 +445,26 @@ test-suite verify-picture-to-span
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 test-suite verify-span-ops
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
   test-module:         VerifySpanOps
 
-  other-modules:       Graphics.Vty
-                       Graphics.Vty.Attributes
-                       Graphics.Vty.DisplayAttributes
-                       Graphics.Vty.DisplayRegion
-                       Graphics.Vty.Image
-                       Graphics.Vty.Image.Internal
-                       Graphics.Vty.Picture
-                       Graphics.Vty.Span
-                       Graphics.Vty.Terminal
-                       Graphics.Vty.Terminal.Generic
-                       Graphics.Vty.Terminal.Debug
-                       Graphics.Vty.Debug
-                       Graphics.Vty.Debug.Image
-                       Graphics.Text.Width
-                       Verify
+  other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
                        Verify.Graphics.Vty.DisplayRegion
                        Verify.Graphics.Vty.Picture
                        Verify.Graphics.Vty.Image
                        Verify.Graphics.Vty.Span
 
-  c-sources:           cbits/gwinsz.c
-                       cbits/set_term_timing.c
-                       cbits/mk_wcwidth.c
-
-  include-dirs:        cbits
-
-  build-depends:       Cabal == 1.17.*,
+  build-depends:       vty,
+                       Cabal == 1.17.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -592,27 +481,21 @@ test-suite verify-span-ops
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 test-suite verify-utf8-width
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
   test-module:         VerifyUtf8Width
 
-  other-modules:       Graphics.Text.Width
-                       Graphics.Vty.Attributes
-                       Graphics.Vty.Image
-                       Graphics.Vty.Image.Internal
-                       Verify
+  other-modules:       Verify
 
-  c-sources:           cbits/mk_wcwidth.c
-
-  include-dirs:        cbits
-
-  build-depends:       Cabal == 1.17.*,
+  build-depends:       vty,
+                       Cabal == 1.17.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -629,21 +512,17 @@ test-suite verify-utf8-width
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 executable vty-interactive-terminal-test
   main-is:             interactive_terminal_test.hs
 
   default-language:    Haskell2010
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
-  c-sources:           cbits/gwinsz.c
-                       cbits/set_term_timing.c
-                       cbits/mk_wcwidth.c
-
-  include-dirs:        cbits
-
-  build-depends:       base >= 4 && < 5,
+  build-depends:       vty,
+                       base >= 4 && < 5,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
@@ -664,15 +543,10 @@ executable vty-benchmark
 
   default-language:    Haskell2010
 
-  hs-source-dirs:      src test
+  hs-source-dirs:      test
 
-  c-sources:           cbits/gwinsz.c
-                       cbits/set_term_timing.c
-                       cbits/mk_wcwidth.c
-
-  include-dirs:        cbits
-
-  build-depends:       base >= 4 && < 5,
+  build-depends:       vty,
+                       base >= 4 && < 5,
                        bytestring,
                        Cabal == 1.17.*,
                        containers,

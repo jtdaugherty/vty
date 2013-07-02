@@ -13,14 +13,11 @@ import Graphics.Vty.Terminal.Generic
 
 import Control.Applicative
 import Control.Monad.Trans
-import Control.Monad.State.Strict
 
 import qualified Data.ByteString.UTF8 as BS
 import qualified Data.ByteString as BSCore
 import Data.IORef
-import qualified Data.Sequence as Seq
 import qualified Data.String.UTF8 as UTF8
-import Data.Word
 
 import Foreign.Marshal.Array ( peekArray )
 import Foreign.Ptr ( plusPtr )
@@ -56,7 +53,7 @@ instance Terminal DebugTerminal where
     reserve_display _t = return ()
     release_display _t = return ()
     display_bounds t = return $ debug_terminal_bounds t
-    display_terminal_instance t r c = return $ c (DebugDisplay r)
+    display_terminal_instance _t r c = return $ c (DebugDisplay r)
     output_byte_buffer t out_buffer buffer_size 
         =   liftIO $ do
             putStrLn $ "output_byte_buffer ?? " ++ show buffer_size
@@ -64,7 +61,7 @@ instance Terminal DebugTerminal where
             >>= return . UTF8.fromRep . BSCore.pack
             >>= writeIORef (debug_terminal_last_output t)
 
-    output_handle t = return stdout
+    output_handle _t = return stdout
 
 data DebugDisplay = DebugDisplay
     { debug_display_bounds :: DisplayRegion
@@ -83,7 +80,7 @@ instance DisplayTerminal DebugDisplay where
     context_region d = debug_display_bounds d
 
     -- | Assume 16 colors
-    context_color_count d = 16
+    context_color_count _d = 16
 
     -- | A cursor move is always visualized as the single character 'M'
     move_cursor_required_bytes _d _x _y = 1

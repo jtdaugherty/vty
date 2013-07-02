@@ -38,22 +38,22 @@ import Control.DeepSeq
 -- reasonable defaults for pic_cursor and pic_background.
 data Picture = Picture
     { pic_cursor :: Cursor
-    , pic_image :: Image 
+    , pic_layers :: [Image]
     , pic_background :: Background
     }
 
 instance Show Picture where
-    show (Picture _ image _ ) = "Picture ?? " ++ show image ++ " ??"
+    show (Picture _ layers _ ) = "Picture ?? " ++ show layers ++ " ??"
 
 instance NFData Picture where
-    rnf (Picture c i b) = c `deepseq` i `deepseq` b `deepseq` ()
+    rnf (Picture c l b) = c `deepseq` l `deepseq` b `deepseq` ()
 
 -- | Create a picture for display for the given image. The picture will not have a displayed cursor
 -- and the background display attribute will be `current_attr`.
 pic_for_image :: Image -> Picture
 pic_for_image i = Picture 
     { pic_cursor = NoCursor
-    , pic_image = i
+    , pic_layers = [i]
     , pic_background = Background ' ' current_attr
     }
 
@@ -92,3 +92,6 @@ data Background = Background
 instance NFData Background where
     rnf (Background c a) = c `seq` a `seq` ()
 
+-- | Compatibility with applications that do not use more than a single layer.
+pic_image :: Picture -> Image
+pic_image = head . pic_layers

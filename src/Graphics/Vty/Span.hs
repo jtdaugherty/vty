@@ -140,13 +140,27 @@ columns_to_char_offset _cx _ = error "columns_to_char_offset applied to span op 
 -- | Produces the span ops that will render the given picture, possibly cropped or padded, into the
 -- specified region.
 spans_for_pic :: Picture -> DisplayRegion -> DisplayOps
-spans_for_pic pic r = DisplayOps r $ Vector.create (build_spans pic r)
+spans_for_pic pic r = DisplayOps r $ Vector.create (combined_spans_for_layers pic r)
+
+-- | Produces the span ops for each layer then combines them.
+--
+-- TODO: a fold over a builder function. start with span ops that are a bg fill of the entire
+-- region.
+combined_spans_for_layers :: Picture -> DisplayRegion -> ST s (MRowOps s)
+combined_spans_for_layers pic r = do
+    layer_ops <- mapM (\layer -> build_spans layer r (pic_background pic)) (pic_layers pic)
+    case layer_ops of
+        []    -> fail "empty picture"
+        [ops] -> return ops
+        _     -> fail "TODO: picture with more than one layer not supported"
 
 -- | Builds a vector of row operations that will output the given picture to the terminal.
 --
 -- Crops to the given display region.
-build_spans :: Picture -> DisplayRegion -> ST s (MRowOps s)
-build_spans pic out_region = do
+--
+-- TODO: I'm pretty sure there is an algorithm that does not require a mutable buffer.
+build_spans :: Image -> DisplayRegion -> Background -> ST s (MRowOps s)
+build_spans image out_region background = do
     -- First we create a mutable vector for each rows output operations.
     out_ops <- Vector.replicate (region_height out_region) Vector.empty
     -- \todo I think building the span operations in display order would provide better performance.
@@ -165,10 +179,10 @@ build_spans pic out_region = do
         -- display that image. The number of columns remaining in this row before exceeding the
         -- bounds is also provided. This is used to clip the span ops produced to the display.
         let full_build = do
-                start_image_build $ pic_image pic
+                start_image_build image
                 -- Fill in any unspecified columns with the background pattern.
                 forM_ [0 .. (region_height out_region - 1)] (add_row_completion out_region)
-            init_env   = BlitEnv (pic_background pic) out_region out_ops
+            init_env   = BlitEnv background out_region out_ops
             init_state = BlitState 0 0 0 0 (region_width out_region) (region_height out_region)
         _ <- runStateT (runReaderT full_build init_env) init_state
         return ()
@@ -306,7 +320,7 @@ add_maybe_clipped_join name skip remaining offset i0_dim i0 i1 size = do
                             put $ state & offset +~ i0_dim' & remaining -~ i0_dim'
                             add_maybe_clipped i1
 
--- TODO: store a skip list in HorizText
+-- TODO: store a skip list in HorizText(?)
 -- TODO: represent display strings containing chars that are not 1 column chars as a separate
 -- display string value?
 -- TODO: assumes max column width is 2
