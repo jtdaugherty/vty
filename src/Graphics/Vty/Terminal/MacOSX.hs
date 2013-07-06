@@ -14,7 +14,7 @@ module Graphics.Vty.Terminal.MacOSX ( terminal_instance
                                     )
     where
 
-import Graphics.Vty.Terminal.Generic
+import Graphics.Vty.Terminal.Interface
 import qualified Graphics.Vty.Terminal.TerminfoBased as TerminfoBased
 
 import Control.Applicative
@@ -32,11 +32,11 @@ data Term = Term
 -- "xterm-256color" is used.
 --
 -- This effects the terminfo lookup.
-terminal_instance :: ( Applicative m, MonadIO m ) => String -> m Term
-terminal_instance v = do
+terminal_instance :: ( Applicative m, MonadIO m ) => String -> Handle -> m Term
+terminal_instance v out_handle = do
     let base_term "iTerm.app" = "xterm-256color"
         base_term _ = "xterm"
-    t <- TerminfoBased.terminal_instance (base_term v) >>= new_terminal_handle
+    t <- TerminfoBased.terminal_instance (base_term v) out_handle >>= new_terminal_handle
     return $ Term t v
 
 flushed_put :: MonadIO m => String -> m ()

@@ -32,11 +32,9 @@ is_set_attr expected_attr (SpanSetAttr in_attr)
     | in_attr == expected_attr = True
 is_set_attr _attr _event = False
 
-data DebugWindow = DebugWindow Int Int
+data MockWindow = MockWindow Int Int
     deriving (Show, Eq)
 
-region_for_window :: DebugWindow -> DisplayRegion
-region_for_window (DebugWindow w h) = DisplayRegion w h
-
-type TestWindow = DebugWindow
+region_for_window :: MockWindow -> DisplayRegion
+region_for_window (MockWindow w h) = DisplayRegion w h
 

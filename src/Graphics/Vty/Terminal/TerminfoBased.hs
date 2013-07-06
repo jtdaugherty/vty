@@ -12,7 +12,7 @@ import Data.Terminfo.Eval
 
 import Graphics.Vty.Attributes
 import Graphics.Vty.DisplayAttributes
-import Graphics.Vty.Terminal.Generic
+import Graphics.Vty.Terminal.Interface
 import Graphics.Vty.DisplayRegion
 
 import Control.Applicative 
@@ -21,7 +21,6 @@ import Control.Monad.Trans
 
 import Data.Bits ( (.&.) )
 import Data.Maybe ( isJust, isNothing, fromJust )
-import Data.Word
 
 import Foreign.C.Types ( CLong(..) )
 
@@ -73,8 +72,8 @@ marshall_cap_to_terminal t cap_selector cap_params = do
  - todo: Some display attributes like underline and bold have independent string capabilities that
  - should be used instead of the generic "sgr" string capability.
  -}
-terminal_instance :: ( Applicative m, MonadIO m ) => String -> m Term
-terminal_instance in_ID = do
+terminal_instance :: ( Applicative m, MonadIO m ) => String -> Handle -> m Term
+terminal_instance in_ID the_handle = do
     ti <- liftIO $ Terminfo.setupTerm in_ID
     let require_cap str 
             = case Terminfo.getCapability ti (Terminfo.tiGetStr str) of
@@ -92,7 +91,6 @@ terminal_instance in_ID = do
                     case parse_result of
                         Left e -> fail $ show e
                         Right cap -> return $ Just cap
-    the_handle <- liftIO $ hDuplicate stdout
     pure Term
         <*> pure in_ID
         <*> pure ti
@@ -245,6 +243,9 @@ instance DisplayTerminal DisplayContext where
     -- the case then the back and fore colors always need to be set if not default.
     --
     -- This equation implements the above logic.
+    --
+    -- \todo This assumes that fewer state changes, followed by fewer bytes, is what to optimize. I
+    -- haven't measured this or even examined terminal implementations. *shrug*
     serialize_set_attr d prev_attr req_attr diffs out_ptr = do
         case (fore_color_diff diffs == ColorToDefault) || (back_color_diff diffs == ColorToDefault) of
             -- The only way to reset either color, portably, to the default is to use either the set

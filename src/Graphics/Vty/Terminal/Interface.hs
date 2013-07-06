@@ -1,13 +1,13 @@
--- Copyright 2009-2011 Corey O'Connor
+-- Copyright Corey O'Connor
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Graphics.Vty.Terminal.Generic ( module Graphics.Vty.Terminal.Generic
-                                     , OutputBuffer
-                                     )
+module Graphics.Vty.Terminal.Interface ( module Graphics.Vty.Terminal.Interface
+                                       , OutputBuffer
+                                       )
     where
 
 import Data.Marshalling

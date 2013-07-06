@@ -1,13 +1,13 @@
---  | Generic Terminal interface.
+--  | Terminal IO device.
 --
---  Defines the common interface supported by all terminals.
+--  Access to the current terminal or a specific terminal device.
 --
 --  See also:
 --
 --  1. Graphics.Vty.Terminal: This instantiates an abtract interface to the terminal interface based
 --  on the TERM and COLORTERM environment variables. 
 --  
---  2. Graphics.Vty.Terminal.Generic: Defines the generic interface all terminals need to implement.
+--  2. Graphics.Vty.Terminal.Interface: Defines the generic interface all terminals need to implement.
 --
 --  3. Graphics.Vty.Terminal.TerminfoBased: Defines a terminal instance that uses terminfo for all
 --  control strings.  No attempt is made to change the character set to UTF-8 for these terminals.
@@ -30,7 +30,7 @@ module Graphics.Vty.Terminal ( module Graphics.Vty.Terminal
 
 
 import Graphics.Vty.DisplayRegion
-import Graphics.Vty.Terminal.Generic
+import Graphics.Vty.Terminal.Interface
 import Graphics.Vty.Terminal.MacOSX as MacOSX
 import Graphics.Vty.Terminal.XTermColor as XTermColor
 import Graphics.Vty.Terminal.TerminfoBased as TerminfoBased
@@ -42,7 +42,10 @@ import Control.Monad.Trans
 
 import Data.List ( isPrefixOf )
 
+import GHC.IO.Handle
+
 import System.Environment
+import System.IO
 
 -- | Returns a TerminalHandle (an abstract Terminal instance) for the current terminal.
 --
@@ -84,23 +87,24 @@ import System.Environment
 terminal_handle :: ( Applicative m, MonadIO m ) => m TerminalHandle
 terminal_handle = do
     term_type <- liftIO $ getEnv "TERM"
+    out_handle <- liftIO $ hDuplicate stdout
     t <- if "xterm" `isPrefixOf` term_type
         then do
             maybe_terminal_app <- get_env "TERM_PROGRAM"
             case maybe_terminal_app of
                 Nothing 
-                    -> XTermColor.terminal_instance term_type >>= new_terminal_handle
+                    -> XTermColor.terminal_instance term_type out_handle >>= new_terminal_handle
                 Just v | v == "Apple_Terminal" || v == "iTerm.app" 
                     -> do
                         maybe_xterm <- get_env "XTERM_VERSION"
                         case maybe_xterm of
-                            Nothing -> MacOSX.terminal_instance v >>= new_terminal_handle
-                            Just _  -> XTermColor.terminal_instance term_type >>= new_terminal_handle
+                            Nothing -> MacOSX.terminal_instance v out_handle >>= new_terminal_handle
+                            Just _  -> XTermColor.terminal_instance term_type out_handle >>= new_terminal_handle
                 -- Assume any other terminal that sets TERM_PROGRAM to not be an OS X terminal.app
                 -- like terminal?
-                _   -> XTermColor.terminal_instance term_type >>= new_terminal_handle
+                _   -> XTermColor.terminal_instance term_type out_handle >>= new_terminal_handle
         -- Not an xterm-like terminal. try for generic terminfo.
-        else TerminfoBased.terminal_instance term_type >>= new_terminal_handle
+        else TerminfoBased.terminal_instance term_type out_handle >>= new_terminal_handle
     return t
     where
         get_env var = do

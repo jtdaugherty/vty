@@ -8,7 +8,7 @@ module Graphics.Vty.Terminal.XTermColor ( terminal_instance
                                         )
     where
 
-import Graphics.Vty.Terminal.Generic
+import Graphics.Vty.Terminal.Interface
 import qualified Graphics.Vty.Terminal.TerminfoBased as TerminfoBased
 
 import Control.Applicative
@@ -29,13 +29,13 @@ data XTermColor = XTermColor
     }
 
 -- | Initialize the display to UTF-8. 
-terminal_instance :: ( Applicative m, MonadIO m ) => String -> m XTermColor
-terminal_instance variant = do
+terminal_instance :: ( Applicative m, MonadIO m ) => String -> Handle -> m XTermColor
+terminal_instance variant out_handle = do
     -- If the terminal variant is xterm-color use xterm instead since, more often than not,
     -- xterm-color is broken.
     let variant' = if variant == "xterm-color" then "xterm" else variant
     flushed_put set_utf8_char_set
-    t <- TerminfoBased.terminal_instance variant' >>= new_terminal_handle
+    t <- TerminfoBased.terminal_instance variant' out_handle >>= new_terminal_handle
     return $ XTermColor variant' t
 
 -- | Output immediately followed by a flush.

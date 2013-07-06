@@ -74,8 +74,8 @@ library
                        Graphics.Vty.Image.Internal
                        Graphics.Vty.PictureToSpans
                        Graphics.Vty.Span
-                       Graphics.Vty.Terminal.Debug
-                       Graphics.Vty.Terminal.Generic
+                       Graphics.Vty.Terminal.Mock
+                       Graphics.Vty.Terminal.Interface
                        Graphics.Vty.Terminal.MacOSX
                        Graphics.Vty.Terminal.XTermColor
                        Graphics.Vty.Terminal.TerminfoBased
@@ -119,14 +119,14 @@ test-suite verify-attribute-ops
                        vector >= 0.7
   
 
-test-suite verify-using-mock-terminal
+test-suite verify-terminal
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
   hs-source-dirs:      test
 
-  test-module:         VerifyMockTerminal
+  test-module:         VerifyTerminal
 
   other-modules:       Verify
                        Verify.Graphics.Vty.Attributes

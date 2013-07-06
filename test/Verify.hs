@@ -10,6 +10,7 @@
 module Verify ( module Verify
               , module Control.DeepSeq
               , module Test.QuickCheck
+              , module Test.QuickCheck.Modifiers
               , succeeded
               , failed
               , result
@@ -26,6 +27,7 @@ import qualified Distribution.TestSuite as TS
 
 import Test.QuickCheck hiding ( Result(..) )
 import qualified Test.QuickCheck as QC
+import Test.QuickCheck.Modifiers
 import Test.QuickCheck.Property hiding ( Result(..) )
 import qualified Test.QuickCheck.Property as Prop
 import Test.QuickCheck.Monadic ( monadicIO ) 

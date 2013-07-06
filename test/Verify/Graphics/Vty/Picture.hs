@@ -15,7 +15,7 @@ import Verify
 
 data DefaultPic = DefaultPic 
     { default_pic :: Picture
-    , default_win :: DebugWindow 
+    , default_win :: MockWindow 
     , default_construct_log :: ImageConstructLog
     }
 
@@ -26,14 +26,14 @@ instance Show DefaultPic where
 instance Arbitrary DefaultPic where
     arbitrary = do
         DefaultImage image image_construct_events <- arbitrary
-        let win = DebugWindow (image_width image) (image_height image)
+        let win = MockWindow (image_width image) (image_height image)
         return $ DefaultPic (pic_for_image image) 
                             win 
                             image_construct_events
 
 data PicWithBGAttr = PicWithBGAttr 
     { with_attr_pic :: Picture
-    , with_attr_win :: DebugWindow
+    , with_attr_win :: MockWindow
     , with_attr_construct_log :: ImageConstructLog
     , with_attr_specified_attr :: Attr
     } deriving ( Show )
@@ -41,7 +41,7 @@ data PicWithBGAttr = PicWithBGAttr
 instance Arbitrary PicWithBGAttr where
     arbitrary = do
         DefaultImage image image_construct_events <- arbitrary
-        let win = DebugWindow (image_width image) (image_height image)
+        let win = MockWindow (image_width image) (image_height image)
         attr <- arbitrary
         return $ PicWithBGAttr (pic_for_image image) 
                                win 

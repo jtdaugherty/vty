@@ -33,7 +33,7 @@ module Graphics.Vty.Inline ( module Graphics.Vty.Inline
 
 import Graphics.Vty.Attributes
 import Graphics.Vty.DisplayAttributes
-import Graphics.Vty.Terminal.Generic
+import Graphics.Vty.Terminal.Interface
 
 import Control.Applicative
 import Control.Monad.State.Strict
