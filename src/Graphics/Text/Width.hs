@@ -20,15 +20,15 @@ wcswidth = sum . map wcwidth
 -- is not true for all terminals then a per-terminal replacement character width needs to be
 -- implemented.
 
--- | Returns the display width of a character. Assumes all characters with unknown widths are 1 width
+-- | Returns the display width of a character. Assumes all characters with unknown widths are 0 width
 safe_wcwidth :: Char -> Int
 safe_wcwidth c = case wcwidth c of
-    i   | i < 0 -> 1 
+    i   | i < 0 -> 0
         | otherwise -> i
 
--- | Returns the display width of a string. Assumes all characters with unknown widths are 1 width
+-- | Returns the display width of a string. Assumes all characters with unknown widths are 0 width
 safe_wcswidth :: String -> Int
 safe_wcswidth str = case wcswidth str of
-    i   | i < 0 -> 1 
+    i   | i < 0 -> 0
         | otherwise -> i
 
