@@ -59,10 +59,11 @@ None!
 
 ## Coverage
 
-On my system the hpc coverage mix file receives a bad hash when using template haskell. This means
-Graphics.Vty.Span needs to have the hash value fixed after being re-generated. I just pull the
-expected hash from the first tix file that fails. The error message is unhelpful:
+Profiling appears to cause issues with coverage when enabled. To evaluate coverage configure as
+follows:
 
-hpc: can not find vty-5.0.0/Graphics.Vty.Span in ["./dist/hpc/mix/vty-5.0.0"]
-
-which is incorrect: The file can be found but the hash is incorrect.
+~~~
+cabal configure --enable-tests --enable-library-coverage \
+  --disable-library-profiling \
+  --disable-executable-profiling
+~~~

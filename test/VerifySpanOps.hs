@@ -118,20 +118,20 @@ horiz_span_image_and_greater_window_0 (SingleRowSingleAttrImage { row_image = i,
     in verify_all_spans_have_width i spans greater_width
 
 arb_image_is_cropped :: DefaultImage -> MockWindow -> Bool
-arb_image_is_cropped (DefaultImage image _) win@(MockWindow w h) =
+arb_image_is_cropped (DefaultImage image) win@(MockWindow w h) =
     let pic = pic_for_image image
         spans = spans_for_pic pic (region_for_window win)
     in ( span_ops_effected_rows spans == h ) && ( all_spans_have_width spans w )
 
 span_ops_actually_fill_rows :: DefaultPic -> Bool
-span_ops_actually_fill_rows (DefaultPic pic win _) =
+span_ops_actually_fill_rows (DefaultPic pic win) =
     let spans = spans_for_pic pic (region_for_window win)
         expected_row_count = region_height (region_for_window win)
         actual_row_count = span_ops_effected_rows spans
     in expected_row_count == actual_row_count
 
 span_ops_actually_fill_columns :: DefaultPic -> Bool
-span_ops_actually_fill_columns (DefaultPic pic win _) =
+span_ops_actually_fill_columns (DefaultPic pic win) =
     let spans = spans_for_pic pic (region_for_window win)
         expected_column_count = region_width (region_for_window win)
     in all_spans_have_width spans expected_column_count

@@ -10,8 +10,7 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
-module Graphics.Vty.Terminal.MacOSX ( terminal_instance
-                                    )
+module Graphics.Vty.Terminal.MacOSX ( reserve_terminal )
     where
 
 import Graphics.Vty.Terminal.Interface
@@ -22,27 +21,25 @@ import Control.Monad.Trans
 
 import System.IO
 
--- | A Mac terminal is assumed to be an xterm based terminal.
-data Term = Term 
-    { super_term :: TerminalHandle
-    , term_app :: String
-    }
-
 -- | for Terminal.app the terminal identifier "xterm" is used. For iTerm.app the terminal identifier
 -- "xterm-256color" is used.
 --
 -- This effects the terminfo lookup.
-terminal_instance :: ( Applicative m, MonadIO m ) => String -> Handle -> m Term
-terminal_instance v out_handle = do
-    let base_term "iTerm.app" = "xterm-256color"
-        base_term _ = "xterm"
-    t <- TerminfoBased.terminal_instance (base_term v) out_handle >>= new_terminal_handle
-    return $ Term t v
+reserve_terminal :: ( Applicative m, MonadIO m ) => String -> Handle -> m Terminal
+reserve_terminal v out_handle = do
+    let remap_term "iTerm.app" = "xterm-256color"
+        remap_term _ = "xterm"
+        flushed_put :: String -> IO ()
+        flushed_put str = do
+            hPutStr out_handle str
+            hFlush out_handle
+    t <- TerminfoBased.reserve_terminal (remap_term v) out_handle
+    return $ t
+        { terminal_ID = terminal_ID t ++ " (Mac)"
+        , reserve_display = terminal_app_reserve_display flushed_put
+        , release_display = terminal_app_release_display flushed_put
+        }
 
-flushed_put :: MonadIO m => String -> m ()
-flushed_put str = do
-    liftIO $ hPutStr stdout str
-    liftIO $ hFlush stdout
 
 -- | Terminal.app requires the xterm-color smcup and rmcup caps. Not the generic xterm ones.
 -- Otherwise, Terminal.app expects the xterm caps.
@@ -50,53 +47,21 @@ smcup_str, rmcup_str :: String
 smcup_str = "\ESC7\ESC[?47h"
 rmcup_str = "\ESC[2J\ESC[?47l\ESC8"
 
+-- | always smcup then clear the screen on terminal.app
+--
+-- \todo really?
+terminal_app_reserve_display :: MonadIO m => (String -> IO ()) -> m ()
+terminal_app_reserve_display flushed_put = liftIO $ do
+    flushed_put smcup_str
+    flushed_put clear_screen_str
+
+terminal_app_release_display :: MonadIO m => (String -> IO ()) -> m ()
+terminal_app_release_display flushed_put = liftIO $ do
+    flushed_put rmcup_str
+
 -- | iTerm needs a clear screen after smcup as well.
+--
+-- \todo but we apply to all mac terminals?
 clear_screen_str :: String
 clear_screen_str = "\ESC[H\ESC[2J"
-
-instance Terminal Term where
-    terminal_ID t = term_app t ++ " :: MacOSX"
-
-    release_terminal t = do 
-        release_terminal $ super_term t
-
-    reserve_display _t = do
-        flushed_put smcup_str
-        flushed_put clear_screen_str
-
-    release_display _t = do
-        flushed_put rmcup_str
-
-    display_terminal_instance t b c = do
-        d <- display_context (super_term t) b
-        return $ c (DisplayContext d)
-
-    display_bounds t = display_bounds (super_term t)
-        
-    output_byte_buffer t = output_byte_buffer (super_term t)
-
-    output_handle t = output_handle (super_term t)
-
-data DisplayContext = DisplayContext
-    { super_display :: DisplayHandle
-    }
-
-instance DisplayTerminal DisplayContext where
-    context_region d = context_region (super_display d)
-    context_color_count d = context_color_count (super_display d)
-
-    move_cursor_required_bytes d = move_cursor_required_bytes (super_display d)
-    serialize_move_cursor d = serialize_move_cursor (super_display d)
-
-    show_cursor_required_bytes d = show_cursor_required_bytes (super_display d)
-    serialize_show_cursor d = serialize_show_cursor (super_display d)
-
-    hide_cursor_required_bytes d = hide_cursor_required_bytes (super_display d)
-    serialize_hide_cursor d = serialize_hide_cursor (super_display d)
-
-    attr_required_bytes d = attr_required_bytes (super_display d)
-    serialize_set_attr d = serialize_set_attr (super_display d)
-
-    default_attr_required_bytes d = default_attr_required_bytes (super_display d)
-    serialize_default_attr d = serialize_default_attr (super_display d)
 

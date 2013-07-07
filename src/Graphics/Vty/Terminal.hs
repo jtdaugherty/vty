@@ -20,9 +20,9 @@
 -- Copyright 2009-2010 Corey O'Connor
 {-# LANGUAGE ScopedTypeVariables #-}
 module Graphics.Vty.Terminal ( module Graphics.Vty.Terminal
-                             , Terminal(..)
-                             , TerminalHandle(..)
-                             , DisplayHandle(..)
+                             , Terminal(..) -- \todo hide constructors
+                             , AssumedState(..)
+                             , DisplayContext(..) -- \todo hide constructors
                              , output_picture
                              , display_context
                              )
@@ -47,7 +47,7 @@ import GHC.IO.Handle
 import System.Environment
 import System.IO
 
--- | Returns a TerminalHandle (an abstract Terminal instance) for the current terminal.
+-- | Returns a `Terminal` for the current terminal.
 --
 -- The specific Terminal implementation used is hidden from the API user. All terminal
 -- implementations are assumed to perform more, or less, the same. Currently all implementations use
@@ -84,27 +84,31 @@ import System.IO
 -- with only what is provided in the haskell platform.
 --
 -- todo: The Terminal interface does not provide any input support.
-terminal_handle :: ( Applicative m, MonadIO m ) => m TerminalHandle
-terminal_handle = do
+current_terminal :: ( Applicative m, MonadIO m ) => m Terminal
+current_terminal = do
     term_type <- liftIO $ getEnv "TERM"
     out_handle <- liftIO $ hDuplicate stdout
+    terminal_for_type_and_io term_type out_handle
+
+terminal_for_type_and_io :: (Applicative m, MonadIO m) => String -> Handle -> m Terminal
+terminal_for_type_and_io term_type out_handle = do
     t <- if "xterm" `isPrefixOf` term_type
         then do
             maybe_terminal_app <- get_env "TERM_PROGRAM"
             case maybe_terminal_app of
-                Nothing 
-                    -> XTermColor.terminal_instance term_type out_handle >>= new_terminal_handle
+                Nothing
+                    -> XTermColor.reserve_terminal term_type out_handle
                 Just v | v == "Apple_Terminal" || v == "iTerm.app" 
                     -> do
                         maybe_xterm <- get_env "XTERM_VERSION"
                         case maybe_xterm of
-                            Nothing -> MacOSX.terminal_instance v out_handle >>= new_terminal_handle
-                            Just _  -> XTermColor.terminal_instance term_type out_handle >>= new_terminal_handle
+                            Nothing -> MacOSX.reserve_terminal v out_handle
+                            Just _  -> XTermColor.reserve_terminal term_type out_handle
                 -- Assume any other terminal that sets TERM_PROGRAM to not be an OS X terminal.app
                 -- like terminal?
-                _   -> XTermColor.terminal_instance term_type out_handle >>= new_terminal_handle
+                _   -> XTermColor.reserve_terminal term_type out_handle
         -- Not an xterm-like terminal. try for generic terminfo.
-        else TerminfoBased.terminal_instance term_type out_handle >>= new_terminal_handle
+        else TerminfoBased.reserve_terminal term_type out_handle
     return t
     where
         get_env var = do
@@ -120,24 +124,24 @@ terminal_handle = do
 --
 -- Currently, the only way to set the cursor position to a given character coordinate is to specify
 -- the coordinate in the Picture instance provided to output_picture or refresh.
-set_cursor_pos :: MonadIO m => TerminalHandle -> Int -> Int -> m ()
+set_cursor_pos :: MonadIO m => Terminal -> Int -> Int -> m ()
 set_cursor_pos t x y = do
     bounds <- display_bounds t
     when (x >= 0 && x < region_width bounds && y >= 0 && y < region_height bounds) $ do
-        d <- display_context t bounds
-        liftIO $ marshall_to_terminal t (move_cursor_required_bytes d x y) (serialize_move_cursor d x y)
+        dc <- display_context t bounds
+        liftIO $ send_to_terminal t (move_cursor_required_bytes dc x y) (serialize_move_cursor dc x y)
 
 -- | Hides the cursor
-hide_cursor :: MonadIO m => TerminalHandle -> m ()
+hide_cursor :: MonadIO m => Terminal -> m ()
 hide_cursor t = do
     bounds <- display_bounds t
-    d <- display_context t bounds
-    liftIO $ marshall_to_terminal t (hide_cursor_required_bytes d) (serialize_hide_cursor d) 
+    dc <- display_context t bounds
+    liftIO $ send_to_terminal t (hide_cursor_required_bytes dc) (serialize_hide_cursor dc) 
     
 -- | Shows the cursor
-show_cursor :: MonadIO m => TerminalHandle -> m ()
+show_cursor :: MonadIO m => Terminal -> m ()
 show_cursor t = do
     bounds <- display_bounds t
-    d <- display_context t bounds
-    liftIO $ marshall_to_terminal t (show_cursor_required_bytes d) (serialize_show_cursor d) 
+    dc <- display_context t bounds
+    liftIO $ send_to_terminal t (show_cursor_required_bytes dc) (serialize_show_cursor dc) 
 

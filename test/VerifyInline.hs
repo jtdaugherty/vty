@@ -12,7 +12,7 @@ tests = return
     [ Test $ TestInstance
         { name = "verify vty inline"
         , run = do
-            t <- terminal_handle
+            t <- current_terminal
             put_attr_change t $ default_all
             return $ Finished Pass
         , tags = []

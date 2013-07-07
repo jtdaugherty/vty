@@ -1,11 +1,7 @@
 -- Copyright Corey O'Connor
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
-module Graphics.Vty.Terminal.Mock ( MockTerminal(..)
-                                  , MockDisplay(..)
-                                  , terminal_instance
-                                  , dehandle
-                                  )
+module Graphics.Vty.Terminal.Mock ( mock_terminal )
     where
 
 import Graphics.Vty.DisplayRegion
@@ -14,8 +10,7 @@ import Graphics.Vty.Terminal.Interface
 import Control.Applicative
 import Control.Monad.Trans
 
-import qualified Data.ByteString.UTF8 as BS
-import qualified Data.ByteString as BSCore
+import qualified Data.ByteString as BS
 import Data.IORef
 import qualified Data.String.UTF8 as UTF8
 
@@ -23,9 +18,7 @@ import Foreign.Marshal.Array ( peekArray )
 import Foreign.Ptr ( plusPtr )
 import Foreign.Storable ( poke )
 
-import System.IO
-
-import Unsafe.Coerce
+type MockData = IORef (UTF8.UTF8 BS.ByteString)
 
 -- | The mock display terminal produces a string representation of the requested picture.  There is
 -- *not* an isomorphism between the string representation and the picture.  The string
@@ -41,81 +34,50 @@ import Unsafe.Coerce
 -- Graphics.Vty.Terminal. As an instance of the Terminal class is also an instance of the Monad
 -- class there exists a monoid that defines it's algebra. The string representation is a sequence of
 -- identifiers where each identifier is the name of an operation in the algebra.
-
-data MockTerminal = MockTerminal
-    { mock_terminal_last_output :: IORef (UTF8.UTF8 BS.ByteString)
-    , mock_terminal_bounds :: DisplayRegion
-    } 
-
-instance Terminal MockTerminal where
-    terminal_ID _t = "mock_terminal"
-    release_terminal _t = return ()
-    reserve_display _t = return ()
-    release_display _t = return ()
-    display_bounds t = return $ mock_terminal_bounds t
-    display_terminal_instance _t r c = return $ c (MockDisplay r)
-    output_byte_buffer t out_buffer buffer_size 
-        =   liftIO $ do
-            putStrLn $ "output_byte_buffer ?? " ++ show buffer_size
+mock_terminal :: (Applicative m, MonadIO m) => DisplayRegion -> m (MockData, Terminal)
+mock_terminal r = liftIO $ do
+    out_ref <- newIORef undefined
+    new_assumed_state_ref <- newIORef initial_assumed_state
+    return $ (,) out_ref $ Terminal
+        { terminal_ID = "mock terminal"
+        , release_device = return ()
+        , reserve_display = return ()
+        , release_display = return ()
+        , display_bounds = return r
+        , output_byte_buffer = \out_buffer buffer_size -> do
+            putStrLn $ "mock output_byte_buffer of " ++ show buffer_size ++ " bytes"
             peekArray (fromEnum buffer_size) out_buffer 
-            >>= return . UTF8.fromRep . BSCore.pack
-            >>= writeIORef (mock_terminal_last_output t)
+            >>= return . UTF8.fromRep . BS.pack
+            >>= writeIORef out_ref
+        , context_color_count = 16
+        , assumed_state_ref = new_assumed_state_ref
+        , mk_display_context = \self -> return $ self
+            { context_region = r
+            -- A cursor move is always visualized as the single character 'M'
+            , move_cursor_required_bytes = \_x _y -> 1
+            , serialize_move_cursor = \_x _y ptr -> do
+                poke ptr (toEnum $ fromEnum 'M') 
+                return $ ptr `plusPtr` 1
+            -- Show cursor is always visualized as the single character 'S'
+            , show_cursor_required_bytes = 1
+            , serialize_show_cursor = \ptr -> do
+                poke ptr (toEnum $ fromEnum 'S') 
+                return $ ptr `plusPtr` 1
+            -- Hide cursor is always visualized as the single character 'H'
+            , hide_cursor_required_bytes = 1
+            , serialize_hide_cursor = \ptr -> do
+                poke ptr (toEnum $ fromEnum 'H') 
+                return $ ptr `plusPtr` 1
+            -- An attr change is always visualized as the single character 'A'
+            , attr_required_bytes = \_fattr _diffs _attr -> 1
+            , serialize_set_attr = \_fattr _diffs _attr ptr -> do
+                poke ptr (toEnum $ fromEnum 'A')
+                return $ ptr `plusPtr` 1
+            -- default attr is always visualized as the single character 'D'
+            , default_attr_required_bytes = 1
+            , serialize_default_attr = \ptr -> do
+                poke ptr (toEnum $ fromEnum 'D')
+                return $ ptr `plusPtr` 1
+            }
+        }
 
-    output_handle _t = return stdout
-
-data MockDisplay = MockDisplay
-    { mock_display_bounds :: DisplayRegion
-    } 
-
-terminal_instance :: ( Applicative m, MonadIO m ) => DisplayRegion -> m TerminalHandle
-terminal_instance r = do
-    output_ref <- liftIO $ newIORef undefined
-    new_terminal_handle $ MockTerminal output_ref r
-
-dehandle :: TerminalHandle -> MockTerminal
-dehandle (TerminalHandle t _) = unsafeCoerce t
-
-instance DisplayTerminal MockDisplay where
-    -- | Provide the current bounds of the output terminal.
-    context_region d = mock_display_bounds d
-
-    -- | Assume 16 colors
-    context_color_count _d = 16
-
-    -- | A cursor move is always visualized as the single character 'M'
-    move_cursor_required_bytes _d _x _y = 1
-
-    -- | A cursor move is always visualized as the single character 'M'
-    serialize_move_cursor _d _x _y ptr = do
-        liftIO $ poke ptr (toEnum $ fromEnum 'M') 
-        return $ ptr `plusPtr` 1
-
-    -- | Show cursor is always visualized as the single character 'S'
-    show_cursor_required_bytes _d = 1
-
-    -- | Show cursor is always visualized as the single character 'S'
-    serialize_show_cursor _d ptr = do
-        liftIO $ poke ptr (toEnum $ fromEnum 'S') 
-        return $ ptr `plusPtr` 1
-
-    -- | Hide cursor is always visualized as the single character 'H'
-    hide_cursor_required_bytes _d = 1
-
-    -- | Hide cursor is always visualized as the single character 'H'
-    serialize_hide_cursor _d ptr = do
-        liftIO $ poke ptr (toEnum $ fromEnum 'H') 
-        return $ ptr `plusPtr` 1
-
-    -- | An attr change is always visualized as the single character 'A'
-    attr_required_bytes _d _fattr _diffs _attr = 1
-
-    -- | An attr change is always visualized as the single character 'A'
-    serialize_set_attr _d _fattr _diffs _attr ptr = do
-        liftIO $ poke ptr (toEnum $ fromEnum 'A')
-        return $ ptr `plusPtr` 1
-
-    default_attr_required_bytes _d = 1
-    serialize_default_attr _d ptr = do
-        liftIO $ poke ptr (toEnum $ fromEnum 'D')
-        return $ ptr `plusPtr` 1
-        

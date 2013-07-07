@@ -6,7 +6,6 @@ module Verify.Graphics.Vty.Image ( module Verify.Graphics.Vty.Image
     where
 
 import Verify.Graphics.Vty.Attributes
-import Graphics.Vty.Debug.Image
 import Graphics.Vty.Image
 
 import Verify
@@ -22,16 +21,16 @@ instance Arbitrary UnitImage where
 instance Show UnitImage where
     show (UnitImage c _) = "UnitImage " ++ show c
 
-data DefaultImage = DefaultImage Image ImageConstructLog
+data DefaultImage = DefaultImage Image
 
 instance Show DefaultImage where
-    show (DefaultImage i image_log) 
-        = "DefaultImage (" ++ show i ++ ") " ++ show (image_width i, image_height i) ++ " " ++ show image_log
+    show (DefaultImage i) 
+        = "DefaultImage (" ++ show i ++ ") " ++ show (image_width i, image_height i)
 
 instance Arbitrary DefaultImage where
     arbitrary = do
-        i <- return $ char def_attr 'X' -- elements forward_image_ops >>= return . (\op -> op empty_image)
-        return $ DefaultImage i []
+        i <- return $ char def_attr 'X'
+        return $ DefaultImage i
 
 data SingleRowSingleAttrImage 
     = SingleRowSingleAttrImage 

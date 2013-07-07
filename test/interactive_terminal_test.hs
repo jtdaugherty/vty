@@ -78,11 +78,11 @@ failure".
                                                 ( \ (_ :: SomeException) -> return (env_name, "") ) 
                            ) 
                            [ "TERM", "COLORTERM", "LANG", "TERM_PROGRAM", "XTERM_VERSION" ]
-    t <- terminal_handle
+    t <- current_terminal
     let results_txt = show env_attributes ++ "\n" 
                       ++ terminal_ID t ++ "\n"
                       ++ show results ++ "\n"
-    release_terminal t
+    release_device t
     writeFile output_file_path results_txt
 
 wait_for_return = do
@@ -179,7 +179,7 @@ reserve_output_test = Test
     { test_name = "Initialize and reserve terminal output then restore previous state."
     , test_ID = "reserve_output_test"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         putStrLn "Line 1"
         putStrLn "Line 2"
@@ -188,7 +188,7 @@ reserve_output_test = Test
         hFlush stdout
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = do
         putStr $ [s|
@@ -212,7 +212,7 @@ display_bounds_test_0 = Test
     { test_name = "Verify display bounds are correct test 0: Using spaces."
     , test_ID = "display_bounds_test_0"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         DisplayRegion w h <- display_bounds t
         let row_0 = replicate (fromEnum w) 'X' ++ "\n"
@@ -223,7 +223,7 @@ display_bounds_test_0 = Test
         hFlush stdout
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = display_bounds_test_summary True
     , confirm_results = generic_output_match_confirm
@@ -233,7 +233,7 @@ display_bounds_test_1 = Test
     { test_name = "Verify display bounds are correct test 0: Using cursor movement."
     , test_ID = "display_bounds_test_1"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         DisplayRegion w h <- display_bounds t
         set_cursor_pos t 0 0
@@ -252,7 +252,7 @@ display_bounds_test_1 = Test
         hFlush stdout
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = display_bounds_test_summary True
     , confirm_results = generic_output_match_confirm
@@ -262,7 +262,7 @@ display_bounds_test_2 = Test
     { test_name = "Verify display bounds are correct test 0: Using Image ops."
     , test_ID = "display_bounds_test_2"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         bounds@(DisplayRegion w h) <- display_bounds t
         let first_row = horiz_cat $ replicate (fromEnum w) (char def_attr 'X')
@@ -275,7 +275,7 @@ display_bounds_test_2 = Test
         output_picture d pic
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = display_bounds_test_summary True
     , confirm_results = generic_output_match_confirm
@@ -285,7 +285,7 @@ display_bounds_test_3 = Test
     { test_name = "Verify display bounds are correct test 0: Hide cursor; Set cursor pos."
     , test_ID = "display_bounds_test_3"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         DisplayRegion w h <- display_bounds t
         hide_cursor t
@@ -306,7 +306,7 @@ display_bounds_test_3 = Test
         getLine
         show_cursor t
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = display_bounds_test_summary False
     , confirm_results = generic_output_match_confirm
@@ -397,7 +397,7 @@ unicode_single_width_0 = Test
     { test_name = "Verify terminal can display unicode single-width characters. (Direct UTF-8)"
     , test_ID = "unicode_single_width_0"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         hide_cursor t
         withArrayLen (concat utf8_txt_0) (flip $ hPutBuf stdout)
@@ -406,7 +406,7 @@ unicode_single_width_0 = Test
         hFlush stdout
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = unicode_single_width_summary
     , confirm_results = generic_output_match_confirm
@@ -416,7 +416,7 @@ unicode_single_width_1 = Test
     { test_name = "Verify terminal can display unicode single-width characters. (Image ops)"
     , test_ID = "unicode_single_width_1"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = line_0 <-> line_1
@@ -426,7 +426,7 @@ unicode_single_width_1 = Test
         output_picture d pic
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = unicode_single_width_summary
     , confirm_results = generic_output_match_confirm
@@ -479,7 +479,7 @@ unicode_double_width_0 = Test
     { test_name = "Verify terminal can display unicode double-width characters. (Direct UTF-8)"
     , test_ID = "unicode_double_width_0"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         hide_cursor t
         withArrayLen (concat utf8_txt_1) (flip $ hPutBuf stdout)
@@ -488,7 +488,7 @@ unicode_double_width_0 = Test
         hFlush stdout
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = unicode_double_width_summary
     , confirm_results = generic_output_match_confirm
@@ -498,7 +498,7 @@ unicode_double_width_1 = Test
     { test_name = "Verify terminal can display unicode double-width characters. (Image ops)"
     , test_ID = "unicode_double_width_1"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = line_0 <-> line_1
@@ -508,7 +508,7 @@ unicode_double_width_1 = Test
         output_picture d pic
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = unicode_double_width_summary
     , confirm_results = generic_output_match_confirm
@@ -552,7 +552,7 @@ attributes_test_0 = Test
     { test_name = "Character attributes: foreground colors."
     , test_ID = "attributes_test_0"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = border <|> column_0 <|> border <|> column_1 <|> border
@@ -564,7 +564,7 @@ attributes_test_0 = Test
         output_picture d pic
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = do
         putStr $ [s|
@@ -598,7 +598,7 @@ attributes_test_1 = Test
     { test_name = "Character attributes: background colors."
     , test_ID = "attributes_test_1"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = border <|> column_0 <|> border <|> column_1 <|> border
@@ -610,7 +610,7 @@ attributes_test_1 = Test
         output_picture d pic
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = do
         putStr $ [s|
@@ -653,7 +653,7 @@ attributes_test_2 = Test
     { test_name = "Character attributes: Vivid foreground colors."
     , test_ID = "attributes_test_2"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = horiz_cat [border, column_0, border, column_1, border, column_2, border]
@@ -667,7 +667,7 @@ attributes_test_2 = Test
         output_picture d pic
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = do
         putStr $ [s|
@@ -712,7 +712,7 @@ attributes_test_3 = Test
     { test_name = "Character attributes: Vivid background colors."
     , test_ID = "attributes_test_3"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = horiz_cat [border, column_0, border, column_1, border, column_2, border]
@@ -726,7 +726,7 @@ attributes_test_3 = Test
         output_picture d pic
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = do
         putStr $ [s|
@@ -790,7 +790,7 @@ attributes_test_4 = Test
     { test_name = "Character attributes: Bold; Blink; Underline."
     , test_ID = "attributes_test_4"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = horiz_cat [border, column_0, border, column_1, border]
@@ -802,7 +802,7 @@ attributes_test_4 = Test
         output_picture d pic
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = do
         putStr $ [s|
@@ -842,7 +842,7 @@ attributes_test_5 = Test
     { test_name = "Character attributes: 240 color palette"
     , test_ID = "attributes_test_5"
     , test_action = do
-        t <- terminal_handle
+        t <- current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = vert_cat $ map horiz_cat $ split_color_images color_images
@@ -853,7 +853,7 @@ attributes_test_5 = Test
         output_picture d pic
         getLine
         release_display t
-        release_terminal t
+        release_device t
         return ()
     , print_summary = do
         putStr $ [s|
@@ -880,14 +880,11 @@ inline_test_0 = Test
     { test_name = "Verify styled output can be performed without clearing the screen."
     , test_ID = "inline_test_0"
     , test_action = do
-        t <- terminal_handle
         putStrLn "line 1."
-        put_attr_change t $ back_color red >> apply_style underline
+        put_attr_change_ $ back_color red >> apply_style underline
         putStrLn "line 2."
-        put_attr_change t $ default_all
+        put_attr_change_ $ default_all
         putStrLn "line 3."
-        release_terminal t
-        return ()
     , print_summary = putStr $ [s|
 lines are in order.
 The second line "line 2" should have a red background and the text underline.
@@ -901,14 +898,11 @@ inline_test_1 = Test
     { test_name = "Verify styled output can be performed without clearing the screen."
     , test_ID = "inline_test_1"
     , test_action = do
-        t <- terminal_handle
         putStr "Not styled. "
-        put_attr_change t $ back_color red >> apply_style underline
+        put_attr_change_ $ back_color red >> apply_style underline
         putStr " Styled! "
-        put_attr_change t $ default_all
+        put_attr_change_ $ default_all
         putStrLn "Not styled."
-        release_terminal t
-        return ()
     , print_summary = putStr $ [s|
 |]
 
@@ -919,14 +913,11 @@ inline_test_2 = Test
     { test_name = "Verify styled output can be performed without clearing the screen."
     , test_ID = "inline_test_1"
     , test_action = do
-        t <- terminal_handle
         putStr "Not styled. "
-        put_attr_change t $ back_color red >> apply_style underline
+        put_attr_change_ $ back_color red >> apply_style underline
         putStr " Styled! "
-        put_attr_change t $ default_all
+        put_attr_change_ $ default_all
         putStr "Not styled.\n"
-        release_terminal t
-        return ()
     , print_summary = putStr $ [s|
 |]
     , confirm_results = generic_output_match_confirm

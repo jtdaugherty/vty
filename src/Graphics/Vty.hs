@@ -44,7 +44,7 @@ data Vty = Vty
       update :: Picture -> IO ()
       -- | Get one Event object, blocking if necessary.
     , next_event :: IO Event
-      -- | Handle to the terminal interface. See `Terminal`
+      -- | The terminal device interface. See `Interface`
       --
       -- The use of Vty typically follows this process:
       --
@@ -60,7 +60,7 @@ data Vty = Vty
       -- input backend for implementation.
       -- 
       -- todo: remove explicit `shutdown` requirement. 
-    , terminal :: TerminalHandle
+    , terminal :: Terminal
       -- | Refresh the display. Normally the library takes care of refreshing.  Nonetheless, some
       -- other program might output to the terminal and mess the display.  In that case the user
       -- might want to force a refresh.
@@ -81,12 +81,12 @@ mkVty = mkVtyEscDelay 0
 mkVtyEscDelay :: Int -> IO Vty
 mkVtyEscDelay escDelay = do 
     term_info <- Terminfo.setupTermFromEnv 
-    t <- terminal_handle
+    t <- current_terminal
     reserve_display t
     (kvar, endi) <- initTermInput escDelay term_info
-    intMkVty kvar ( endi >> release_display t >> release_terminal t ) t
+    intMkVty kvar ( endi >> release_display t >> release_device t ) t
 
-intMkVty :: IO Event -> IO () -> TerminalHandle -> IO Vty
+intMkVty :: IO Event -> IO () -> Terminal -> IO Vty
 intMkVty kvar fend t = do
     last_pic_ref <- newIORef Nothing
     last_update_ref <- newIORef Nothing
@@ -111,15 +111,15 @@ intMkVty kvar fend t = do
             mlast_update <- readIORef last_update_ref
             update_data <- case mlast_update of
                 Nothing -> do
-                    d <- display_context t b
-                    output_picture d in_pic'
-                    return (b, d)
+                    dc <- display_context t b
+                    output_picture dc in_pic'
+                    return (b, dc)
                 Just (last_bounds, last_context) -> do
                     if b /= last_bounds
                         then do
-                            d <- display_context t b
-                            output_picture d in_pic'
-                            return (b, d)
+                            dc <- display_context t b
+                            output_picture dc in_pic'
+                            return (b, dc)
                         else do
                             output_picture last_context in_pic'
                             return (b, last_context)

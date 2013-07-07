@@ -9,15 +9,13 @@
 -- text \" Styled! \" drawn over a red background and underlined.
 --
 -- @
---      t <- terminal_handle
 --      putStr \"Not styled. \"
---      put_attr_change t $ do
+--      put_attr_change_ $ do
 --          back_color red 
 --          apply_style underline
 --      putStr \" Styled! \"
---      put_attr_change t $ default_all
+--      put_attr_change_ $ default_all
 --      putStrLn \"Not styled.\"
---      release_terminal t
 -- @
 --
 -- 'put_attr_change' outputs the control codes to the terminal device 'Handle'. This is a duplicate
@@ -33,7 +31,9 @@ module Graphics.Vty.Inline ( module Graphics.Vty.Inline
 
 import Graphics.Vty.Attributes
 import Graphics.Vty.DisplayAttributes
+import Graphics.Vty.Inline.Hack
 import Graphics.Vty.Terminal.Interface
+import Graphics.Vty.Terminal
 
 import Control.Applicative
 import Control.Monad.State.Strict
@@ -76,27 +76,42 @@ remove_style s_mask = modify $ \attr ->
 default_all :: InlineM ()
 default_all = put def_attr
 
--- | Apply the provided display attribute changes to the terminal.
+-- | Apply the provided display attribute changes to the given terminal.
 --
--- This also flushes the 'stdout' handle.
-put_attr_change :: ( Applicative m, MonadIO m ) => TerminalHandle -> InlineM () -> m ()
-put_attr_change t c = do
+-- This does not flush the terminal.
+put_attr_change :: ( Applicative m, MonadIO m ) => Terminal -> InlineM () -> m ()
+put_attr_change t c = liftIO $ do
     bounds <- display_bounds t
-    d <- display_context t bounds
-    mfattr <- liftIO $ known_fattr <$> readIORef ( state_ref t )
+    dc <- display_context t bounds
+    mfattr <- prev_fattr <$> readIORef (assumed_state_ref t)
     fattr <- case mfattr of
                 Nothing -> do
-                    liftIO $ marshall_to_terminal t (default_attr_required_bytes d) (serialize_default_attr d) 
+                    liftIO $ send_to_terminal t (default_attr_required_bytes dc) (serialize_default_attr dc)
                     return $ FixedAttr default_style_mask Nothing Nothing
                 Just v -> return v
     let attr = execState c current_attr
-        attr' = limit_attr_for_display d attr
+        attr' = limit_attr_for_display t attr
         fattr' = fix_display_attr fattr attr'
         diffs = display_attr_diffs fattr fattr'
-    liftIO $ hFlush stdout
-    liftIO $ marshall_to_terminal t ( attr_required_bytes d fattr attr' diffs )
-                                    ( serialize_set_attr d fattr attr' diffs )
-    liftIO $ modifyIORef ( state_ref t ) $ \s -> s { known_fattr = Just fattr' }
-    inline_hack d
-    liftIO $ hFlush stdout
+    send_to_terminal t (attr_required_bytes dc fattr attr' diffs)
+                       (serialize_set_attr dc fattr attr' diffs)
+    modifyIORef (assumed_state_ref t) $ \s -> s { prev_fattr = Just fattr' }
+    inline_hack dc
+
+-- | Apply the provided display attributes changes to the terminal that was current at the time this
+-- was first used. Which, for most use cases, is the current terminal.
+--
+-- This will flush the terminal output.
+put_attr_change_ :: ( Applicative m, MonadIO m ) => InlineM () -> m ()
+put_attr_change_ c = liftIO $ do
+    mt <- readIORef global_vty_terminal
+    t <- case mt of
+        Nothing -> do
+            t <- current_terminal
+            writeIORef global_vty_terminal (Just t)
+            return t
+        Just t -> return t
+    hFlush stdout
+    put_attr_change t c
+    hFlush stdout
 
