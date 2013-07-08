@@ -40,7 +40,7 @@ mock_terminal r = liftIO $ do
     new_assumed_state_ref <- newIORef initial_assumed_state
     return $ (,) out_ref $ Terminal
         { terminal_ID = "mock terminal"
-        , release_device = return ()
+        , release_terminal = return ()
         , reserve_display = return ()
         , release_display = return ()
         , display_bounds = return r

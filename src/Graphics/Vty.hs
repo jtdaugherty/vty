@@ -78,13 +78,14 @@ mkVty = mkVtyEscDelay 0
 -- | Set up the state object for using vty.  At most one state object should be
 -- created at a time. The delay, in microseconds, specifies the period of time to wait for a key
 -- following reading ESC from the terminal before considering the ESC key press as a discrete event.
+-- \todo move input init into terminal interface
 mkVtyEscDelay :: Int -> IO Vty
 mkVtyEscDelay escDelay = do 
     term_info <- Terminfo.setupTermFromEnv 
     t <- current_terminal
     reserve_display t
     (kvar, endi) <- initTermInput escDelay term_info
-    intMkVty kvar ( endi >> release_display t >> release_device t ) t
+    intMkVty kvar ( endi >> release_display t >> release_terminal t ) t
 
 intMkVty :: IO Event -> IO () -> Terminal -> IO Vty
 intMkVty kvar fend t = do

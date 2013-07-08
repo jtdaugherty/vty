@@ -9,10 +9,6 @@ import qualified System.Console.Terminfo as Terminfo
 import Verify.Data.Terminfo.Parse
 import Verify
 
-import Control.Applicative ( (<$>) )
-import Control.Exception ( try, SomeException(..) )
-import Control.Monad ( mapM_, forM, forM_ )
-
 import Data.Maybe ( catMaybes, fromJust )
 import Data.Word
 

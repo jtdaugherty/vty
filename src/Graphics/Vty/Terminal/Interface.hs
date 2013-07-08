@@ -29,7 +29,7 @@ import qualified Data.Vector as Vector
 data Terminal = Terminal
     { -- | Text identifier for the terminal. Used for debugging. 
       terminal_ID :: String
-    , release_device :: MonadIO m => m ()
+    , release_terminal :: MonadIO m => m ()
     -- | Clear the display and initialize the terminal to some initial display state. 
     --
     -- The expectation of a program is that the display starts in some initial state. 

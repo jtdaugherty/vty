@@ -86,7 +86,7 @@ reserve_terminal in_ID out_handle = liftIO $ mfix $ \self -> do
     new_assumed_state_ref <- newIORef initial_assumed_state
     return $ Terminal
         { terminal_ID = in_ID
-        , release_device = liftIO $ do
+        , release_terminal = liftIO $ do
             send_cap set_default_attr []
             send_cap cnorm []
             hClose out_handle

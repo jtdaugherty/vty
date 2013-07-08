@@ -82,7 +82,7 @@ failure".
     let results_txt = show env_attributes ++ "\n" 
                       ++ terminal_ID t ++ "\n"
                       ++ show results ++ "\n"
-    release_device t
+    release_terminal t
     writeFile output_file_path results_txt
 
 wait_for_return = do
@@ -188,7 +188,7 @@ reserve_output_test = Test
         hFlush stdout
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = do
         putStr $ [s|
@@ -223,7 +223,7 @@ display_bounds_test_0 = Test
         hFlush stdout
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = display_bounds_test_summary True
     , confirm_results = generic_output_match_confirm
@@ -252,7 +252,7 @@ display_bounds_test_1 = Test
         hFlush stdout
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = display_bounds_test_summary True
     , confirm_results = generic_output_match_confirm
@@ -275,7 +275,7 @@ display_bounds_test_2 = Test
         output_picture d pic
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = display_bounds_test_summary True
     , confirm_results = generic_output_match_confirm
@@ -306,7 +306,7 @@ display_bounds_test_3 = Test
         getLine
         show_cursor t
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = display_bounds_test_summary False
     , confirm_results = generic_output_match_confirm
@@ -406,7 +406,7 @@ unicode_single_width_0 = Test
         hFlush stdout
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = unicode_single_width_summary
     , confirm_results = generic_output_match_confirm
@@ -426,7 +426,7 @@ unicode_single_width_1 = Test
         output_picture d pic
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = unicode_single_width_summary
     , confirm_results = generic_output_match_confirm
@@ -488,7 +488,7 @@ unicode_double_width_0 = Test
         hFlush stdout
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = unicode_double_width_summary
     , confirm_results = generic_output_match_confirm
@@ -508,7 +508,7 @@ unicode_double_width_1 = Test
         output_picture d pic
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = unicode_double_width_summary
     , confirm_results = generic_output_match_confirm
@@ -564,7 +564,7 @@ attributes_test_0 = Test
         output_picture d pic
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = do
         putStr $ [s|
@@ -610,7 +610,7 @@ attributes_test_1 = Test
         output_picture d pic
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = do
         putStr $ [s|
@@ -667,7 +667,7 @@ attributes_test_2 = Test
         output_picture d pic
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = do
         putStr $ [s|
@@ -726,7 +726,7 @@ attributes_test_3 = Test
         output_picture d pic
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = do
         putStr $ [s|
@@ -802,7 +802,7 @@ attributes_test_4 = Test
         output_picture d pic
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = do
         putStr $ [s|
@@ -853,7 +853,7 @@ attributes_test_5 = Test
         output_picture d pic
         getLine
         release_display t
-        release_device t
+        release_terminal t
         return ()
     , print_summary = do
         putStr $ [s|

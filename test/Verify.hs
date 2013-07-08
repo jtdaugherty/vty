@@ -8,7 +8,10 @@
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 module Verify ( module Verify
+              , module Control.Applicative
               , module Control.DeepSeq
+              , module Control.Exception
+              , module Control.Monad
               , module Test.QuickCheck
               , module Test.QuickCheck.Modifiers
               , succeeded
@@ -22,6 +25,8 @@ module Verify ( module Verify
               )
     where
 
+import Control.Exception ( bracket, try, SomeException(..) )
+
 import Distribution.TestSuite hiding ( Result(..) )
 import qualified Distribution.TestSuite as TS
 
@@ -34,7 +39,9 @@ import Test.QuickCheck.Monadic ( monadicIO )
 
 import qualified Codec.Binary.UTF8.String as UTF8
 
+import Control.Applicative hiding ( (<|>) )
 import Control.DeepSeq
+import Control.Monad ( forM, mapM, mapM_, forM_ )
 import Control.Monad.State.Strict
 
 import Data.IORef

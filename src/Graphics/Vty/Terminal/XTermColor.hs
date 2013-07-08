@@ -31,9 +31,9 @@ reserve_terminal variant out_handle = liftIO $ do
     t <- TerminfoBased.reserve_terminal variant' out_handle
     return $ t
         { terminal_ID = terminal_ID t ++ " (xterm-color)"
-        , release_device = do
+        , release_terminal = do
             liftIO $ flushed_put set_default_char_set
-            release_device t
+            release_terminal t
         , mk_display_context = \self -> return $ self
             { inline_hack = xterm_inline_hack t
             }

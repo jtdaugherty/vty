@@ -88,10 +88,10 @@ current_terminal :: ( Applicative m, MonadIO m ) => m Terminal
 current_terminal = do
     term_type <- liftIO $ getEnv "TERM"
     out_handle <- liftIO $ hDuplicate stdout
-    terminal_for_type_and_io term_type out_handle
+    terminal_with_name_and_io term_type out_handle
 
-terminal_for_type_and_io :: (Applicative m, MonadIO m) => String -> Handle -> m Terminal
-terminal_for_type_and_io term_type out_handle = do
+terminal_with_name_and_io :: (Applicative m, MonadIO m) => String -> Handle -> m Terminal
+terminal_with_name_and_io term_type out_handle = do
     t <- if "xterm" `isPrefixOf` term_type
         then do
             maybe_terminal_app <- get_env "TERM_PROGRAM"

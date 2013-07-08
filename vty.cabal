@@ -155,6 +155,40 @@ test-suite verify-terminal
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
   
+test-suite verify-terminfo-based
+  default-language:    Haskell2010
+
+  type:                detailed-0.9
+
+  hs-source-dirs:      test
+
+  test-module:         VerifyTerminfoBased
+
+  other-modules:       Verify
+                       Verify.Graphics.Vty.Attributes
+                       Verify.Graphics.Vty.DisplayRegion
+                       Verify.Graphics.Vty.Picture
+                       Verify.Graphics.Vty.Image
+                       Verify.Graphics.Vty.Span
+
+  build-depends:       vty,
+                       Cabal == 1.17.*,
+                       QuickCheck >= 2.4,
+                       random == 1.0.*,
+                       base >= 4 && < 5,
+                       bytestring,
+                       containers,
+                       deepseq >= 1.1 && < 1.4,
+                       ghc-prim,
+                       lens,
+                       mtl >= 1.1.1.0 && < 2.2,
+                       parallel >= 2.2 && < 3.3,
+                       parsec >= 2 && < 4,
+                       terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
+                       unix,
+                       utf8-string >= 0.3 && < 0.4,
+                       vector >= 0.7
 
 test-suite verify-display-attributes
   default-language:    Haskell2010
