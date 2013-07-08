@@ -52,6 +52,8 @@ data Terminal = Terminal
     , output_byte_buffer :: OutputBuffer -> Int -> IO ()
     -- | Maximum number of colors supported by the context.
     , context_color_count :: Int
+    -- | if the cursor can be shown / hidden
+    , supports_cursor_visibility :: Bool
     , assumed_state_ref :: IORef AssumedState
     , mk_display_context :: DisplayContext -> IO DisplayContext
     }
@@ -153,6 +155,7 @@ serialize_utf8_text str dest_ptr =
 output_picture :: MonadIO m => DisplayContext -> Picture -> m ()
 output_picture dc pic = liftIO $ do
     as <- readIORef (assumed_state_ref $ context_device dc)
+    let manip_cursor = supports_cursor_visibility (context_device dc)
     let !r = context_region dc
         !ops = spans_for_pic pic r
         !initial_attr = FixedAttr default_style_mask Nothing Nothing
@@ -166,26 +169,31 @@ output_picture dc pic = liftIO $ do
                 else zipWith (/=) (Vector.toList $ display_ops previous_ops)
                                   (Vector.toList $ display_ops ops)
         -- determine the number of bytes required to completely serialize the output ops.
-        total =   hide_cursor_required_bytes dc 
+        total =   (if manip_cursor then hide_cursor_required_bytes dc else 0)
                 + default_attr_required_bytes dc
                 + required_bytes dc initial_attr diffs ops 
                 + case pic_cursor pic of
+                    _ | not manip_cursor -> 0
                     NoCursor -> 0
-                    Cursor x y -> let m = cursor_output_map ops $ pic_cursor pic
-		                      ( ox, oy ) = char_to_output_pos m ( x, y )
-		                   in show_cursor_required_bytes dc + move_cursor_required_bytes dc ox oy
+                    Cursor x y ->
+                        let { m = cursor_output_map ops $ pic_cursor pic; (ox, oy) = char_to_output_pos m ( x, y ) }
+		                in show_cursor_required_bytes dc + move_cursor_required_bytes dc ox oy
     -- ... then serialize
     allocaBytes (fromEnum total) $ \start_ptr -> do
-        ptr <- serialize_hide_cursor dc start_ptr
+        ptr <- case manip_cursor of
+                True  -> serialize_hide_cursor dc start_ptr
+                False -> return start_ptr
         ptr' <- serialize_default_attr dc ptr
         ptr'' <- serialize_output_ops dc ptr' initial_attr diffs ops
         end_ptr <- case pic_cursor pic of
+                        _ | not manip_cursor -> return ptr''
                         NoCursor -> return ptr''
                         Cursor x y -> do
                             let m = cursor_output_map ops $ pic_cursor pic
                                 (ox, oy) = char_to_output_pos m (x,y)
                             serialize_show_cursor dc ptr'' >>= serialize_move_cursor dc ox oy
         -- todo: How to handle exceptions?
+        -- probably set the prev_output_ops to Nothing
         case end_ptr `minusPtr` start_ptr of
             count | count < 0 -> fail "End pointer before start of buffer."
                   | toEnum count > total -> fail $ "End pointer past end of buffer by " ++ show (toEnum count - total)

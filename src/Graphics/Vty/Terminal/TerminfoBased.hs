@@ -1,3 +1,9 @@
+-- |  Terminfo based terminal handling.
+--
+-- The color handling assumes tektronix like. No HP support provided. If the terminal is not one I
+-- have easy access to then color support is entirely based of the docs. Probably with some
+-- assumptions mixed in.
+--
 -- Copyright Corey O'Connor (coreyoconnor@gmail.com)
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -15,7 +21,7 @@ import Graphics.Vty.Terminal.Interface
 import Graphics.Vty.DisplayRegion
 
 import Control.Applicative 
-import Control.Monad ( foldM )
+import Control.Monad ( foldM, when )
 import Control.Monad.Fix (mfix)
 import Control.Monad.Trans
 
@@ -33,8 +39,10 @@ data TerminfoCaps = TerminfoCaps
     { smcup :: Maybe CapExpression
     , rmcup :: Maybe CapExpression
     , cup :: CapExpression
-    , cnorm :: CapExpression
-    , civis :: CapExpression
+    , cnorm :: Maybe CapExpression
+    , civis :: Maybe CapExpression
+    , supports_no_colors :: Bool
+    , use_alt_color_map :: Bool
     , set_fore_color :: CapExpression
     , set_back_color :: CapExpression
     , set_default_attr :: CapExpression
@@ -71,39 +79,55 @@ send_cap_to_terminal t cap cap_params = do
 reserve_terminal :: ( Applicative m, MonadIO m ) => String -> Handle -> m Terminal
 reserve_terminal in_ID out_handle = liftIO $ mfix $ \self -> do
     ti <- Terminfo.setupTerm in_ID
+    -- assumes set foreground always implies set background exists.
+    -- if set foreground is not set then all color changing style attributes are filtered.
+    msetaf <- probe_cap ti "setaf"
+    msetf <- probe_cap ti "setf"
+    let (no_colors, use_alt, set_fore_cap) 
+            = case msetaf of
+                Just setaf -> (False, False, setaf)
+                Nothing -> case msetf of
+                    Just setf -> (False, True, setf)
+                    Nothing -> (True, True, error $ "no fore color support for terminal " ++ in_ID)
+    msetab <- probe_cap ti "setab"
+    msetb <- probe_cap ti "setb"
+    let set_back_cap 
+            = case msetab of
+                Nothing -> case msetb of
+                    Just setb -> setb
+                    Nothing -> error $ "no back color support for terminal " ++ in_ID
+                Just setab -> setab
     terminfo_caps <- pure TerminfoCaps
         <*> probe_cap ti "smcup"
         <*> probe_cap ti "rmcup"
         <*> require_cap ti "cup"
-        <*> require_cap ti "cnorm"
-        <*> require_cap ti "civis"
-        <*> require_cap ti "setaf"
-        <*> require_cap ti "setab"
+        <*> probe_cap ti "cnorm"
+        <*> probe_cap ti "civis"
+        <*> pure no_colors
+        <*> pure use_alt
+        <*> pure set_fore_cap
+        <*> pure set_back_cap
         <*> require_cap ti "sgr0"
         <*> require_cap ti "clear"
         <*> current_display_attr_caps ti
     let send_cap s = send_cap_to_terminal self (s terminfo_caps)
+        maybe_send_cap s = when (isJust $ s terminfo_caps) . send_cap (fromJust . s)
     new_assumed_state_ref <- newIORef initial_assumed_state
     return $ Terminal
         { terminal_ID = in_ID
         , release_terminal = liftIO $ do
             send_cap set_default_attr []
-            send_cap cnorm []
+            maybe_send_cap cnorm []
             hClose out_handle
         , reserve_display = liftIO $ do
-            if (isJust $ smcup terminfo_caps)
-                then send_cap (fromJust . smcup) []
-                else return ()
-            -- Screen on OS X does not appear to support smcup?
-            -- To approximate the expected behavior: clear the screen and then move the mouse to the
-            -- home position.
+            -- If there is no support for smcup: Clear the screen and then move the mouse to the
+            -- home position to approximate the behavior.
+            maybe_send_cap smcup []
             hFlush out_handle
             send_cap clear_screen []
         , release_display = liftIO $ do
-            if (isJust $ rmcup terminfo_caps)
-                then send_cap (fromJust . rmcup) []
-                else return ()
-            send_cap cnorm []
+            maybe_send_cap rmcup []
+            maybe_send_cap cnorm []
         , display_bounds = do
             raw_size <- liftIO $ get_window_size
             case raw_size of
@@ -112,9 +136,13 @@ reserve_terminal in_ID out_handle = liftIO $ mfix $ \self -> do
         , output_byte_buffer = \out_ptr out_byte_count -> do
             hPutBuf out_handle out_ptr (fromEnum out_byte_count)
             hFlush out_handle
-        , context_color_count = case Terminfo.getCapability ti (Terminfo.tiGetNum "colors" ) of
-            Nothing -> 8
-            Just v -> toEnum v
+        , context_color_count
+            = case supports_no_colors terminfo_caps of
+                False -> case Terminfo.getCapability ti (Terminfo.tiGetNum "colors" ) of
+                    Nothing -> 8
+                    Just v -> toEnum v
+                True -> 1
+        , supports_cursor_visibility = isJust $ civis terminfo_caps
         , assumed_state_ref = new_assumed_state_ref
         , mk_display_context = mk_terminfo_display_context terminfo_caps
         }
@@ -167,10 +195,20 @@ mk_terminfo_display_context terminfo_caps self = do
         , serialize_move_cursor = \x y out_ptr -> serialize_cap_expression (cup terminfo_caps)
                                                                            [toEnum y, toEnum x]
                                                                            out_ptr
-        , show_cursor_required_bytes = cap_expression_required_bytes (cnorm terminfo_caps) []
-        , serialize_show_cursor = \out_ptr -> serialize_cap_expression (cnorm terminfo_caps) [] out_ptr
-        , hide_cursor_required_bytes = cap_expression_required_bytes (civis terminfo_caps) []
-        , serialize_hide_cursor = \out_ptr -> serialize_cap_expression (civis terminfo_caps) [] out_ptr
+        , show_cursor_required_bytes = case cnorm terminfo_caps of
+            Nothing -> error "this terminal does not support show cursor"
+            Just c -> cap_expression_required_bytes c []
+        , serialize_show_cursor = \out_ptr -> do
+            case cnorm terminfo_caps of
+                Nothing -> fail "this terminal does not support show cursor"
+                Just c -> serialize_cap_expression c [] out_ptr
+        , hide_cursor_required_bytes = case civis terminfo_caps of
+            Nothing -> error "this terminal does not support hide cursor"
+            Just c -> cap_expression_required_bytes c []
+        , serialize_hide_cursor = \out_ptr -> do
+            case civis terminfo_caps of
+                Nothing -> fail "this terminal does not support hide cursor"
+                Just c -> serialize_cap_expression c [] out_ptr
         , attr_required_bytes = \_prev_attr _req_attr _diffs -> assumed_attr_required_bytes
         , serialize_set_attr = terminfo_serialize_set_attr self terminfo_caps
         , default_attr_required_bytes = cap_expression_required_bytes (set_default_attr terminfo_caps) []
@@ -209,8 +247,11 @@ assumed_attr_required_bytes = 512
 --
 -- This equation implements the above logic.
 --
+-- \todo This assumes the removal of color changes in the display attributes is done as expected
+-- with no_colors == True. See `limit_attr_for_display`
+--
 -- \todo This assumes that fewer state changes, followed by fewer bytes, is what to optimize. I
-    -- haven't measured this or even examined terminal implementations. *shrug*
+-- haven't measured this or even examined terminal implementations. *shrug*
 terminfo_serialize_set_attr :: DisplayContext
                             -> TerminfoCaps
                             -> FixedAttr -> Attr -> DisplayAttrDiff -> OutputBuffer -> IO OutputBuffer
@@ -264,16 +305,19 @@ terminfo_serialize_set_attr dc terminfo_caps prev_attr req_attr diffs out_ptr = 
                                                      out_ptr
                         >>= set_colors
     where 
+        color_map = case use_alt_color_map terminfo_caps of
+                        False -> ansi_color_index
+                        True -> alt_color_index
         attr = fix_display_attr prev_attr req_attr
         set_colors ptr = do
             ptr' <- case fixed_fore_color attr of
                 Just c -> serialize_cap_expression (set_fore_color terminfo_caps)
-                                                   [ toEnum $ ansi_color_index c ]
+                                                   [ toEnum $ color_map c ]
                                                    ptr
                 Nothing -> return ptr
             ptr'' <- case fixed_back_color attr of
                 Just c -> serialize_cap_expression (set_back_color terminfo_caps)
-                                                   [ toEnum $ ansi_color_index c ]
+                                                   [ toEnum $ color_map c ]
                                                    ptr'
                 Nothing -> return ptr'
             return ptr''
@@ -283,7 +327,7 @@ terminfo_serialize_set_attr dc terminfo_caps prev_attr req_attr diffs out_ptr = 
             = fail "ColorToDefault is not a possible case for apply_color_diffs"
         apply_color_diff f ( SetColor c ) ptr
             = serialize_cap_expression (f terminfo_caps)
-                                       [ toEnum $ ansi_color_index c ]
+                                       [ toEnum $ color_map c ]
                                        ptr
 
 -- | The color table used by a terminal is a 16 color set followed by a 240 color set that might not
@@ -294,6 +338,22 @@ terminfo_serialize_set_attr dc terminfo_caps prev_attr req_attr diffs out_ptr = 
 ansi_color_index :: Color -> Int
 ansi_color_index (ISOColor v) = fromEnum v
 ansi_color_index (Color240 v) = 16 + fromEnum v
+
+-- | For terminals without setaf/setab
+-- 
+-- See table in `man terminfo`
+-- Will error if not in table.
+alt_color_index :: Color -> Int
+alt_color_index (ISOColor 0) = 0
+alt_color_index (ISOColor 1) = 4
+alt_color_index (ISOColor 2) = 2
+alt_color_index (ISOColor 3) = 6
+alt_color_index (ISOColor 4) = 1
+alt_color_index (ISOColor 5) = 5
+alt_color_index (ISOColor 6) = 3
+alt_color_index (ISOColor 7) = 7
+alt_color_index (ISOColor v) = fromEnum v
+alt_color_index (Color240 v) = 16 + fromEnum v
 
 {- | The sequence of terminfo caps to apply a given style are determined according to these rules.
  -

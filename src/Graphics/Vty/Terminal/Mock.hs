@@ -50,6 +50,7 @@ mock_terminal r = liftIO $ do
             >>= return . UTF8.fromRep . BS.pack
             >>= writeIORef out_ref
         , context_color_count = 16
+        , supports_cursor_visibility = True
         , assumed_state_ref = new_assumed_state_ref
         , mk_display_context = \self -> return $ self
             { context_region = r

@@ -49,7 +49,6 @@ terminals_of_interest =
     , "rxvt-unicode"
     , "rxvt-basic"
     , "cygwin"
-    , "dumb"
     ]
 
 tests :: IO [Test]
@@ -68,9 +67,11 @@ smoke_test_term :: String -> SingleAttrSingleSpanStack -> Property
 smoke_test_term term_name (SingleAttrSingleSpanStack i _ _ _) = liftIOResult $ do
     null_out <- openFile "/dev/null" WriteMode
     t <- TerminfoBased.reserve_terminal term_name null_out
+    putStrLn $ "context color count: " ++ show (context_color_count t)
     reserve_display t
     dc <- display_context t (DisplayRegion 100 100)
-    let pic = pic_for_image i
+    -- always show the cursor to produce tests for terminals with no cursor support.
+    let pic = (pic_for_image i) { pic_cursor = Cursor 0 0 }
     output_picture dc pic
     release_display t
     release_terminal t

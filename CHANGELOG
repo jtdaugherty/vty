@@ -1,5 +1,12 @@
 5.0.0
     * API changes:
+       * removed the typeclass based terminal and display context interface in favor of a data
+         structure of properties interface.
+    * compatibility improvements:
+       * terminfo based terminals with no cursor support are now silently accepted. The cursor
+         visibility changes in the Picture will have no effect.
+       * alternate (setf/setb) color maps supported. Though colors beyond the first 8 are just a
+         guess.
 
 4.7.0.0
     * API changes:
