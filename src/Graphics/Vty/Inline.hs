@@ -25,13 +25,12 @@
 --
 -- Copyright 2009-2010 Corey O'Connor
 {-# LANGUAGE BangPatterns #-}
-module Graphics.Vty.Inline ( module Graphics.Vty.Inline
-                           )
+module Graphics.Vty.Inline (module Graphics.Vty.Inline)
     where
 
 import Graphics.Vty.Attributes
 import Graphics.Vty.DisplayAttributes
-import Graphics.Vty.Inline.Hack
+import Graphics.Vty.Inline.Unsafe
 import Graphics.Vty.Terminal.Interface
 import Graphics.Vty.Terminal
 

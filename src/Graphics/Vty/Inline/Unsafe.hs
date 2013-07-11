@@ -1,4 +1,4 @@
-module Graphics.Vty.Inline.Hack where
+module Graphics.Vty.Inline.Unsafe where
 
 import Graphics.Vty.Terminal.Interface (Terminal)
 
