@@ -14,6 +14,7 @@ module Graphics.Vty.Terminal.Interface ( module Graphics.Vty.Terminal.Interface
 import Data.Marshalling
 
 import Graphics.Vty.Picture
+import Graphics.Vty.PictureToSpans
 import Graphics.Vty.Span
 import Graphics.Vty.DisplayRegion
 

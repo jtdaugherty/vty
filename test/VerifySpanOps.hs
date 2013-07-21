@@ -2,12 +2,13 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module VerifySpanOps where
 
-import Verify.Graphics.Vty.Picture
-import Verify.Graphics.Vty.Image
-import Verify.Graphics.Vty.Span
 import Verify.Graphics.Vty.DisplayRegion
+import Verify.Graphics.Vty.Image
+import Verify.Graphics.Vty.Picture
+import Verify.Graphics.Vty.Span
 
 import Graphics.Vty.Debug
+import Graphics.Vty.PictureToSpans
 
 import Verify
 
