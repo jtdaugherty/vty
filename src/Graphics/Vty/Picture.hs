@@ -54,7 +54,7 @@ pic_for_image :: Image -> Picture
 pic_for_image i = Picture 
     { pic_cursor = NoCursor
     , pic_layers = [i]
-    , pic_background = Background ' ' current_attr
+    , pic_background = ClearBackground
     }
 
 -- | A picture can be configured either to not show the cursor or show the cursor at the specified
@@ -80,17 +80,23 @@ instance NFData Cursor where
 --
 -- \todo The current attribute is always set to the default attributes at the start of updating the
 -- screen to a picture.
---
--- \todo The background character *must* occupy a single column and no more.
---
--- \todo background char should be optional
-data Background = Background 
+data Background
+    = Background 
     { background_char :: Char
     , background_attr :: Attr
     }
+     -- | The background is: 
+     --
+     -- * the space character if there are remaining non-skip ops
+     -- * (?) nothing if there are no remaining non-skip ops.
+     --
+     -- Might require the terminal interface to do a line clear?
+     -- Or should the nothing case be switched with crlf?
+    | ClearBackground
 
 instance NFData Background where
     rnf (Background c a) = c `seq` a `seq` ()
+    rnf ClearBackground = ()
 
 -- | Compatibility with applications that do not use more than a single layer.
 pic_image :: Picture -> Image

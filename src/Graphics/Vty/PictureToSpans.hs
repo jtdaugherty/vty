@@ -21,7 +21,7 @@ import Control.Monad.ST.Strict hiding ( unsafeIOToST )
 
 import qualified Data.Vector as Vector hiding ( take, replicate )
 import Data.Vector.Mutable ( MVector(..))
-import qualified Data.Vector.Mutable as Vector
+import qualified Data.Vector.Mutable as MVector
 
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -51,8 +51,7 @@ data BlitState = BlitState
 makeLenses ''BlitState
 
 data BlitEnv s = BlitEnv
-    { _bg :: Background
-    , _region :: DisplayRegion
+    { _region :: DisplayRegion
     , _mrow_ops :: MRowOps s
     }
 
@@ -70,22 +69,74 @@ spans_for_pic pic r = DisplayOps r $ Vector.create (combined_spans_for_layers pi
 -- TODO: a fold over a builder function. start with span ops that are a bg fill of the entire
 -- region.
 combined_spans_for_layers :: Picture -> DisplayRegion -> ST s (MRowOps s)
-combined_spans_for_layers pic r = do
-    layer_ops <- mapM (\layer -> build_spans layer r (pic_background pic)) (pic_layers pic)
-    case layer_ops of
-        []    -> fail "empty picture"
-        [ops] -> return ops
-        _     -> fail "TODO: picture with more than one layer not supported"
+combined_spans_for_layers pic r
+    | region_width r == 0 || region_height r == 0 = MVector.new 0
+    | otherwise = do
+        layer_ops <- mapM (\layer -> build_spans layer r) (pic_layers pic)
+        case layer_ops of
+            []    -> fail "empty picture"
+            [ops] -> substitute_skips (pic_background pic) ops
+            _     -> fail "TODO: picture with more than one layer not supported"
+
+substitute_skips :: Background -> MRowOps s -> ST s (MRowOps s)
+substitute_skips ClearBackground ops = do
+    forM_ [0 .. MVector.length ops - 1] $ \row -> do
+        row_ops <- MVector.read ops row
+        -- the image operations assure that background fills are combined.
+        -- clipping a background fill does not split the background fill.
+        -- merging of image layers can split a skip, but only by the insertion of a non skip.
+        -- all this combines to mean we can check the last operation and remove it if it's a skip
+        -- todo: or does it?
+        let row_ops' = case Vector.last row_ops of
+                        Skip w -> Vector.init row_ops `Vector.snoc` RowEnd w
+                        _      -> row_ops
+        -- now all the skips can be replaced by replications of ' ' of the required width.
+        let row_ops'' = swap_skips_for_single_column_char_span ' ' row_ops'
+        MVector.write ops row row_ops''
+    return ops
+substitute_skips (Background {background_char, background_attr}) ops = do
+    -- At this point we decide if the background character is single column or not.
+    -- obviously, single column is easier.
+    case safe_wcwidth background_char of
+        w | w == 0 -> fail $ "invalid background character " ++ show background_char
+          | w == 1 -> do
+                forM_ [0 .. MVector.length ops - 1] $ \row -> do
+                    row_ops <- MVector.read ops row
+                    let row_ops' = swap_skips_for_single_column_char_span background_char row_ops
+                        row_ops'' = (AttributeChange background_attr) `Vector.cons` row_ops'
+                    MVector.write ops row row_ops''
+          | otherwise -> do
+                forM_ [0 .. MVector.length ops - 1] $ \row -> do
+                    row_ops <- MVector.read ops row
+                    let row_ops' = swap_skips_for_char_span w background_char row_ops
+                        row_ops'' = (AttributeChange background_attr) `Vector.cons` row_ops'
+                    MVector.write ops row row_ops''
+    return ops
+
+swap_skips_for_single_column_char_span :: Char -> SpanOps -> SpanOps
+swap_skips_for_single_column_char_span c = Vector.map f
+    where f (Skip ow) = TextSpan ow ow (T.encodeUtf8 $ T.pack $ replicate ow c)
+          f v         = v
+
+swap_skips_for_char_span :: Int -> Char -> SpanOps -> SpanOps
+swap_skips_for_char_span w c = Vector.map f
+    where
+        f (Skip ow) = let txt_0_cw = ow `div` w
+                          txt_0 = T.pack $ replicate txt_0_cw c
+                          txt_1_cw = ow `mod` w
+                          txt_1 = T.pack $ replicate txt_1_cw '…'
+                      in TextSpan ow (txt_0_cw + txt_1_cw) $ T.encodeUtf8 (txt_0 `T.append` txt_1)
+        f v = v
 
 -- | Builds a vector of row operations that will output the given picture to the terminal.
 --
 -- Crops to the given display region.
 --
 -- TODO: I'm pretty sure there is an algorithm that does not require a mutable buffer.
-build_spans :: Image -> DisplayRegion -> Background -> ST s (MRowOps s)
-build_spans image out_region background = do
+build_spans :: Image -> DisplayRegion -> ST s (MRowOps s)
+build_spans image out_region = do
     -- First we create a mutable vector for each rows output operations.
-    out_ops <- Vector.replicate (region_height out_region) Vector.empty
+    out_ops <- MVector.replicate (region_height out_region) Vector.empty
     -- \todo I think building the span operations in display order would provide better performance.
     -- However, I got stuck trying to implement an algorithm that did this. This will be considered
     -- as a possible future optimization. 
@@ -103,9 +154,9 @@ build_spans image out_region background = do
         -- bounds is also provided. This is used to clip the span ops produced to the display.
         let full_build = do
                 start_image_build image
-                -- Fill in any unspecified columns with the background pattern.
+                -- Fill in any unspecified columns with a skip.
                 forM_ [0 .. (region_height out_region - 1)] (add_row_completion out_region)
-            init_env   = BlitEnv background out_region out_ops
+            init_env   = BlitEnv out_region out_ops
             init_state = BlitState 0 0 0 0 (region_width out_region) (region_height out_region)
         _ <- runStateT (runReaderT full_build init_env) init_state
         return ()
@@ -143,13 +194,10 @@ add_unclipped (VertJoin part_top part_bottom _ow _oh) = do
     add_unclipped part_top
     row_offset .= y + image_height part_top
     add_unclipped part_bottom
-    -- TODO: assumes background character is 1 column
 add_unclipped (BGFill ow oh) = do
-    Background c a <- view bg
     y <- use row_offset
-    let op = TextSpan ow ow (T.encodeUtf8 $ T.replicate (fromIntegral ow) (T.singleton c))
+    let op = Skip ow
     forM_ [y..y+oh-1] $ \row -> do
-        snoc_op (AttributeChange a) row
         snoc_op op row
 -- TODO: we know it's clipped actually, the equations that are exposed that introduce a
 -- Crop all assure the image exceeds the crop in the relevant direction.
@@ -271,26 +319,21 @@ add_unclipped_text txt = do
         used_display_columns = wcswidth $ TL.unpack txt
     use row_offset >>= snoc_op op
 
--- todo: If there is no background pattern defined then skip to next line.
--- todo: assumes background character is 1 column
 add_row_completion :: DisplayRegion -> Int -> BlitM s ()
 add_row_completion display_region row = do
     all_row_ops <- view mrow_ops
-    Background c a <- view bg
-    row_ops <- lift $ lift $ Vector.read all_row_ops row
+    row_ops <- lift $ lift $ MVector.read all_row_ops row
     let end_x = span_ops_effected_columns row_ops
     when (end_x < region_width display_region) $ do
         let ow = region_width display_region - end_x
-            op = TextSpan ow ow (T.encodeUtf8 $ T.replicate (fromIntegral ow) (T.singleton c))
-        snoc_op (AttributeChange a) row
-        snoc_op op row
+        snoc_op (Skip ow) row
 
 -- | snocs the operation to the operations for the given row.
 snoc_op :: SpanOp -> Int -> BlitM s ()
 snoc_op !op !row = do
     the_mrow_ops <- view mrow_ops
     lift $ lift $ do
-        ops <- Vector.read the_mrow_ops row
+        ops <- MVector.read the_mrow_ops row
         let ops' = Vector.snoc ops op
-        Vector.write the_mrow_ops row ops'
+        MVector.write the_mrow_ops row ops'
 

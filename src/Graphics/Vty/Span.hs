@@ -35,6 +35,15 @@ data SpanOp =
     -- character does not necessarially represent 1 colunm. See Codec.Binary.UTF8.Width
     -- TextSpan [output width in columns] [number of characters] [data]
     | TextSpan !Int !Int BS.ByteString
+    -- | Skips the given number of columns
+    -- A skip is transparent.... maybe? I am not sure how attribute changes interact.
+    -- todo: separate from this type.
+    | Skip !Int
+    -- | Marks the end of a row. specifies how many columns are remaining. These columns will not be
+    -- explicitly overwritten with the span ops. The terminal is require to assure the remaining
+    -- columns are clear.
+    -- todo: separate from this type.
+    | RowEnd !Int
     deriving Eq
 
 -- | vector of span operations. executed in succession. This represents the operations required to
@@ -57,7 +66,9 @@ instance Show DisplayOps where
 
 instance Show SpanOp where
     show (AttributeChange attr) = show attr
-    show (TextSpan ow cw _) = "TextSpan " ++ show ow ++ " " ++ show cw
+    show (TextSpan ow cw _) = "TextSpan(" ++ show ow ++ ", " ++ show cw ++ ")"
+    show (Skip ow) = "Skip(" ++ show ow ++ ")"
+    show (RowEnd ow) = "RowEnd(" ++ show ow ++ ")"
 
 -- | Number of columns the DisplayOps are defined for
 span_ops_columns :: DisplayOps -> Int
@@ -72,11 +83,15 @@ span_ops_effected_columns :: SpanOps -> Int
 span_ops_effected_columns in_ops = Vector.foldl' span_ops_effected_columns' 0 in_ops
     where 
         span_ops_effected_columns' t (TextSpan w _ _ ) = t + w
+        span_ops_effected_columns' t (Skip w) = t + w
+        span_ops_effected_columns' t (RowEnd w) = t + w
         span_ops_effected_columns' t _ = t
 
 -- | The width of a single SpanOp in columns
 span_op_has_width :: SpanOp -> Maybe (Int, Int)
 span_op_has_width (TextSpan ow cw _) = Just (cw, ow)
+span_op_has_width (Skip ow) = Just (ow,ow)
+span_op_has_width (RowEnd ow) = Just (ow,ow)
 span_op_has_width _ = Nothing
 
 -- | returns the number of columns to the character at the given position in the span op
@@ -84,5 +99,7 @@ columns_to_char_offset :: Int -> SpanOp -> Int
 columns_to_char_offset cx (TextSpan _ _ utf8_str) =
     let str = T.unpack (T.decodeUtf8 utf8_str)
     in wcswidth (take cx str)
+columns_to_char_offset cx (Skip _) = cx
+columns_to_char_offset cx (RowEnd _) = cx
 columns_to_char_offset _cx _ = error "columns_to_char_offset applied to span op without width"
 

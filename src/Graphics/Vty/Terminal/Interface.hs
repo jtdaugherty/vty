@@ -235,6 +235,8 @@ span_op_required_bytes dc fattr (AttributeChange attr) =
         fattr' = fix_display_attr fattr attr'
     in (c, fattr')
 span_op_required_bytes _dc fattr (TextSpan _ _ str) = (utf8_text_required_bytes str, fattr)
+span_op_required_bytes _dc _fattr (Skip _) = error "span_op_required_bytes for Skip."
+span_op_required_bytes _dc fattr (RowEnd _) = (0,fattr)
 
 serialize_output_ops :: DisplayContext
                         -> OutputBuffer 
@@ -284,6 +286,8 @@ serialize_span_op dc (AttributeChange attr) out_ptr fattr = do
 serialize_span_op _dc (TextSpan _ _ str) out_ptr fattr = do
     out_ptr' <- serialize_utf8_text str out_ptr
     return (out_ptr', fattr)
+serialize_span_op _dc (Skip _) _out_ptr _fattr = error "serialize_span_op for Skip"
+serialize_span_op _dc (RowEnd _) out_ptr fattr = return (out_ptr, fattr)
 
 send_to_terminal :: Terminal -> Int -> (Ptr Word8 -> IO (Ptr Word8)) -> IO ()
 send_to_terminal t c f = allocaBytes (fromEnum c) $ \start_ptr -> do
