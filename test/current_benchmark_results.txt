@@ -10,6 +10,7 @@ on ooyala, no screen, iTerm:
 
   * post background span replacement:
       * [("no-diff-opt-0",26,3),("render-char-0",109,8),("render-char-1",44,5),("vertical-scroll-0",244,26),("image-fuzz-0",17,2)]
+      * [("no-diff-opt-0",25,4),("render-char-0",110,7),("render-char-1",43,6),("vertical-scroll-0",239,24),("image-fuzz-0",17,2)]
 
 release 4.7 on toast
 [("no-diff-opt-0",226,13),("render-char-0",411,22),("render-char-1",386,21),("vertical-scroll-0",1930,96),("image-fuzz-0",1225,52)]
