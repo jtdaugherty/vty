@@ -91,7 +91,7 @@ substitute_skips ClearBackground ops = do
                         Skip w -> Vector.init row_ops `Vector.snoc` RowEnd w
                         _      -> row_ops
         -- now all the skips can be replaced by replications of ' ' of the required width.
-        let row_ops'' = swap_skips_for_single_column_char_span ' ' row_ops'
+        let row_ops'' = swap_skips_for_single_column_char_span ' ' current_attr row_ops'
         MVector.write ops row row_ops''
     return ops
 substitute_skips (Background {background_char, background_attr}) ops = do
@@ -102,31 +102,34 @@ substitute_skips (Background {background_char, background_attr}) ops = do
           | w == 1 -> do
                 forM_ [0 .. MVector.length ops - 1] $ \row -> do
                     row_ops <- MVector.read ops row
-                    let row_ops' = swap_skips_for_single_column_char_span background_char row_ops
-                        row_ops'' = (AttributeChange background_attr) `Vector.cons` row_ops'
-                    MVector.write ops row row_ops''
+                    let row_ops' = swap_skips_for_single_column_char_span background_char background_attr row_ops
+                    MVector.write ops row row_ops'
           | otherwise -> do
                 forM_ [0 .. MVector.length ops - 1] $ \row -> do
                     row_ops <- MVector.read ops row
-                    let row_ops' = swap_skips_for_char_span w background_char row_ops
-                        row_ops'' = (AttributeChange background_attr) `Vector.cons` row_ops'
-                    MVector.write ops row row_ops''
+                    let row_ops' = swap_skips_for_char_span w background_char background_attr row_ops
+                    MVector.write ops row row_ops'
     return ops
 
-swap_skips_for_single_column_char_span :: Char -> SpanOps -> SpanOps
-swap_skips_for_single_column_char_span c = Vector.map f
-    where f (Skip ow) = TextSpan ow ow (T.encodeUtf8 $ T.pack $ replicate ow c)
-          f v         = v
+swap_skips_for_single_column_char_span :: Char -> Attr -> SpanOps -> SpanOps
+swap_skips_for_single_column_char_span c a = Vector.concatMap f
+    where f (Skip ow) = let txt = T.pack $ replicate ow c
+                        in Vector.cons (AttributeChange a)
+                                       (Vector.singleton $ TextSpan ow ow (T.encodeUtf8 txt))
+          f v = Vector.singleton v
 
-swap_skips_for_char_span :: Int -> Char -> SpanOps -> SpanOps
-swap_skips_for_char_span w c = Vector.map f
+swap_skips_for_char_span :: Int -> Char -> Attr -> SpanOps -> SpanOps
+swap_skips_for_char_span w c a = Vector.concatMap f
     where
         f (Skip ow) = let txt_0_cw = ow `div` w
                           txt_0 = T.pack $ replicate txt_0_cw c
                           txt_1_cw = ow `mod` w
                           txt_1 = T.pack $ replicate txt_1_cw '…'
-                      in TextSpan ow (txt_0_cw + txt_1_cw) $ T.encodeUtf8 (txt_0 `T.append` txt_1)
-        f v = v
+                          cw = txt_0_cw + txt_1_cw
+                          txt = txt_0 `T.append` txt_1
+                      in Vector.cons (AttributeChange a)
+                                     (Vector.singleton $ TextSpan ow cw $ T.encodeUtf8 txt)
+        f v = Vector.singleton v
 
 -- | Builds a vector of row operations that will output the given picture to the terminal.
 --
