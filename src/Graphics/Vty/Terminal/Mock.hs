@@ -79,6 +79,11 @@ mock_terminal r = liftIO $ do
             , serialize_default_attr = \ptr -> do
                 poke ptr (toEnum $ fromEnum 'D')
                 return $ ptr `plusPtr` 1
+            -- row end is always visualized as the single character 'E'
+            , row_end_required_bytes = 1
+            , serialize_row_end = \ptr -> do
+                poke ptr (toEnum $ fromEnum 'E')
+                return $ ptr `plusPtr` 1
             }
         }
 

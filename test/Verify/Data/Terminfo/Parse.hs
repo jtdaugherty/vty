@@ -12,12 +12,6 @@ import Data.Word
 
 import Numeric
 
-instance Show CapExpression where
-    show c 
-        = "CapExpression { " ++ show (cap_ops c) ++ " }"
-        ++ " <- [" ++ hex_dump ( map ( toEnum . fromEnum ) $! source_string c ) ++ "]"
-        ++ " <= " ++ show (source_string c) 
-
 hex_dump :: [Word8] -> String
 hex_dump bytes = foldr (\b s -> showHex b s) "" bytes
 

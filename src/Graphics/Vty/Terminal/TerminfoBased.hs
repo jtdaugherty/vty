@@ -47,6 +47,7 @@ data TerminfoCaps = TerminfoCaps
     , set_back_color :: CapExpression
     , set_default_attr :: CapExpression
     , clear_screen :: CapExpression
+    , clear_eol :: CapExpression
     , display_attr_caps :: DisplayAttrCaps
     }
 
@@ -109,6 +110,7 @@ reserve_terminal in_ID out_handle = liftIO $ mfix $ \self -> do
         <*> pure set_back_cap
         <*> require_cap ti "sgr0"
         <*> require_cap ti "clear"
+        <*> require_cap ti "el"
         <*> current_display_attr_caps ti
     let send_cap s = send_cap_to_terminal self (s terminfo_caps)
         maybe_send_cap s = when (isJust $ s terminfo_caps) . send_cap (fromJust . s)
@@ -212,7 +214,9 @@ mk_terminfo_display_context terminfo_caps self = do
         , attr_required_bytes = \_prev_attr _req_attr _diffs -> assumed_attr_required_bytes
         , serialize_set_attr = terminfo_serialize_set_attr self terminfo_caps
         , default_attr_required_bytes = cap_expression_required_bytes (set_default_attr terminfo_caps) []
-        , serialize_default_attr = \out_ptr -> serialize_cap_expression (set_default_attr terminfo_caps) [] out_ptr
+        , serialize_default_attr = serialize_cap_expression (set_default_attr terminfo_caps) []
+        , row_end_required_bytes = cap_expression_required_bytes (clear_eol terminfo_caps) []
+        , serialize_row_end = serialize_cap_expression (clear_eol terminfo_caps) []
         }
 
 -- | Instead of evaluating all the rules related to setting display attributes twice (once in

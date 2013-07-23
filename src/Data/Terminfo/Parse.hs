@@ -21,6 +21,8 @@ import Foreign.C.Types
 import Foreign.Marshal.Array
 import Foreign.Ptr
 
+import Numeric (showHex)
+
 import Text.ParserCombinators.Parsec
 
 type CapBytes = ( Ptr Word8, CSize )
@@ -31,7 +33,16 @@ data CapExpression = CapExpression
     , source_string :: !String
     , param_count :: !Word
     , param_ops :: !ParamOps
-    }
+    } deriving (Eq)
+
+instance Show CapExpression where
+    show c
+        = "CapExpression { " ++ show (cap_ops c) ++ " }"
+        ++ " <- [" ++ hex_dump ( map ( toEnum . fromEnum ) $! source_string c ) ++ "]"
+        ++ " <= " ++ show (source_string c)
+        where
+            hex_dump :: [Word8] -> String
+            hex_dump = foldr (\b s -> showHex b s) ""
 
 instance NFData CapExpression where
     rnf (CapExpression ops !_bytes !str !c !p_ops) 
@@ -55,7 +66,7 @@ data CapOp =
     | BitwiseOr | BitwiseXOr | BitwiseAnd
     | ArithPlus | ArithMinus
     | CompareEq | CompareLt | CompareGt
-    deriving ( Show )
+    deriving (Show, Eq)
 
 instance NFData CapOp where
     rnf (Bytes offset _count next_offset) = rnf offset `seq` rnf next_offset
@@ -76,7 +87,7 @@ instance NFData CapOp where
 type ParamOps = [ParamOp]
 data ParamOp =
       IncFirstTwo
-    deriving ( Show )
+    deriving (Show, Eq)
 
 instance NFData ParamOp where
     rnf IncFirstTwo = ()
