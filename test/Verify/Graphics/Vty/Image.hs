@@ -80,9 +80,9 @@ instance Arbitrary SingleAttrSingleSpanStack where
     arbitrary = do
         image_list <- Verify.resize 128 (listOf1 arbitrary)
         let image = vert_cat [ i | SingleRowSingleAttrImage { row_image = i } <- image_list ]
-        return $ SingleAttrSingleSpanStack 
-                    image 
-                    image_list 
+        return $ SingleAttrSingleSpanStack
+                    image
+                    image_list
                     ( maximum $ map expected_columns image_list )
                     ( toEnum $ length image_list )
 

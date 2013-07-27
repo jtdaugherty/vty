@@ -178,45 +178,6 @@ is_out_of_bounds s
     | s ^. remaining_rows    <= 0 = True
     | otherwise                   = False
 
--- TODO: prove skip_columns, skip_rows == 0
--- TODO: prove remaining_columns >= image_width
--- TODO: prove remaining_rows >= image_height
-add_unclipped :: Image -> BlitM s ()
-add_unclipped EmptyImage = return ()
-add_unclipped (HorizText a text_str _ow _cw) = do
-    use row_offset >>= snoc_op (AttributeChange a)
-    add_unclipped_text text_str
-add_unclipped (HorizJoin part_left part_right _ow _oh) = do
-    -- TODO: push into env and use
-    y <- use row_offset
-    add_unclipped part_left
-    row_offset .= y
-    add_unclipped part_right
-add_unclipped (VertJoin part_top part_bottom _ow _oh) = do
-    y <- use row_offset
-    add_unclipped part_top
-    row_offset .= y + image_height part_top
-    add_unclipped part_bottom
-add_unclipped (BGFill ow oh) = do
-    y <- use row_offset
-    let op = Skip ow
-    forM_ [y..y+oh-1] $ \row -> do
-        snoc_op op row
--- TODO: we know it's clipped actually, the equations that are exposed that introduce a
--- Crop all assure the image exceeds the crop in the relevant direction.
-add_unclipped CropRight {cropped_image, output_width} = do
-    remaining_columns .= output_width
-    add_maybe_clipped cropped_image
-add_unclipped CropLeft {cropped_image, left_skip} = do
-    skip_columns .= left_skip
-    add_maybe_clipped cropped_image
-add_unclipped CropBottom {cropped_image, output_height} = do
-    remaining_rows .= output_height
-    add_maybe_clipped cropped_image
-add_unclipped CropTop {cropped_image, top_skip} = do
-    skip_rows .= top_skip
-    add_maybe_clipped cropped_image
-
 -- TODO: prove this cannot be called in an out of bounds case.
 add_maybe_clipped :: forall s . Image -> BlitM s ()
 add_maybe_clipped EmptyImage = return ()
@@ -249,7 +210,8 @@ add_maybe_clipped BGFill {output_width, output_height} = do
     s <- get
     let output_width'  = min (output_width  - s^.skip_columns) (s^.remaining_columns)
         output_height' = min (output_height - s^.skip_rows   ) (s^.remaining_rows)
-    add_unclipped (BGFill output_width' output_height')
+    y <- use row_offset
+    forM_ [y..y+output_height'-1] $ snoc_op (Skip output_width')
 add_maybe_clipped CropRight {cropped_image, output_width} = do
     remaining_columns .= output_width
     add_maybe_clipped cropped_image
