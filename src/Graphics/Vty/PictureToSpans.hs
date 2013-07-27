@@ -213,13 +213,15 @@ add_maybe_clipped BGFill {output_width, output_height} = do
     y <- use row_offset
     forM_ [y..y+output_height'-1] $ snoc_op (Skip output_width')
 add_maybe_clipped CropRight {cropped_image, output_width} = do
-    remaining_columns .= output_width
+    r <- use remaining_columns
+    when (r > output_width) $ remaining_columns .= output_width
     add_maybe_clipped cropped_image
 add_maybe_clipped CropLeft {cropped_image, left_skip} = do
     skip_columns += left_skip
     add_maybe_clipped cropped_image
 add_maybe_clipped CropBottom {cropped_image, output_height} = do
-    remaining_rows .= output_height
+    r <- use remaining_rows
+    when (r > output_height) $ remaining_rows .= output_height
     add_maybe_clipped cropped_image
 add_maybe_clipped CropTop {cropped_image, top_skip} = do
     skip_rows += top_skip

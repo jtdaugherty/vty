@@ -44,3 +44,8 @@ instance Arbitrary PicWithBGAttr where
                                win 
                                attr
         
+instance Arbitrary Picture where
+    arbitrary = do
+        layers <- Verify.resize 20 (listOf1 arbitrary)
+        return $ pic_for_layers layers
+

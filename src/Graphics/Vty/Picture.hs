@@ -5,30 +5,10 @@
 --
 -- Copyright 2009-2010 Corey O'Connor
 module Graphics.Vty.Picture ( module Graphics.Vty.Picture
-                            , Image
-                            , image_width
-                            , image_height
-                            , (<|>)
-                            , (<->)
-                            , horiz_cat
-                            , vert_cat
-                            , background_fill
-                            , char
-                            , string
-                            , iso_10646_string
-                            , utf8_string
-                            , utf8_bytestring
-                            , char_fill
-                            , empty_image
-                            , translate
-                            , crop
-                            , pad
-                            -- | The possible display attributes used in constructing an `Image`.
-                            , module Graphics.Vty.Attributes
+                            , module Graphics.Vty.Image
                             )
     where
 
-import Graphics.Vty.Attributes
 import Graphics.Vty.Image
 
 import Control.DeepSeq
@@ -54,6 +34,15 @@ pic_for_image :: Image -> Picture
 pic_for_image i = Picture 
     { pic_cursor = NoCursor
     , pic_layers = [i]
+    , pic_background = ClearBackground
+    }
+
+-- | Create a picture for display with the given layers.
+-- The first image is the top layer.
+pic_for_layers :: [Image] -> Picture
+pic_for_layers is = Picture 
+    { pic_cursor = NoCursor
+    , pic_layers = is
     , pic_background = ClearBackground
     }
 

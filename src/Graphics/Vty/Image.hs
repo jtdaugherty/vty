@@ -34,6 +34,8 @@ module Graphics.Vty.Image ( DisplayText
                           , crop_top
                           , pad
                           , resize
+                          , resize_width
+                          , resize_height
                           , translate
                           -- | The possible display attributes used in constructing an `Image`.
                           , module Graphics.Vty.Attributes
@@ -56,7 +58,7 @@ import Data.Word
 infixr 5 <|>
 infixr 4 <->
 
--- | Currently append in the Monoid instance is equivalent to <->. 
+-- | Append in the Monoid instance is equivalent to <->. 
 instance Monoid Image where
     mempty = EmptyImage
     mappend = (<->)
@@ -229,6 +231,7 @@ empty_image :: Image
 empty_image = EmptyImage
 
 -- | pad the given image. This adds background character fills to the left, top, right, bottom.
+-- The pad values are how many display columns or rows to add.
 pad :: Int -> Int -> Int -> Int -> Image -> Image
 pad 0 0 0 0 i = i
 pad in_l in_t in_r in_b in_image
@@ -273,12 +276,15 @@ crop_bottom h in_i
     | otherwise = go in_i
         where
             go EmptyImage = EmptyImage
-            go (CropBottom {cropped_image, output_width, output_height}) =
-                CropBottom cropped_image output_width (min h output_height)
+            go i@(CropBottom {cropped_image, output_width, output_height})
+                | output_height <= h = i
+                | otherwise          = CropBottom cropped_image output_width (min h output_height)
             go i
                 | h >= image_height i = i
                 | otherwise           = CropBottom i (image_width i) h
 
+-- | ensure the image is no wider than the given width. If the image is wider then crop the right
+-- side.
 crop_right :: Int -> Image -> Image
 crop_right 0 _ = EmptyImage
 crop_right w in_i
@@ -286,20 +292,67 @@ crop_right w in_i
     | otherwise = go in_i
         where
             go EmptyImage = EmptyImage
-            go (CropRight {cropped_image, output_width, output_height}) =
-                CropRight cropped_image (min w output_width) output_height
+            go i@(CropRight {cropped_image, output_width, output_height})
+                | output_width <= w = i
+                | otherwise         = CropRight cropped_image (min w output_width) output_height
             go i
                 | w >= image_width i = i
                 | otherwise          = CropRight i w (image_height i)
 
+-- | ensure the image is no wider than the given width. If the image is wider then crop the left
+-- side.
 crop_left :: Int -> Image -> Image
-crop_left _ _ = error "not implemented"
+crop_left 0 _ = EmptyImage
+crop_left w in_i
+    | w < 0     = error "cannot crop the width to less than zero"
+    | otherwise = go in_i
+        where
+            go EmptyImage = EmptyImage
+            go i@(CropLeft {cropped_image, left_skip, output_width, output_height})
+                | output_width <= w = i
+                | otherwise         =
+                    let left_skip' = left_skip + w - output_width
+                    in CropLeft cropped_image left_skip' w output_height
+            go i
+                | image_width i <= w = i
+                | otherwise          = CropLeft i (image_width i - w) w (image_height i)
 
+-- | crop the display height. If the image is less than or equal in height then this operation has
+-- no effect. Otherwise the image is cropped from the top.
 crop_top :: Int -> Image -> Image
-crop_top _ _ = error "not implemented"
+crop_top 0 _ = EmptyImage
+crop_top h in_i
+    | h < 0  = error "cannot crop the height to less than zero"
+    | otherwise = go in_i
+        where
+            go EmptyImage = EmptyImage
+            go i@(CropTop {cropped_image, top_skip, output_width, output_height})
+                | output_height <= h = i
+                | otherwise          =
+                    let top_skip' = top_skip + h - output_height
+                    in CropTop cropped_image top_skip' output_width h
+            go i
+                | image_height i <= h = i
+                | otherwise           = CropTop i (image_height i - h) (image_width i) h
 
 -- | Generic resize. Pads and crops as required to assure the given display width and height.
--- This is biased to pad the right and bottom.
+-- This is biased to pad/crop the right and bottom.
 resize :: Int -> Int -> Image -> Image
-resize _w _h _i = error "not implemented yet"
+resize w h i = resize_height h (resize_width w i)
+
+-- | Resize the width. Pads and crops as required to assure the given display width.
+-- This is biased to pad/crop the right.
+resize_width :: Int -> Image -> Image
+resize_width w i = case w `compare` image_width i of
+    LT -> crop_right w i
+    EQ -> i
+    GT -> i <|> BGFill (w - image_width i) (image_height i)
+
+-- | Resize the height. Pads and crops as required to assure the given display height.
+-- This is biased to pad/crop the bottom.
+resize_height :: Int -> Image -> Image
+resize_height h i = case h `compare` image_height i of
+    LT -> crop_bottom h i
+    EQ -> i
+    GT -> i <-> BGFill (image_width i) (h - image_height i)
 
