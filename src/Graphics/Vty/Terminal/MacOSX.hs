@@ -34,11 +34,15 @@ reserve_terminal v out_handle = do
             hPutStr out_handle str
             hFlush out_handle
     t <- TerminfoBased.reserve_terminal (remap_term v) out_handle
-    return $ t
-        { terminal_ID = terminal_ID t ++ " (Mac)"
-        , reserve_display = terminal_app_reserve_display flushed_put
-        , release_display = terminal_app_release_display flushed_put
-        }
+    let t' = t
+             { terminal_ID = terminal_ID t ++ " (Mac)"
+             , reserve_display = terminal_app_reserve_display flushed_put
+             , release_display = terminal_app_release_display flushed_put
+             , display_context = \r -> do
+                dc <- display_context t r
+                return $ dc { context_device = t' }
+             }
+    return t'
 
 
 -- | Terminal.app requires the xterm-color smcup and rmcup caps. Not the generic xterm ones.

@@ -38,52 +38,55 @@ mock_terminal :: (Applicative m, MonadIO m) => DisplayRegion -> m (MockData, Ter
 mock_terminal r = liftIO $ do
     out_ref <- newIORef undefined
     new_assumed_state_ref <- newIORef initial_assumed_state
-    return $ (,) out_ref $ Terminal
-        { terminal_ID = "mock terminal"
-        , release_terminal = return ()
-        , reserve_display = return ()
-        , release_display = return ()
-        , display_bounds = return r
-        , output_byte_buffer = \out_buffer buffer_size -> do
-            putStrLn $ "mock output_byte_buffer of " ++ show buffer_size ++ " bytes"
-            peekArray (fromEnum buffer_size) out_buffer 
-            >>= return . UTF8.fromRep . BS.pack
-            >>= writeIORef out_ref
-        , context_color_count = 16
-        , supports_cursor_visibility = True
-        , assumed_state_ref = new_assumed_state_ref
-        , mk_display_context = \self -> return $ self
-            { context_region = r
-            -- A cursor move is always visualized as the single character 'M'
-            , move_cursor_required_bytes = \_x _y -> 1
-            , serialize_move_cursor = \_x _y ptr -> do
-                poke ptr (toEnum $ fromEnum 'M') 
-                return $ ptr `plusPtr` 1
-            -- Show cursor is always visualized as the single character 'S'
-            , show_cursor_required_bytes = 1
-            , serialize_show_cursor = \ptr -> do
-                poke ptr (toEnum $ fromEnum 'S') 
-                return $ ptr `plusPtr` 1
-            -- Hide cursor is always visualized as the single character 'H'
-            , hide_cursor_required_bytes = 1
-            , serialize_hide_cursor = \ptr -> do
-                poke ptr (toEnum $ fromEnum 'H') 
-                return $ ptr `plusPtr` 1
-            -- An attr change is always visualized as the single character 'A'
-            , attr_required_bytes = \_fattr _diffs _attr -> 1
-            , serialize_set_attr = \_fattr _diffs _attr ptr -> do
-                poke ptr (toEnum $ fromEnum 'A')
-                return $ ptr `plusPtr` 1
-            -- default attr is always visualized as the single character 'D'
-            , default_attr_required_bytes = 1
-            , serialize_default_attr = \ptr -> do
-                poke ptr (toEnum $ fromEnum 'D')
-                return $ ptr `plusPtr` 1
-            -- row end is always visualized as the single character 'E'
-            , row_end_required_bytes = 1
-            , serialize_row_end = \ptr -> do
-                poke ptr (toEnum $ fromEnum 'E')
-                return $ ptr `plusPtr` 1
+    let t = Terminal
+            { terminal_ID = "mock terminal"
+            , release_terminal = return ()
+            , reserve_display = return ()
+            , release_display = return ()
+            , display_bounds = return r
+            , output_byte_buffer = \out_buffer buffer_size -> do
+                putStrLn $ "mock output_byte_buffer of " ++ show buffer_size ++ " bytes"
+                peekArray (fromEnum buffer_size) out_buffer 
+                >>= return . UTF8.fromRep . BS.pack
+                >>= writeIORef out_ref
+            , context_color_count = 16
+            , supports_cursor_visibility = True
+            , assumed_state_ref = new_assumed_state_ref
+            , display_context = \r_ -> return $ DisplayContext
+                { context_region = r_
+                , context_device = t
+                -- A cursor move is always visualized as the single character 'M'
+                , move_cursor_required_bytes = \_x _y -> 1
+                , serialize_move_cursor = \_x _y ptr -> do
+                    poke ptr (toEnum $ fromEnum 'M') 
+                    return $ ptr `plusPtr` 1
+                -- Show cursor is always visualized as the single character 'S'
+                , show_cursor_required_bytes = 1
+                , serialize_show_cursor = \ptr -> do
+                    poke ptr (toEnum $ fromEnum 'S') 
+                    return $ ptr `plusPtr` 1
+                -- Hide cursor is always visualized as the single character 'H'
+                , hide_cursor_required_bytes = 1
+                , serialize_hide_cursor = \ptr -> do
+                    poke ptr (toEnum $ fromEnum 'H') 
+                    return $ ptr `plusPtr` 1
+                -- An attr change is always visualized as the single character 'A'
+                , attr_required_bytes = \_fattr _diffs _attr -> 1
+                , serialize_set_attr = \_fattr _diffs _attr ptr -> do
+                    poke ptr (toEnum $ fromEnum 'A')
+                    return $ ptr `plusPtr` 1
+                -- default attr is always visualized as the single character 'D'
+                , default_attr_required_bytes = 1
+                , serialize_default_attr = \ptr -> do
+                    poke ptr (toEnum $ fromEnum 'D')
+                    return $ ptr `plusPtr` 1
+                -- row end is always visualized as the single character 'E'
+                , row_end_required_bytes = 1
+                , serialize_row_end = \ptr -> do
+                    poke ptr (toEnum $ fromEnum 'E')
+                    return $ ptr `plusPtr` 1
+                , inline_hack = return ()
+                }
             }
-        }
+    return (out_ref, t)
 

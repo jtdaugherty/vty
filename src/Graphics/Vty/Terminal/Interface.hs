@@ -56,7 +56,10 @@ data Terminal = Terminal
     -- | if the cursor can be shown / hidden
     , supports_cursor_visibility :: Bool
     , assumed_state_ref :: IORef AssumedState
-    , mk_display_context :: DisplayContext -> IO DisplayContext
+    -- | Acquire display access to the given region of the display.
+    -- Currently all regions have the upper left corner of (0,0) and the lower right corner at 
+    -- (max display_width provided_width, max display_height provided_height)
+    , display_context :: MonadIO m => DisplayRegion -> m DisplayContext
     }
 
 data AssumedState = AssumedState
@@ -66,33 +69,6 @@ data AssumedState = AssumedState
 
 initial_assumed_state :: AssumedState
 initial_assumed_state = AssumedState Nothing Nothing
-
--- | Acquire display access to the given region of the display.
--- Currently all regions have the upper left corner of (0,0) and the lower right corner at 
--- (max display_width provided_width, max display_height provided_height)
-display_context :: MonadIO m 
-                => Terminal
-                -> DisplayRegion
-                -> m DisplayContext
-display_context t r = liftIO $ do
-    let def_context self = DisplayContext
-                           { context_region = r
-                           , context_device = t
-                           , move_cursor_required_bytes = move_cursor_required_bytes self 
-                           , serialize_move_cursor = serialize_move_cursor self
-                           , show_cursor_required_bytes = show_cursor_required_bytes self
-                           , serialize_show_cursor = serialize_show_cursor self
-                           , hide_cursor_required_bytes = hide_cursor_required_bytes self
-                           , serialize_hide_cursor = serialize_hide_cursor self
-                           , attr_required_bytes = attr_required_bytes self
-                           , serialize_set_attr = serialize_set_attr self
-                           , default_attr_required_bytes = default_attr_required_bytes self
-                           , serialize_default_attr = serialize_default_attr self
-                           , row_end_required_bytes = row_end_required_bytes self
-                           , serialize_row_end = serialize_row_end self
-                           , inline_hack = return ()
-                           }
-    mfix (mk_display_context t . def_context)
 
 data DisplayContext = DisplayContext
     { -- | Provide the bounds of the display context. 

@@ -29,15 +29,16 @@ reserve_terminal variant out_handle = liftIO $ do
     let variant' = if variant == "xterm-color" then "xterm" else variant
     flushed_put set_utf8_char_set
     t <- TerminfoBased.reserve_terminal variant' out_handle
-    return $ t
-        { terminal_ID = terminal_ID t ++ " (xterm-color)"
-        , release_terminal = do
-            liftIO $ flushed_put set_default_char_set
-            release_terminal t
-        , mk_display_context = \self -> return $ self
-            { inline_hack = xterm_inline_hack t
-            }
-        }
+    let t' = t
+             { terminal_ID = terminal_ID t ++ " (xterm-color)"
+             , release_terminal = do
+                 liftIO $ flushed_put set_default_char_set
+                 release_terminal t
+             , display_context = \r -> do
+                dc <- display_context t r
+                return $ dc { context_device = t', inline_hack = xterm_inline_hack t }
+             }
+    return t'
 
 -- | These sequences set xterm based terminals to UTF-8 output.
 --

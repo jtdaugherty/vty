@@ -78,7 +78,7 @@ send_cap_to_terminal t cap cap_params = do
  - should be used instead of the generic "sgr" string capability.
  -}
 reserve_terminal :: ( Applicative m, MonadIO m ) => String -> Handle -> m Terminal
-reserve_terminal in_ID out_handle = liftIO $ mfix $ \self -> do
+reserve_terminal in_ID out_handle = liftIO $ do
     ti <- Terminfo.setupTerm in_ID
     -- assumes set foreground always implies set background exists.
     -- if set foreground is not set then all color changing style attributes are filtered.
@@ -112,42 +112,44 @@ reserve_terminal in_ID out_handle = liftIO $ mfix $ \self -> do
         <*> require_cap ti "clear"
         <*> require_cap ti "el"
         <*> current_display_attr_caps ti
-    let send_cap s = send_cap_to_terminal self (s terminfo_caps)
-        maybe_send_cap s = when (isJust $ s terminfo_caps) . send_cap (fromJust . s)
     new_assumed_state_ref <- newIORef initial_assumed_state
-    return $ Terminal
-        { terminal_ID = in_ID
-        , release_terminal = liftIO $ do
-            send_cap set_default_attr []
-            maybe_send_cap cnorm []
-            hClose out_handle
-        , reserve_display = liftIO $ do
-            -- If there is no support for smcup: Clear the screen and then move the mouse to the
-            -- home position to approximate the behavior.
-            maybe_send_cap smcup []
-            hFlush out_handle
-            send_cap clear_screen []
-        , release_display = liftIO $ do
-            maybe_send_cap rmcup []
-            maybe_send_cap cnorm []
-        , display_bounds = do
-            raw_size <- liftIO $ get_window_size
-            case raw_size of
-                (w, h)  | w < 0 || h < 0 -> fail $ "getwinsize returned < 0 : " ++ show raw_size
-                        | otherwise      -> return $ DisplayRegion (toEnum w) (toEnum h)
-        , output_byte_buffer = \out_ptr out_byte_count -> do
-            hPutBuf out_handle out_ptr (fromEnum out_byte_count)
-            hFlush out_handle
-        , context_color_count
-            = case supports_no_colors terminfo_caps of
-                False -> case Terminfo.getCapability ti (Terminfo.tiGetNum "colors" ) of
-                    Nothing -> 8
-                    Just v -> toEnum v
-                True -> 1
-        , supports_cursor_visibility = isJust $ civis terminfo_caps
-        , assumed_state_ref = new_assumed_state_ref
-        , mk_display_context = mk_terminfo_display_context terminfo_caps
-        }
+    let t = Terminal
+            { terminal_ID = in_ID
+            , release_terminal = liftIO $ do
+                send_cap set_default_attr []
+                maybe_send_cap cnorm []
+                hClose out_handle
+            , reserve_display = liftIO $ do
+                -- If there is no support for smcup: Clear the screen and then move the mouse to the
+                -- home position to approximate the behavior.
+                maybe_send_cap smcup []
+                hFlush out_handle
+                send_cap clear_screen []
+            , release_display = liftIO $ do
+                maybe_send_cap rmcup []
+                maybe_send_cap cnorm []
+            , display_bounds = do
+                raw_size <- liftIO $ get_window_size
+                case raw_size of
+                    (w, h)  | w < 0 || h < 0 -> fail $ "getwinsize returned < 0 : " ++ show raw_size
+                            | otherwise      -> return $ DisplayRegion (toEnum w) (toEnum h)
+            , output_byte_buffer = \out_ptr out_byte_count -> do
+                hPutBuf out_handle out_ptr (fromEnum out_byte_count)
+                hFlush out_handle
+            , context_color_count
+                = case supports_no_colors terminfo_caps of
+                    False -> case Terminfo.getCapability ti (Terminfo.tiGetNum "colors" ) of
+                        Nothing -> 8
+                        Just v -> toEnum v
+                    True -> 1
+            , supports_cursor_visibility = isJust $ civis terminfo_caps
+            , assumed_state_ref = new_assumed_state_ref
+            -- would be better to use fix, but I'm having issues avoiding <<loop>>
+            , display_context = liftIO . terminfo_display_context terminfo_caps t
+            }
+        send_cap s = send_cap_to_terminal t (s terminfo_caps)
+        maybe_send_cap s = when (isJust $ s terminfo_caps) . send_cap (fromJust . s)
+    return t
 
 require_cap :: (Applicative m, MonadIO m) => Terminfo.Terminal -> String -> m CapExpression
 require_cap ti cap_name 
@@ -189,35 +191,39 @@ get_window_size = do
     (a,b) <- (`divMod` 65536) `fmap` c_get_window_size
     return (fromIntegral b, fromIntegral a)
 
-mk_terminfo_display_context :: TerminfoCaps -> DisplayContext -> IO DisplayContext
-mk_terminfo_display_context terminfo_caps self = do
-    return $ self
-        { move_cursor_required_bytes = \x y -> cap_expression_required_bytes (cup terminfo_caps)
-                                                                             [toEnum y, toEnum x]
-        , serialize_move_cursor = \x y out_ptr -> serialize_cap_expression (cup terminfo_caps)
-                                                                           [toEnum y, toEnum x]
-                                                                           out_ptr
-        , show_cursor_required_bytes = case cnorm terminfo_caps of
-            Nothing -> error "this terminal does not support show cursor"
-            Just c -> cap_expression_required_bytes c []
-        , serialize_show_cursor = \out_ptr -> do
-            case cnorm terminfo_caps of
-                Nothing -> fail "this terminal does not support show cursor"
-                Just c -> serialize_cap_expression c [] out_ptr
-        , hide_cursor_required_bytes = case civis terminfo_caps of
-            Nothing -> error "this terminal does not support hide cursor"
-            Just c -> cap_expression_required_bytes c []
-        , serialize_hide_cursor = \out_ptr -> do
-            case civis terminfo_caps of
-                Nothing -> fail "this terminal does not support hide cursor"
-                Just c -> serialize_cap_expression c [] out_ptr
-        , attr_required_bytes = \_prev_attr _req_attr _diffs -> assumed_attr_required_bytes
-        , serialize_set_attr = terminfo_serialize_set_attr self terminfo_caps
-        , default_attr_required_bytes = cap_expression_required_bytes (set_default_attr terminfo_caps) []
-        , serialize_default_attr = serialize_cap_expression (set_default_attr terminfo_caps) []
-        , row_end_required_bytes = cap_expression_required_bytes (clear_eol terminfo_caps) []
-        , serialize_row_end = serialize_cap_expression (clear_eol terminfo_caps) []
-        }
+terminfo_display_context :: TerminfoCaps -> Terminal -> DisplayRegion -> IO DisplayContext
+terminfo_display_context terminfo_caps t r = do
+    let dc = DisplayContext
+             { context_region = r
+             , context_device = t
+             , move_cursor_required_bytes = \x y -> cap_expression_required_bytes (cup terminfo_caps)
+                                                                                  [toEnum y, toEnum x]
+             , serialize_move_cursor = \x y out_ptr -> serialize_cap_expression (cup terminfo_caps)
+                                                                                [toEnum y, toEnum x]
+                                                                                out_ptr
+             , show_cursor_required_bytes = case cnorm terminfo_caps of
+                 Nothing -> error "this terminal does not support show cursor"
+                 Just c -> cap_expression_required_bytes c []
+             , serialize_show_cursor = \out_ptr -> do
+                 case cnorm terminfo_caps of
+                     Nothing -> fail "this terminal does not support show cursor"
+                     Just c -> serialize_cap_expression c [] out_ptr
+             , hide_cursor_required_bytes = case civis terminfo_caps of
+                 Nothing -> error "this terminal does not support hide cursor"
+                 Just c -> cap_expression_required_bytes c []
+             , serialize_hide_cursor = \out_ptr -> do
+                 case civis terminfo_caps of
+                     Nothing -> fail "this terminal does not support hide cursor"
+                     Just c -> serialize_cap_expression c [] out_ptr
+             , attr_required_bytes = \_prev_attr _req_attr _diffs -> assumed_attr_required_bytes
+             , serialize_set_attr = terminfo_serialize_set_attr dc terminfo_caps
+             , default_attr_required_bytes = cap_expression_required_bytes (set_default_attr terminfo_caps) []
+             , serialize_default_attr = serialize_cap_expression (set_default_attr terminfo_caps) []
+             , row_end_required_bytes = cap_expression_required_bytes (clear_eol terminfo_caps) []
+             , serialize_row_end = serialize_cap_expression (clear_eol terminfo_caps) []
+             , inline_hack = return ()
+             }
+    return dc
 
 -- | Instead of evaluating all the rules related to setting display attributes twice (once in
 -- required bytes and again in serialize) or some memoization scheme just return a size
