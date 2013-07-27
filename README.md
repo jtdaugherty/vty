@@ -67,3 +67,12 @@ rm -rf dist ; cabal configure --enable-tests --enable-library-coverage \
   --disable-library-profiling \
   --disable-executable-profiling
 ~~~
+
+## Profiling
+
+
+~~~
+rm -rf dist ; cabal configure --enable-tests --disable-library-coverage \
+  --enable-library-profiling \
+  --enable-executable-profiling
+~~~

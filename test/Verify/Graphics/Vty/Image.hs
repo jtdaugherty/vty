@@ -69,18 +69,23 @@ newtype ImageResize = ImageResize (Image -> (Image, (Int, Int)))
 
 instance Arbitrary ImageResize where
     arbitrary = oneof
-        [ return $ ImageResize $ \i -> (i, (image_width i, image_height i))
+        [ return $! ImageResize $! \i -> (i, (image_width i, image_height i))
+        , return $! ImageResize $! \i -> (i, (image_width i, image_height i))
+        , return $! ImageResize $! \i -> (i, (image_width i, image_height i))
+        , return $! ImageResize $! \i -> (i, (image_width i, image_height i))
+        , return $! ImageResize $! \i -> (i, (image_width i, image_height i))
+        , return $! ImageResize $! \i -> (i, (image_width i, image_height i))
         , do
             ImageResize f <- arbitrary
             WidthResize g <- arbitrary
-            return $ ImageResize $ \i -> 
+            return $! ImageResize $! \i -> 
                 let (i_0, (_, out_height)) = f i
                     g_i = g i_0
                 in (fst g_i, (snd g_i, out_height))
         , do
             ImageResize f <- arbitrary
             HeightResize g <- arbitrary
-            return $ ImageResize $ \i -> 
+            return $! ImageResize $! \i -> 
                 let (i_0, (out_width, _)) = f i
                     g_i = g i_0
                 in (fst g_i, (out_width, snd g_i))
@@ -134,18 +139,26 @@ instance Arbitrary Image  where
         [ do
             SingleAttrSingleSpanStack {stack_image} <- arbitrary
             ImageResize f <- arbitrary
-            return $ fst $ f stack_image
+            return $! fst $! f stack_image
+        , do
+            SingleAttrSingleSpanStack {stack_image} <- arbitrary
+            ImageResize f <- arbitrary
+            return $! fst $! f stack_image
+        , do
+            SingleAttrSingleSpanStack {stack_image} <- arbitrary
+            ImageResize f <- arbitrary
+            return $! fst $! f stack_image
         , do
             i_0 <- arbitrary
             i_1 <- arbitrary
             let i = i_0 <|> i_1
             ImageResize f <- arbitrary
-            return $ fst $ f i
+            return $! fst $! f i
         , do
             i_0 <- arbitrary
             i_1 <- arbitrary
             let i = i_0 <-> i_1
             ImageResize f <- arbitrary
-            return $ fst $ f i
+            return $! fst $! f i
         ]
 

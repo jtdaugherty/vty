@@ -149,6 +149,13 @@ single_attr_single_span_stack_op_coverage stack =
         spans = spans_for_pic p (region_for_window w)
     in verify_all_spans_have_width (stack_image stack) spans (stack_width stack)
 
+image_coverage_matches_bounds :: Image -> Result
+image_coverage_matches_bounds i =
+    let p = pic_for_image i
+        r = DisplayRegion (image_width i) (image_height i)
+        spans = spans_for_pic p r
+    in verify_all_spans_have_width i spans (image_width i)
+
 tests :: IO [Test]
 tests = return 
     [ verify "unit image is cropped when window size == (0,0) [0]" unit_image_and_zero_window_0
@@ -164,18 +171,20 @@ tests = return
     , verify "The span ops actually define content for all the columns in the output region" span_ops_actually_fill_columns
     , verify "first span op is always to set the text attribute" first_span_op_sets_attr
     , verify "a stack of single attr text spans should define content for all the columns [output region == size of stack]"
-             single_attr_single_span_stack_op_coverage
+        single_attr_single_span_stack_op_coverage
     , verify "a single attr text span is cropped when window size < size of stack image [width]"
-             single_attr_single_span_stack_cropped_0 
+        single_attr_single_span_stack_cropped_0 
     , verify "a single attr text span is cropped when window size < size of stack image [height]"
-             single_attr_single_span_stack_cropped_1
+        single_attr_single_span_stack_cropped_1
     , verify "single attr text span <|> single attr text span cropped. [width]"
-             single_attr_single_span_stack_cropped_2
+        single_attr_single_span_stack_cropped_2
     , verify "single attr text span <|> single attr text span cropped. [height]"
-             single_attr_single_span_stack_cropped_3
+        single_attr_single_span_stack_cropped_3
     , verify "single attr text span <-> single attr text span cropped. [width]"
-             single_attr_single_span_stack_cropped_4
+        single_attr_single_span_stack_cropped_4
     , verify "single attr text span <-> single attr text span cropped. [height]"
-             single_attr_single_span_stack_cropped_5
+        single_attr_single_span_stack_cropped_5
+    , verify "an arbitrary image when rendered to a window of the same size will cover the entire window"
+        image_coverage_matches_bounds
     ]
 

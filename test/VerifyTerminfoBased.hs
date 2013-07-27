@@ -27,8 +27,8 @@ tests = concat <$> forM terminals_of_interest (\term_name -> do
                           ]
     )
 
-smoke_test_term :: String -> SingleAttrSingleSpanStack -> Property
-smoke_test_term term_name (SingleAttrSingleSpanStack i _ _ _) = liftIOResult $ do
+smoke_test_term :: String -> Image -> Property
+smoke_test_term term_name i = liftIOResult $ do
     null_out <- openFile "/dev/null" WriteMode
     t <- TerminfoBased.reserve_terminal term_name null_out
     putStrLn $ "context color count: " ++ show (context_color_count t)
