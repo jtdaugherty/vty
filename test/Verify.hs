@@ -59,6 +59,7 @@ verify test_name p = Test $ TestInstance
     qc_result <- quickCheckResult p
     case qc_result of
       QC.Success {..} -> return $ Finished TS.Pass
+      QC.Failure {output} -> return $ Finished $ TS.Fail output
       _               -> return $ Finished $ TS.Fail "TODO(corey): add failure message"
   , tags = []
   , options = []

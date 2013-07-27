@@ -33,7 +33,7 @@ data Image =
       }
     -- | A horizontal join can be constructed between any two images. However a HorizJoin instance is
     -- required to be between two images of equal height. The horiz_join constructor adds background
-    -- filles to the provided images that assure this is true for the HorizJoin value produced.
+    -- fills to the provided images that assure this is true for the HorizJoin value produced.
     | HorizJoin
       { part_left :: Image 
       , part_right :: Image

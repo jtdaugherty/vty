@@ -32,10 +32,10 @@ main = do
         ["-h"    ] -> help
         _          -> do
             let args' = if args /= []
-                        then args
+                        then map (drop 2) args
                         else map fst benches
             -- drop the dash-dash "--"
-            results <- forM args' $ \(_ : _ : b_name) -> do
+            results <- forM args' $ \b_name -> do
                 case lookup b_name benches of
                     Just b  -> bench b_name b
                     Nothing -> fail $ "No benchmark named " ++ b_name

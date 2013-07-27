@@ -14,6 +14,7 @@ module Graphics.Vty.Terminal.Interface ( module Graphics.Vty.Terminal.Interface
 import Data.Marshalling
 
 import Graphics.Vty.Picture
+import Graphics.Vty.PictureToSpans
 import Graphics.Vty.Span
 import Graphics.Vty.DisplayRegion
 
@@ -87,6 +88,8 @@ display_context t r = liftIO $ do
                            , serialize_set_attr = serialize_set_attr self
                            , default_attr_required_bytes = default_attr_required_bytes self
                            , serialize_default_attr = serialize_default_attr self
+                           , row_end_required_bytes = row_end_required_bytes self
+                           , serialize_row_end = serialize_row_end self
                            , inline_hack = return ()
                            }
     mfix (mk_display_context t . def_context)
@@ -119,6 +122,8 @@ data DisplayContext = DisplayContext
     -- | Reset the display attributes to the default display attributes
     , default_attr_required_bytes :: Int
     , serialize_default_attr :: OutputBuffer -> IO OutputBuffer
+    , row_end_required_bytes :: Int
+    , serialize_row_end :: OutputBuffer -> IO OutputBuffer
     -- | See Graphics.Vty.Terminal.XTermColor.inline_hack
     , inline_hack :: IO ()
     }
@@ -234,6 +239,8 @@ span_op_required_bytes dc fattr (AttributeChange attr) =
         fattr' = fix_display_attr fattr attr'
     in (c, fattr')
 span_op_required_bytes _dc fattr (TextSpan _ _ str) = (utf8_text_required_bytes str, fattr)
+span_op_required_bytes _dc _fattr (Skip _) = error "span_op_required_bytes for Skip."
+span_op_required_bytes dc fattr (RowEnd _) = (row_end_required_bytes dc, fattr)
 
 serialize_output_ops :: DisplayContext
                         -> OutputBuffer 
@@ -269,6 +276,8 @@ serialize_span_ops dc y out_ptr in_fattr span_ops = do
                  (out_ptr', in_fattr)
                  span_ops
 
+-- | 
+-- TODO: move this into the terminal implementation?
 serialize_span_op :: DisplayContext
                      -> SpanOp 
                      -> OutputBuffer 
@@ -282,6 +291,10 @@ serialize_span_op dc (AttributeChange attr) out_ptr fattr = do
     return (out_ptr', fattr')
 serialize_span_op _dc (TextSpan _ _ str) out_ptr fattr = do
     out_ptr' <- serialize_utf8_text str out_ptr
+    return (out_ptr', fattr)
+serialize_span_op _dc (Skip _) _out_ptr _fattr = error "serialize_span_op for Skip"
+serialize_span_op dc (RowEnd _) out_ptr fattr = do
+    out_ptr' <- serialize_row_end dc out_ptr
     return (out_ptr', fattr)
 
 send_to_terminal :: Terminal -> Int -> (Ptr Word8 -> IO (Ptr Word8)) -> IO ()

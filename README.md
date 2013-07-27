@@ -63,6 +63,7 @@ Profiling appears to cause issues with coverage when enabled. To evaluate covera
 follows:
 
 ~~~
+rm -rf dist
 cabal configure --enable-tests --enable-library-coverage \
   --disable-library-profiling \
   --disable-executable-profiling

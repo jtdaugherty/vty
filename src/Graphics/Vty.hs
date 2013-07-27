@@ -80,8 +80,8 @@ mkVty = mkVtyEscDelay 0
 -- following reading ESC from the terminal before considering the ESC key press as a discrete event.
 -- \todo move input init into terminal interface
 mkVtyEscDelay :: Int -> IO Vty
-mkVtyEscDelay escDelay = do 
-    term_info <- Terminfo.setupTermFromEnv 
+mkVtyEscDelay escDelay = do
+    term_info <- Terminfo.setupTermFromEnv
     t <- current_terminal
     reserve_display t
     (kvar, endi) <- initTermInput escDelay term_info

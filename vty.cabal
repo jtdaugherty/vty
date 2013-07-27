@@ -58,6 +58,7 @@ library
                        Graphics.Vty.Error
                        Graphics.Vty.Image
                        Graphics.Vty.Inline
+                       Graphics.Vty.Inline.Unsafe
                        Graphics.Vty.LLInput
                        Graphics.Vty.Picture
                        Graphics.Vty.Terminal
@@ -79,7 +80,6 @@ library
                        Graphics.Vty.Terminal.XTermColor
                        Graphics.Vty.Terminal.TerminfoBased
 
-  other-modules:       Graphics.Vty.Inline.Hack
 
   c-sources:           cbits/gwinsz.c
                        cbits/set_term_timing.c

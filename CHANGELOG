@@ -1,12 +1,25 @@
 5.0.0
-    * API changes:
-       * removed the typeclass based terminal and display context interface in favor of a data
-         structure of properties interface.
+    * removed the typeclass based terminal and display context interface in favor of a data
+      structure of properties interface.
+    * The default picture for an image now uses the "clear" background. This background fills
+      background spans with spaces or just ends the line.
+        * Previously the background defaulted to the space character. This causes issues copying
+          text from a text editor. The text would end up with many extra spaces at the end of the
+          line.
+    * Layer support
+        * Each layer is an image.
+        * The layers for a picture are a list of images.
+        * The first image is the top-most layer.
+        * The final rendering is as if the bottom layer (last image) was rendered, then the next
+          (second to last image) etc.
+        * The transparent areas for a layer are the background image components.
+        * If the background is clear there is no background layer.
+        * If there is a background character then the bottom layer is the background layer.
     * compatibility improvements:
-       * terminfo based terminals with no cursor support are now silently accepted. The cursor
-         visibility changes in the Picture will have no effect.
-       * alternate (setf/setb) color maps supported. Though colors beyond the first 8 are just a
-         guess.
+        * terminfo based terminals with no cursor support are silently accepted. The cursor
+          visibility changes in the Picture will have no effect.
+        * alternate (setf/setb) color maps supported. Though colors beyond the first 8 are just a
+          guess.
 
 4.7.0.0
     * API changes:

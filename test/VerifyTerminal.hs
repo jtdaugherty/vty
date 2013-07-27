@@ -18,6 +18,14 @@ import qualified Data.String.UTF8 as UTF8
 
 import System.IO
 
+compare_bytes out_bytes expected_bytes =
+    if out_bytes /=  expected_bytes
+        then return $ failed { reason = "bytes\n" ++ show out_bytes
+                                        ++ "\nare not the expected bytes\n"
+                                        ++ show expected_bytes
+                             }
+        else return succeeded
+
 unit_image_unit_bounds :: UnitImage -> Property
 unit_image_unit_bounds (UnitImage _ i) = liftIOResult $ do
     (_,t) <- mock_terminal (DisplayRegion 1 1)
@@ -49,9 +57,7 @@ single_T_row (MockWindow w h) = liftIOResult $ do
     -- character
                    ++ concat (replicate (fromEnum h - 1) $ "MA" ++ replicate (fromEnum w) 'B')
         expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected
-    if out_bytes /=  expected_bytes
-        then return $ failed { reason = "\n" ++ show out_bytes ++ "\n\n" ++ show expected_bytes }
-        else return succeeded
+    compare_bytes out_bytes expected_bytes
     
 many_T_rows :: MockWindow -> Property
 many_T_rows (MockWindow w h) = liftIOResult $ do
@@ -66,9 +72,7 @@ many_T_rows (MockWindow w h) = liftIOResult $ do
     -- attribute change. 'A', followed by w 'T's
     let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
         expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected
-    if out_bytes /=  expected_bytes
-        then return $ failed { reason = "\n" ++ show out_bytes ++ "\n\n" ++ show expected_bytes }
-        else return succeeded
+    compare_bytes out_bytes expected_bytes
 
 many_T_rows_cropped_width :: MockWindow -> Property
 many_T_rows_cropped_width (MockWindow w h) = liftIOResult $ do
@@ -83,9 +87,7 @@ many_T_rows_cropped_width (MockWindow w h) = liftIOResult $ do
     -- attribute change. 'A', followed by w 'T's
     let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
         expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected
-    if out_bytes /=  expected_bytes
-        then return $ failed { reason = "\n" ++ show out_bytes ++ "\n\n" ++ show expected_bytes }
-        else return succeeded
+    compare_bytes out_bytes expected_bytes
 
 many_T_rows_cropped_height :: MockWindow -> Property
 many_T_rows_cropped_height (MockWindow w h) = liftIOResult $ do
@@ -100,9 +102,7 @@ many_T_rows_cropped_height (MockWindow w h) = liftIOResult $ do
     -- attribute change. 'A', followed by w count 'T's
     let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
         expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected
-    if out_bytes /=  expected_bytes
-        then return $ failed { reason = "\n" ++ show out_bytes ++ "\n\n" ++ show expected_bytes }
-        else return succeeded
+    compare_bytes out_bytes expected_bytes
 
 tests :: IO [Test]
 tests = return [ verify "unit_image_unit_bounds" unit_image_unit_bounds

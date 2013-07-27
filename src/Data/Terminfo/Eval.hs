@@ -162,7 +162,7 @@ serialize_cap_ops :: OutputBuffer -> CapOps -> EvalT IO OutputBuffer
 serialize_cap_ops out_ptr ops = foldM serialize_cap_op out_ptr ops
 
 serialize_cap_op :: OutputBuffer -> CapOp -> EvalT IO OutputBuffer
-serialize_cap_op !out_ptr ( Bytes !offset !byte_count !next_offset ) = do
+serialize_cap_op !out_ptr (Bytes !offset !byte_count !next_offset) = do
     !cap <- get >>= return . eval_expression
     let ( !start_ptr, _ ) = cap_bytes cap
         !src_ptr = start_ptr `plusPtr` offset
