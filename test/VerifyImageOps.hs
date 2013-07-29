@@ -105,6 +105,36 @@ disjoint_width_vert_join_bg_fill (NonEmpty stack_0) (NonEmpty stack_1) =
                        ( expected_width == (image_width $ part_bottom image) )
         _           -> True
 
+translation_is_linear_on_out_size :: Translation -> Bool
+translation_is_linear_on_out_size (Translation i (x,y) i') =
+    image_width i' == image_width i + x && image_height i' == image_height i + y
+
+padding_is_linear_on_out_size :: Image -> Gen Bool
+padding_is_linear_on_out_size i = do
+    l <- offset
+    t <- offset
+    r <- offset
+    b <- offset
+    let i' = pad l t r b i
+    return $ image_width i' == image_width i + l + r && image_height i' == image_height i + t + b
+    where offset = choose (1,1024)
+
+crop_left_limits_width :: Image -> Int -> Property
+crop_left_limits_width i v = v >= 0 ==>
+    v >= image_width (crop_left v i)
+
+crop_right_limits_width :: Image -> Int -> Property
+crop_right_limits_width i v = v >= 0 ==>
+    v >= image_width (crop_right v i)
+
+crop_top_limits_height :: Image -> Int -> Property
+crop_top_limits_height i v = v >= 0 ==>
+    v >= image_height (crop_top v i)
+
+crop_bottom_limits_height :: Image -> Int -> Property
+crop_bottom_limits_height i v = v >= 0 ==>
+    v >= image_height (crop_bottom v i)
+
 tests :: IO [Test]
 tests = return
     [ verify "two_sw_horiz_concat" two_sw_horiz_concat
@@ -120,5 +150,11 @@ tests = return
     , verify "disjoint_height_horiz_join BG fill" disjoint_height_horiz_join_bg_fill
     , verify "disjoint_width_vert_join" disjoint_width_vert_join
     , verify "disjoint_width_vert_join BG fill" disjoint_width_vert_join_bg_fill
+    , verify "translation effects output dimensions linearly" translation_is_linear_on_out_size
+    , verify "padding effects output dimensions linearly" padding_is_linear_on_out_size
+    , verify "crop left limits width" crop_left_limits_width
+    , verify "crop right limits width" crop_right_limits_width
+    , verify "crop top limits height" crop_top_limits_height
+    , verify "crop bottom limits height" crop_bottom_limits_height
     ]
 

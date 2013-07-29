@@ -213,8 +213,6 @@ utf8_strict_bytestring a bs = strict_text a (T.decodeUtf8 bs)
 
 -- | creates a fill of the specified character. The dimensions are in number of characters wide and
 -- number of rows high.
---
--- Unlike the Background fill character this character can have double column display width.
 char_fill :: Integral d => Attr -> Char -> d -> d -> Image
 char_fill _a _c 0  _h = EmptyImage
 char_fill _a _c _w 0  = EmptyImage

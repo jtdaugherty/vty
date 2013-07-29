@@ -52,9 +52,9 @@ mock_terminal r = liftIO $ do
             , context_color_count = 16
             , supports_cursor_visibility = True
             , assumed_state_ref = new_assumed_state_ref
-            , display_context = \r_ -> return $ DisplayContext
-                { context_region = r_
-                , context_device = t
+            , mk_display_context = \t_actual r_actual -> return $ DisplayContext
+                { context_region = r_actual
+                , context_device = t_actual
                 -- A cursor move is always visualized as the single character 'M'
                 , move_cursor_required_bytes = \_x _y -> 1
                 , serialize_move_cursor = \_x _y ptr -> do

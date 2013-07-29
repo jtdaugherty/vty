@@ -20,7 +20,6 @@ import Graphics.Vty.DisplayRegion
 
 import Graphics.Vty.DisplayAttributes
 
-import Control.Monad.Fix
 import Control.Monad.Trans
 
 import qualified Data.ByteString.Internal as BS
@@ -59,8 +58,11 @@ data Terminal = Terminal
     -- | Acquire display access to the given region of the display.
     -- Currently all regions have the upper left corner of (0,0) and the lower right corner at 
     -- (max display_width provided_width, max display_height provided_height)
-    , display_context :: MonadIO m => DisplayRegion -> m DisplayContext
+    , mk_display_context :: MonadIO m => Terminal -> DisplayRegion -> m DisplayContext
     }
+
+display_context :: MonadIO m => Terminal -> DisplayRegion -> m DisplayContext
+display_context t = liftIO . mk_display_context t t
 
 data AssumedState = AssumedState
     { prev_fattr :: Maybe FixedAttr
@@ -71,9 +73,9 @@ initial_assumed_state :: AssumedState
 initial_assumed_state = AssumedState Nothing Nothing
 
 data DisplayContext = DisplayContext
-    { -- | Provide the bounds of the display context. 
-      context_region :: DisplayRegion
-    , context_device :: Terminal
+    { context_device :: Terminal
+    -- | Provide the bounds of the display context. 
+    , context_region :: DisplayRegion
     --  | sets the output position to the specified row and column. Where the number of bytes
     --  required for the control codes can be specified seperate from the actual byte sequence.
     , move_cursor_required_bytes :: Int -> Int -> Int

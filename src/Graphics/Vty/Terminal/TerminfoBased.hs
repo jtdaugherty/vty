@@ -22,7 +22,6 @@ import Graphics.Vty.DisplayRegion
 
 import Control.Applicative 
 import Control.Monad ( foldM, when )
-import Control.Monad.Fix (mfix)
 import Control.Monad.Trans
 
 import Data.Bits ( (.&.) )
@@ -144,8 +143,9 @@ reserve_terminal in_ID out_handle = liftIO $ do
                     True -> 1
             , supports_cursor_visibility = isJust $ civis terminfo_caps
             , assumed_state_ref = new_assumed_state_ref
-            -- would be better to use fix, but I'm having issues avoiding <<loop>>
-            , display_context = liftIO . terminfo_display_context terminfo_caps t
+            -- I think fix would help assure t_actual is the only reference. I was having issues
+            -- tho.
+            , mk_display_context = \t_actual -> liftIO . terminfo_display_context t_actual terminfo_caps
             }
         send_cap s = send_cap_to_terminal t (s terminfo_caps)
         maybe_send_cap s = when (isJust $ s terminfo_caps) . send_cap (fromJust . s)
@@ -191,11 +191,11 @@ get_window_size = do
     (a,b) <- (`divMod` 65536) `fmap` c_get_window_size
     return (fromIntegral b, fromIntegral a)
 
-terminfo_display_context :: TerminfoCaps -> Terminal -> DisplayRegion -> IO DisplayContext
-terminfo_display_context terminfo_caps t r = do
+terminfo_display_context :: Terminal -> TerminfoCaps -> DisplayRegion -> IO DisplayContext
+terminfo_display_context t_actual terminfo_caps r =
     let dc = DisplayContext
-             { context_region = r
-             , context_device = t
+             { context_device = t_actual
+             , context_region = r
              , move_cursor_required_bytes = \x y -> cap_expression_required_bytes (cup terminfo_caps)
                                                                                   [toEnum y, toEnum x]
              , serialize_move_cursor = \x y out_ptr -> serialize_cap_expression (cup terminfo_caps)
@@ -223,7 +223,7 @@ terminfo_display_context terminfo_caps t r = do
              , serialize_row_end = serialize_cap_expression (clear_eol terminfo_caps) []
              , inline_hack = return ()
              }
-    return dc
+    in return dc
 
 -- | Instead of evaluating all the rules related to setting display attributes twice (once in
 -- required bytes and again in serialize) or some memoization scheme just return a size

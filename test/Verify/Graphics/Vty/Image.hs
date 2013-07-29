@@ -46,24 +46,28 @@ instance Show SingleRowSingleAttrImage where
 newtype WidthResize = WidthResize (Image -> (Image, Int))
 
 instance Arbitrary WidthResize where
-    arbitrary = oneof
-        [ return $ WidthResize $ \i -> (i, image_width i)
-        , do
-            WidthResize f <- arbitrary
-            out_width <- choose (1, 256)
-            return $ WidthResize $ \i -> (resize_width out_width $ fst $ f i, out_width)
-        ]
+    arbitrary = do
+        WidthResize f <- arbitrary
+        w <- choose (1,1024)
+        oneof $ map (return . WidthResize)
+            [ \i -> (i, image_width i)
+            , \i -> (resize_width w $ fst $ f i, w)
+            , \i -> let i' = fst $ f i in (crop_left w i', min (image_width i') w)
+            , \i -> let i' = fst $ f i in (crop_right w i', min (image_width i') w)
+            ]
 
 newtype HeightResize = HeightResize (Image -> (Image, Int))
 
 instance Arbitrary HeightResize where
-    arbitrary = oneof
-        [ return $ HeightResize $ \i -> (i, image_height i)
-        , do
-            HeightResize f <- arbitrary
-            out_height <- choose (1, 256)
-            return $ HeightResize $ \i -> (resize_height out_height $ fst $ f i, out_height)
-        ]
+    arbitrary = do
+        HeightResize f <- arbitrary
+        h <- choose (1,1024)
+        oneof $ map (return . HeightResize)
+            [ \i -> (i, image_height i)
+            , \i -> (resize_height h $ fst $ f i, h)
+            , \i -> let i' = fst $ f i in (crop_top h i', min (image_height i') h)
+            , \i -> let i' = fst $ f i in (crop_bottom h i', min (image_height i') h)
+            ]
 
 newtype ImageResize = ImageResize (Image -> (Image, (Int, Int)))
 
@@ -161,4 +165,25 @@ instance Arbitrary Image  where
             ImageResize f <- arbitrary
             return $! fst $! f i
         ]
+
+data CropOperation
+    = CropFromLeft
+    | CropFromRight
+    | CropFromTop
+    | CropFromBottom
+    deriving (Eq, Show)
+
+instance Arbitrary CropOperation where
+    arbitrary = oneof $ map return [CropFromLeft, CropFromRight, CropFromTop, CropFromBottom]
+
+data Translation = Translation Image (Int, Int) Image
+    deriving (Eq, Show)
+
+instance Arbitrary Translation where
+    arbitrary = do
+        i <- arbitrary
+        x <- arbitrary `suchThat` (> 0)
+        y <- arbitrary `suchThat` (> 0)
+        let i' = translate x y i
+        return $ Translation i (x,y) i'
 

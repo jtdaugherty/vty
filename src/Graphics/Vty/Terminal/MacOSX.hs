@@ -38,9 +38,6 @@ reserve_terminal v out_handle = do
              { terminal_ID = terminal_ID t ++ " (Mac)"
              , reserve_display = terminal_app_reserve_display flushed_put
              , release_display = terminal_app_release_display flushed_put
-             , display_context = \r -> do
-                dc <- display_context t r
-                return $ dc { context_device = t' }
              }
     return t'
 

@@ -34,9 +34,9 @@ reserve_terminal variant out_handle = liftIO $ do
              , release_terminal = do
                  liftIO $ flushed_put set_default_char_set
                  release_terminal t
-             , display_context = \r -> do
-                dc <- display_context t r
-                return $ dc { context_device = t', inline_hack = xterm_inline_hack t }
+             , mk_display_context = \t_actual r -> do
+                dc <- mk_display_context t_actual t_actual r
+                return $ dc { inline_hack = xterm_inline_hack t' }
              }
     return t'
 
