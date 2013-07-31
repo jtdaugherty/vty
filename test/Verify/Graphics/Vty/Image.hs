@@ -7,6 +7,7 @@ module Verify.Graphics.Vty.Image ( module Verify.Graphics.Vty.Image
 
 import Verify.Graphics.Vty.Attributes
 import Graphics.Vty.Image
+import Graphics.Vty.Image.Internal
 
 import Verify
 
@@ -131,19 +132,19 @@ data SingleAttrSingleSpanStack = SingleAttrSingleSpanStack
 instance Arbitrary SingleAttrSingleSpanStack where
     arbitrary = do
         image_list <- Verify.resize 128 (listOf1 arbitrary)
-        let image = vert_cat [ i | SingleRowSingleAttrImage { row_image = i } <- image_list ]
-        return $ SingleAttrSingleSpanStack
-                    image
-                    image_list
-                    ( maximum $ map expected_columns image_list )
-                    ( toEnum $ length image_list )
+        return $ mk_single_attr_single_span_stack image_list
+    shrink s = do
+        image_list <- shrink $ stack_source_images s
+        return $ mk_single_attr_single_span_stack image_list
+
+mk_single_attr_single_span_stack image_list =
+    let image = vert_cat [ i | SingleRowSingleAttrImage { row_image = i } <- image_list ]
+    in SingleAttrSingleSpanStack image image_list (maximum $ map expected_columns image_list)
+                                                  (toEnum $ length image_list)
 
 instance Arbitrary Image  where
     arbitrary = oneof
-        [ do
-            SingleAttrSingleSpanStack {stack_image} <- arbitrary
-            ImageResize f <- arbitrary
-            return $! fst $! f stack_image
+        [ return EmptyImage
         , do
             SingleAttrSingleSpanStack {stack_image} <- arbitrary
             ImageResize f <- arbitrary
@@ -165,6 +166,13 @@ instance Arbitrary Image  where
             ImageResize f <- arbitrary
             return $! fst $! f i
         ]
+    shrink (HorizJoin {part_left, part_right}) = shrink =<< [part_left, part_right]
+    shrink (VertJoin {part_top, part_bottom}) = shrink =<< [part_top, part_bottom]
+    shrink (CropRight {cropped_image}) = shrink =<< [cropped_image]
+    shrink (CropLeft {cropped_image}) = shrink =<< [cropped_image]
+    shrink (CropBottom {cropped_image}) = shrink =<< [cropped_image]
+    shrink (CropTop {cropped_image}) = shrink =<< [cropped_image]
+    shrink _ = []
 
 data CropOperation
     = CropFromLeft
