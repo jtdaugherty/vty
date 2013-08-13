@@ -177,6 +177,10 @@ all_tests
       , vert_crop_test_1
       , vert_crop_test_2
       , vert_crop_test_3
+      , horiz_crop_test_0
+      , horiz_crop_test_1
+      , horiz_crop_test_2
+      , horiz_crop_test_3
       ]
 
 reserve_output_test = Test 
@@ -1030,6 +1034,74 @@ vert_crop_test_3 = Test
     , confirm_results = generic_output_match_confirm
     }
 
+horiz_crop_test_0 :: Test
+horiz_crop_test_0 = Test
+    { test_name = "Verify right cropping works as expected with single column chars"
+    , test_ID = "crop_test_0"
+    , test_action = do
+        let base_image = vert_cat $ map (string def_attr) lorum_ipsum
+            cropped_image = crop_right (image_width base_image `div` 2) base_image 
+            image = base_image <-> background_fill 10 2 <-> cropped_image
+        output_image_and_wait image
+    , print_summary = putStr $ [s|
+    1. Verify the bottom text block is about half the width of the top text block.
+    2. press enter.
+    3. the display should return to the state before the test.
+|]
+    , confirm_results = generic_output_match_confirm
+    }
+
+horiz_crop_test_1 :: Test
+horiz_crop_test_1 = Test
+    { test_name = "Verify right cropping works as expected with double column chars"
+    , test_ID = "crop_test_0"
+    , test_action = do
+        let base_image = vert_cat $ map (string def_attr) lorum_ipsum_chinese
+            cropped_image = crop_right (image_width base_image `div` 2) base_image 
+            image = base_image <-> background_fill 10 2 <-> cropped_image
+        output_image_and_wait image
+    , print_summary = putStr $ [s|
+    1. Verify the bottom text block is the left half of the top block. Ellipses on the right edge are OK.
+    2. press enter.
+    3. the display should return to the state before the test.
+|]
+    , confirm_results = generic_output_match_confirm
+    }
+
+horiz_crop_test_2 :: Test
+horiz_crop_test_2 = Test
+    { test_name = "Verify left cropping works as expected with single column chars"
+    , test_ID = "crop_test_0"
+    , test_action = do
+        let base_image = vert_cat $ map (string def_attr) lorum_ipsum
+            cropped_image = crop_left (image_width base_image `div` 2) base_image 
+            image = base_image <-> background_fill 10 2 <-> cropped_image
+        output_image_and_wait image
+    , print_summary = putStr $ [s|
+    1. Verify the bottom text block is the right half of the top text block.
+    2. press enter.
+    3. the display should return to the state before the test.
+|]
+    , confirm_results = generic_output_match_confirm
+    }
+
+horiz_crop_test_3 :: Test
+horiz_crop_test_3 = Test
+    { test_name = "Verify right cropping works as expected with double column chars"
+    , test_ID = "crop_test_0"
+    , test_action = do
+        let base_image = vert_cat $ map (string def_attr) lorum_ipsum_chinese
+            cropped_image = crop_left (image_width base_image `div` 2) base_image 
+            image = base_image <-> background_fill 10 2 <-> cropped_image
+        output_image_and_wait image
+    , print_summary = putStr $ [s|
+    1. Verify the bottom text block is the right half of the top block. Ellipses on the left edge are OK.
+    2. press enter.
+    3. the display should return to the state before the test.
+|]
+    , confirm_results = generic_output_match_confirm
+    }
+
 lorum_ipsum :: [String]
 lorum_ipsum = lines [s|
 Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium,
@@ -1047,8 +1119,7 @@ lorum_ipsum_chinese :: [String]
 lorum_ipsum_chinese = lines [s|
 輐銛 螷蟞覮 裌覅詵 暕 鴅噮 槶 惝掭掝 婸媥媕 耏胠臿, 汫汭沎 忕汌卣 蚡袀 僣 蒮 瀁瀎瀊 渮湸湤 緌翢,
 腠腶舝 糲蘥蠩 樏殣氀 蒮 蹢鎒 滍 鸄齴 櫧櫋瀩 鬄鵊鵙 莃荶衒, 毸溠 橀 簎艜薤 莃荶衒 翣聜蒢
-
-斔櫅檷 晛桼桾 拻敁柧 犿玒 膣, 墐 笓粊紒 樏殣氀 鼀齕, 蔝蓶蓨 顊顃餭 姴怤 骱 暕 蹢鎒鎛 藒襓謥 鄻鎟霣
+斔櫅檷 晛桼桾 拻敁柧 犿玒 膣, 墐 笓粊紒 bacon 鼀齕, 蔝蓶蓨 顊顃餭 姴怤 骱 暕 蹢鎒鎛 藒襓謥 鄻鎟霣
 鬎鯪, 鐩闤 硻禂稢 谾踘遳 撱 赲迡 箷 蛃袚觙 萇雊蜩 壿嫷 鋡 縢羱聬 跐鉠鉣 蔝蓶蓨 匢奾灱 溮煡煟 雥齆犪
 蔰 虈觿, 腷腯葹 鍹餳駷 蛚袲褁 蜸 皯竻 瀁瀎 蜭蜸覟 梪涫湴 揗斝湁 毼
 |]
