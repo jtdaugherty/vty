@@ -173,6 +173,10 @@ all_tests
       , inline_test_1
       , inline_test_2
       , cursor_hide_test_0
+      , vert_crop_test_0
+      , vert_crop_test_1
+      , vert_crop_test_2
+      , vert_crop_test_3
       ]
 
 reserve_output_test = Test 
@@ -945,4 +949,107 @@ cursor_hide_test_0 = Test
 |]
     , confirm_results = generic_output_match_confirm
     }
+
+output_image_and_wait :: Image -> IO ()
+output_image_and_wait image = do
+    t <- current_terminal
+    reserve_display t
+    let pic = pic_for_image image
+    d <- display_bounds t >>= display_context t
+    output_picture d pic
+    getLine
+    release_display t
+    release_terminal t
+    return ()
+
+vert_crop_test_0 :: Test
+vert_crop_test_0 = Test
+    { test_name = "Verify bottom cropping works as expected with single column chars"
+    , test_ID = "crop_test_0"
+    , test_action = do
+        let block_0 = crop_bottom 2 $ vert_cat $ map (string def_attr) lorum_ipsum
+            block_1 = vert_cat $ map (string def_attr) $ take 2 lorum_ipsum
+            image = block_0 <-> background_fill 10 2 <-> block_1
+        output_image_and_wait image
+    , print_summary = putStr $ [s|
+    1. Verify the two text blocks are identical.
+    2. press enter.
+    3. the display should return to the state before the test.
+|]
+    , confirm_results = generic_output_match_confirm
+    }
+
+vert_crop_test_1 :: Test
+vert_crop_test_1 = Test
+    { test_name = "Verify bottom cropping works as expected with double column chars"
+    , test_ID = "crop_test_0"
+    , test_action = do
+        let block_0 = crop_bottom 2 $ vert_cat $ map (string def_attr) lorum_ipsum_chinese
+            block_1 = vert_cat $ map (string def_attr) $ take 2 lorum_ipsum_chinese
+            image = block_0 <-> background_fill 10 2 <-> block_1
+        output_image_and_wait image
+    , print_summary = putStr $ [s|
+    1. Verify the two text blocks are identical.
+    2. press enter.
+    3. the display should return to the state before the test.
+|]
+    , confirm_results = generic_output_match_confirm
+    }
+
+vert_crop_test_2 :: Test
+vert_crop_test_2 = Test
+    { test_name = "Verify top cropping works as expected with single column chars"
+    , test_ID = "crop_test_0"
+    , test_action = do
+        let block_0 = crop_top 2 $ vert_cat $ map (string def_attr) lorum_ipsum
+            block_1 = vert_cat $ map (string def_attr) $ drop (length lorum_ipsum - 2) lorum_ipsum
+            image = block_0 <-> background_fill 10 2 <-> block_1
+        output_image_and_wait image
+    , print_summary = putStr $ [s|
+    1. Verify the two text blocks are identical.
+    2. press enter.
+    3. the display should return to the state before the test.
+|]
+    , confirm_results = generic_output_match_confirm
+    }
+
+vert_crop_test_3 :: Test
+vert_crop_test_3 = Test
+    { test_name = "Verify top cropping works as expected with double column chars"
+    , test_ID = "crop_test_0"
+    , test_action = do
+        let block_0 = crop_top 2 $ vert_cat $ map (string def_attr) lorum_ipsum_chinese
+            block_1 = vert_cat $ map (string def_attr) $ drop (length lorum_ipsum_chinese - 2 ) lorum_ipsum_chinese
+            image = block_0 <-> background_fill 10 2 <-> block_1
+        output_image_and_wait image
+    , print_summary = putStr $ [s|
+    1. Verify the two text blocks are identical.
+    2. press enter.
+    3. the display should return to the state before the test.
+|]
+    , confirm_results = generic_output_match_confirm
+    }
+
+lorum_ipsum :: [String]
+lorum_ipsum = lines [s|
+Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium,
+totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae
+dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit,
+sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam
+est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius
+modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima
+veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea
+commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil
+molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
+|]
+
+lorum_ipsum_chinese :: [String]
+lorum_ipsum_chinese = lines [s|
+輐銛 螷蟞覮 裌覅詵 暕 鴅噮 槶 惝掭掝 婸媥媕 耏胠臿, 汫汭沎 忕汌卣 蚡袀 僣 蒮 瀁瀎瀊 渮湸湤 緌翢,
+腠腶舝 糲蘥蠩 樏殣氀 蒮 蹢鎒 滍 鸄齴 櫧櫋瀩 鬄鵊鵙 莃荶衒, 毸溠 橀 簎艜薤 莃荶衒 翣聜蒢
+
+斔櫅檷 晛桼桾 拻敁柧 犿玒 膣, 墐 笓粊紒 樏殣氀 鼀齕, 蔝蓶蓨 顊顃餭 姴怤 骱 暕 蹢鎒鎛 藒襓謥 鄻鎟霣
+鬎鯪, 鐩闤 硻禂稢 谾踘遳 撱 赲迡 箷 蛃袚觙 萇雊蜩 壿嫷 鋡 縢羱聬 跐鉠鉣 蔝蓶蓨 匢奾灱 溮煡煟 雥齆犪
+蔰 虈觿, 腷腯葹 鍹餳駷 蛚袲褁 蜸 皯竻 瀁瀎 蜭蜸覟 梪涫湴 揗斝湁 毼
+|]
 

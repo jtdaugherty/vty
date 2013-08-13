@@ -22,7 +22,7 @@ random_picture = pic_for_image <$> random_image
 bench_0 = do
     vty <- mkVty
     DisplayRegion w h <- display_bounds $ terminal vty
-    let pictures = replicateM 100 random_picture
+    let pictures = replicateM 3000 random_picture
         bench ps = do
             forM ps (update vty)
             shutdown vty
