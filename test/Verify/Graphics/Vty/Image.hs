@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
 module Verify.Graphics.Vty.Image ( module Verify.Graphics.Vty.Image
@@ -49,7 +50,7 @@ newtype WidthResize = WidthResize (Image -> (Image, Int))
 instance Arbitrary WidthResize where
     arbitrary = do
         WidthResize f <- arbitrary
-        w <- choose (1,1024)
+        w <- choose (1,64)
         oneof $ map (return . WidthResize)
             [ \i -> (i, image_width i)
             , \i -> (resize_width w $ fst $ f i, w)
@@ -62,7 +63,7 @@ newtype HeightResize = HeightResize (Image -> (Image, Int))
 instance Arbitrary HeightResize where
     arbitrary = do
         HeightResize f <- arbitrary
-        h <- choose (1,1024)
+        h <- choose (1,64)
         oneof $ map (return . HeightResize)
             [ \i -> (i, image_height i)
             , \i -> (resize_height h $ fst $ f i, h)
@@ -102,7 +103,7 @@ instance Arbitrary SingleRowSingleAttrImage where
         -- The text must contain at least one character. Otherwise the image simplifies to the
         -- IdImage which has a height of 0. If this is to represent a single row then the height
         -- must be 1
-        single_column_row_text <- Verify.resize 128 (listOf1 arbitrary)
+        single_column_row_text <- Verify.resize 16 (listOf1 arbitrary)
         a <- arbitrary
         let out_image = horiz_cat $ [char a c | SingleColumnChar c <- single_column_row_text]
             out_width = length single_column_row_text
@@ -131,11 +132,13 @@ data SingleAttrSingleSpanStack = SingleAttrSingleSpanStack
 
 instance Arbitrary SingleAttrSingleSpanStack where
     arbitrary = do
-        image_list <- Verify.resize 128 (listOf1 arbitrary)
+        image_list <- Verify.resize 16 (listOf1 arbitrary)
         return $ mk_single_attr_single_span_stack image_list
     shrink s = do
         image_list <- shrink $ stack_source_images s
-        return $ mk_single_attr_single_span_stack image_list
+        if null image_list
+            then []
+            else return $ mk_single_attr_single_span_stack image_list
 
 mk_single_attr_single_span_stack image_list =
     let image = vert_cat [ i | SingleRowSingleAttrImage { row_image = i } <- image_list ]
@@ -146,33 +149,51 @@ instance Arbitrary Image  where
     arbitrary = oneof
         [ return EmptyImage
         , do
-            SingleAttrSingleSpanStack {stack_image} <- arbitrary
-            ImageResize f <- arbitrary
+            SingleAttrSingleSpanStack {stack_image} <- Verify.resize 8 arbitrary
+            ImageResize f <- Verify.resize 2 arbitrary
             return $! fst $! f stack_image
         , do
-            SingleAttrSingleSpanStack {stack_image} <- arbitrary
-            ImageResize f <- arbitrary
+            SingleAttrSingleSpanStack {stack_image} <- Verify.resize 8 arbitrary
+            ImageResize f <- Verify.resize 2 arbitrary
             return $! fst $! f stack_image
         , do
             i_0 <- arbitrary
             i_1 <- arbitrary
             let i = i_0 <|> i_1
-            ImageResize f <- arbitrary
+            ImageResize f <- Verify.resize 2 arbitrary
             return $! fst $! f i
         , do
             i_0 <- arbitrary
             i_1 <- arbitrary
             let i = i_0 <-> i_1
-            ImageResize f <- arbitrary
+            ImageResize f <- Verify.resize 2 arbitrary
             return $! fst $! f i
         ]
-    shrink (HorizJoin {part_left, part_right}) = shrink =<< [part_left, part_right]
-    shrink (VertJoin {part_top, part_bottom}) = shrink =<< [part_top, part_bottom]
-    shrink (CropRight {cropped_image}) = shrink =<< [cropped_image]
-    shrink (CropLeft {cropped_image}) = shrink =<< [cropped_image]
-    shrink (CropBottom {cropped_image}) = shrink =<< [cropped_image]
-    shrink (CropTop {cropped_image}) = shrink =<< [cropped_image]
-    shrink _ = []
+    {-
+    shrink i@(HorizJoin {part_left, part_right}) = do
+        let !i_alt = background_fill (image_width i) (image_height i)
+        !part_left' <- shrink part_left
+        !part_right' <- shrink part_right
+        [i_alt, part_left' <|> part_right']
+    shrink i@(VertJoin {part_top, part_bottom}) = do
+        let !i_alt = background_fill (image_width i) (image_height i)
+        !part_top' <- shrink part_top
+        !part_bottom' <- shrink part_bottom
+        [i_alt, part_top' <-> part_bottom']
+    shrink i@(CropRight {cropped_image, output_width}) = do
+        let !i_alt = background_fill (image_width i) (image_height i)
+        [i_alt, cropped_image]
+    shrink i@(CropLeft {cropped_image, left_skip, output_width}) = do
+        let !i_alt = background_fill (image_width i) (image_height i)
+        [i_alt, cropped_image]
+    shrink i@(CropBottom {cropped_image, output_height}) = do
+        let !i_alt = background_fill (image_width i) (image_height i)
+        [i_alt, cropped_image]
+    shrink i@(CropTop {cropped_image, top_skip, output_height}) = do
+        let !i_alt = background_fill (image_width i) (image_height i)
+        [i_alt, cropped_image]
+    shrink i = [empty_image, background_fill (image_width i) (image_height i)]
+    -}
 
 data CropOperation
     = CropFromLeft

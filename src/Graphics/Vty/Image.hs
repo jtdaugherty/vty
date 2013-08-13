@@ -276,7 +276,7 @@ crop_bottom h in_i
             go EmptyImage = EmptyImage
             go i@(CropBottom {cropped_image, output_width, output_height})
                 | output_height <= h = i
-                | otherwise          = CropBottom cropped_image output_width (min h output_height)
+                | otherwise          = CropBottom cropped_image output_width h
             go i
                 | h >= image_height i = i
                 | otherwise           = CropBottom i (image_width i) h
@@ -292,7 +292,7 @@ crop_right w in_i
             go EmptyImage = EmptyImage
             go i@(CropRight {cropped_image, output_width, output_height})
                 | output_width <= w = i
-                | otherwise         = CropRight cropped_image (min w output_width) output_height
+                | otherwise         = CropRight cropped_image w output_height
             go i
                 | w >= image_width i = i
                 | otherwise          = CropRight i w (image_height i)
@@ -309,7 +309,7 @@ crop_left w in_i
             go i@(CropLeft {cropped_image, left_skip, output_width, output_height})
                 | output_width <= w = i
                 | otherwise         =
-                    let left_skip' = left_skip + w - output_width
+                    let left_skip' = left_skip + output_width - w
                     in CropLeft cropped_image left_skip' w output_height
             go i
                 | image_width i <= w = i
@@ -327,7 +327,7 @@ crop_top h in_i
             go i@(CropTop {cropped_image, top_skip, output_width, output_height})
                 | output_height <= h = i
                 | otherwise          =
-                    let top_skip' = top_skip + h - output_height
+                    let top_skip' = top_skip + output_height - h
                     in CropTop cropped_image top_skip' output_width h
             go i
                 | image_height i <= h = i

@@ -13,16 +13,16 @@ import Graphics.Vty.DisplayRegion
 import qualified Data.Vector as Vector 
 
 row_ops_effected_columns :: DisplayOps -> [Int]
-row_ops_effected_columns spans 
-    = Vector.toList $ Vector.map span_ops_effected_columns $ display_ops spans
+row_ops_effected_columns ops 
+    = Vector.toList $ Vector.map span_ops_effected_columns ops
 
 all_spans_have_width :: DisplayOps -> Int -> Bool
-all_spans_have_width spans expected
-    = all (== expected) $ Vector.toList $ Vector.map span_ops_effected_columns $ display_ops spans
+all_spans_have_width ops expected
+    = all (== expected) $ Vector.toList $ Vector.map span_ops_effected_columns ops
 
 span_ops_effected_rows :: DisplayOps -> Int
-span_ops_effected_rows (DisplayOps _ the_row_ops) 
-    = toEnum $ length (filter (not . null . Vector.toList) (Vector.toList the_row_ops))
+span_ops_effected_rows ops
+    = toEnum $ length (filter (not . null . Vector.toList) (Vector.toList ops))
         
 type SpanConstructLog = [SpanConstructEvent]
 data SpanConstructEvent = SpanSetAttr Attr

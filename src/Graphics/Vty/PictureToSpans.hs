@@ -5,6 +5,8 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{- | Transforms an image into rows of operations.
+ -}
 module Graphics.Vty.PictureToSpans where
 
 import Graphics.Vty.DisplayRegion
@@ -61,15 +63,20 @@ type BlitM s a = ReaderT (BlitEnv s) (StateT BlitState (ST s)) a
 
 -- | Produces the span ops that will render the given picture, possibly cropped or padded, into the
 -- specified region.
-spans_for_pic :: Picture -> DisplayRegion -> DisplayOps
-spans_for_pic pic r = DisplayOps r $ Vector.create (combined_spans_for_layers pic r)
+display_ops_for_pic :: Picture -> DisplayRegion -> DisplayOps
+display_ops_for_pic pic r = Vector.create (combined_ops_for_layers pic r)
+
+-- | Returns the DisplayOps for an image rendered to a window the size of the image. Used only for debugging.
+display_ops_for_image :: Image -> DisplayOps
+display_ops_for_image i = display_ops_for_pic (pic_for_image i)
+                                              (DisplayRegion (image_width i) (image_height i))
 
 -- | Produces the span ops for each layer then combines them.
 --
 -- TODO: a fold over a builder function. start with span ops that are a bg fill of the entire
 -- region.
-combined_spans_for_layers :: Picture -> DisplayRegion -> ST s (MRowOps s)
-combined_spans_for_layers pic r
+combined_ops_for_layers :: Picture -> DisplayRegion -> ST s (MRowOps s)
+combined_ops_for_layers pic r
     | region_width r == 0 || region_height r == 0 = MVector.new 0
     | otherwise = do
         layer_ops <- mapM (\layer -> build_spans layer r) (pic_layers pic)
@@ -169,15 +176,23 @@ build_spans image out_region = do
 -- returns the number of columns and rows contributed to the output.
 start_image_build :: Image -> BlitM s ()
 start_image_build image = do
-    out_of_bounds <- is_out_of_bounds <$> get
+    out_of_bounds <- is_out_of_bounds image <$> get
     when (not out_of_bounds) $ add_maybe_clipped image
 
-is_out_of_bounds :: BlitState -> Bool
-is_out_of_bounds s
-    | s ^. remaining_columns <= 0 = True
-    | s ^. remaining_rows    <= 0 = True
-    | otherwise                   = False
+is_out_of_bounds :: Image -> BlitState -> Bool
+is_out_of_bounds i s
+    | s ^. remaining_columns <= 0              = True
+    | s ^. remaining_rows    <= 0              = True
+    | s ^. skip_columns      >= image_width i  = True
+    | s ^. skip_rows         >= image_height i = True
+    | otherwise = False
 
+-- | This adds an image that might be partially clipped to the output ops.
+--
+-- This is a very touchy algorithm. Too touchy. For instance, the CropRight and CropBottom
+-- implementations are odd. They pass the current tests but something seems terribly wrong about all
+-- this.
+--
 -- TODO: prove this cannot be called in an out of bounds case.
 add_maybe_clipped :: forall s . Image -> BlitM s ()
 add_maybe_clipped EmptyImage = return ()
@@ -213,15 +228,19 @@ add_maybe_clipped BGFill {output_width, output_height} = do
     y <- use row_offset
     forM_ [y..y+output_height'-1] $ snoc_op (Skip output_width')
 add_maybe_clipped CropRight {cropped_image, output_width} = do
+    s <- use skip_columns
     r <- use remaining_columns
-    when (r > output_width) $ remaining_columns .= output_width
+    let x = output_width - s
+    when (x < r) $ remaining_columns .= x
     add_maybe_clipped cropped_image
 add_maybe_clipped CropLeft {cropped_image, left_skip} = do
     skip_columns += left_skip
     add_maybe_clipped cropped_image
 add_maybe_clipped CropBottom {cropped_image, output_height} = do
+    s <- use skip_rows
     r <- use remaining_rows
-    when (r > output_height) $ remaining_rows .= output_height
+    let x = output_height - s
+    when (x < r) $ remaining_rows .= x
     add_maybe_clipped cropped_image
 add_maybe_clipped CropTop {cropped_image, top_skip} = do
     skip_rows += top_skip
@@ -238,30 +257,32 @@ add_maybe_clipped_join :: forall s . String
                        -> BlitM s ()
 add_maybe_clipped_join name skip remaining offset i0_dim i0 i1 size = do
     state <- get
-    when (state^.remaining == 0) $ fail $ name ++ " with remaining == 0"
+    when (state^.remaining <= 0) $ fail $ name ++ " with remaining <= 0"
     case state^.skip of
-        s | s >= size -> fail $ name ++ " on fully clipped"
-          -- TODO: check if clipped in other dim. if not use add_unclipped
-          | s == 0    -> case state^.remaining of
-                r | r > i0_dim -> do
+        s -- TODO: check if clipped in other dim. if not use add_unclipped
+          | s >= size -> fail $ name ++ " on fully clipped"
+          | s == 0    -> if state^.remaining > i0_dim 
+                            then do
+                                add_maybe_clipped i0
+                                put $ state & offset +~ i0_dim & remaining -~ i0_dim
+                                add_maybe_clipped i1
+                            else add_maybe_clipped i0
+          | s < i0_dim  ->
+                let i0_dim' = i0_dim - s
+                in if state^.remaining <= i0_dim'
+                    then add_maybe_clipped i0
+                    else do
                         add_maybe_clipped i0
-                        put $ state & offset +~ i0_dim & remaining -~ i0_dim
+                        put $ state & offset +~ i0_dim' & remaining -~ i0_dim' & skip .~ 0
                         add_maybe_clipped i1
-                  | otherwise  -> add_maybe_clipped i0
           | s >= i0_dim -> do
                 put $ state & skip -~ i0_dim
                 add_maybe_clipped i1
-          | otherwise  -> case i0_dim - s of
-                i0_dim' | state^.remaining <= i0_dim' -> add_maybe_clipped i0
-                        | otherwise                   -> do
-                            add_maybe_clipped i0
-                            put $ state & offset +~ i0_dim' & remaining -~ i0_dim'
-                            add_maybe_clipped i1
+        _ -> fail $ name ++ " has unhandled skip class"
 
 -- TODO: store a skip list in HorizText(?)
 -- TODO: represent display strings containing chars that are not 1 column chars as a separate
 -- display string value?
--- TODO: assumes max column width is 2
 clip_text :: DisplayText -> Int -> Int -> DisplayText
 clip_text txt left_skip right_clip =
     -- CPS would clarify this I think
@@ -271,6 +292,7 @@ clip_text txt left_skip right_clip =
         txt'' = TL.append (TL.take to_take txt') (if pad_suffix then TL.singleton '…' else TL.empty)
         clip_for_char_width 0 _ n = (n, False)
         clip_for_char_width w t n
+            | TL.null t = (n, False)
             | w <  cw = (n, True)
             | w == cw = (n+1, False)
             | w >  cw = clip_for_char_width (w - cw) (TL.tail t) (n + 1)
@@ -299,8 +321,11 @@ add_row_completion display_region row = do
 snoc_op :: SpanOp -> Int -> BlitM s ()
 snoc_op !op !row = do
     the_mrow_ops <- view mrow_ops
+    the_region <- view region
     lift $ lift $ do
         ops <- MVector.read the_mrow_ops row
         let ops' = Vector.snoc ops op
+        when (span_ops_effected_columns ops' > region_width the_region)
+             $ fail $ "row " ++ show row ++ " now exceeds region width"
         MVector.write the_mrow_ops row ops'
 

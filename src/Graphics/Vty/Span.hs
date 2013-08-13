@@ -21,7 +21,7 @@ import Graphics.Vty.DisplayRegion
 import Graphics.Vty.Image
 
 import Data.Vector (Vector)
-import qualified Data.Vector as Vector hiding ( take, replicate )
+import qualified Data.Vector as Vector
 
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
@@ -52,17 +52,8 @@ data SpanOp =
 -- color is changed.
 type SpanOps = Vector SpanOp
 
-data DisplayOps = DisplayOps
-    { effected_region :: DisplayRegion 
-    , display_ops :: RowOps
-    }
-
--- | vector of span operation vectors. One per row of the screen.
-type RowOps = Vector SpanOps
-
-instance Show DisplayOps where
-    show (DisplayOps _ the_row_ops)
-        = "{ " ++ (show $ Vector.map (\ops -> show ops ++ "; " ) the_row_ops) ++ " }"
+-- | vector of span operation vectors for display. One per row of the output region.
+type DisplayOps = Vector SpanOps
 
 instance Show SpanOp where
     show (AttributeChange attr) = show attr
@@ -71,12 +62,19 @@ instance Show SpanOp where
     show (RowEnd ow) = "RowEnd(" ++ show ow ++ ")"
 
 -- | Number of columns the DisplayOps are defined for
-span_ops_columns :: DisplayOps -> Int
-span_ops_columns ops = region_width $ effected_region ops
+--
+-- All spans are verified to define same number of columns. See: VerifySpanOps
+display_ops_columns :: DisplayOps -> Int
+display_ops_columns ops 
+    | Vector.length ops == 0 = 0
+    | otherwise              = Vector.length $ Vector.head ops
 
 -- | Number of rows the DisplayOps are defined for
-span_ops_rows :: DisplayOps -> Int
-span_ops_rows ops = region_height $ effected_region ops
+display_ops_rows :: DisplayOps -> Int
+display_ops_rows ops = Vector.length ops
+
+effected_region :: DisplayOps -> DisplayRegion
+effected_region ops = DisplayRegion (display_ops_columns ops) (display_ops_rows ops)
 
 -- | The number of columns a SpanOps effects.
 span_ops_effected_columns :: SpanOps -> Int

@@ -140,7 +140,7 @@ output_picture dc pic = liftIO $ do
     as <- readIORef (assumed_state_ref $ context_device dc)
     let manip_cursor = supports_cursor_visibility (context_device dc)
     let !r = context_region dc
-        !ops = spans_for_pic pic r
+        !ops = display_ops_for_pic pic r
         !initial_attr = FixedAttr default_style_mask Nothing Nothing
         -- Diff the previous output against the requested output. Differences are currently on a per-row
         -- basis.
@@ -148,9 +148,9 @@ output_picture dc pic = liftIO $ do
         diffs :: [Bool] = case prev_output_ops as of
             Nothing -> replicate (fromEnum $ region_height $ effected_region ops) True
             Just previous_ops -> if effected_region previous_ops /= effected_region ops
-                then replicate (fromEnum $ region_height $ effected_region ops) True
-                else zipWith (/=) (Vector.toList $ display_ops previous_ops)
-                                  (Vector.toList $ display_ops ops)
+                then replicate (display_ops_rows ops) True
+                else zipWith (/=) (Vector.toList previous_ops)
+                                  (Vector.toList ops)
         -- determine the number of bytes required to completely serialize the output ops.
         total =   (if manip_cursor then hide_cursor_required_bytes dc else 0)
                 + default_attr_required_bytes dc
@@ -187,7 +187,7 @@ output_picture dc pic = liftIO $ do
 
 required_bytes :: DisplayContext -> FixedAttr -> [Bool] -> DisplayOps -> Int
 required_bytes dc in_fattr diffs ops = 
-    let (_, n, _, _) = Vector.foldl' required_bytes' (0, 0, in_fattr, diffs) ( display_ops ops )
+    let (_, n, _, _) = Vector.foldl' required_bytes' (0, 0, in_fattr, diffs) ops
     in n
     where 
         required_bytes' (y, current_sum, fattr, True : diffs') span_ops
@@ -199,7 +199,7 @@ required_bytes dc in_fattr diffs ops =
             = error "shouldn't be possible"
 
 span_ops_required_bytes :: DisplayContext -> Int -> FixedAttr -> SpanOps -> (Int, FixedAttr)
-span_ops_required_bytes dc y in_fattr span_ops = 
+span_ops_required_bytes dc y in_fattr span_ops =
     -- The first operation is to set the cursor to the start of the row
     let header_required_bytes = move_cursor_required_bytes dc 0 y
     -- then the span ops are serialized in the order specified
@@ -229,7 +229,7 @@ serialize_output_ops :: DisplayContext
 serialize_output_ops dc start_ptr in_fattr diffs ops = do
     (_, end_ptr, _, _) <- Vector.foldM' serialize_output_ops' 
                               ( 0, start_ptr, in_fattr, diffs ) 
-                              ( display_ops ops )
+                              ops
     return end_ptr
     where 
         serialize_output_ops' ( y, out_ptr, fattr, True : diffs' ) span_ops
@@ -295,8 +295,8 @@ cursor_output_map span_ops _cursor = CursorOutputMap
     }
 
 cursor_column_offset :: DisplayOps -> Int -> Int -> Int
-cursor_column_offset span_ops cx cy =
-    let cursor_row_ops = Vector.unsafeIndex (display_ops span_ops) (fromEnum cy)
+cursor_column_offset ops cx cy =
+    let cursor_row_ops = Vector.unsafeIndex ops (fromEnum cy)
         (out_offset, _, _) 
             = Vector.foldl' ( \(d, current_cx, done) op -> 
                         if done then (d, current_cx, done) else case span_op_has_width op of

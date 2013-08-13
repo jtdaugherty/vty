@@ -102,7 +102,7 @@ test-suite verify-attribute-ops
   test-module:         VerifyAttributeOps
   build-depends:       vty,
                        Cabal == 1.17.*,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.6,
                        random == 1.0.*,
                        base >= 4 && < 5,
                        bytestring,

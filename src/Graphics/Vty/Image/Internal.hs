@@ -125,6 +125,35 @@ instance Show Image where
                    ++ " (" ++ show cropped_image ++ ")"
     show ( EmptyImage ) = "EmptyImage"
 
+-- | Attempts to pretty print just the structure of an image.
+pp_image_structure :: Image -> String
+pp_image_structure in_img = go 0 in_img
+    where
+        go indent img = tab indent ++ pp indent img
+        tab indent = concat $ replicate indent "  "
+        pp _ (HorizText {output_width}) = "HorizText(" ++ show output_width ++ ")"
+        pp _ (BGFill {output_width, output_height})
+            = "BGFill(" ++ show output_width ++ "," ++ show output_height ++ ")"
+        pp i (HorizJoin {part_left = l, part_right = r, output_width = c})
+            = "HorizJoin(" ++ show c ++ ")\n" ++ go (i+1) l ++ "\n" ++ go (i+1) r
+        pp i (VertJoin {part_top = t, part_bottom = b, output_width = c, output_height = r})
+            = "VertJoin(" ++ show c ++ ", " ++ show r ++ ")\n"
+              ++ go (i+1) t ++ "\n"
+              ++ go (i+1) b
+        pp i (CropRight {cropped_image, output_width, output_height})
+            = "CropRight(" ++ show output_width ++ "," ++ show output_height ++ ")\n"
+              ++ go (i+1) cropped_image
+        pp i (CropLeft {cropped_image, left_skip, output_width, output_height})
+            = "CropLeft(" ++ show left_skip ++ "->" ++ show output_width ++ "," ++ show output_height ++ ")\n"
+              ++ go (i+1) cropped_image
+        pp i (CropBottom {cropped_image, output_width, output_height})
+            = "CropBottom(" ++ show output_width ++ "," ++ show output_height ++ ")\n"
+              ++ go (i+1) cropped_image
+        pp i (CropTop {cropped_image, top_skip, output_width, output_height})
+            = "CropTop("++ show output_width ++ "," ++ show top_skip ++ "->" ++ show output_height ++ ")\n"
+              ++ go (i+1) cropped_image
+        pp _ EmptyImage = "EmptyImage"
+        
 instance NFData Image where
     rnf EmptyImage = ()
     rnf (CropRight i w h) = i `deepseq` w `seq` h `seq` ()
