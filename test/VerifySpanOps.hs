@@ -185,6 +185,26 @@ crop_top_output_rows = height_crop_output_columns crop_top
 crop_bottom_output_rows :: SingleAttrSingleSpanStack -> NonNegative Int -> Property
 crop_bottom_output_rows = height_crop_output_columns crop_bottom
 
+crop_right_and_left_rejoined_equivalence :: SingleAttrSingleSpanStack -> Property
+crop_right_and_left_rejoined_equivalence stack = image_width (stack_image stack) `mod` 2 == 0 ==>
+    let i = stack_image stack
+        -- the right part is made by cropping the image from the left.
+        i_r = crop_left (image_width i `div` 2) i
+        -- the left part is made by cropping the image from the right
+        i_l = crop_right (image_width i `div` 2) i
+        i_alt = i_l <|> i_r
+    in display_ops_for_image i == display_ops_for_image i_alt
+
+crop_top_and_bottom_rejoined_equivalence :: SingleAttrSingleSpanStack -> Property
+crop_top_and_bottom_rejoined_equivalence stack = image_height (stack_image stack) `mod` 2 == 0 ==>
+    let i = stack_image stack
+        -- the top part is made by cropping the image from the bottom.
+        i_t = crop_bottom (image_height i `div` 2) i
+        -- the bottom part is made by cropping the image from the top.
+        i_b = crop_top (image_height i `div` 2) i
+        i_alt = i_t <-> i_b
+    in display_ops_for_image i == display_ops_for_image i_alt
+
 image_coverage_matches_bounds :: Image -> Result
 image_coverage_matches_bounds i =
     let p = pic_for_image i
@@ -228,6 +248,10 @@ tests = return
         crop_left_output_columns
     , verify "cropping from the right produces display operations covering the expected columns"
         crop_right_output_columns
+    , verify "the output of a stack is the same as that stack cropped left & right and joined together"
+        crop_right_and_left_rejoined_equivalence
+    , verify "the output of a stack is the same as that stack cropped top & bottom and joined together"
+        crop_top_and_bottom_rejoined_equivalence
     , verify "an arbitrary image when rendered to a window of the same size will cover the entire window"
         image_coverage_matches_bounds
     ]
