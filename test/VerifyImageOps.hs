@@ -7,6 +7,8 @@ import Verify.Graphics.Vty.Image
 
 import Verify
 
+import Control.DeepSeq
+
 two_sw_horiz_concat :: SingleColumnChar -> SingleColumnChar -> Bool
 two_sw_horiz_concat (SingleColumnChar c1) (SingleColumnChar c2) = 
     image_width (char def_attr c1 <|> char def_attr c2) == 2
@@ -135,6 +137,16 @@ crop_bottom_limits_height :: Image -> Int -> Property
 crop_bottom_limits_height i v = v >= 0 ==>
     v >= image_height (crop_bottom v i)
 
+-- rediculous tests just to satisfy my desire for nice code coverage :-P
+can_show_image :: Image -> Bool
+can_show_image i = length (show i) > 0
+
+can_rnf_image :: Image -> Bool
+can_rnf_image i = rnf i == ()
+
+can_pp_image :: Image -> Bool
+can_pp_image i = length (pp_image_structure i) > 0
+
 tests :: IO [Test]
 tests = return
     [ verify "two_sw_horiz_concat" two_sw_horiz_concat
@@ -156,5 +168,8 @@ tests = return
     , verify "crop right limits width" crop_right_limits_width
     , verify "crop top limits height" crop_top_limits_height
     , verify "crop bottom limits height" crop_bottom_limits_height
+    , verify "can show image" can_show_image
+    , verify "can rnf image" can_rnf_image
+    , verify "can pp image" can_pp_image
     ]
 

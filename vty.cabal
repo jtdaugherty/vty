@@ -120,14 +120,14 @@ test-suite verify-attribute-ops
                        vector >= 0.7
   
 
-test-suite verify-terminal
+test-suite verify-using-mock-terminal
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
   hs-source-dirs:      test
 
-  test-module:         VerifyTerminal
+  test-module:         VerifyUsingMockTerminal
 
   other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
@@ -155,14 +155,14 @@ test-suite verify-terminal
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
   
-test-suite verify-terminfo-based
+test-suite verify-terminal
   default-language:    Haskell2010
 
   type:                detailed-0.9
 
   hs-source-dirs:      test
 
-  test-module:         VerifyTerminfoBased
+  test-module:         VerifyTerminal
 
   other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
