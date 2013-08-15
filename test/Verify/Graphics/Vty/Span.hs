@@ -28,3 +28,10 @@ verify_all_spans_have_width i spans w
                                 ++ (concatMap ((++ "\n") . show)) v
                             }
 
+verify_ops_equality i_ops i_alt_ops =
+    if i_ops == i_alt_ops
+        then succeeded
+        else failed { reason = "ops for alternate image " ++ show i_alt_ops
+                               ++ " are not the same as " ++ show i_ops
+                    }
+

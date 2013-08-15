@@ -37,7 +37,8 @@ pic_for_image i = Picture
     , pic_background = ClearBackground
     }
 
--- | Create a picture for display with the given layers.
+-- | Create a picture for display with the given layers. Ordered top to bottom.
+-- 
 -- The first image is the top layer.
 pic_for_layers :: [Image] -> Picture
 pic_for_layers is = Picture 

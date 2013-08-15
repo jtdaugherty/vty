@@ -61,11 +61,7 @@ crop_right_and_left_rejoined_equivalence stack = image_width (stack_image stack)
         i_alt = i_l <|> i_r
         i_ops = display_ops_for_image i
         i_alt_ops = display_ops_for_image i_alt
-    in if i_ops == i_alt_ops
-        then succeeded
-        else failed { reason = "ops for alternate image " ++ show i_alt_ops
-                               ++ " are not the same as " ++ show i_ops
-                    }
+    in verify_ops_equality i_ops i_alt_ops
 
 crop_top_and_bottom_rejoined_equivalence :: SingleAttrSingleSpanStack -> Property
 crop_top_and_bottom_rejoined_equivalence stack = image_height (stack_image stack) `mod` 2 == 0 ==>
