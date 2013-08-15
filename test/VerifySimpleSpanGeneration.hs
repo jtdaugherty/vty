@@ -1,6 +1,6 @@
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
-module VerifySpanOps where
+module VerifySimpleSpanGeneration where
 
 import Verify.Graphics.Vty.DisplayRegion
 import Verify.Graphics.Vty.Image
@@ -149,69 +149,6 @@ single_attr_single_span_stack_op_coverage stack =
         ops = display_ops_for_pic p (region_for_window w)
     in verify_all_spans_have_width (stack_image stack) ops (stack_width stack)
 
-crop_op_display_ops :: (Int -> Image -> Image) ->
-                       Int -> Image -> (DisplayOps, Image)
-crop_op_display_ops crop_op v i =
-    let i_out = crop_op v i
-        p = pic_for_image i_out
-        w = MockWindow (image_width i_out) (image_height i_out)
-    in (display_ops_for_pic p (region_for_window w), i_out)
-
-width_crop_output_columns :: (Int -> Image -> Image) ->
-                             SingleAttrSingleSpanStack ->
-                             NonNegative Int ->
-                             Property
-width_crop_output_columns crop_op s (NonNegative w) = stack_width s > w ==>
-    let (ops, i_out) = crop_op_display_ops crop_op w (stack_image s)
-    in verify_all_spans_have_width i_out ops w
-
-height_crop_output_columns :: (Int -> Image -> Image) ->
-                              SingleAttrSingleSpanStack ->
-                              NonNegative Int ->
-                              Property
-height_crop_output_columns crop_op s (NonNegative h) = stack_height s > h ==>
-    let (ops, _) = crop_op_display_ops crop_op h (stack_image s)
-    in display_ops_rows ops == h
-
-crop_right_output_columns :: SingleAttrSingleSpanStack -> NonNegative Int -> Property
-crop_right_output_columns = width_crop_output_columns crop_right
-
-crop_left_output_columns :: SingleAttrSingleSpanStack -> NonNegative Int -> Property
-crop_left_output_columns = width_crop_output_columns crop_left
-
-crop_top_output_rows :: SingleAttrSingleSpanStack -> NonNegative Int -> Property
-crop_top_output_rows = height_crop_output_columns crop_top
-
-crop_bottom_output_rows :: SingleAttrSingleSpanStack -> NonNegative Int -> Property
-crop_bottom_output_rows = height_crop_output_columns crop_bottom
-
--- TODO: known benign failure.
-crop_right_and_left_rejoined_equivalence :: SingleAttrSingleSpanStack -> Property
-crop_right_and_left_rejoined_equivalence stack = image_width (stack_image stack) `mod` 2 == 0 ==>
-    let i = stack_image stack
-        -- the right part is made by cropping the image from the left.
-        i_r = crop_left (image_width i `div` 2) i
-        -- the left part is made by cropping the image from the right
-        i_l = crop_right (image_width i `div` 2) i
-        i_alt = i_l <|> i_r
-        i_ops = display_ops_for_image i
-        i_alt_ops = display_ops_for_image i_alt
-    in if i_ops == i_alt_ops
-        then succeeded
-        else failed { reason = "ops for alternate image " ++ show i_alt_ops
-                               ++ " are not the same as " ++ show i_ops
-                    }
-
-crop_top_and_bottom_rejoined_equivalence :: SingleAttrSingleSpanStack -> Property
-crop_top_and_bottom_rejoined_equivalence stack = image_height (stack_image stack) `mod` 2 == 0 ==>
-    let i = stack_image stack
-        -- the top part is made by cropping the image from the bottom.
-        i_t = crop_bottom (image_height i `div` 2) i
-        -- the bottom part is made by cropping the image from the top.
-        i_b = crop_top (image_height i `div` 2) i
-        i_alt = i_t <-> i_b
-    in display_ops_for_image i == display_ops_for_image i_alt
-
 image_coverage_matches_bounds :: Image -> Result
 image_coverage_matches_bounds i =
     let p = pic_for_image i
@@ -229,9 +166,6 @@ tests = return
     , verify "horiz span image is not cropped when window size == size of image [height]" horiz_span_image_and_equal_window_1
     , verify "horiz span image is not cropped when window size < size of image [width]" horiz_span_image_and_lesser_window_0
     , verify "horiz span image is not cropped when window size > size of image [width]" horiz_span_image_and_greater_window_0
-    , verify "arbitrary image is padded or cropped" arb_image_is_cropped
-    , verify "The span ops actually define content for all the rows in the output region" span_ops_actually_fill_rows
-    , verify "The span ops actually define content for all the columns in the output region" span_ops_actually_fill_columns
     , verify "first span op is always to set the text attribute" first_span_op_sets_attr
     , verify "a stack of single attr text spans should define content for all the columns [output region == size of stack]"
         single_attr_single_span_stack_op_coverage
@@ -247,19 +181,6 @@ tests = return
         single_attr_single_span_stack_cropped_4
     , verify "single attr text span <-> single attr text span display cropped. [height]"
         single_attr_single_span_stack_cropped_5
-    , verify "cropping from the bottom produces display operations covering the expected rows"
-        crop_bottom_output_rows
-    , verify "cropping from the top produces display operations covering the expected rows"
-        crop_top_output_rows
-    , verify "cropping from the left produces display operations covering the expected columns"
-        crop_left_output_columns
-    , verify "cropping from the right produces display operations covering the expected columns"
-        crop_right_output_columns
-    -- TODO: known benign failure.
-    -- , verify "the output of a stack is the same as that stack cropped left & right and joined together"
-    --     crop_right_and_left_rejoined_equivalence
-    , verify "the output of a stack is the same as that stack cropped top & bottom and joined together"
-        crop_top_and_bottom_rejoined_equivalence
     , verify "an arbitrary image when rendered to a window of the same size will cover the entire window"
         image_coverage_matches_bounds
     ]
