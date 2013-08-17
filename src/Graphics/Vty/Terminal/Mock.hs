@@ -1,6 +1,8 @@
 -- Copyright Corey O'Connor
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
+-- | This provides a mock terminal implementation that is nice for testing. This transforms the
+-- output operations to visible characters. Which is nice for some tests.
 module Graphics.Vty.Terminal.Mock ( MockData, mock_terminal )
     where
 
