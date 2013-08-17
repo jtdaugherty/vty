@@ -1,4 +1,13 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Verify.Graphics.Vty.Terminal where
+
+import Graphics.Vty.Terminal.Mock
+
+import qualified Data.ByteString as BS
+import Data.IORef
+import qualified Data.String.UTF8 as UTF8
+
+import Test.QuickCheck.Property
 
 -- A list of terminals that should be supported.
 -- This started with a list of terminals ubuntu supported. Then those terminals that really could
@@ -36,3 +45,15 @@ terminals_of_interest =
     , "rxvt-basic"
     , "cygwin"
     ]
+
+compare_mock_output :: MockData -> String -> IO Result
+compare_mock_output mock_data expected_str = do
+    out_bytes <- readIORef mock_data >>= return . UTF8.toRep
+    let expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected_str
+    if out_bytes /=  expected_bytes
+        then return $ failed { reason = "bytes\n" ++ show out_bytes
+                                        ++ "\nare not the expected bytes\n"
+                                        ++ show expected_bytes
+                             }
+        else return succeeded
+

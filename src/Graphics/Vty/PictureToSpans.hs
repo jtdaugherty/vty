@@ -66,7 +66,9 @@ type BlitM s a = ReaderT (BlitEnv s) (StateT BlitState (ST s)) a
 display_ops_for_pic :: Picture -> DisplayRegion -> DisplayOps
 display_ops_for_pic pic r = Vector.create (combined_ops_for_layers pic r)
 
--- | Returns the DisplayOps for an image rendered to a window the size of the image. Used only for debugging.
+-- | Returns the DisplayOps for an image rendered to a window the size of the image.
+--
+-- largerly used only for debugging.
 display_ops_for_image :: Image -> DisplayOps
 display_ops_for_image i = display_ops_for_pic (pic_for_image i)
                                               (DisplayRegion (image_width i) (image_height i))

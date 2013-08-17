@@ -135,6 +135,7 @@ test-suite verify-using-mock-terminal
                        Verify.Graphics.Vty.Picture
                        Verify.Graphics.Vty.Image
                        Verify.Graphics.Vty.Span
+                       Verify.Graphics.Vty.Terminal
 
   build-depends:       vty,
                        Cabal == 1.17.*,

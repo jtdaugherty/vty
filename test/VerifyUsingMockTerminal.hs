@@ -5,6 +5,7 @@ import Verify.Graphics.Vty.DisplayRegion
 import Verify.Graphics.Vty.Picture
 import Verify.Graphics.Vty.Image
 import Verify.Graphics.Vty.Span
+import Verify.Graphics.Vty.Terminal
 import Graphics.Vty.Terminal
 import Graphics.Vty.Terminal.Mock
 
@@ -17,14 +18,6 @@ import Data.IORef
 import qualified Data.String.UTF8 as UTF8
 
 import System.IO
-
-compare_bytes out_bytes expected_bytes =
-    if out_bytes /=  expected_bytes
-        then return $ failed { reason = "bytes\n" ++ show out_bytes
-                                        ++ "\nare not the expected bytes\n"
-                                        ++ show expected_bytes
-                             }
-        else return succeeded
 
 unit_image_unit_bounds :: UnitImage -> Property
 unit_image_unit_bounds (UnitImage _ i) = liftIOResult $ do
@@ -50,14 +43,12 @@ single_T_row (MockWindow w h) = liftIOResult $ do
     let i = horiz_cat $ replicate (fromEnum w) (char def_attr 'T')
         pic = (pic_for_image i) { pic_background = Background 'B' def_attr }
     output_picture dc pic
-    out_bytes <- readIORef mock_data >>= return . UTF8.toRep
-    -- The UTF8 string that represents the output bytes a single line containing the T string:
+    -- The mock output string that represents the output bytes a single line containing the T
+    -- string: Followed by h - 1 lines of a change to the background attribute and then the
+    -- background character
     let expected = "HD" ++ "MA" ++ replicate (fromEnum w) 'T'
-    -- Followed by h - 1 lines of a change to the background attribute and then the background
-    -- character
                    ++ concat (replicate (fromEnum h - 1) $ "MA" ++ replicate (fromEnum w) 'B')
-        expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected
-    compare_bytes out_bytes expected_bytes
+    compare_mock_output mock_data expected
     
 many_T_rows :: MockWindow -> Property
 many_T_rows (MockWindow w h) = liftIOResult $ do
@@ -67,12 +58,10 @@ many_T_rows (MockWindow w h) = liftIOResult $ do
     let i = vert_cat $ replicate (fromEnum h) $ horiz_cat $ replicate (fromEnum w) (char def_attr 'T')
         pic = (pic_for_image i) { pic_background = Background 'B' def_attr }
     output_picture dc pic
-    out_bytes <- readIORef mock_data >>= return . UTF8.toRep
     -- The UTF8 string that represents the output bytes is h repeats of a move, 'M', followed by an
     -- attribute change. 'A', followed by w 'T's
     let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
-        expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected
-    compare_bytes out_bytes expected_bytes
+    compare_mock_output mock_data expected
 
 many_T_rows_cropped_width :: MockWindow -> Property
 many_T_rows_cropped_width (MockWindow w h) = liftIOResult $ do
@@ -82,12 +71,10 @@ many_T_rows_cropped_width (MockWindow w h) = liftIOResult $ do
     let i = vert_cat $ replicate (fromEnum h) $ horiz_cat $ replicate (fromEnum w * 2) (char def_attr 'T')
         pic = (pic_for_image i) { pic_background = Background 'B' def_attr }
     output_picture dc pic
-    out_bytes <- readIORef mock_data >>= return . UTF8.toRep
     -- The UTF8 string that represents the output bytes is h repeats of a move, 'M', followed by an
     -- attribute change. 'A', followed by w 'T's
     let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
-        expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected
-    compare_bytes out_bytes expected_bytes
+    compare_mock_output mock_data expected
 
 many_T_rows_cropped_height :: MockWindow -> Property
 many_T_rows_cropped_height (MockWindow w h) = liftIOResult $ do
@@ -97,12 +84,10 @@ many_T_rows_cropped_height (MockWindow w h) = liftIOResult $ do
     let i = vert_cat $ replicate (fromEnum h * 2) $ horiz_cat $ replicate (fromEnum w) (char def_attr 'T')
         pic = (pic_for_image i) { pic_background = Background 'B' def_attr }
     output_picture dc pic
-    out_bytes <- readIORef mock_data >>= return . UTF8.toRep
     -- The UTF8 string that represents the output bytes is h repeats of a move, 'M', followed by an
     -- attribute change. 'A', followed by w count 'T's
     let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
-        expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected
-    compare_bytes out_bytes expected_bytes
+    compare_mock_output mock_data expected
 
 tests :: IO [Test]
 tests = return [ verify "unit_image_unit_bounds" unit_image_unit_bounds

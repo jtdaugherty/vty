@@ -1,7 +1,7 @@
 -- Copyright Corey O'Connor
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
-module Graphics.Vty.Terminal.Mock ( mock_terminal )
+module Graphics.Vty.Terminal.Mock ( MockData, mock_terminal )
     where
 
 import Graphics.Vty.DisplayRegion
