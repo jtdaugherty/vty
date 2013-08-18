@@ -53,8 +53,8 @@ vert_stack_layer_equivalence_1 row_0 row_1 =
 
 -- | Two rows horiz joined is equivalent to the first row rendered as the top layer and the
 -- second row rendered as a bottom layer with a background fill where the first row would be.
-horiz_stack_layer_equivalence_0 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
-horiz_stack_layer_equivalence_0 row_0 row_1 =
+horiz_join_layer_equivalence_0 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
+horiz_join_layer_equivalence_0 row_0 row_1 =
     let i_0 = row_image row_0
         i_1 = row_image row_1
         i = i_0 <|> i_1
@@ -65,8 +65,8 @@ horiz_stack_layer_equivalence_0 row_0 row_1 =
         ops_layered = display_ops_for_pic p_layered $ DisplayRegion (image_width i_lower) (image_height i_lower)
     in verify_ops_equality expected_ops ops_layered
 
-horiz_stack_layer_equivalence_1 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
-horiz_stack_layer_equivalence_1 row_0 row_1 =
+horiz_join_layer_equivalence_1 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
+horiz_join_layer_equivalence_1 row_0 row_1 =
     let i_0 = row_image row_0
         i_1 = row_image row_1
         i = i_0 <|> i_1
@@ -78,6 +78,35 @@ horiz_stack_layer_equivalence_1 row_0 row_1 =
         ops_layered = display_ops_for_pic p_layered $ DisplayRegion (image_width i_lower) (image_height i_lower)
     in verify_ops_equality expected_ops ops_layered
 
+horiz_join_alternate_0 :: Result
+horiz_join_alternate_0 =
+    let size = 4
+        str_0 = replicate size 'a'
+        str_1 = replicate size 'b'
+        i_0 = string def_attr str_0
+        i_1 = string def_attr str_1
+        i = horiz_cat $ zipWith horiz_join (replicate size i_0) (replicate size i_1)
+        layer_0 = horiz_cat $ replicate size $ i_0 <|> background_fill size 1
+        layer_1 = horiz_cat $ replicate size $ background_fill size 1 <|> i_1
+        expected_ops = display_ops_for_image i
+        ops_layered = display_ops_for_pic (pic_for_layers [layer_0, layer_1])
+                                          (DisplayRegion (image_width i) (image_height i))
+    in verify_ops_equality expected_ops ops_layered
+
+horiz_join_alternate_1 :: Result
+horiz_join_alternate_1 =
+    let size = 4
+        str_0 = replicate size 'a'
+        str_1 = replicate size 'b'
+        i_0 = string def_attr str_0
+        i_1 = string def_attr str_1
+        i = horiz_cat $ zipWith horiz_join (replicate size i_0) (replicate size i_1)
+        layers = [l | b <- take 4 [0,size*2..], let l = background_fill b 1 <|> i_0 <|> i_1]
+        expected_ops = display_ops_for_image i
+        ops_layered = display_ops_for_pic (pic_for_layers layers)
+                                          (DisplayRegion (image_width i) (image_height i))
+    in verify_ops_equality expected_ops ops_layered
+
 tests :: IO [Test]
 tests = return 
     [ verify "a larger horiz span occludes a smaller span on a lower layer"
@@ -87,8 +116,12 @@ tests = return
     , verify "two rows stack vertical equiv to first image layered on top of second with padding (1)"
         vert_stack_layer_equivalence_1
     , verify "two rows horiz joined equiv to first image layered on top of second with padding (0)"
-        horiz_stack_layer_equivalence_0
+        horiz_join_layer_equivalence_0
     , verify "two rows horiz joined equiv to first image layered on top of second with padding (1)"
-        horiz_stack_layer_equivalence_1
+        horiz_join_layer_equivalence_1
+    , verify "alternating images using joins is the same as alternating images using layers (0)"
+        horiz_join_alternate_0
+    , verify "alternating images using joins is the same as alternating images using layers (1)"
+        horiz_join_alternate_1
     ]
 
