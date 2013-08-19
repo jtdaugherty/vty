@@ -15,8 +15,8 @@ import Data.Word
 import Verify
 
 is_attr_span_op :: SpanOp -> Bool
-is_attr_span_op AttributeChange {} = True
-is_attr_span_op _                  = False
+is_attr_span_op TextSpan {} = True
+is_attr_span_op _           = False
 
 verify_all_spans_have_width i spans w
     = let v = map (\s -> (span_ops_effected_columns s /= w, s)) (Vector.toList spans)

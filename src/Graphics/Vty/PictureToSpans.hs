@@ -121,14 +121,13 @@ substitute_skips (Background {background_char, background_attr}) ops = do
     return ops
 
 swap_skips_for_single_column_char_span :: Char -> Attr -> SpanOps -> SpanOps
-swap_skips_for_single_column_char_span c a = Vector.concatMap f
+swap_skips_for_single_column_char_span c a = Vector.map f
     where f (Skip ow) = let txt = T.pack $ replicate ow c
-                        in Vector.cons (AttributeChange a)
-                                       (Vector.singleton $ TextSpan ow ow (T.encodeUtf8 txt))
-          f v = Vector.singleton v
+                        in TextSpan a ow ow (T.encodeUtf8 txt)
+          f v = v
 
 swap_skips_for_char_span :: Int -> Char -> Attr -> SpanOps -> SpanOps
-swap_skips_for_char_span w c a = Vector.concatMap f
+swap_skips_for_char_span w c a = Vector.map f
     where
         f (Skip ow) = let txt_0_cw = ow `div` w
                           txt_0 = T.pack $ replicate txt_0_cw c
@@ -136,9 +135,8 @@ swap_skips_for_char_span w c a = Vector.concatMap f
                           txt_1 = T.pack $ replicate txt_1_cw '…'
                           cw = txt_0_cw + txt_1_cw
                           txt = txt_0 `T.append` txt_1
-                      in Vector.cons (AttributeChange a)
-                                     (Vector.singleton $ TextSpan ow cw $ T.encodeUtf8 txt)
-        f v = Vector.singleton v
+                      in TextSpan a ow cw $ T.encodeUtf8 txt
+        f v = v
 
 -- | Builds a vector of row operations that will output the given picture to the terminal.
 --
@@ -202,15 +200,14 @@ add_maybe_clipped (HorizText a text_str ow _cw) = do
     -- TODO: assumption that text spans are only 1 row high.
     s <- use skip_rows
     when (s < 1) $ do
-        use row_offset >>= snoc_op (AttributeChange a)
         left_clip <- use skip_columns
         right_clip <- use remaining_columns
         let left_clipped = left_clip > 0
             right_clipped = (ow - left_clip) > right_clip
         if left_clipped || right_clipped
             then let text_str' = clip_text text_str left_clip right_clip
-                 in add_unclipped_text text_str'
-            else add_unclipped_text text_str
+                 in add_unclipped_text a text_str'
+            else add_unclipped_text a text_str
 add_maybe_clipped (VertJoin top_image bottom_image _ow oh) = do
     add_maybe_clipped_join "vert_join" skip_rows remaining_rows row_offset
                            (image_height top_image)
@@ -302,9 +299,9 @@ clip_text txt left_skip right_clip =
         clip_for_char_width _ _ _ = error "clip_for_char_width applied to undefined"
     in txt''
 
-add_unclipped_text :: DisplayText -> BlitM s ()
-add_unclipped_text txt = do
-    let op = TextSpan used_display_columns
+add_unclipped_text :: Attr -> DisplayText -> BlitM s ()
+add_unclipped_text a txt = do
+    let op = TextSpan a used_display_columns
                       (fromIntegral $ TL.length txt)
                       (T.encodeUtf8 $ TL.toStrict txt)
         used_display_columns = wcswidth $ TL.unpack txt

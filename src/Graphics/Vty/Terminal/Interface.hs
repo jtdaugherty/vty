@@ -210,13 +210,12 @@ span_ops_required_bytes dc y in_fattr span_ops =
                      span_ops
 
 span_op_required_bytes :: DisplayContext -> FixedAttr -> SpanOp -> (Int, FixedAttr)
-span_op_required_bytes dc fattr (AttributeChange attr) = 
+span_op_required_bytes dc fattr (TextSpan attr _ _ str) =
     let attr' = limit_attr_for_display (context_device dc) attr
         diffs = display_attr_diffs fattr fattr'
         c = attr_required_bytes dc fattr attr' diffs
         fattr' = fix_display_attr fattr attr'
-    in (c, fattr')
-span_op_required_bytes _dc fattr (TextSpan _ _ str) = (utf8_text_required_bytes str, fattr)
+    in (c + utf8_text_required_bytes str, fattr')
 span_op_required_bytes _dc _fattr (Skip _) = error "span_op_required_bytes for Skip."
 span_op_required_bytes dc fattr (RowEnd _) = (row_end_required_bytes dc, fattr)
 
@@ -261,15 +260,13 @@ serialize_span_op :: DisplayContext
                      -> OutputBuffer 
                      -> FixedAttr
                      -> IO (OutputBuffer, FixedAttr)
-serialize_span_op dc (AttributeChange attr) out_ptr fattr = do
+serialize_span_op dc (TextSpan attr _ _ str) out_ptr fattr = do
     let attr' = limit_attr_for_display (context_device dc) attr
         fattr' = fix_display_attr fattr attr'
         diffs = display_attr_diffs fattr fattr'
     out_ptr' <- serialize_set_attr dc fattr attr' diffs out_ptr
-    return (out_ptr', fattr')
-serialize_span_op _dc (TextSpan _ _ str) out_ptr fattr = do
-    out_ptr' <- serialize_utf8_text str out_ptr
-    return (out_ptr', fattr)
+    out_ptr'' <- serialize_utf8_text str out_ptr'
+    return (out_ptr'', fattr')
 serialize_span_op _dc (Skip _) _out_ptr _fattr = error "serialize_span_op for Skip"
 serialize_span_op dc (RowEnd _) out_ptr fattr = do
     out_ptr' <- serialize_row_end dc out_ptr
