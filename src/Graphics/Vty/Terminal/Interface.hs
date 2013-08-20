@@ -23,6 +23,8 @@ import Graphics.Vty.DisplayAttributes
 import Control.Monad.Trans
 
 import qualified Data.ByteString.Internal as BS
+import qualified Data.Text.Encoding as T
+import qualified Data.Text.Lazy as TL
 import Data.IORef
 import qualified Data.Vector as Vector 
 
@@ -215,7 +217,7 @@ span_op_required_bytes dc fattr (TextSpan attr _ _ str) =
         diffs = display_attr_diffs fattr fattr'
         c = attr_required_bytes dc fattr attr' diffs
         fattr' = fix_display_attr fattr attr'
-    in (c + utf8_text_required_bytes str, fattr')
+    in (c + utf8_text_required_bytes (T.encodeUtf8 $ TL.toStrict str), fattr')
 span_op_required_bytes _dc _fattr (Skip _) = error "span_op_required_bytes for Skip."
 span_op_required_bytes dc fattr (RowEnd _) = (row_end_required_bytes dc, fattr)
 
@@ -265,7 +267,7 @@ serialize_span_op dc (TextSpan attr _ _ str) out_ptr fattr = do
         fattr' = fix_display_attr fattr attr'
         diffs = display_attr_diffs fattr fattr'
     out_ptr' <- serialize_set_attr dc fattr attr' diffs out_ptr
-    out_ptr'' <- serialize_utf8_text str out_ptr'
+    out_ptr'' <- serialize_utf8_text (T.encodeUtf8 $ TL.toStrict str) out_ptr'
     return (out_ptr'', fattr')
 serialize_span_op _dc (Skip _) _out_ptr _fattr = error "serialize_span_op for Skip"
 serialize_span_op dc (RowEnd _) out_ptr fattr = do

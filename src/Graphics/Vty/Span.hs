@@ -23,17 +23,20 @@ import Graphics.Vty.Image
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
 
-import qualified Data.ByteString as BS
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
+import qualified Data.Text.Lazy as TL
 
 -- | This represents an operation on the terminal. Either an attribute change or the output of a
 -- text string.
 data SpanOp =
     -- | a span of UTF-8 text occupies a specific number of screen space columns. A single UTF
     -- character does not necessarially represent 1 colunm. See Codec.Binary.UTF8.Width
-    -- TextSpan [output width in columns] [number of characters] [data]
-      TextSpan !Attr !Int !Int BS.ByteString
+    -- TextSpan [Attr] [output width in columns] [number of characters] [data]
+      TextSpan 
+      { text_span_attr :: !Attr
+      , text_span_output_width :: !Int
+      , text_span_char_width :: !Int
+      , text_span_data :: DisplayText
+      }
     -- | Skips the given number of columns
     -- A skip is transparent.... maybe? I am not sure how attribute changes interact.
     -- todo: separate from this type.
@@ -50,6 +53,24 @@ data SpanOp =
 -- EG: Setting the foreground color in one row will effect all subsequent rows until the foreground
 -- color is changed.
 type SpanOps = Vector SpanOp
+
+drop_ops :: Int -> SpanOps -> SpanOps
+drop_ops w = snd . split_ops_at w
+
+split_ops_at :: Int -> SpanOps -> (SpanOps, SpanOps)
+split_ops_at in_w in_ops = split_ops_at' in_w in_ops
+    where
+        split_ops_at' 0 ops = (Vector.empty, ops)
+        split_ops_at' remaining_columns ops = case Vector.head ops of
+            t@(TextSpan {}) -> undefined
+            Skip w -> if remaining_columns >= w
+                then let (pre,post) = split_ops_at' (remaining_columns - w) (Vector.tail ops)
+                     in (Vector.cons (Skip w) pre, post)
+                else ( Vector.singleton $ Skip remaining_columns
+                     , Vector.cons (Skip (w - remaining_columns)) (Vector.tail ops)
+                     )
+            RowEnd _ -> error "cannot split ops containing a row end"
+        
 
 -- | vector of span operation vectors for display. One per row of the output region.
 type DisplayOps = Vector SpanOps
@@ -91,7 +112,7 @@ span_op_has_width (RowEnd ow) = Just (ow,ow)
 -- | returns the number of columns to the character at the given position in the span op
 columns_to_char_offset :: Int -> SpanOp -> Int
 columns_to_char_offset cx (TextSpan _ _ _ utf8_str) =
-    let str = T.unpack (T.decodeUtf8 utf8_str)
+    let str = TL.unpack utf8_str
     in wcswidth (take cx str)
 columns_to_char_offset cx (Skip _) = cx
 columns_to_char_offset cx (RowEnd _) = cx

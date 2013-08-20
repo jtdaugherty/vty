@@ -2,6 +2,7 @@
 module Graphics.Vty.Image.Internal where
 
 import Graphics.Vty.Attributes
+import Graphics.Text.Width
 
 import Control.DeepSeq
 
@@ -13,6 +14,26 @@ import qualified Data.Text.Lazy as TL
 -- application probably uses a single type. Perhaps parameterize the entire vty interface by the
 -- input text type?
 type DisplayText = TL.Text
+
+-- TODO: store a skip list in HorizText(?)
+-- TODO: represent display strings containing chars that are not 1 column chars as a separate
+-- display string value?
+clip_text :: DisplayText -> Int -> Int -> DisplayText
+clip_text txt left_skip right_clip =
+    -- CPS would clarify this I think
+    let (to_drop,pad_prefix) = clip_for_char_width left_skip txt 0
+        txt' = if pad_prefix then TL.cons '…' (TL.drop (to_drop+1) txt) else TL.drop to_drop txt
+        (to_take,pad_suffix) = clip_for_char_width right_clip txt' 0
+        txt'' = TL.append (TL.take to_take txt') (if pad_suffix then TL.singleton '…' else TL.empty)
+        clip_for_char_width 0 _ n = (n, False)
+        clip_for_char_width w t n
+            | TL.null t = (n, False)
+            | w <  cw = (n, True)
+            | w == cw = (n+1, False)
+            | w >  cw = clip_for_char_width (w - cw) (TL.tail t) (n + 1)
+            where cw = safe_wcwidth (TL.head t)
+        clip_for_char_width _ _ _ = error "clip_for_char_width applied to undefined"
+    in txt''
 
 -- | An image in VTY is
 --

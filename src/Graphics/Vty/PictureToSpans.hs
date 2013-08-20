@@ -22,11 +22,10 @@ import Control.Monad.State.Strict hiding ( state )
 import Control.Monad.ST.Strict hiding ( unsafeIOToST )
 
 import qualified Data.Vector as Vector hiding ( take, replicate )
+import Data.Monoid (mappend)
 import Data.Vector.Mutable ( MVector(..))
 import qualified Data.Vector.Mutable as MVector
 
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 
 type MRowOps s = MVector s SpanOps
@@ -36,6 +35,9 @@ type MSpanOps s = MVector s SpanOp
 -- transform plus clip. More or less.
 data BlitState = BlitState
     -- we always snoc to the operation vectors. Thus the column_offset = length of row at row_offset
+    -- although, one possibility is to merge layers right in snoc_op (naming it something else, of
+    -- course). In which case columnn_offset would be applicable.
+    -- Right now we need it to exist.
     { _column_offset :: Int
     , _row_offset :: Int
     -- clip coordinate space is in image space. Which means it's >= 0 and < image_width.
@@ -85,7 +87,11 @@ combined_ops_for_layers pic r
         case layer_ops of
             []    -> fail "empty picture"
             [ops] -> substitute_skips (pic_background pic) ops
-            _     -> fail "TODO: picture with more than one layer not supported"
+            -- instead of merging ops after generation the merging can be performed as part of
+            -- snoc_op.
+            top_ops : lower_ops -> do
+                ops <- foldM merge_under top_ops lower_ops
+                substitute_skips (pic_background pic) ops
 
 substitute_skips :: Background -> MRowOps s -> ST s (MRowOps s)
 substitute_skips ClearBackground ops = do
@@ -120,22 +126,53 @@ substitute_skips (Background {background_char, background_attr}) ops = do
                     MVector.write ops row row_ops'
     return ops
 
+merge_under :: MRowOps s -> MRowOps s -> ST s (MRowOps s)
+merge_under upper lower = do
+    forM_ [0 .. MVector.length upper - 1] $ \row -> do
+        upper_row_ops <- MVector.read upper row
+        lower_row_ops <- MVector.read lower row
+        let row_ops = merge_row_under upper_row_ops lower_row_ops
+        MVector.write upper row row_ops
+    return upper
+
+-- fugly
+merge_row_under :: SpanOps -> SpanOps -> SpanOps
+merge_row_under upper_row_ops lower_row_ops =
+    on_upper_op Vector.empty (Vector.head upper_row_ops) (Vector.tail upper_row_ops) lower_row_ops
+    where
+        -- H: it will never be the case that we are out of upper ops before lower ops.
+        on_upper_op :: SpanOps -> SpanOp -> SpanOps -> SpanOps -> SpanOps
+        on_upper_op out_ops op@(TextSpan _ w _ _) upper_ops lower_ops =
+            let lower_ops' = drop_ops w lower_ops
+                out_ops' = Vector.snoc out_ops op
+            in if Vector.null lower_ops'
+                then out_ops'
+                else on_upper_op out_ops' (Vector.head upper_ops) (Vector.tail upper_ops) lower_ops'
+        on_upper_op out_ops (Skip w) upper_ops lower_ops =
+            let (ops', lower_ops') = split_ops_at w lower_ops
+                out_ops' = out_ops `mappend` ops'
+            in if Vector.null lower_ops'
+                then out_ops'
+                else on_upper_op out_ops' (Vector.head upper_ops) (Vector.tail upper_ops) lower_ops'
+        on_upper_op _ (RowEnd _) _ _ = error "cannot merge rows containing RowEnd ops"
+
+
 swap_skips_for_single_column_char_span :: Char -> Attr -> SpanOps -> SpanOps
 swap_skips_for_single_column_char_span c a = Vector.map f
-    where f (Skip ow) = let txt = T.pack $ replicate ow c
-                        in TextSpan a ow ow (T.encodeUtf8 txt)
+    where f (Skip ow) = let txt = TL.pack $ replicate ow c
+                        in TextSpan a ow ow txt
           f v = v
 
 swap_skips_for_char_span :: Int -> Char -> Attr -> SpanOps -> SpanOps
 swap_skips_for_char_span w c a = Vector.map f
     where
         f (Skip ow) = let txt_0_cw = ow `div` w
-                          txt_0 = T.pack $ replicate txt_0_cw c
+                          txt_0 = TL.pack $ replicate txt_0_cw c
                           txt_1_cw = ow `mod` w
-                          txt_1 = T.pack $ replicate txt_1_cw '…'
+                          txt_1 = TL.pack $ replicate txt_1_cw '…'
                           cw = txt_0_cw + txt_1_cw
-                          txt = txt_0 `T.append` txt_1
-                      in TextSpan a ow cw $ T.encodeUtf8 txt
+                          txt = txt_0 `TL.append` txt_1
+                      in TextSpan a ow cw txt
         f v = v
 
 -- | Builds a vector of row operations that will output the given picture to the terminal.
@@ -279,31 +316,11 @@ add_maybe_clipped_join name skip remaining offset i0_dim i0 i1 size = do
                 add_maybe_clipped i1
         _ -> fail $ name ++ " has unhandled skip class"
 
--- TODO: store a skip list in HorizText(?)
--- TODO: represent display strings containing chars that are not 1 column chars as a separate
--- display string value?
-clip_text :: DisplayText -> Int -> Int -> DisplayText
-clip_text txt left_skip right_clip =
-    -- CPS would clarify this I think
-    let (to_drop,pad_prefix) = clip_for_char_width left_skip txt 0
-        txt' = if pad_prefix then TL.cons '…' (TL.drop (to_drop+1) txt) else TL.drop to_drop txt
-        (to_take,pad_suffix) = clip_for_char_width right_clip txt' 0
-        txt'' = TL.append (TL.take to_take txt') (if pad_suffix then TL.singleton '…' else TL.empty)
-        clip_for_char_width 0 _ n = (n, False)
-        clip_for_char_width w t n
-            | TL.null t = (n, False)
-            | w <  cw = (n, True)
-            | w == cw = (n+1, False)
-            | w >  cw = clip_for_char_width (w - cw) (TL.tail t) (n + 1)
-            where cw = safe_wcwidth (TL.head t)
-        clip_for_char_width _ _ _ = error "clip_for_char_width applied to undefined"
-    in txt''
-
 add_unclipped_text :: Attr -> DisplayText -> BlitM s ()
 add_unclipped_text a txt = do
     let op = TextSpan a used_display_columns
                       (fromIntegral $ TL.length txt)
-                      (T.encodeUtf8 $ TL.toStrict txt)
+                      txt
         used_display_columns = wcswidth $ TL.unpack txt
     use row_offset >>= snoc_op op
 
