@@ -119,12 +119,9 @@ tests = return
         horiz_join_layer_equivalence_0
     , verify "two rows horiz joined equiv to first image layered on top of second with padding (1)"
         horiz_join_layer_equivalence_1
-    {- The image operations aggressively join the text chunks. So the comparison is faulty.
-     - in this case it is safe to directly use the image constructors.
     , verify "alternating images using joins is the same as alternating images using layers (0)"
         horiz_join_alternate_0
     , verify "alternating images using joins is the same as alternating images using layers (1)"
         horiz_join_alternate_1
-    -}
     ]
 
