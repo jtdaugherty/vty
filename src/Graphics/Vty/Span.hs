@@ -20,6 +20,8 @@ module Graphics.Vty.Span
 import Graphics.Vty.DisplayRegion
 import Graphics.Vty.Image
 
+import Graphics.Vty.Image.Internal ( clip_text )
+
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
 
@@ -35,7 +37,7 @@ data SpanOp =
       { text_span_attr :: !Attr
       , text_span_output_width :: !Int
       , text_span_char_width :: !Int
-      , text_span_data :: DisplayText
+      , text_span_text :: DisplayText
       }
     -- | Skips the given number of columns
     -- A skip is transparent.... maybe? I am not sure how attribute changes interact.
@@ -62,7 +64,25 @@ split_ops_at in_w in_ops = split_ops_at' in_w in_ops
     where
         split_ops_at' 0 ops = (Vector.empty, ops)
         split_ops_at' remaining_columns ops = case Vector.head ops of
-            t@(TextSpan {}) -> undefined
+            t@(TextSpan {}) -> if remaining_columns >= text_span_output_width t
+                then let (pre,post) = split_ops_at' (remaining_columns - text_span_output_width t) (Vector.tail ops)
+                     in (Vector.cons t pre, post)
+                else let pre_txt = clip_text (text_span_text t) 0 remaining_columns
+                         pre_op = TextSpan { text_span_attr = text_span_attr t
+                                           , text_span_output_width = remaining_columns
+                                           , text_span_char_width = fromIntegral $! TL.length pre_txt
+                                           , text_span_text = pre_txt
+                                           }
+                         post_width = text_span_output_width t - remaining_columns
+                         post_txt = clip_text (text_span_text t) remaining_columns post_width
+                         post_op = TextSpan { text_span_attr = text_span_attr t
+                                            , text_span_output_width = post_width
+                                            , text_span_char_width = fromIntegral $! TL.length post_txt
+                                            , text_span_text = post_txt
+                                            }
+                     in ( Vector.singleton pre_op
+                        , Vector.cons post_op (Vector.tail ops)
+                        )
             Skip w -> if remaining_columns >= w
                 then let (pre,post) = split_ops_at' (remaining_columns - w) (Vector.tail ops)
                      in (Vector.cons (Skip w) pre, post)
