@@ -181,6 +181,7 @@ all_tests
       , horiz_crop_test_1
       , horiz_crop_test_2
       , horiz_crop_test_3
+      , layer_0
       ]
 
 reserve_output_test = Test 
@@ -956,16 +957,20 @@ cursor_hide_test_0 = Test
 
 output_image_and_wait :: Image -> IO ()
 output_image_and_wait image = do
+    let pic = pic_for_image image
+    output_pic_and_wait pic
+
+output_pic_and_wait :: Picture -> IO ()
+output_pic_and_wait pic = do
     t <- current_terminal
     reserve_display t
-    let pic = pic_for_image image
     d <- display_bounds t >>= display_context t
     output_picture d pic
     getLine
     release_display t
     release_terminal t
     return ()
-
+    
 vert_crop_test_0 :: Test
 vert_crop_test_0 = Test
     { test_name = "Verify bottom cropping works as expected with single column chars"
@@ -1101,6 +1106,21 @@ horiz_crop_test_3 = Test
 |]
     , confirm_results = generic_output_match_confirm
     }
+
+layer_0 :: Test
+layer_0 = Test
+    { test_name = "verify layer 0"
+    , test_ID = "layer_0"
+    , test_action = do
+        let upper_image = vert_cat $ map (string def_attr) lorum_ipsum_chinese
+            lower_image = vert_cat $ map (string def_attr) lorum_ipsum
+            p = pic_for_layers [upper_image, lower_image]
+        output_pic_and_wait p
+    , print_summary = putStr $ [s|
+|]
+    , confirm_results = generic_output_match_confirm
+    }
+        
 
 lorum_ipsum :: [String]
 lorum_ipsum = lines [s|
