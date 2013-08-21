@@ -9,6 +9,7 @@ import Graphics.Vty.Picture
 import Graphics.Vty.Terminal
 import Graphics.Vty.DisplayRegion
 
+import Control.Concurrent (threadDelay)
 import Control.Exception
 import Control.Monad
 
@@ -182,6 +183,7 @@ all_tests
       , horiz_crop_test_2
       , horiz_crop_test_3
       , layer_0
+      , layer_1
       ]
 
 reserve_output_test = Test 
@@ -1117,10 +1119,48 @@ layer_0 = Test
             p = pic_for_layers [upper_image, lower_image]
         output_pic_and_wait p
     , print_summary = putStr $ [s|
+    1. Verify the text block appears to be Chinese text placed on top Latin text.
+    2. press enter.
+    3. the display should return to the state before the test.
 |]
     , confirm_results = generic_output_match_confirm
     }
-        
+
+layer_1 :: Test
+layer_1 = Test
+    { test_name = "verify layer 1"
+    , test_ID = "layer_1"
+    , test_action = do
+        let upper_image = vert_cat $ map (string def_attr) lorum_ipsum_chinese
+            block = resize 10 10 upper_image
+            layer_0 = vert_cat $ map (string def_attr) lorum_ipsum
+            layer_1 = char_fill (def_attr `with_back_color` blue) '#' 1000 1000
+        cheesy_anim_0 block [layer_0, layer_1]
+    , print_summary = putStr $ [s|
+    1. Verify the text block appears to be Chinese text moving on top a Latin text.
+       Which is all on a background of '#' characters over blue.
+    2. press enter.
+    3. the display should return to the state before the test.
+|]
+    , confirm_results = generic_output_match_confirm
+    }
+
+cheesy_anim_0 :: Image -> [Image] -> IO ()
+cheesy_anim_0 i background = do
+    t <- current_terminal
+    reserve_display t
+    bounds <- display_bounds t
+    d <- display_context t bounds
+    forM_ [0..100] $ \t -> do
+        let i_offset = translate (t `mod` region_width bounds)
+                                 (t `div` 2 `mod` region_height bounds)
+                                 i
+        let pic = pic_for_layers $ i_offset : background
+        output_picture d pic
+        threadDelay 50000
+    release_display t
+    release_terminal t
+    return ()
 
 lorum_ipsum :: [String]
 lorum_ipsum = lines [s|
