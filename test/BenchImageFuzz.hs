@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiWayIf #-}
 module BenchImageFuzz where
 import Graphics.Vty
 import Graphics.Vty.Debug
