@@ -101,24 +101,18 @@ test-suite verify-attribute-ops
   hs-source-dirs:      test
   test-module:         VerifyAttributeOps
   build-depends:       vty,
-                       Cabal == 1.17.*,
-                       QuickCheck >= 2.6,
+                       Cabal == 1.18.*,
+                       QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
-                       lens,
                        mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
-                       terminfo >= 0.3 && < 0.4,
                        text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
-  
 
 test-suite verify-using-mock-terminal
   default-language:    Haskell2010
@@ -138,19 +132,14 @@ test-suite verify-using-mock-terminal
                        Verify.Graphics.Vty.Terminal
 
   build-depends:       vty,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
-                       lens,
                        mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
-                       terminfo >= 0.3 && < 0.4,
                        text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
@@ -174,18 +163,14 @@ test-suite verify-terminal
                        Verify.Graphics.Vty.Terminal
 
   build-depends:       vty,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
-                       lens,
                        mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
                        text >= 0.11.3,
                        unix,
@@ -209,24 +194,18 @@ test-suite verify-display-attributes
                        Verify.Graphics.Vty.Span
 
   build-depends:       vty,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
-                       lens,
                        mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
-                       terminfo >= 0.3 && < 0.4,
                        text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
-  
 
 test-suite verify-empty-image-props
   default-language:    Haskell2010
@@ -240,24 +219,18 @@ test-suite verify-empty-image-props
   other-modules:       Verify
 
   build-depends:       vty,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
-                       lens,
                        mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
-                       terminfo >= 0.3 && < 0.4,
                        text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
-  
 
 test-suite verify-eval-terminfo-caps
   default-language:    Haskell2010
@@ -271,24 +244,19 @@ test-suite verify-eval-terminfo-caps
   other-modules:       Verify
 
   build-depends:       vty,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
-                       lens,
                        mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
                        text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
-  
 
 test-suite verify-image-ops
   default-language:    Haskell2010
@@ -304,24 +272,18 @@ test-suite verify-image-ops
                        Verify.Graphics.Vty.Image
 
   build-depends:       vty,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
-                       lens,
                        mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
-                       terminfo >= 0.3 && < 0.4,
                        text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
-  
 
 test-suite verify-image-trans
   default-language:    Haskell2010
@@ -337,24 +299,18 @@ test-suite verify-image-trans
                        Verify.Graphics.Vty.Image
 
   build-depends:       vty,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
-                       lens,
                        mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
-                       terminfo >= 0.3 && < 0.4,
                        text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
-  
 
 test-suite verify-inline
   default-language:    Haskell2010
@@ -369,24 +325,18 @@ test-suite verify-inline
                        Verify.Graphics.Vty.Terminal
 
   build-depends:       vty,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
-                       lens,
                        mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
-                       terminfo >= 0.3 && < 0.4,
                        text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
-  
 
 test-suite verify-parse-terminfo-caps
   default-language:    Haskell2010
@@ -401,18 +351,14 @@ test-suite verify-parse-terminfo-caps
                        Verify.Data.Terminfo.Parse
 
   build-depends:       vty,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
-                       lens,
                        mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
                        terminfo >= 0.3 && < 0.4,
                        text >= 0.11.3,
                        unix,
@@ -436,7 +382,7 @@ test-suite verify-simple-span-generation
                        Verify.Graphics.Vty.Span
 
   build-depends:       vty,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -448,6 +394,7 @@ test-suite verify-simple-span-generation
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
   
 test-suite verify-crop-span-generation
   default-language:    Haskell2010
@@ -466,7 +413,7 @@ test-suite verify-crop-span-generation
                        Verify.Graphics.Vty.Span
 
   build-depends:       vty,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -478,6 +425,7 @@ test-suite verify-crop-span-generation
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
+  
 
 test-suite verify-layers-span-generation
   default-language:    Haskell2010
@@ -496,7 +444,7 @@ test-suite verify-layers-span-generation
                        Verify.Graphics.Vty.Span
 
   build-depends:       vty,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
@@ -521,19 +469,39 @@ test-suite verify-utf8-width
   other-modules:       Verify
 
   build-depends:       vty,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
-                       lens,
                        mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
-                       terminfo >= 0.3 && < 0.4,
+                       text >= 0.11.3,
+                       unix,
+                       utf8-string >= 0.3 && < 0.4,
+                       vector >= 0.7
+  
+test-suite verify-using-mock-input
+  default-language:    Haskell2010
+
+  type:                detailed-0.9
+
+  hs-source-dirs:      test
+
+  test-module:         VerifyUsingMockInput
+
+  other-modules:       Verify
+
+  build-depends:       vty,
+                       Cabal == 1.18.*,
+                       QuickCheck >= 2.4,
+                       random == 1.0.*,
+                       base >= 4 && < 5,
+                       bytestring,
+                       containers,
+                       deepseq >= 1.1 && < 1.4,
+                       mtl >= 1.1.1.0 && < 2.2,
                        text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
@@ -574,7 +542,7 @@ executable vty-benchmark
   build-depends:       vty,
                        base >= 4 && < 5,
                        bytestring,
-                       Cabal == 1.17.*,
+                       Cabal == 1.18.*,
                        containers,
                        deepseq >= 1.1 && < 1.4,
                        ghc-prim,
