@@ -23,7 +23,7 @@ module Graphics.Vty ( Vty(..)
 import Graphics.Vty.Terminal
 import Graphics.Vty.Picture
 import Graphics.Vty.DisplayRegion
-import Graphics.Vty.LLInput
+import Graphics.Vty.Input
 
 import Data.IORef
 

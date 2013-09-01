@@ -2,13 +2,12 @@
 -- Copyright 2009-2010 Corey O'Connor
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
-module Graphics.Vty.LLInput ( Key(..)
-                            , Modifier(..)
-                            , Button(..)
-                            , Event(..)
-                            , initTermInput
-                            )
+module Graphics.Vty.Input ( module Graphics.Vty.Input.Data
+                          , initTermInput
+                          )
     where
+
+import Graphics.Vty.Input.Data
 
 import Data.Char
 import Data.Maybe ( mapMaybe
@@ -35,30 +34,6 @@ import System.Posix.IO ( stdInput
                        )
 
 import Foreign ( alloca, poke, peek, Ptr )
-
--- |Representations of non-modifier keys.
-data Key = KEsc | KFun Int | KBackTab | KPrtScr | KPause | KASCII Char | KBS | KIns
-         | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin |  KNP5 | KUp | KMenu
-         | KLeft | KDown | KRight | KEnter
-    deriving (Eq,Show,Ord)
-
--- |Modifier keys.  Key codes are interpreted such that users are more likely to
--- have Meta than Alt; for instance on the PC Linux console, 'MMeta' will
--- generally correspond to the physical Alt key.
-data Modifier = MShift | MCtrl | MMeta | MAlt
-    deriving (Eq,Show,Ord)
-
--- |Mouse buttons.  Not yet used.
-data Button = BLeft | BMiddle | BRight
-    deriving (Eq,Show,Ord)
-
--- |Generic events.
-data Event = EvKey Key [Modifier] | EvMouse Int Int Button [Modifier]
-           | EvResize Int Int
-    deriving (Eq,Show,Ord)
-
-data KClass = Valid Key [Modifier] | Invalid | Prefix | MisPfx Key [Modifier] [Char]
-    deriving(Show)
 
 -- | Set up the terminal for input.  Returns a function which reads key
 -- events, and a function for shutting down the terminal access.
@@ -148,19 +123,8 @@ initTermInput escDelay terminal = do
 
       classifyTab = compile (caps_classify_table : ansi_classify_table)
 
-      caps_tabls = [("khome", (KHome, [])),
-                    ("kend",  (KEnd,  [])),
-                    ("cbt",   (KBackTab, [])),
-                    ("kcud1", (KDown,  [])),
-                    ("kcuu1", (KUp,  [])),
-                    ("kcuf1", (KRight,  [])),
-                    ("kcub1", (KLeft,  [])),
-
-                    ("kLFT", (KLeft, [MShift])),
-                    ("kRIT", (KRight, [MShift]))
-                   ]
-
-      caps_classify_table = [(x,y) | (Just x,y) <- map (first (getCapability terminal . tiGetStr)) $ caps_tabls]
+      caps_classify_table
+        = map_to_legacy_table [(x,y) | (Just x,y) <- map (first (getCapability terminal . tiGetStr)) $ caps_table]
 
       ansi_classify_table :: [[([Char], (Key, [Modifier]))]]
       ansi_classify_table =

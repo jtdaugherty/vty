@@ -59,7 +59,8 @@ library
                        Graphics.Vty.Image
                        Graphics.Vty.Inline
                        Graphics.Vty.Inline.Unsafe
-                       Graphics.Vty.LLInput
+                       Graphics.Vty.Input
+                       Graphics.Vty.Input.Data
                        Graphics.Vty.Picture
                        Graphics.Vty.Terminal
                        Graphics.Text.Width
