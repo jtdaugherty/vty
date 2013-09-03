@@ -3,13 +3,13 @@
 -- Copyright Corey O'Connor
 module Graphics.Vty.Input.Data where
 
--- |Representations of non-modifier keys.
+-- | Representations of non-modifier keys.
 data Key = KEsc | KFun Int | KBackTab | KPrtScr | KPause | KASCII Char | KBS | KIns
          | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin |  KNP5 | KUp | KMenu
          | KLeft | KDown | KRight | KEnter
     deriving (Eq,Show,Ord)
 
--- |Modifier keys.  Key codes are interpreted such that users are more likely to
+-- | Modifier keys.  Key codes are interpreted such that users are more likely to
 -- have Meta than Alt; for instance on the PC Linux console, 'MMeta' will
 -- generally correspond to the physical Alt key.
 data Modifier = MShift | MCtrl | MMeta | MAlt
