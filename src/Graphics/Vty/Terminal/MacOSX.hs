@@ -5,8 +5,6 @@
 --
 -- This terminal implementation modifies the standard terminfo terminal as required for complete OS
 -- X support.
-{-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}

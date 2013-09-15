@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 module VerifyImageOps where
 
 import Graphics.Vty.Attributes

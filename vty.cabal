@@ -27,8 +27,7 @@ description:
   &#169; 2006-2007 Stefan O'Rear; BSD3 license.
   .
   &#169; Corey O'Connor; BSD3 license.
--- the test suites require >= 1.17.0
-cabal-version:        >= 1.14.0
+cabal-version:        >= 1.18.0
 build-type:           Simple
 data-files:          README.md,
                      TODO,
@@ -38,6 +37,7 @@ data-files:          README.md,
 
 library
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
   build-depends:       base >= 4 && < 5,
                        bytestring,
                        containers,
@@ -90,6 +90,9 @@ library
 
   hs-source-dirs:      src
 
+  extensions:          ScopedTypeVariables
+                       ForeignFunctionInterface
+
   ghc-options:         -O2 -funbox-strict-fields -Wall -fno-full-laziness -fspec-constr -fspec-constr-count=10
 
   ghc-prof-options:    -O2 -funbox-strict-fields -caf-all -Wall -fno-full-laziness -fspec-constr -fspec-constr-count=10
@@ -98,6 +101,7 @@ library
 
 test-suite verify-attribute-ops
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
   type:                detailed-0.9
   hs-source-dirs:      test
   test-module:         VerifyAttributeOps
@@ -117,6 +121,7 @@ test-suite verify-attribute-ops
 
 test-suite verify-using-mock-terminal
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -148,6 +153,7 @@ test-suite verify-using-mock-terminal
   
 test-suite verify-terminal
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -180,6 +186,7 @@ test-suite verify-terminal
 
 test-suite verify-display-attributes
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -210,6 +217,7 @@ test-suite verify-display-attributes
 
 test-suite verify-empty-image-props
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -235,6 +243,7 @@ test-suite verify-empty-image-props
 
 test-suite verify-eval-terminfo-caps
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -261,6 +270,7 @@ test-suite verify-eval-terminfo-caps
 
 test-suite verify-image-ops
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -288,6 +298,7 @@ test-suite verify-image-ops
 
 test-suite verify-image-trans
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -315,6 +326,7 @@ test-suite verify-image-trans
 
 test-suite verify-inline
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -341,6 +353,7 @@ test-suite verify-inline
 
 test-suite verify-parse-terminfo-caps
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -368,6 +381,7 @@ test-suite verify-parse-terminfo-caps
   
 test-suite verify-simple-span-generation
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -399,6 +413,7 @@ test-suite verify-simple-span-generation
   
 test-suite verify-crop-span-generation
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -430,6 +445,7 @@ test-suite verify-crop-span-generation
 
 test-suite verify-layers-span-generation
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -460,6 +476,7 @@ test-suite verify-layers-span-generation
 
 test-suite verify-utf8-width
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -485,6 +502,7 @@ test-suite verify-utf8-width
   
 test-suite verify-using-mock-input
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -513,6 +531,7 @@ executable vty-interactive-terminal-test
   main-is:             interactive_terminal_test.hs
 
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   hs-source-dirs:      test
 
@@ -537,6 +556,7 @@ executable vty-benchmark
   main-is:             benchmark.hs
 
   default-language:    Haskell2010
+  extensions:          ScopedTypeVariables
 
   hs-source-dirs:      test
 

@@ -1,5 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
 -- Copyright Corey O'Connor
 module Graphics.Vty.Input.Data where
 
@@ -27,7 +25,8 @@ data Event = EvKey Key [Modifier] | EvMouse Int Int Button [Modifier]
 data KClass = Valid Key [Modifier] | Invalid | Prefix | MisPfx Key [Modifier] [Char]
     deriving(Show)
 
-map_to_legacy_table :: [(String, Event)] -> [(String, (Key, [Modifier]))]
+type ClassifyTable = [(String, (Key, [Modifier]))]
+map_to_legacy_table :: [(String, Event)] -> ClassifyTable
 map_to_legacy_table = map f
     where f (s, EvKey k mods) = (s, (k, mods))
           f _                 = error "no mapping for mouse or resize events"
@@ -46,7 +45,7 @@ caps_table =
     , ("kRIT",  EvKey KRight    [MShift])
     ]
 
-nav_keys_0 :: [([Char], (Key, [Modifier]))]
+nav_keys_0 :: ClassifyTable
 nav_keys_0 =
     [ k "G" KNP5
     , k "P" KPause
@@ -61,7 +60,7 @@ nav_keys_0 =
     where k c s = ("\ESC["++c,(s,[]))
 
 -- Support for arrows and KHome/KEnd
-nav_keys_1 :: [([Char], (Key, [Modifier]))]
+nav_keys_1 :: ClassifyTable
 nav_keys_1 =
    [("\ESC[" ++ charCnt ++ show mc++c,(s,m))
     | charCnt <- ["1;", ""], -- we can have a count or not
@@ -70,36 +69,36 @@ nav_keys_1 =
     (c,s) <- [("A", KUp), ("B", KDown), ("C", KRight), ("D", KLeft), ("H", KHome), ("F", KEnd)] -- directions and their codes
    ]
 
-nav_keys_2 :: [([Char], (Key, [Modifier]))]
+nav_keys_2 :: ClassifyTable
 nav_keys_2 =
     let k n s = ("\ESC["++show n++"~",(s,[]))
     in zipWith k [2::Int,3,5,6,1,4]
                  [KIns,KDel,KPageUp,KPageDown,KHome,KEnd]
 
-nav_keys_3 :: [([Char], (Key, [Modifier]))]
+nav_keys_3 :: ClassifyTable
 nav_keys_3 =
     let k n s = ("\ESC["++show n++";5~",(s,[MCtrl]))
     in zipWith k [2::Int,3,5,6,1,4]
                  [KIns,KDel,KPageUp,KPageDown,KHome,KEnd]
 
 -- Support for simple characters.
-simple_chars :: [([Char], (Key, [Modifier]))]
+simple_chars :: ClassifyTable
 simple_chars = [ (x:[],(KASCII x,[])) | x <- map toEnum [0..255] ]
 
 -- Support for function keys (should use terminfo)
-function_keys_0 :: [([Char], (Key, [Modifier]))]
+function_keys_0 :: ClassifyTable
 function_keys_0 = [ ("\ESC[["++[toEnum(64+i)],(KFun i,[])) | i <- [1..5] ]
 
-function_keys_1 :: [([Char], (Key, [Modifier]))]
+function_keys_1 :: ClassifyTable
 function_keys_1 =
     let f ff nrs m = [ ("\ESC["++show n++"~",(KFun (n-(nrs!!0)+ff), m)) | n <- nrs ] in
     concat [ f 6 [17..21] [], f 11 [23,24] [], f 1 [25,26] [MShift], f 3 [28,29] [MShift], f 5 [31..34] [MShift] ]
 
-function_keys_2 :: [([Char], (Key, [Modifier]))]
+function_keys_2 :: ClassifyTable
 function_keys_2 = [ ('\ESC':[x],(KASCII x,[MMeta])) | x <- '\ESC':'\t':[' ' .. '\DEL'] ]
 
 -- Ctrl+Char
-ctrl_char_keys :: [([Char], (Key, [Modifier]))]
+ctrl_char_keys :: ClassifyTable
 ctrl_char_keys =
     [ ([toEnum x],(KASCII y,[MCtrl]))
     | (x,y) <- zip ([0..31]) ('@':['a'..'z']++['['..'_']),
@@ -107,12 +106,12 @@ ctrl_char_keys =
     ]
 
 -- Ctrl+Meta+Char
-ctrl_meta_keys :: [([Char], (Key, [Modifier]))]
+ctrl_meta_keys :: ClassifyTable
 ctrl_meta_keys =
     [ ('\ESC':[toEnum x],(KASCII y,[MMeta,MCtrl])) | (x,y) <- zip [0..31] ('@':['a'..'z']++['['..'_']) ]
 
 -- Special support
-special_support_keys :: [([Char], (Key, [Modifier]))]
+special_support_keys :: ClassifyTable
 special_support_keys =
     [ -- special support for ESC
       ("\ESC",(KEsc,[])) , ("\ESC\ESC",(KEsc,[MMeta]))
@@ -123,7 +122,7 @@ special_support_keys =
     ]
 
 -- | classify table for ANSI terminals
-ansi_classify_table :: [[([Char], (Key, [Modifier]))]]
+ansi_classify_table :: [ClassifyTable]
 ansi_classify_table =
     [ nav_keys_0
     , nav_keys_1

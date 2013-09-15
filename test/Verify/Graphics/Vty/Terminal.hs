@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 module Verify.Graphics.Vty.Terminal where
 
 import Graphics.Vty.Terminal.Mock

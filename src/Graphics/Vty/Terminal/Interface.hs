@@ -2,7 +2,6 @@
 -- General philosophy is: MonadIO is for equations exposed to clients.
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}

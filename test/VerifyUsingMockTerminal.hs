@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 module VerifyUsingMockTerminal where
 
 import Verify.Graphics.Vty.DisplayRegion

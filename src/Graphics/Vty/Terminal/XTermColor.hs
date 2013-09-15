@@ -1,9 +1,4 @@
 -- Copyright 2009-2010 Corey O'Connor
-{-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE MagicHash #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeFamilies #-}
 module Graphics.Vty.Terminal.XTermColor ( reserve_terminal )
     where
 
