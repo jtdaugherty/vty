@@ -26,6 +26,7 @@ data KClass = Valid Key [Modifier] | Invalid | Prefix | MisPfx Key [Modifier] [C
     deriving(Show)
 
 type ClassifyTable = [(String, (Key, [Modifier]))]
+
 map_to_legacy_table :: [(String, Event)] -> ClassifyTable
 map_to_legacy_table = map f
     where f (s, EvKey k mods) = (s, (k, mods))
