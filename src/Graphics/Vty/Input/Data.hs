@@ -22,7 +22,12 @@ data Event = EvKey Key [Modifier] | EvMouse Int Int Button [Modifier]
            | EvResize Int Int
     deriving (Eq,Show,Ord)
 
-data KClass = Valid Key [Modifier] | Invalid | Prefix | MisPfx Key [Modifier] [Char]
+data KClass
+    = Valid Key [Modifier]
+    | Invalid
+    | EndLoop
+    | Prefix
+    | MisPfx Key [Modifier] [Char]
     deriving(Show)
 
 type ClassifyTable = [(String, (Key, [Modifier]))]
@@ -83,8 +88,10 @@ nav_keys_3 =
                  [KIns,KDel,KPageUp,KPageDown,KHome,KEnd]
 
 -- Support for simple characters.
+-- we limit to < 0xC1. The UTF8 sequence detector will catch all values 0xC2 and above before this
+-- classify table is reached.
 simple_chars :: ClassifyTable
-simple_chars = [ (x:[],(KASCII x,[])) | x <- map toEnum [0..255] ]
+simple_chars = [ (x:[],(KASCII x,[])) | x <- map toEnum [0..0xC1] ]
 
 -- Support for function keys (should use terminfo)
 function_keys_0 :: ClassifyTable

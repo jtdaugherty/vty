@@ -61,6 +61,7 @@ library
                        Graphics.Vty.Inline.Unsafe
                        Graphics.Vty.Input
                        Graphics.Vty.Input.Data
+                       Graphics.Vty.Input.Internal
                        Graphics.Vty.Picture
                        Graphics.Vty.Terminal
                        Graphics.Text.Width
@@ -515,6 +516,7 @@ test-suite verify-using-mock-input
   build-depends:       vty,
                        Cabal == 1.18.*,
                        QuickCheck >= 2.4,
+                       quickcheck-assertions >= 0.1.1,
                        random == 1.0.*,
                        base >= 4 && < 5,
                        bytestring,

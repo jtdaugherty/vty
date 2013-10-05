@@ -8,16 +8,10 @@ module Graphics.Vty.Input ( Key(..)
     where
 
 import Graphics.Vty.Input.Data
+import Graphics.Vty.Input.Internal
 
 import Data.Char
-import Data.Maybe ( mapMaybe
-                  )
-import Data.List( inits )
 import Data.Word
-import qualified Data.Map as M( fromList, lookup )
-import qualified Data.Set as S( fromList, member )
-
-import Codec.Binary.UTF8.Generic (decode)
 
 import Control.Monad (when)
 import Control.Concurrent
@@ -106,50 +100,3 @@ initTermInput escDelay terminal = do
             setTerminalAttributes stdInput oattr Immediately
     return (readChan eventChannel, uninit)
 
-inputToEventThread :: (String -> KClass) -> Chan Char -> Chan Event -> IO ()
-inputToEventThread classifier inputChannel eventChannel = loop []
-    where loop kb = case (classifier kb) of
-                      Prefix       -> do c <- readChan inputChannel
-                                         loop (kb ++ [c])
-                      Invalid      -> do c <- readChan inputChannel
-                                         loop [c]
-                      MisPfx k m s -> writeChan eventChannel (EvKey k m) >> loop s
-                      Valid k m    -> writeChan eventChannel (EvKey k m) >> loop ""
-
-compile :: ClassifyTable -> [Char] -> KClass
-compile table = cl' where
-    pfx = S.fromList $ concatMap (init . inits . fst) $ table
-    mlst = M.fromList table
-    cl' str = case S.member str pfx of
-        True -> Prefix
-        False -> case M.lookup str mlst of
-            Just (k,m) -> Valid k m
-            Nothing -> case head $ mapMaybe (\s -> (,) s `fmap` M.lookup s mlst) $ init $ inits str of
-                (s,(k,m)) -> MisPfx k m (drop (length s) str)
-
-classify, classifyTab :: ClassifyTable -> [Char] -> KClass
-
--- As soon as
-classify _table "\xFFFE" = Invalid
-classify _table s@(c:_) | ord c >= 0xC2
-    = if utf8Length (ord c) > length s then Prefix else classifyUtf8 s -- beginning of an utf8 sequence
-classify table other
-    = classifyTab table other
-
-classifyUtf8 s = case decode ((map (fromIntegral . ord) s) :: [Word8]) of
-    Just (unicodeChar, _) -> Valid (KASCII unicodeChar) []
-    _ -> Invalid -- something bad happened; just ignore and continue.
-
-classifyTab table = compile table
-
-first :: (a -> b) -> (a,c) -> (b,c)
-first f (x,y) = (f x, y)
-
-utf8Length :: (Num t, Ord a, Num a) => a -> t
-utf8Length c
-    | c < 0x80 = 1
-    | c < 0xE0 = 2
-    | c < 0xF0 = 3
-    | otherwise = 4
-
-foreign import ccall "vty_set_term_timing" set_term_timing :: IO ()
