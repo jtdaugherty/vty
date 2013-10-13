@@ -11,6 +11,7 @@ import Control.DeepSeq
 import qualified System.Console.Terminfo as Terminfo
 
 import Verify
+import Verify.Graphics.Vty.Terminal
 
 import Control.Applicative ( (<$>) )
 import Control.Exception ( try, SomeException(..) )
@@ -21,47 +22,6 @@ import Data.Maybe ( fromJust )
 import Data.Word
 
 import Numeric
-
--- A list of terminals that ubuntu includes a terminfo cap file for. 
--- Assuming that is a good place to start.
-terminals_of_interest = 
-    [ "wsvt25"
-    , "wsvt25m"
-    , "vt52"
-    , "vt100"
-    , "vt220"
-    , "vt102"
-    , "xterm-r5"
-    , "xterm-xfree86"
-    , "xterm-r6"
-    , "xterm-256color"
-    , "xterm-vt220"
-    , "xterm-debian"
-    , "xterm-mono"
-    , "xterm-color"
-    , "xterm"
-    , "mach"
-    , "mach-bold"
-    , "mach-color"
-    , "linux"
-    , "ansi"
-    , "hurd"
-    , "Eterm"
-    , "pcansi"
-    , "screen-256color"
-    , "screen-bce"
-    , "screen-s"
-    , "screen-w"
-    , "screen"
-    , "screen-256color-bce"
-    , "sun"
-    , "rxvt"
-    , "rxvt-unicode"
-    , "rxvt-basic"
-    , "cygwin"
-    , "cons25"
-    , "dumb"
-    ]
 
 -- If a terminal defines one of the caps then it's expected to be parsable.
 caps_of_interest = 

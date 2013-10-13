@@ -22,9 +22,9 @@ import System.Console.Terminfo
 import System.Posix.Signals.Exts
 import System.Posix.Terminal
 import System.Posix.IO ( stdInput
-                        ,fdReadBuf
-                        ,setFdOption
-                        ,FdOption(..)
+                       , fdReadBuf
+                       , setFdOption
+                       , FdOption(..)
                        )
 
 import Foreign ( alloca, poke, peek, Ptr )
@@ -77,7 +77,7 @@ initTermInput escDelay terminal = do
                     loop
 
         extract_cap = first (getCapability terminal . tiGetStr)
-        caps_classify_table = map_to_legacy_table [(x,y) | (Just x,y) <- map extract_cap caps_table]
+        caps_classify_table = map_to_legacy_table [(x,y) | (Just x,y) <- map extract_cap keys_from_caps_table]
         term_event_classify_table = concat $ caps_classify_table : ansi_classify_table
         term_event_classifier = classify term_event_classify_table
 

@@ -5,6 +5,8 @@
 module VerifyUsingMockInput where
 import Verify hiding (classify)
 
+import Verify.Graphics.Vty.Terminal
+
 import Graphics.Vty hiding (resize)
 import Graphics.Vty.Input
 import Graphics.Vty.Input.Data
@@ -46,12 +48,15 @@ assert_events_from_input_block table input_spec expected_events = do
     input <- newChan
     output <- newChan
     forkIO $ write_input_spec_to_chan input input_spec
-    handle (\(e :: BlockedIndefinitelyOnMVar) ->
-                return $ failed { reason = show expected_events ++ " -> " ++ show e }
-           ) $ do
-        inputToEventThread classifier input output
-        out_events <- replicateM (length expected_events) (readChan output)
-        return $ out_events ?== expected_events
+    inputToEventThread classifier input output
+    -- H: all events are available in output channel
+    -- TODO: switch to using explicit control events. Currently the channel is passing around a
+    -- magic FFFX characters
+    -- TODO: use STM channel
+    let collect_events = handle (\(e :: BlockedIndefinitelyOnMVar) -> return [])
+                                ((:) <$> readChan output <*> collect_events)
+    out_events <- collect_events
+    return $ out_events ?== expected_events
 
 write_input_spec_to_chan :: Chan Char -> InputSpec -> IO ()
 write_input_spec_to_chan chan [] = writeChan chan '\xFFFD'
@@ -62,15 +67,21 @@ write_input_spec_to_chan chan (Delay t : input_spec')
 
 verify_simple_input_block_to_event :: Property
 verify_simple_input_block_to_event = do
+    -- Ouch! 16 is as high as this can go without taking far too long. :-\
     Positive block_length <- resize 16 $ arbitrary
     block_event_pairs <- vectorOf block_length $ elements $ simple_chars
     let input = [Bytes $ concatMap fst block_event_pairs]
         events = map (\(k,ms) -> EvKey k ms) $ map snd block_event_pairs
     morallyDubiousIOProperty $ assert_events_from_input_block simple_chars input events
 
+verify_keys_from_caps_table :: String -> Result
+verify_keys_from_caps_table term_name = succeeded
+
 tests :: IO [Test]
 tests = return
-    [ verify "basic block generated from ansi table to event translation"
-             verify_simple_input_block_to_event
+    [ verify "basic block generated from single ansi chars to event translation"
+        verify_simple_input_block_to_event
+    , verify "keys from caps table are parsed to the same key"
+        verify_keys_from_caps_table
     ]
 

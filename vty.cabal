@@ -148,6 +148,7 @@ test-suite verify-using-mock-terminal
                        deepseq >= 1.1 && < 1.4,
                        mtl >= 1.1.1.0 && < 2.2,
                        text >= 0.11.3,
+                       terminfo,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
@@ -253,6 +254,7 @@ test-suite verify-eval-terminfo-caps
   test-module:         VerifyEvalTerminfoCaps
 
   other-modules:       Verify
+                       Verify.Graphics.Vty.Terminal
 
   build-depends:       vty,
                        Cabal == 1.18.*,
@@ -364,6 +366,7 @@ test-suite verify-parse-terminfo-caps
 
   other-modules:       Verify
                        Verify.Data.Terminfo.Parse
+                       Verify.Graphics.Vty.Terminal
 
   build-depends:       vty,
                        Cabal == 1.18.*,

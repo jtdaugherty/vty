@@ -14,6 +14,7 @@ module Verify ( module Verify
               , module Control.Monad
               , module Test.QuickCheck
               , module Test.QuickCheck.Modifiers
+              , module Text.Printf
               , succeeded
               , failed
               , result
@@ -36,6 +37,8 @@ import Test.QuickCheck.Modifiers
 import Test.QuickCheck.Property hiding ( Result(..) )
 import qualified Test.QuickCheck.Property as Prop
 import Test.QuickCheck.Monadic ( monadicIO ) 
+
+import Text.Printf
 
 import qualified Codec.Binary.UTF8.String as UTF8
 

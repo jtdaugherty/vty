@@ -38,8 +38,8 @@ map_to_legacy_table = map f
           f _                 = error "no mapping for mouse or resize events"
 
 -- | classify table directly generated from terminfo cap strings
-caps_table :: [(String, Event)]
-caps_table =
+keys_from_caps_table :: [(String, Event)]
+keys_from_caps_table =
     [ ("khome", EvKey KHome     [])
     , ("kend",  EvKey KEnd      [])
     , ("cbt",   EvKey KBackTab  [])
