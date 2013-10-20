@@ -8,18 +8,22 @@ module Main where
 
 import Verify.Graphics.Vty.Terminal
 
+import Data.List (intersperse, permutations)
+
 import Graphics.Vty hiding (resize)
 import Graphics.Vty.Input
 import Graphics.Vty.Input.Data
 import Graphics.Vty.Input.Internal
+import Graphics.Vty.Input.Terminfo
 
 import Control.Applicative
 import Control.Concurrent
 import Control.Exception
 import Control.Monad
 
-import System.Posix.Env
+import System.Console.Terminfo
 import System.IO
+import System.Posix.Env
 
 import Test.Framework.Providers.SmallCheck
 import Test.Framework
@@ -68,12 +72,6 @@ write_input_spec_to_chan chan (Delay t : input_spec')
 
 {-
 
-verify_keys_from_caps_table :: String -> Property
-verify_keys_from_caps_table = do
-    term_name <- elements terminals_of_interest
-    cap <- elements keys_from_caps_table
-    
-
 tests :: IO [Test]
 tests = do
     mappend 
@@ -85,20 +83,40 @@ tests = do
     ]
 -}
 
-data SimpleEvent = SimpleEvent (String, (Key, [Modifier]))
-    deriving (Show)
+-- how to make this data dependent?
 
-instance Monad m => Serial m SimpleEvent where
-    series = generate (\n -> map SimpleEvent $ take n simple_chars)
+newtype EventBlock event = EventBlock ([(String,event)] -> [(String, event)])
+
+instance Show (EventBlock event) where
+    show (EventBlock g) = "EventBlock(* -> *)"
+
+instance Monad m => Serial m (EventBlock event) where
+    series = do
+        n :: Int <- localDepth (max 16) series -- what elements to select from the table
+        return $ EventBlock $ \table -> concat (take n (permutations table))
 
 verify_simple_input_block_to_event :: Property IO
-verify_simple_input_block_to_event = forAll $ \input_spec -> do
-    let input = Bytes $ concat [s | SimpleEvent (s,_) <- input_spec]
-        events = [e | SimpleEvent (_,(k,ms)) <- input_spec, let e = EvKey k ms]
+verify_simple_input_block_to_event = forAll $ \(EventBlock block_gen) -> do
+    let simple_input_seq = block_gen simple_chars
+        input = Bytes $ concat [s | (s,_) <- simple_input_seq]
+        events = [e | (_,(k,ms)) <- simple_input_seq, let e = EvKey k ms]
     monadic $ assert_events_from_input_block simple_chars [input] events
+
+verify_keys_from_caps_table_block_to_event :: Property IO
+verify_keys_from_caps_table_block_to_event = forAll $ \(EventBlock block_gen) ->
+    over (generate (\n -> take n terminals_of_interest)) $ \term_name -> monadic $ do
+        terminal <- setupTerm term_name
+        let caps_seq :: [(String, Event)] = block_gen keys_from_caps_table
+        let bytes_seq = caps_classify_table terminal caps_seq
+            input = [Bytes s | (s,_) <- bytes_seq]
+            escaped_sequence = intersperse (Delay defaultEscDelay) input
+        return True :: IO Bool
+    -- cap <- elements keys_from_caps_table
 
 main = defaultMain
     [ testProperty "basic block generated from a single ansi chars to event translation"
                    verify_simple_input_block_to_event
+    , testProperty "key sequences read from caps table map to expected events"
+                   verify_keys_from_caps_table_block_to_event
     ]
 

@@ -73,7 +73,7 @@ data Vty = Vty
 -- | Set up the state object for using vty.  At most one state object should be
 -- created at a time.
 mkVty :: IO Vty
-mkVty = mkVtyEscDelay 0
+mkVty = mkVtyEscDelay defaultEscDelay
 
 -- | Set up the state object for using vty.  At most one state object should be
 -- created at a time. The delay, in microseconds, specifies the period of time to wait for a key

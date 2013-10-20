@@ -4,11 +4,13 @@ module Graphics.Vty.Input ( Key(..)
                           , Button(..)
                           , Event(..)
                           , initTermInput
+                          , defaultEscDelay
                           )
     where
 
 import Graphics.Vty.Input.Data
 import Graphics.Vty.Input.Internal
+import Graphics.Vty.Input.Terminfo
 
 import Data.Char
 import Data.Word
@@ -28,6 +30,9 @@ import System.Posix.IO ( stdInput
                        )
 
 import Foreign ( alloca, poke, peek, Ptr )
+
+defaultEscDelay :: Int
+defaultEscDelay = 0
 
 -- | Set up the terminal for input.  Returns a function which reads key
 -- events, and a function for shutting down the terminal access.
@@ -76,9 +81,8 @@ initTermInput escDelay terminal = do
                         finishAtomicInput
                     loop
 
-        extract_cap = first (getCapability terminal . tiGetStr)
-        caps_classify_table = map_to_legacy_table [(x,y) | (Just x,y) <- map extract_cap keys_from_caps_table]
-        term_event_classify_table = concat $ caps_classify_table : ansi_classify_table
+        caps_legacy_table = map_to_legacy_table $ caps_classify_table terminal keys_from_caps_table
+        term_event_classify_table = concat $ caps_legacy_table : ansi_classify_table
         term_event_classifier = classify term_event_classify_table
 
     eventThreadId <- forkIO $ inputToEventThread term_event_classifier inputChannel eventChannel
