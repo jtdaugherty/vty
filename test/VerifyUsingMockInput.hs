@@ -2,8 +2,7 @@
  - This assumes appropriate definitions exist in the current environment for the terminals of
  - interest.
  -}
-module VerifyUsingMockInput where
-import Verify hiding (classify)
+module Main where
 
 import Verify.Graphics.Vty.Terminal
 
@@ -12,6 +11,7 @@ import Graphics.Vty.Input
 import Graphics.Vty.Input.Data
 import Graphics.Vty.Input.Internal
 
+import Control.Applicative
 import Control.Concurrent
 import Control.Exception
 import Control.Monad
@@ -19,8 +19,9 @@ import Control.Monad
 import System.Posix.Env
 import System.IO
 
-import Test.QuickCheck.Assertions
-import Test.QuickCheck.Property ( morallyDubiousIOProperty )
+import Test.Framework.Providers.SmallCheck
+import Test.Framework
+import Test.SmallCheck
 
 -- processing a block of 16 chars is the largest I can do without taking too long to run the test.
 max_bytes_size = 16
@@ -39,10 +40,7 @@ exec_input_spec input out_handle = forM_ input f
         f (Bytes str) = hPutStr out_handle str >> hFlush out_handle
         f (Delay t) = threadDelay (t*1000)
 
-assert_events_from_IO_reads :: InputSpec -> ExpectedSpec -> IO Result
-assert_events_from_IO_reads input events = undefined
-
-assert_events_from_input_block :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Result
+assert_events_from_input_block :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Bool
 assert_events_from_input_block table input_spec expected_events = do
     let classifier = classify table
     input <- newChan
@@ -56,7 +54,7 @@ assert_events_from_input_block table input_spec expected_events = do
     let collect_events = handle (\(e :: BlockedIndefinitelyOnMVar) -> return [])
                                 ((:) <$> readChan output <*> collect_events)
     out_events <- collect_events
-    return $ out_events ?== expected_events
+    return $ out_events == expected_events
 
 write_input_spec_to_chan :: Chan Char -> InputSpec -> IO ()
 write_input_spec_to_chan chan [] = writeChan chan '\xFFFD'
@@ -65,7 +63,26 @@ write_input_spec_to_chan chan (Bytes str : input_spec')
 write_input_spec_to_chan chan (Delay t : input_spec')
     = writeChan chan '\xFFFE' >> write_input_spec_to_chan chan input_spec'
 
-verify_simple_input_block_to_event :: Property
+{-
+
+verify_keys_from_caps_table :: String -> Property
+verify_keys_from_caps_table = do
+    term_name <- elements terminals_of_interest
+    cap <- elements keys_from_caps_table
+    
+
+tests :: IO [Test]
+tests = do
+    mappend 
+        <$> pure [ verify "basic block generated from single ansi chars to event translation" ]
+        <*> mapM terminals_of_interest
+        verify_simple_input_block_to_event
+    , verify "keys from caps table are parsed to the same key"
+        verify_keys_from_caps_table
+    ]
+
+
+verify_simple_input_block_to_event :: Int -> IO (Property IO)
 verify_simple_input_block_to_event = do
     -- Ouch! 16 is as high as this can go without taking far too long. :-\
     Positive block_length <- resize 16 $ arbitrary
@@ -74,14 +91,10 @@ verify_simple_input_block_to_event = do
         events = map (\(k,ms) -> EvKey k ms) $ map snd block_event_pairs
     morallyDubiousIOProperty $ assert_events_from_input_block simple_chars input events
 
-verify_keys_from_caps_table :: String -> Result
-verify_keys_from_caps_table term_name = succeeded
-
-tests :: IO [Test]
-tests = return
-    [ verify "basic block generated from single ansi chars to event translation"
-        verify_simple_input_block_to_event
-    , verify "keys from caps table are parsed to the same key"
-        verify_keys_from_caps_table
+main = defaultMain
+    [ testProperty "basic block generated from a single ansi chars to event translation"
+                   verify_simple_input_block_to_event
     ]
+-}
+main = defaultMain []
 
