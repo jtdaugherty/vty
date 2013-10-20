@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 {- We setup the environment to envoke certain terminals of interest.
  - This assumes appropriate definitions exist in the current environment for the terminals of
  - interest.
@@ -22,6 +24,7 @@ import System.IO
 import Test.Framework.Providers.SmallCheck
 import Test.Framework
 import Test.SmallCheck
+import Test.SmallCheck.Series
 
 -- processing a block of 16 chars is the largest I can do without taking too long to run the test.
 max_bytes_size = 16
@@ -80,21 +83,22 @@ tests = do
     , verify "keys from caps table are parsed to the same key"
         verify_keys_from_caps_table
     ]
+-}
 
+data SimpleEvent = SimpleEvent (String, (Key, [Modifier]))
+    deriving (Show)
 
-verify_simple_input_block_to_event :: Int -> IO (Property IO)
-verify_simple_input_block_to_event = do
-    -- Ouch! 16 is as high as this can go without taking far too long. :-\
-    Positive block_length <- resize 16 $ arbitrary
-    block_event_pairs <- vectorOf block_length $ elements $ simple_chars
-    let input = [Bytes $ concatMap fst block_event_pairs]
-        events = map (\(k,ms) -> EvKey k ms) $ map snd block_event_pairs
-    morallyDubiousIOProperty $ assert_events_from_input_block simple_chars input events
+instance Monad m => Serial m SimpleEvent where
+    series = generate (\n -> map SimpleEvent $ take n simple_chars)
+
+verify_simple_input_block_to_event :: Property IO
+verify_simple_input_block_to_event = forAll $ \input_spec -> do
+    let input = Bytes $ concat [s | SimpleEvent (s,_) <- input_spec]
+        events = [e | SimpleEvent (_,(k,ms)) <- input_spec, let e = EvKey k ms]
+    monadic $ assert_events_from_input_block simple_chars [input] events
 
 main = defaultMain
     [ testProperty "basic block generated from a single ansi chars to event translation"
                    verify_simple_input_block_to_event
     ]
--}
-main = defaultMain []
 
