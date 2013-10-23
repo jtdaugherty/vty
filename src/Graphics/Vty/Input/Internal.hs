@@ -17,10 +17,14 @@ inputToEventThread classifier inputChannel eventChannel = loop []
     where loop kb = case (classifier kb) of
             Prefix       -> do
                 c <- readChan inputChannel
-                loop (kb ++ [c])
+                if c == '\xFFFD'
+                    then return ()
+                    else loop (kb ++ [c])
             Invalid      -> do
                 c <- readChan inputChannel
-                loop [c]
+                if c == '\xFFFD'
+                    then return ()
+                    else loop [c]
             EndLoop      -> return ()
             MisPfx k m s -> writeChan eventChannel (EvKey k m) >> loop s
             Valid k m    -> writeChan eventChannel (EvKey k m) >> loop ""
@@ -28,25 +32,26 @@ inputToEventThread classifier inputChannel eventChannel = loop []
 compile :: ClassifyTable -> [Char] -> KClass
 compile table = cl' where
     -- take all prefixes and create a set of these
-    -- including inserting [] into the set many times.. hm
     prefix_set = S.fromList $ concatMap (init . inits . fst) $ table
     -- create a map from strings to event
     event_for_input = flip M.lookup (M.fromList table)
+    cl' [] = Prefix
     cl' input_block = case S.member input_block prefix_set of
-        True -> Prefix
-        -- if the input_block is exactly what is expected for an event then consume the whole block
-        -- and return the event
-        False -> case event_for_input input_block of
-            Just (k,m) -> Valid k m
-            -- look up progressively large prefixes of the input block until an event is found
-            -- H: There will always be one match. The prefix_set contains, by definition, all
-            -- prefixes of an event. 
-            Nothing -> 
-                let input_prefixes = init $ inits input_block
-                in case mapMaybe (\s -> (,) s `fmap` event_for_input s) input_prefixes of
-                    (s,(k,m)) : _ -> MisPfx k m (drop (length s) input_block)
-                    [] -> error $ "vty internal inconsistency - input not a prefix nor contains any event data "
-                                ++ show input_block
+            True -> Prefix
+            -- if the input_block is exactly what is expected for an event then consume the whole
+            -- block and return the event
+            False -> case event_for_input input_block of
+                Just (k,m) -> Valid k m
+                -- look up progressively large prefixes of the input block until an event is found
+                -- H: There will always be one match. The prefix_set contains, by definition, all
+                -- prefixes of an event. 
+                Nothing -> 
+                    let input_prefixes = init $ inits input_block
+                    in case mapMaybe (\s -> (,) s `fmap` event_for_input s) input_prefixes of
+                        (s,(k,m)) : _ -> MisPfx k m (drop (length s) input_block)
+                        [] -> error $ "vty internal inconsistency - "
+                                    ++ "input not a prefix nor contains any event data "
+                                    ++ show input_block
 
 classify, classifyTab :: ClassifyTable -> [Char] -> KClass
 

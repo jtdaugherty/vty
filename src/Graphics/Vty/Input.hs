@@ -15,7 +15,7 @@ import Graphics.Vty.Input.Terminfo
 import Data.Char
 import Data.Word
 
-import Control.Monad (when)
+import Control.Monad (when, void)
 import Control.Concurrent
 import Control.Exception
 
@@ -85,7 +85,7 @@ initTermInput escDelay terminal = do
         term_event_classify_table = concat $ caps_legacy_table : ansi_classify_table
         term_event_classifier = classify term_event_classify_table
 
-    eventThreadId <- forkIO $ inputToEventThread term_event_classifier inputChannel eventChannel
+    eventThreadId <- forkIO $ void $ inputToEventThread term_event_classifier inputChannel eventChannel
     inputThreadId <- forkIO $ inputThread
     noInputThreadId <- forkIO $ noInputThread
     let pokeIO = Catch $ do

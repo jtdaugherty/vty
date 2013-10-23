@@ -23,7 +23,6 @@ import Control.Monad
 
 import System.Console.Terminfo
 import System.IO
-import System.Posix.Env
 
 import Test.Framework.Providers.SmallCheck
 import Test.Framework
@@ -36,6 +35,7 @@ max_bytes_size = 16
 data InputEvent
     = Bytes String  -- | input sequence encoded as a string. Regardless, the input is read a byte at a time.
     | Delay Int     -- | millisecond delay
+    deriving Show
 
 type InputSpec = [InputEvent]
 
@@ -49,46 +49,38 @@ exec_input_spec input out_handle = forM_ input f
 
 assert_events_from_input_block :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Bool
 assert_events_from_input_block table input_spec expected_events = do
+    print input_spec
     let classifier = classify table
     input <- newChan
     output <- newChan
-    forkIO $ write_input_spec_to_chan input input_spec
-    inputToEventThread classifier input output
-    -- H: all events are available in output channel
-    -- TODO: switch to using explicit control events. Currently the channel is passing around a
-    -- magic FFFX characters
+    read_complete <- newEmptyMVar
+    write_complete <- newEmptyMVar
+    _ <- forkIO $ write_input_spec_to_chan input input_spec
+                  `finally` putMVar write_complete ()
+    _ <- forkIO $ inputToEventThread classifier input output
+                  `finally` putMVar read_complete ()
+    () <- takeMVar write_complete
+    () <- takeMVar read_complete
     -- TODO: use STM channel
-    let collect_events = handle (\(e :: BlockedIndefinitelyOnMVar) -> return [])
-                                ((:) <$> readChan output <*> collect_events)
-    out_events <- collect_events
+    -- assures the next line does not block.
+    writeList2Chan output $ replicate (length expected_events) undefined
+    out_events <- take (length expected_events) <$> getChanContents output
     return $ out_events == expected_events
 
 write_input_spec_to_chan :: Chan Char -> InputSpec -> IO ()
-write_input_spec_to_chan chan [] = writeChan chan '\xFFFD'
-write_input_spec_to_chan chan (Bytes str : input_spec')
-    = writeList2Chan chan str >> write_input_spec_to_chan chan input_spec'
-write_input_spec_to_chan chan (Delay t : input_spec')
-    = writeChan chan '\xFFFE' >> write_input_spec_to_chan chan input_spec'
-
-{-
-
-tests :: IO [Test]
-tests = do
-    mappend 
-        <$> pure [ verify "basic block generated from single ansi chars to event translation" ]
-        <*> mapM terminals_of_interest
-        verify_simple_input_block_to_event
-    , verify "keys from caps table are parsed to the same key"
-        verify_keys_from_caps_table
-    ]
--}
-
--- how to make this data dependent?
+write_input_spec_to_chan chan [] = do
+    writeChan chan '\xFFFD'
+write_input_spec_to_chan chan (Bytes str : input_spec') = do
+    writeList2Chan chan str
+    write_input_spec_to_chan chan input_spec'
+write_input_spec_to_chan chan (Delay _t : input_spec') = do
+    writeChan chan '\xFFFE'
+    write_input_spec_to_chan chan input_spec'
 
 newtype EventBlock event = EventBlock ([(String,event)] -> [(String, event)])
 
 instance Show (EventBlock event) where
-    show (EventBlock g) = "EventBlock(* -> *)"
+    show (EventBlock g) = "EventBlock(*->*)"
 
 instance Monad m => Serial m (EventBlock event) where
     series = do
@@ -106,12 +98,12 @@ verify_keys_from_caps_table_block_to_event :: Property IO
 verify_keys_from_caps_table_block_to_event = forAll $ \(EventBlock block_gen) ->
     over (generate (\n -> take n terminals_of_interest)) $ \term_name -> monadic $ do
         terminal <- setupTerm term_name
-        let caps_seq :: [(String, Event)] = block_gen keys_from_caps_table
-        let bytes_seq = caps_classify_table terminal caps_seq
-            input = [Bytes s | (s,_) <- bytes_seq]
-            escaped_sequence = intersperse (Delay defaultEscDelay) input
-        return True :: IO Bool
-    -- cap <- elements keys_from_caps_table
+        let table = caps_classify_table terminal keys_from_caps_table
+            input_seq :: [(String, Event)] = block_gen table
+            input_bytes = [Bytes s | (s,_) <- input_seq]
+            input = intersperse (Delay defaultEscDelay) input_bytes
+            events = [e | (_,e) <- input_seq]
+        assert_events_from_input_block (map_to_legacy_table table) input events
 
 main = defaultMain
     [ testProperty "basic block generated from a single ansi chars to event translation"

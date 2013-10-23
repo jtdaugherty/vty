@@ -95,9 +95,9 @@ library
   default-extensions:          ScopedTypeVariables
                        ForeignFunctionInterface
 
-  ghc-options:         -O2 -funbox-strict-fields -Wall -fno-full-laziness -fspec-constr -fspec-constr-count=10
+  ghc-options:         -O2 -funbox-strict-fields -threaded -Wall -fspec-constr -fspec-constr-count=10
 
-  ghc-prof-options:    -O2 -funbox-strict-fields -caf-all -Wall -fno-full-laziness -fspec-constr -fspec-constr-count=10
+  ghc-prof-options:    -O2 -funbox-strict-fields -threaded -caf-all -Wall -fspec-constr -fspec-constr-count=10
 
   cc-options:          -O2
 
@@ -534,6 +534,7 @@ test-suite verify-using-mock-input
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
   
+  ghc-options:         -threaded -Wall
 
 executable vty-interactive-terminal-test
   main-is:             interactive_terminal_test.hs
