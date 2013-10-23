@@ -30,7 +30,8 @@ import Test.SmallCheck
 import Test.SmallCheck.Series
 
 -- processing a block of 16 chars is the largest I can do without taking too long to run the test.
-max_bytes_size = 16
+max_block_size :: Int
+max_block_size = 16
 
 data InputEvent
     = Bytes String  -- | input sequence encoded as a string. Regardless, the input is read a byte at a time.
@@ -84,7 +85,7 @@ instance Show (EventBlock event) where
 
 instance Monad m => Serial m (EventBlock event) where
     series = do
-        n :: Int <- localDepth (max 16) series -- what elements to select from the table
+        n :: Int <- localDepth (max max_block_size) series -- what elements to select from the table
         return $ EventBlock $ \table -> concat (take n (permutations table))
 
 verify_simple_input_block_to_event :: Property IO
