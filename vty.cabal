@@ -561,6 +561,24 @@ executable vty-interactive-terminal-test
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
 
+executable vty-rouge
+  main-is:             Rouge.hs
+  hs-source-dirs:      test
+
+  default-language:    Haskell2010
+  default-extensions:  ScopedTypeVariables
+
+  build-depends:       vty,
+                       base >= 4 && < 5,
+                       bytestring,
+                       containers,
+                       lens,
+                       mtl >= 1.1.1.0 && < 2.2,
+                       parallel >= 2.2 && < 3.3,
+                       text >= 0.11.3,
+                       utf8-string >= 0.3 && < 0.4,
+                       vector >= 0.7
+
 executable vty-benchmark
   main-is:             benchmark.hs
 
