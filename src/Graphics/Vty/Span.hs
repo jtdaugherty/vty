@@ -2,7 +2,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {- | A picture is translated into a sequences of state changes and character spans.
  - State changes are currently limited to new attribute values. The attribute is applied to all
  - following spans. Including spans of the next row.  The nth element of the sequence represents the

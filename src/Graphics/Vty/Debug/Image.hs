@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 module Graphics.Vty.Debug.Image where
 
 import Graphics.Vty.Image

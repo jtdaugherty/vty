@@ -1,5 +1,4 @@
 -- Copyright 2009-2010 Corey O'Connor
-{-# LANGUAGE ScopedTypeVariables #-}
 module Graphics.Vty.Debug ( module Graphics.Vty.Debug
                           , module Graphics.Vty.Debug.Image
                           )

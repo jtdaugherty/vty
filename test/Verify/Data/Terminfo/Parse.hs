@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 module Verify.Data.Terminfo.Parse ( module Verify.Data.Terminfo.Parse
                                   , module Data.Terminfo.Parse
                                   )

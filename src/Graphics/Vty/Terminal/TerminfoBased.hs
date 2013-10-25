@@ -5,8 +5,6 @@
 -- assumptions mixed in.
 --
 -- Copyright Corey O'Connor (coreyoconnor@gmail.com)
-{-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -D_XOPEN_SOURCE=500 #-}
 module Graphics.Vty.Terminal.TerminfoBased ( reserve_terminal )

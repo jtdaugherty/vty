@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NamedFieldPuns #-}
 module VerifyParseTerminfoCaps where
 
@@ -7,6 +6,7 @@ import Prelude hiding ( catch )
 import qualified System.Console.Terminfo as Terminfo
 
 import Verify.Data.Terminfo.Parse
+import Verify.Graphics.Vty.Terminal
 import Verify
 
 import Data.Maybe ( catMaybes, fromJust )
@@ -14,48 +14,8 @@ import Data.Word
 
 import Numeric
 
--- A list of terminals that ubuntu includes a terminfo cap file for. 
--- Assuming that is a good place to start.
-terminals_of_interest = 
-    [ "wsvt25"
-    , "wsvt25m"
-    , "vt52"
-    , "vt100"
-    , "vt220"
-    , "vt102"
-    , "xterm-r5"
-    , "xterm-xfree86"
-    , "xterm-r6"
-    , "xterm-256color"
-    , "xterm-vt220"
-    , "xterm-debian"
-    , "xterm-mono"
-    , "xterm-color"
-    , "xterm"
-    , "mach"
-    , "mach-bold"
-    , "mach-color"
-    , "linux"
-    , "ansi"
-    , "hurd"
-    , "Eterm"
-    , "pcansi"
-    , "screen-256color"
-    , "screen-bce"
-    , "screen-s"
-    , "screen-w"
-    , "screen"
-    , "screen-256color-bce"
-    , "sun"
-    , "rxvt"
-    , "rxvt-unicode"
-    , "rxvt-basic"
-    , "cygwin"
-    , "cons25"
-    , "dumb"
-    ]
-
 -- If a terminal defines one of the caps then it's expected to be parsable.
+-- TODO: reduce duplication with terminfo terminal implementation.
 caps_of_interest = 
     [ "cup"
     , "sc"
@@ -81,7 +41,6 @@ from_capname ti name = fromJust $ Terminfo.getCapability ti (Terminfo.tiGetStr n
 tests :: IO [Test]
 tests = do
     parse_tests <- concat <$> forM terminals_of_interest ( \term_name -> do
-        putStrLn $ "testing parsing of caps for terminal: " ++ term_name
         mti <- liftIO $ try $ Terminfo.setupTerm term_name
         case mti of
             Left (_e :: SomeException)

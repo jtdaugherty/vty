@@ -18,7 +18,6 @@
 --  control codes as possible. 
 --
 -- Copyright 2009-2010 Corey O'Connor
-{-# LANGUAGE ScopedTypeVariables #-}
 module Graphics.Vty.Terminal ( module Graphics.Vty.Terminal
                              , Terminal(..) -- \todo hide constructors
                              , AssumedState(..)
