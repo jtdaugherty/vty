@@ -12,6 +12,14 @@ import Data.Maybe ( mapMaybe )
 import qualified Data.Set as S( fromList, member )
 import Data.Word
 
+data KClass
+    = Valid Key [Modifier]
+    | Invalid
+    | EndLoop
+    | Prefix
+    | MisPfx Key [Modifier] [Char]
+    deriving(Show)
+
 inputToEventThread :: (String -> KClass) -> Chan Char -> Chan Event -> IO ()
 inputToEventThread classifier inputChannel eventChannel = loop []
     where loop kb = case (classifier kb) of

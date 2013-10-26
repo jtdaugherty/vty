@@ -13,22 +13,14 @@ data Key = KEsc | KFun Int | KBackTab | KPrtScr | KPause | KASCII Char | KBS | K
 data Modifier = MShift | MCtrl | MMeta | MAlt
     deriving (Eq,Show,Ord)
 
--- |Mouse buttons.  Not yet used.
+-- | Mouse buttons.  Not yet used.
 data Button = BLeft | BMiddle | BRight
     deriving (Eq,Show,Ord)
 
--- |Generic events.
+-- | Generic events.
 data Event = EvKey Key [Modifier] | EvMouse Int Int Button [Modifier]
            | EvResize Int Int
     deriving (Eq,Show,Ord)
-
-data KClass
-    = Valid Key [Modifier]
-    | Invalid
-    | EndLoop
-    | Prefix
-    | MisPfx Key [Modifier] [Char]
-    deriving(Show)
 
 type ClassifyTable = [(String, (Key, [Modifier]))]
 
