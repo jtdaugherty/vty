@@ -14,13 +14,13 @@ module Graphics.Vty.Image ( DisplayText
                           , vert_cat
                           , background_fill
                           , text
-                          , strict_text
+                          , text'
                           , char
                           , string
                           , iso_10646_string
                           , utf8_string
                           , utf8_bytestring
-                          , utf8_strict_bytestring
+                          , utf8_bytestring'
                           , char_fill
                           , empty_image
                           , safe_wcwidth
@@ -162,8 +162,8 @@ text a txt
                            in HorizText a txt display_width (fromIntegral $! TL.length txt)
 
 -- | A Data.Text value
-strict_text :: Attr -> T.Text -> Image
-strict_text a txt
+text' :: Attr -> T.Text -> Image
+text' a txt
     | T.length txt == 0 = EmptyImage
     | otherwise         = let display_width = safe_wcswidth (T.unpack txt)
                           in HorizText a (TL.fromStrict txt) display_width (T.length txt)
@@ -208,8 +208,8 @@ utf8_bytestring :: Attr -> BL.ByteString -> Image
 utf8_bytestring a bs = text a (TL.decodeUtf8 bs)
 
 -- | Renders a UTF-8 encoded strict bytestring. 
-utf8_strict_bytestring :: Attr -> B.ByteString -> Image
-utf8_strict_bytestring a bs = strict_text a (T.decodeUtf8 bs)
+utf8_bytestring' :: Attr -> B.ByteString -> Image
+utf8_bytestring' a bs = text' a (T.decodeUtf8 bs)
 
 -- | creates a fill of the specified character. The dimensions are in number of characters wide and
 -- number of rows high.

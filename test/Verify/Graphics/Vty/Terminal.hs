@@ -8,12 +8,11 @@ import qualified Data.String.UTF8 as UTF8
 
 import Test.QuickCheck.Property
 
-import Verify
-
 -- A list of terminals that should be supported.
 -- This started with a list of terminals ubuntu supported. Then those terminals that really could
 -- not be supported were removed. Then a few more were pruned until a reasonable looking set was
 -- made.
+terminals_of_interest :: [String]
 terminals_of_interest = 
     [ "vt100"
     , "vt220"

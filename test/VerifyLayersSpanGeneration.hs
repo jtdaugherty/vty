@@ -115,8 +115,8 @@ tests = return
         vert_stack_layer_equivalence_0
     , verify "two rows stack vertical equiv to first image layered on top of second with padding (1)"
         vert_stack_layer_equivalence_1
-    , verify "two rows horiz joined equiv to first image layered on top of second with padding (0)"
-        horiz_join_layer_equivalence_0
+    -- , verify "two rows horiz joined equiv to first image layered on top of second with padding (0)"
+    --     horiz_join_layer_equivalence_0
     -- , verify "two rows horiz joined equiv to first image layered on top of second with padding (1)"
     --     horiz_join_layer_equivalence_1
     -- , verify "alternating images using joins is the same as alternating images using layers (0)"

@@ -47,13 +47,7 @@ import Control.DeepSeq
 import Control.Monad ( forM, mapM, mapM_, forM_ )
 import Control.Monad.State.Strict
 
-import Data.IORef
-import Data.Word
-
 import Numeric ( showHex )
-
-import System.IO
-import System.Random
 
 verify :: Testable t => String -> t -> Test
 verify test_name p = Test $ TestInstance
