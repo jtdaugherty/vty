@@ -49,13 +49,10 @@ mkLevel _difficulty = do
     level_height <- randomRIO (10,15)
     start <- (,) <$> randomRIO (2, level_width-3) <*> randomRIO (2, level_height-3)
     end <- (,) <$> randomRIO (2, level_width-3) <*> randomRIO (2, level_height-3)
-    let geo = array ((0,0), (level_width, level_height))
-                    [((x,y),p) | x <- [0..level_width-1], y <- [0..level_height-1],
-                                 let p = if (x == 0 || x == level_width-1) || (y==0 || y==level_height-1)
-                                            then Rock
-                                            else EmptySpace
-                    ]
-    return $ Level start end geo
+    -- first the base geography: all rocks
+    let base_geo = array ((0,0), (level_width, level_height))
+                         [((x,y),Rock) | x <- [0..level_width-1], y <- [0..level_height-1]]
+    return $ Level start end base_geo
 
 image_for_geo EmptySpace = char (def_attr `with_back_color` green) ' '
 image_for_geo Rock = char (def_attr `with_fore_color` white) 'X'
