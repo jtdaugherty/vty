@@ -29,7 +29,7 @@ update_display :: App ()
 update_display = do
     let info = string def_attr "Press ESC to exit."
     event_log <- foldMap (string def_attr) <$> get
-    let pic = pic_for_layers [info,event_log]
+    let pic = pic_for_image $ info <-> event_log
     vty <- ask
     liftIO $ update vty pic
 
