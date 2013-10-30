@@ -76,3 +76,10 @@ rm -rf dist ; cabal configure --enable-tests --disable-library-coverage \
   --enable-library-profiling \
   --enable-executable-profiling
 ~~~
+
+# References
+
+* https://github.com/b4winckler/vim/blob/master/src/term.c
+* http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+* http://ulisse.elettra.trieste.it/services/doc/serial/config.html
+* http://www.leonerd.org.uk/hacks/hints/xterm-8bit.html
