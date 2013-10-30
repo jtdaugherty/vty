@@ -44,6 +44,8 @@ library
                        deepseq >= 1.1 && < 1.4,
                        ghc-prim,
                        lens >= 3.9.0.2,
+                       -- required for nice installation with yi
+                       hashable >= 1.2,
                        mtl >= 1.1.1.0 && < 2.2,
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
