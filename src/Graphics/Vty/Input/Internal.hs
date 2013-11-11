@@ -4,6 +4,8 @@ import Graphics.Vty.Input.Data
 
 import Codec.Binary.UTF8.Generic (decode)
 import Control.Concurrent
+import Control.Exception (try, IOException(..))
+import Control.Monad (when, void)
 
 import Data.Char
 import Data.List( inits )
@@ -11,6 +13,14 @@ import qualified Data.Map as M( fromList, lookup )
 import Data.Maybe ( mapMaybe )
 import qualified Data.Set as S( fromList, member )
 import Data.Word
+
+import Foreign ( alloca, poke, peek, Ptr )
+
+import System.Posix.IO ( fdReadBuf
+                       , setFdOption
+                       , FdOption(..)
+                       )
+import System.Posix.Types (Fd(..))
 
 data KClass
     = Valid Key [Modifier]
@@ -22,7 +32,7 @@ data KClass
 
 inputToEventThread :: (String -> KClass) -> Chan Char -> Chan Event -> IO ()
 inputToEventThread classifier inputChannel eventChannel = loop []
-    where loop kb = case (classifier kb) of
+    where loop kb = case classifier kb of
             Prefix       -> do
                 c <- readChan inputChannel
                 if c == '\xFFFD'
@@ -87,5 +97,55 @@ utf8Length c
     | c < 0xE0 = 2
     | c < 0xF0 = 3
     | otherwise = 4
+
+initInputForFd :: Int -> ClassifyTable -> Fd -> IO (Chan Event, IO ())
+initInputForFd escDelay classify_table input_fd = do
+    inputChannel <- newChan
+    eventChannel <- newChan
+    hadInput <- newEmptyMVar
+    let finishAtomicInput = writeChan inputChannel '\xFFFE'
+        inputThread :: IO ()
+        inputThread = do
+            _ <- alloca $ \(input_buffer :: Ptr Word8) -> do
+                let loop = do
+                        setFdOption input_fd NonBlockingRead False
+                        threadWaitRead input_fd
+                        setFdOption input_fd NonBlockingRead True
+                        _ <- try readAll :: IO (Either IOException ())
+                        when (escDelay == 0) finishAtomicInput
+                        loop
+                    readAll = do
+                        poke input_buffer 0
+                        bytes_read <- fdReadBuf input_fd input_buffer 1
+                        input_char <- fmap (chr . fromIntegral) $ peek input_buffer
+                        when (bytes_read > 0) $ do
+                            _ <- tryPutMVar hadInput () -- signal input
+                            writeChan inputChannel input_char
+                            readAll
+                loop
+            return ()
+        -- | If there is no input for some time, this thread puts '\xFFFE' in the
+        -- inputChannel.
+        noInputThread :: IO ()
+        noInputThread = when (escDelay > 0) loop
+            where loop = do
+                    takeMVar hadInput -- wait for some input
+                    threadDelay escDelay -- microseconds
+                    hadNoInput <- isEmptyMVar hadInput -- no input yet?
+                    -- TODO(corey): there is a race between here and the inputThread.
+                    when hadNoInput finishAtomicInput
+                    loop
+        classifier = classify classify_table
+    eventThreadId <- forkIO $ void $ inputToEventThread classifier inputChannel eventChannel
+    inputThreadId <- forkIO $ inputThread
+    noInputThreadId <- forkIO $ noInputThread
+    -- TODO(corey): killThread is a bit risky for my tastes.
+    -- H - somewhat mitigated by sending a magic terminate character?
+    let shutdown_input = do
+            writeChan inputChannel '\xFFFD' 
+            killThread noInputThreadId
+            killThread eventThreadId
+            killThread inputThreadId
+    return (eventChannel, shutdown_input)
 
 foreign import ccall "vty_set_term_timing" set_term_timing :: IO ()
