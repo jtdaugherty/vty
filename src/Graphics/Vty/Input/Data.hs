@@ -85,7 +85,9 @@ nav_keys_3 =
 simple_chars :: ClassifyTable
 simple_chars = [ (x:[],(KASCII x,[])) | x <- map toEnum [0..0xC1] ]
 
--- Support for function keys (should use terminfo)
+-- TODO: Support for function keys (should use terminfo)
+-- 
+-- (corey): yes. This definitely should. On my terminal these keys do not operate as expected.
 function_keys_0 :: ClassifyTable
 function_keys_0 = [ ("\ESC[["++[toEnum(64+i)],(KFun i,[])) | i <- [1..5] ]
 
