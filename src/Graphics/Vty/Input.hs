@@ -1,5 +1,7 @@
 -- Copyright 2009-2010 Corey O'Connor
 --
+-- Right, I'm mostly guessing on these details. So, as far as I can figure:
+--
 -- There are two input modes:
 --  1. 7 bit
 --  2. 8 bit
@@ -45,10 +47,33 @@ defaultEscDelay = 4000
 
 -- | Set up the terminal for input.  Returns a function which reads key
 -- events, and a function for shutting down the terminal access.
+--
+-- The terminal is modified as follows:
+--
+-- * IXON disabled
+--      - disables software flow control on outgoing data. This stops the process from being
+--        suspended if the output terminal cannot keep up. I presume this has little effect these
+--        days. I hope this means that output will be buffered if the terminal cannot keep up. In the
+--        ol days the output might of been dropped.
+-- 
+-- "raw" mode is used for input.
+--
+-- * ISIG disabled
+--      - enables keyboard combinations that result in signals. People would probably want this to
+--        be an option.
+--
+-- * ECHO disabled
+--      - input is not echod to the output.
+--
+-- * ICANON disabled
+--      - canonical mode (line mode) input is not used.
+--
+-- * IEXTEN disabled
+--      - extended functions are disabled. Uh. Whatever these are.
+--
 initTermInput :: Int -> Terminal -> IO (IO Event, IO ())
 initTermInput escDelay terminal = do
     attr <- getTerminalAttributes stdInput
-    -- disable IXON,
     let attr' = foldl withoutMode attr [ StartStopOutput, KeyboardInterrupts
                                        , EnableEcho, ProcessInput, ExtendedFunctions
                                        ]

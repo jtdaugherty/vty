@@ -20,6 +20,11 @@
           visibility changes in the Picture will have no effect.
         * alternate (setf/setb) color maps supported. Though colors beyond the first 8 are just a
           guess.
+    * input handling changes
+        * tests exist
+        * the default amount of time between ESC and a subsequent character that causes VTY to
+          interpret the input as "ESC" then the character, versus some special key, has been
+          increased to 4000 microseconds.
 
 4.7.0.0
     * API changes:
