@@ -26,22 +26,22 @@
         * the default amount of time between ESC and a subsequent character that causes VTY to
           interpret the input as "ESC" then the character, versus some special key, has been
           increased to 4000 microseconds; 4 milliseconds.
-    * examples optionally installed, using the --with-examples, with library:
+    * examples moved to vty-examples package. See test directory for cabal file.
         * vty-interactive-terminal-test
             * interactive test. Useful for building a bug report for vty's author.
-            * tests/interactive_terminal_test.hs
+            * test/interactive_terminal_test.hs
         * vty-event-echo
-            * view a input event log for vty. Small example of interacting with user.
-            * tests/EventEcho.hs
+            * view a input event log for vty. Example of interacting with user.
+            * test/EventEcho.hs
         * vty-rouge
-            * A bad rouge-like game. Go from the entrance to exit. Ooooh. Small example of layers
+            * A bad rouge-like game. Go from the entrance to exit. Example of layers
               and image build operations.
-            * tests/Rouge.hs
+            * test/Rouge.hs
         * vty-benchmark
             * benchmarks vty. A series of tests that push random pictures to the terminal. The
               random pictures are generated using QuickCheck. The same generators used in the
               automated tests.
-            * tests/benchmark.hs
+            * test/benchmark.hs
 
 4.7.0.0
     * API changes:

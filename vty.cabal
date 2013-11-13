@@ -27,8 +27,8 @@ description:
   &#169; 2006-2007 Stefan O'Rear; BSD3 license.
   .
   &#169; Corey O'Connor; BSD3 license.
-cabal-version:        >= 1.18.0
-build-type:           Simple
+cabal-version:       >= 1.18.0
+build-type:          Simple
 data-files:          README.md,
                      TODO,
                      AUTHORS,
@@ -37,7 +37,6 @@ data-files:          README.md,
 
 library
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
   build-depends:       base >= 4 && < 5,
                        bytestring,
                        containers,
@@ -96,7 +95,7 @@ library
 
   hs-source-dirs:      src
 
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
                        ForeignFunctionInterface
 
   ghc-options:         -O2 -funbox-strict-fields -threaded -Wall -fspec-constr -fspec-constr-count=10
@@ -107,7 +106,7 @@ library
 
 test-suite verify-attribute-ops
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
   type:                detailed-0.9
   hs-source-dirs:      test
   test-module:         VerifyAttributeOps
@@ -127,7 +126,7 @@ test-suite verify-attribute-ops
 
 test-suite verify-using-mock-terminal
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -160,7 +159,7 @@ test-suite verify-using-mock-terminal
   
 test-suite verify-terminal
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -193,7 +192,7 @@ test-suite verify-terminal
 
 test-suite verify-display-attributes
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -224,7 +223,7 @@ test-suite verify-display-attributes
 
 test-suite verify-empty-image-props
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -250,7 +249,7 @@ test-suite verify-empty-image-props
 
 test-suite verify-eval-terminfo-caps
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -278,7 +277,7 @@ test-suite verify-eval-terminfo-caps
 
 test-suite verify-image-ops
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -306,7 +305,7 @@ test-suite verify-image-ops
 
 test-suite verify-image-trans
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -334,7 +333,7 @@ test-suite verify-image-trans
 
 test-suite verify-inline
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -361,7 +360,7 @@ test-suite verify-inline
 
 test-suite verify-parse-terminfo-caps
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -390,7 +389,7 @@ test-suite verify-parse-terminfo-caps
   
 test-suite verify-simple-span-generation
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -422,7 +421,7 @@ test-suite verify-simple-span-generation
   
 test-suite verify-crop-span-generation
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -454,7 +453,7 @@ test-suite verify-crop-span-generation
 
 test-suite verify-layers-span-generation
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -485,7 +484,7 @@ test-suite verify-layers-span-generation
 
 test-suite verify-utf8-width
   default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
+  default-extensions:  ScopedTypeVariables
 
   type:                detailed-0.9
 
@@ -539,111 +538,4 @@ test-suite verify-using-mock-input
                        vector >= 0.7
   
   ghc-options:         -threaded -Wall
-
-executable vty-interactive-terminal-test
-  main-is:             interactive_terminal_test.hs
-
-  default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
-
-  hs-source-dirs:      test
-
-  build-depends:       vty,
-                       base >= 4 && < 5,
-                       bytestring,
-                       containers,
-                       deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
-                       lens,
-                       mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
-                       string-qq,
-                       terminfo >= 0.3 && < 0.4,
-                       text >= 0.11.3,
-                       unix,
-                       utf8-string >= 0.3 && < 0.4,
-                       vector >= 0.7
-
-executable vty-event-echo
-  main-is:             EventEcho.hs
-  hs-source-dirs:      test
-
-  default-language:    Haskell2010
-  default-extensions:  ScopedTypeVariables
-
-  build-depends:       vty,
-                       base >= 4 && < 5,
-                       array >= 0.4 && < 2.0,
-                       bytestring,
-                       containers,
-                       lens,
-                       mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       text >= 0.11.3,
-                       utf8-string >= 0.3 && < 0.4,
-                       vector >= 0.7
-
-executable vty-rouge
-  main-is:             Rouge.hs
-  hs-source-dirs:      test
-
-  default-language:    Haskell2010
-  default-extensions:  ScopedTypeVariables
-
-  build-depends:       vty,
-                       base >= 4 && < 5,
-                       array >= 0.4 && < 2.0,
-                       bytestring,
-                       containers,
-                       lens,
-                       mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       random >= 1.0 && < 2.0,
-                       text >= 0.11.3,
-                       utf8-string >= 0.3 && < 0.4,
-                       vector >= 0.7
-
-executable vty-benchmark
-  main-is:             benchmark.hs
-
-  default-language:    Haskell2010
-  default-extensions:          ScopedTypeVariables
-
-  hs-source-dirs:      test
-
-  build-depends:       vty,
-                       base >= 4 && < 5,
-                       bytestring,
-                       Cabal == 1.18.*,
-                       containers,
-                       deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
-                       lens,
-                       mtl >= 1.1.1.0 && < 2.2,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
-                       QuickCheck >= 2.4,
-                       random == 1.0.*,
-                       string-qq,
-                       terminfo >= 0.3 && < 0.4,
-                       text >= 0.11.3,
-                       unix,
-                       utf8-string >= 0.3 && < 0.4,
-                       vector >= 0.7
-
--- ControlTable.hs
--- HereDoc.hs
--- Test.hs
--- Test2.hs
--- Verify.hs
--- Verify/Data/Terminfo/Parse.hs
--- Verify/Graphics/Vty/Attributes.hs
--- Verify/Graphics/Vty/DisplayRegion.hs
--- Verify/Graphics/Vty/Image.hs
--- Verify/Graphics/Vty/Picture.hs
--- Verify/Graphics/Vty/Span.hs
--- vty_inline_example.hs
--- vty_issue_18.hs
--- yi_issue_264.hs
 
