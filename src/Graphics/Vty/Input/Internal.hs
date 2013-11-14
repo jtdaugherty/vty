@@ -4,7 +4,7 @@ import Graphics.Vty.Input.Data
 
 import Codec.Binary.UTF8.Generic (decode)
 import Control.Concurrent
-import Control.Exception (try, IOException(..))
+import Control.Exception (try, IOException)
 import Control.Monad (when, void)
 
 import Data.Char

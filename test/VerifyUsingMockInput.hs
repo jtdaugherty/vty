@@ -8,7 +8,7 @@ module Main where
 
 import Verify.Graphics.Vty.Terminal
 
-import Data.List (intersperse, permutations)
+import Data.List (intersperse)
 
 import Graphics.Vty hiding (resize)
 import Graphics.Vty.Input.Data
@@ -35,6 +35,9 @@ import Test.SmallCheck.Series
 -- processing a block of 16 chars is the largest I can do without taking too long to run the test.
 max_block_size :: Int
 max_block_size = 16
+
+max_table_size :: Int
+max_table_size = 28
 
 forEachOf :: (Show a, Testable m b) => [a] -> (a -> b) -> Property m
 forEachOf l = over (generate (\n -> take n l))
@@ -81,7 +84,6 @@ assert_events_from_syn_input :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO
 assert_events_from_syn_input table input_spec expected_events = do
     let max_duration = sum [t | Delay t <- input_spec] + min_detectable_delay
         event_count = length expected_events
-    -- create pipe
     (output_fd, input_fd) <- createPipe
     (output, shutdown_input) <- initInputForFd test_esc_sample_delay table output_fd
     events_ref <- newIORef []
@@ -93,13 +95,13 @@ assert_events_from_syn_input table input_spec expected_events = do
             closeFd input_fd
             closeFd output_fd
     -- drain output pipe
-    let read_all_events = read_loop event_count
+    let read_events = read_loop event_count
         read_loop 0 = return ()
         read_loop n = do
             e <- readChan output
             modifyIORef events_ref ((:) e)
             read_loop (n - 1)
-    gen_events_using_io_actions max_duration write_wait_close read_all_events
+    gen_events_using_io_actions max_duration write_wait_close read_events
     out_events <- reverse <$> readIORef events_ref
     print (input_spec, expected_events, out_events)
     return $ out_events == expected_events
@@ -139,8 +141,11 @@ instance Show (InputBlocksUsingTable event) where
 
 instance Monad m => Serial m (InputBlocksUsingTable event) where
     series = do
-        n :: Int <- localDepth (max max_block_size) series -- what elements to select from the table
-        return $ InputBlocksUsingTable $ \table -> concat (take n (permutations table))
+        n :: Int <- localDepth (const max_table_size) series
+        return $ InputBlocksUsingTable $ \table -> concat (take n (selections table))
+        where
+            selections []     = []
+            selections (x:xs) = let z = selections xs in [x] : (z ++ map ((:) x) z)
 
 verify_simple_input_block_to_event :: Property IO
 verify_simple_input_block_to_event = forAll $ \(InputBlocksUsingTable gen) -> do
@@ -161,7 +166,16 @@ verify_keys_from_caps_table_block_to_event = forAll $ \(InputBlocksUsingTable ge
         assert_events_from_input_block (map_to_legacy_table table) input events
 
 verify_simple_syn_input_to_event :: Property IO
-verify_simple_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) ->
+verify_simple_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) -> monadic $ do
+    let table         = simple_chars
+        input_seq     = gen table
+        events        = [EvKey k ms | (_,(k,ms)) <- input_seq]
+        keydowns      = [Bytes s    | (s,_) <- input_seq]
+        input         = intersperse (Delay test_key_delay) keydowns
+    assert_events_from_syn_input (concat ansi_classify_table) input events
+
+verify_caps_syn_input_to_event :: Property IO
+verify_caps_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) ->
     forEachOf terminals_of_interest $ \term_name -> monadic $ do
         term <- setupTerm term_name
         let table         = caps_classify_table term keys_from_caps_table
@@ -171,9 +185,9 @@ verify_simple_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) ->
             input         = intersperse (Delay test_key_delay) keydowns
         assert_events_from_syn_input (map_to_legacy_table table) input events
 
-verify_fkeys_syn_input_to_event :: Property IO
-verify_fkeys_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) -> monadic $ do
-    let table         = function_keys_0
+verify_special_syn_input_to_event :: Property IO
+verify_special_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) -> monadic $ do
+    let table         = function_keys_1 ++ function_keys_2
         input_seq     = gen table
         events        = [EvKey k ms | (_,(k,ms)) <- input_seq]
         keydowns      = [Bytes s    | (s,_) <- input_seq]
@@ -182,13 +196,15 @@ verify_fkeys_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) -> monad
 
 main :: IO ()
 main = defaultMain
-    [ testProperty "basic block generated from a single ansi chars to event translation"
+    [ testProperty "basic block generated from a single visible chars to event translation"
         verify_simple_input_block_to_event
     , testProperty "key sequences read from caps table map to expected events"
         verify_keys_from_caps_table_block_to_event
-    , testProperty "synthesized typing from basic blocks translates to expected events"
+    , testProperty "synthesized typing from single visible chars translates to expected events"
         verify_simple_syn_input_to_event
-    , testProperty "synthesized typing from function keys translates to expected events"
-        verify_fkeys_syn_input_to_event
+    , testProperty "synthesized typing from keys from capabilities tables translates to expected events"
+        verify_caps_syn_input_to_event
+    , testProperty "synthesized typing from hard coded special keys translates to expected events"
+        verify_special_syn_input_to_event
     ]
 
