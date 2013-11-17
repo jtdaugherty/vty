@@ -46,7 +46,7 @@ keys_from_caps_table =
     ] ++ function_key_caps_table
 
 function_key_caps_table :: [(String, Event)]
-function_key_caps_table = flip map [0..63] $ \n -> ("key_f" ++ show n, EvKey (KFun n) [])
+function_key_caps_table = flip map [0..63] $ \n -> ("kf" ++ show n, EvKey (KFun n) [])
 
 nav_keys_0 :: ClassifyTable
 nav_keys_0 =

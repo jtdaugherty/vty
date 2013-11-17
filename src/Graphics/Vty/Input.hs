@@ -79,8 +79,7 @@ initTermInput escDelay terminal = do
                                        ]
     setTerminalAttributes stdInput attr' Immediately
     set_term_timing
-    let caps_legacy_table = map_to_legacy_table $ caps_classify_table terminal keys_from_caps_table
-        classify_table    = concat $ caps_legacy_table : ansi_classify_table
+    let classify_table = classify_table_for_term terminal
     (eventChannel, shutdown_input) <- initInputForFd escDelay classify_table stdInput
     let pokeIO = Catch $ do
             let e = error "(getsize in input layer)"

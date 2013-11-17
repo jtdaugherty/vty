@@ -32,6 +32,8 @@ import Test.Framework
 import Test.SmallCheck
 import Test.SmallCheck.Series
 
+import Text.Printf
+
 -- processing a block of 16 chars is the largest I can do without taking too long to run the test.
 max_block_size :: Int
 max_block_size = 16
@@ -58,7 +60,7 @@ synthesize_input input out_handle = forM_ input f >> (void $ fdWrite out_handle 
         f (Delay t) = threadDelay t
 
 min_detectable_delay :: Int
-min_detectable_delay = 1000
+min_detectable_delay = 4000
 
 min_timout :: Int
 min_timout = 4000000
@@ -79,6 +81,25 @@ gen_events_using_io_actions max_duration input_action output_action = do
     Just () <- timeout max_duration' $ takeMVar write_complete
     Just () <- timeout max_duration' $ takeMVar read_complete
     return ()
+
+compare_events input_spec expected_events out_events = compare_events' expected_events out_events
+    where
+        compare_events' [] []         = return True
+        compare_events' [] out_events' = do
+            printf "extra events %s\n" (show out_events) :: IO ()
+            return False
+        compare_events' expected_events' [] = do
+            printf "events %s were not produced for input %s\n" (show expected_events') (show input_spec) :: IO ()
+            printf "expected events %s\n" (show expected_events) :: IO ()
+            printf "received events %s\n" (show out_events) :: IO ()
+            return False
+        compare_events' (e : expected_events') (o : out_events')
+            | e == o    = compare_events' expected_events' out_events'
+            | otherwise = do
+                printf "%s expected not %s for input %s\n" (show e) (show o) (show input_spec) :: IO ()
+                printf "expected events %s\n" (show expected_events) :: IO ()
+                printf "received events %s\n" (show out_events) :: IO ()
+                return False
 
 assert_events_from_syn_input :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Bool
 assert_events_from_syn_input table input_spec expected_events = do
@@ -103,8 +124,7 @@ assert_events_from_syn_input table input_spec expected_events = do
             read_loop (n - 1)
     gen_events_using_io_actions max_duration write_wait_close read_events
     out_events <- reverse <$> readIORef events_ref
-    print (input_spec, expected_events, out_events)
-    return $ out_events == expected_events
+    compare_events input_spec expected_events out_events
 
 assert_events_from_input_block :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Bool
 assert_events_from_input_block table input_spec expected_events = do
@@ -162,7 +182,7 @@ verify_keys_from_caps_table_block_to_event = forAll $ \(InputBlocksUsingTable ge
             input_seq     = gen table
             events        = [e       | (_,e) <- input_seq]
             keydowns      = [Bytes s | (s,_) <- input_seq]
-            input         = intersperse (Delay test_key_delay) keydowns
+            input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
         assert_events_from_input_block (map_to_legacy_table table) input events
 
 verify_simple_syn_input_to_event :: Property IO
@@ -171,7 +191,7 @@ verify_simple_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) -> mona
         input_seq     = gen table
         events        = [EvKey k ms | (_,(k,ms)) <- input_seq]
         keydowns      = [Bytes s    | (s,_) <- input_seq]
-        input         = intersperse (Delay test_key_delay) keydowns
+        input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
     assert_events_from_syn_input (concat ansi_classify_table) input events
 
 verify_caps_syn_input_to_event :: Property IO
@@ -182,7 +202,7 @@ verify_caps_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) ->
             input_seq     = gen table
             events        = [e       | (_,e) <- input_seq]
             keydowns      = [Bytes s | (s,_) <- input_seq]
-            input         = intersperse (Delay test_key_delay) keydowns
+            input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
         assert_events_from_syn_input (map_to_legacy_table table) input events
 
 verify_special_syn_input_to_event :: Property IO
@@ -191,8 +211,19 @@ verify_special_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) -> mon
         input_seq     = gen table
         events        = [EvKey k ms | (_,(k,ms)) <- input_seq]
         keydowns      = [Bytes s    | (s,_) <- input_seq]
-        input         = intersperse (Delay test_key_delay) keydowns
+        input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
     assert_events_from_syn_input (concat ansi_classify_table) input events
+
+verify_full_syn_input_to_event :: Property IO
+verify_full_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) ->
+    forEachOf terminals_of_interest $ \term_name -> monadic $ do
+        term <- setupTerm term_name
+        let table         = classify_table_for_term term
+            input_seq     = gen table
+            events        = [EvKey k ms | (_,(k,ms)) <- input_seq]
+            keydowns      = [Bytes s    | (s,_) <- input_seq]
+            input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
+        assert_events_from_syn_input table input events
 
 main :: IO ()
 main = defaultMain
@@ -206,5 +237,7 @@ main = defaultMain
         verify_caps_syn_input_to_event
     , testProperty "synthesized typing from hard coded special keys translates to expected events"
         verify_special_syn_input_to_event
+    , testProperty "synthesized typing from any key in the table translates to expected events"
+        verify_full_syn_input_to_event
     ]
 
