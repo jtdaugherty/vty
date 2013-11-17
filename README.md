@@ -83,3 +83,4 @@ rm -rf dist ; cabal configure --enable-tests --disable-library-coverage \
 * http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 * http://ulisse.elettra.trieste.it/services/doc/serial/config.html
 * http://www.leonerd.org.uk/hacks/hints/xterm-8bit.html
+* http://www.unixwiz.net/techtips/termios-vmin-vtime.html
