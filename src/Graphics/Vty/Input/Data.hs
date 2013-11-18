@@ -82,14 +82,14 @@ nav_keys_1 =
    ]
 
 -- | VT 100 (?) encoding for ins, del, pageup, pagedown, home, end
-nav_keys_2 :: ClassifyTable
+nav_keys_2 :: ClassifyTableV1
 nav_keys_2 =
     let k n s = ("\ESC["++show n++"~",(s,[]))
     in zipWith k [2::Int,3,5,6,1,4]
                  [KIns,KDel,KPageUp,KPageDown,KHome,KEnd]
 
 -- | VT 100 (?) encoding for ctrl + ins, del, pageup, pagedown, home, end
-nav_keys_3 :: ClassifyTable
+nav_keys_3 :: ClassifyTableV1
 nav_keys_3 =
     let k n s = ("\ESC["++show n++";5~",(s,[MCtrl]))
     in zipWith k [2::Int,3,5,6,1,4]
@@ -102,7 +102,7 @@ nav_keys_3 =
 --
 -- TODO: resolve
 -- 1. start at ' '. The earlier characters are all ctrl_char_keys
-simple_chars :: ClassifyTable
+simple_chars :: ClassifyTableV1
 simple_chars = [(x:[],(KASCII x,[])) | x <- [' ' .. toEnum 0xC1]]
 
 -- | VT 100 (?) encoding for shift plus function keys
@@ -114,7 +114,7 @@ simple_chars = [(x:[],(KASCII x,[])) | x <- [' ' .. toEnum 0xC1]]
 -- ``meta mode'' on and off, they can be given as smm and rmm."
 --
 -- That is more complex than below. I cannot fault the original author for just hard coding a table.
-function_keys_1 :: ClassifyTable
+function_keys_1 :: ClassifyTableV1
 function_keys_1 =
     let f ff nrs m = [ ("\ESC["++show n++"~",(KFun (n-(nrs!!0)+ff), m)) | n <- nrs ] in
     concat [f 1 [25,26] [MShift], f 3 [28,29] [MShift], f 5 [31..34] [MShift] ]
@@ -128,12 +128,12 @@ function_keys_1 =
 -- the same as ESC should examine km and current encoding.
 -- 3. stopped enumeration at '~' instead of '\DEL'. The latter is mapped to KBS by
 -- special_support_keys.
-function_keys_2 :: ClassifyTable
+function_keys_2 :: ClassifyTableV1
 function_keys_2 = [ ('\ESC':[x],(KASCII x,[MMeta])) | x <- '\t':[' ' .. '~'],
                                                       x /= '[']
 
 -- | Ctrl+Char
-ctrl_char_keys :: ClassifyTable
+ctrl_char_keys :: ClassifyTableV1
 ctrl_char_keys =
     [ ([toEnum x],(KASCII y,[MCtrl]))
     | (x,y) <- zip ([0..31]) ('@':['a'..'z']++['['..'_']),
@@ -143,14 +143,14 @@ ctrl_char_keys =
 -- | Ctrl+Meta+Char
 -- 
 -- TODO: CTRL-i is the same as tab thing
-ctrl_meta_keys :: ClassifyTable
+ctrl_meta_keys :: ClassifyTableV1
 ctrl_meta_keys =
     [ ('\ESC':[toEnum x],(KASCII y,[MMeta,MCtrl])) | (x,y) <- zip [0..31] ('@':['a'..'z']++['['..'_']),
                                                      y /= 'i'
     ]
 
 -- | Special support
-special_support_keys :: ClassifyTable
+special_support_keys :: ClassifyTableV1
 special_support_keys =
     [ -- special support for ESC
       ("\ESC",(KEsc,[])) , ("\ESC\ESC",(KEsc,[MMeta]))
@@ -161,7 +161,7 @@ special_support_keys =
     ]
 
 -- | classify table for ANSI terminals
-ansi_classify_table :: [ClassifyTable]
+ansi_classify_table :: [ClassifyTableV1]
 ansi_classify_table =
     [ nav_keys_0
     , nav_keys_1

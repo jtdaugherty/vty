@@ -1,3 +1,4 @@
 #!/bin/bash
+set -ex
 cabal install
 (cd test && cabal install)

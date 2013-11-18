@@ -47,7 +47,7 @@ inputToEventThread classifier inputChannel eventChannel = loop []
             MisPfx k m s -> writeChan eventChannel (EvKey k m) >> loop s
             Valid k m    -> writeChan eventChannel (EvKey k m) >> loop ""
 
-compile :: ClassifyTable -> [Char] -> KClass
+compile :: ClassifyTableV1 -> [Char] -> KClass
 compile table = cl' where
     -- take all prefixes and create a set of these
     prefix_set = S.fromList $ concatMap (init . inits . fst) $ table
@@ -71,7 +71,7 @@ compile table = cl' where
                                     ++ "input not a prefix nor contains any event data "
                                     ++ show input_block
 
-classify, classifyTab :: ClassifyTable -> [Char] -> KClass
+classify, classifyTab :: ClassifyTableV1 -> [Char] -> KClass
 
 -- As soon as
 classify _table "\xFFFD" = EndLoop
@@ -98,7 +98,7 @@ utf8Length c
     | c < 0xF0 = 3
     | otherwise = 4
 
-initInputForFd :: Int -> ClassifyTable -> Fd -> IO (Chan Event, IO ())
+initInputForFd :: Int -> ClassifyTableV1 -> Fd -> IO (Chan Event, IO ())
 initInputForFd escDelay classify_table input_fd = do
     inputChannel <- newChan
     eventChannel <- newChan

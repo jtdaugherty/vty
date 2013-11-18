@@ -101,7 +101,7 @@ compare_events input_spec expected_events out_events = compare_events' expected_
                 printf "received events %s\n" (show out_events) :: IO ()
                 return False
 
-assert_events_from_syn_input :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Bool
+assert_events_from_syn_input :: ClassifyTableV1 -> InputSpec -> ExpectedSpec -> IO Bool
 assert_events_from_syn_input table input_spec expected_events = do
     let max_duration = sum [t | Delay t <- input_spec] + min_detectable_delay
         event_count = length expected_events
@@ -126,7 +126,7 @@ assert_events_from_syn_input table input_spec expected_events = do
     out_events <- reverse <$> readIORef events_ref
     compare_events input_spec expected_events out_events
 
-assert_events_from_input_block :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Bool
+assert_events_from_input_block :: ClassifyTableV1 -> InputSpec -> ExpectedSpec -> IO Bool
 assert_events_from_input_block table input_spec expected_events = do
     let classifier = classify table
         max_duration = sum [t | Delay t <- input_spec] + min_detectable_delay
