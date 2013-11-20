@@ -86,6 +86,8 @@ library
 
   other-modules:       Graphics.Vty.Attributes.Color
                        Graphics.Vty.Attributes.Color240
+                       Graphics.Vty.Input.Data.ANSI
+                       Graphics.Vty.Input.Events
 
   c-sources:           cbits/gwinsz.c
                        cbits/set_term_timing.c

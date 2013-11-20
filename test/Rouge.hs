@@ -14,8 +14,10 @@ import Control.Monad.Writer
 import System.IO
 import System.Random
 
-data Dude = Dude Int Int
-    deriving (Show,Eq)
+data Dude = Dude
+    { dude_x :: Int
+    , dude_y :: Int
+    } deriving (Show,Eq)
 
 data World = World
     { dude :: Dude
@@ -41,18 +43,29 @@ main = do
     vty <- mkVty
     level_0 <- mkLevel 0
     let world_0 = World (Dude (fst $ start level_0) (snd $ start level_0)) level_0
-    (_final_world, ()) <- execRWST (play >> view_world) vty world_0
+    (_final_world, ()) <- execRWST (play >> view) vty world_0
     shutdown vty
 
 mkLevel _difficulty = do
-    level_width <- randomRIO (10,15)
-    level_height <- randomRIO (10,15)
+    level_width <- randomRIO (40,80)
+    level_height <- randomRIO (40,80)
     start <- (,) <$> randomRIO (2, level_width-3) <*> randomRIO (2, level_height-3)
     end <- (,) <$> randomRIO (2, level_width-3) <*> randomRIO (2, level_height-3)
     -- first the base geography: all rocks
     let base_geo = array ((0,0), (level_width, level_height))
                          [((x,y),Rock) | x <- [0..level_width-1], y <- [0..level_height-1]]
-    return $ Level start end base_geo
+    -- next the empty spaces that make the rooms
+    geo <- add_room start base_geo level_width level_height
+    return $ Level start end geo
+
+add_room (center_x, center_y) geo level_width level_height = do
+    size <- randomRIO (5,15)
+    let x_min = max 0 (center_x - size)
+        x_max = min level_width (center_x + size)
+        y_min = max 0 (center_y - size)
+        y_max = min level_height (center_y + size)
+    let room = [((x,y), EmptySpace) | x <- [x_min..x_max], y <- [y_min..y_max]]
+    return $ accum (\_ v -> v) geo room
 
 image_for_geo EmptySpace = char (def_attr `with_back_color` green) ' '
 image_for_geo Rock = char (def_attr `with_fore_color` white) 'X'
@@ -61,7 +74,7 @@ pieceA = def_attr `with_fore_color` red
 dumpA = def_attr `with_style` reverse_video
 
 play = do
-    view_world
+    view
     done <- process_event
     unless done play
 
@@ -88,18 +101,29 @@ move_dude dx dy = do
                               (min (h - 2) $ max 1 (y + dy))
                 }
 
-view_world :: Game ()
-view_world = do
-    Dude x y <- gets dude
+view :: Game ()
+view = do
+    let info = string def_attr "Move with the arrows keys. Press ESC to exit."
+    -- determine offsets to place the dude in the center of the level.
+    DisplayRegion w h <- asks terminal >>= liftIO . display_bounds
+    the_dude <- gets dude
+    let ox = (w `div` 2) - dude_x the_dude
+        oy = (h `div` 2) - dude_y the_dude + image_height info
+    -- translate the world images to place the dude in the center of the level.
+    world' <- map (translate ox oy) <$> world
+    let pic = pic_for_layers $ info : world'
+    vty <- ask
+    liftIO $ update vty pic
+
+world :: Game [Image]
+world = do
+    the_dude <- gets dude
     the_level <- gets level
-    let dude_image = translate x y (char pieceA '@')
-    let (geo_width, geo_height) = snd $ bounds (geo the_level)
+    let dude_image = translate (dude_x the_dude) (dude_y the_dude) (char pieceA '@')
+        (geo_width, geo_height) = snd $ bounds (geo the_level)
         geo_image = vert_cat [ geo_row | y <- [0..geo_height-1],
                                let geo_row = horiz_cat [ i | x <- [0..geo_width-1],
                                                          let i = image_for_geo (geo the_level ! (x,y))
                                                        ]
                              ]
-        info = string def_attr "Move with the arrows keys. Press ESC to exit."
-    let pic = pic_for_layers [info, translate 0 1 dude_image,translate 0 1 geo_image]
-    vty <- ask
-    liftIO $ update vty pic
+    return [dude_image, geo_image]

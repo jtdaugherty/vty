@@ -251,9 +251,26 @@ pad in_l in_t in_r in_b in_image
                 where w = image_width  i + l
                       h = image_height i
 
--- | "translates" an image by padding the top and left.
+-- | translates an image by padding or cropping the top and left.
+--
+-- TODO: This has an unexpected effect - Translating an image off the screen and then back onto the
+-- screen will result in an empty image.
 translate :: Int -> Int -> Image -> Image
-translate x y i = pad x y 0 0 i
+translate x y i = translate_x x (translate_y y i)
+
+-- | translates an image by padding or cropping the left
+translate_x :: Int -> Image -> Image
+translate_x x i
+    | x < 0     = let s = abs x in CropLeft i s (image_width i - s) (image_height i)
+    | x == 0    = i
+    | otherwise = let h = image_height i in HorizJoin (BGFill x h) i (image_width i + x) h
+
+-- | translates an image by padding or cropping the top
+translate_y :: Int -> Image -> Image
+translate_y y i
+    | y < 0     = let s = abs y in CropTop i s (image_width i) (image_height i - s)
+    | y == 0    = i
+    | otherwise = let w = image_width i in VertJoin (BGFill w y) i w (image_height i + y)
 
 -- | Ensure an image is no larger than the provided size. If the image is larger then crop the right
 -- or bottom.
