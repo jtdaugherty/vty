@@ -54,6 +54,7 @@ import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Builder as TL
 import qualified Data.Text.Lazy.Encoding as TL
 import Data.Word
 
@@ -63,7 +64,7 @@ infixr 4 <->
 -- | Append in the Monoid instance is equivalent to <->. 
 instance Monoid Image where
     mempty = EmptyImage
-    mappend = (<->)
+    mappend = vert_join
 
 -- | combines two images side by side
 --
@@ -150,11 +151,11 @@ background_fill w h
 
 -- | Compose any number of images horizontally.
 horiz_cat :: [Image] -> Image
-horiz_cat = foldr (<|>) EmptyImage
+horiz_cat = foldr horiz_join EmptyImage
 
 -- | Compose any number of images vertically.
 vert_cat :: [Image] -> Image
-vert_cat = foldr (<->) EmptyImage
+vert_cat = foldr vert_join EmptyImage
 
 -- | A Data.Text.Lazy value
 text :: Attr -> TL.Text -> Image
@@ -173,7 +174,7 @@ text' a txt
 -- | an image of a single character. This is a standard Haskell 31-bit character assumed to be in
 -- the ISO-10646 encoding.
 char :: Attr -> Char -> Image
-char a c = 
+char a c =
     let display_width = safe_wcwidth c
     in HorizText a (TL.singleton c) display_width 1
 

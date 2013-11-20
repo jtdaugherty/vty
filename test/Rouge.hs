@@ -29,6 +29,9 @@ data Level = Level
     { start :: (Int, Int)
     , end :: (Int, Int)
     , geo :: Array (Int, Int) LevelPiece
+    -- building the geo image is expensive. Cache it. Though VTY should go through greater lengths
+    -- to avoid the need to cache images.
+    , geo_image :: Image
     }
     deriving (Show,Eq)
 
@@ -47,8 +50,8 @@ main = do
     shutdown vty
 
 mkLevel _difficulty = do
-    level_width <- randomRIO (40,80)
-    level_height <- randomRIO (40,80)
+    level_width <- randomRIO (200,300)
+    level_height <- randomRIO (200,300)
     start <- (,) <$> randomRIO (2, level_width-3) <*> randomRIO (2, level_height-3)
     end <- (,) <$> randomRIO (2, level_width-3) <*> randomRIO (2, level_height-3)
     -- first the base geography: all rocks
@@ -56,7 +59,7 @@ mkLevel _difficulty = do
                          [((x,y),Rock) | x <- [0..level_width-1], y <- [0..level_height-1]]
     -- next the empty spaces that make the rooms
     geo <- add_room start base_geo level_width level_height
-    return $ Level start end geo
+    return $ Level start end geo (build_geo_image geo)
 
 add_room (center_x, center_y) geo level_width level_height = do
     size <- randomRIO (5,15)
@@ -122,10 +125,16 @@ world = do
     the_dude <- gets dude
     the_level <- gets level
     let dude_image = translate (dude_x the_dude) (dude_y the_dude) (char pieceA '@')
-        (geo_width, geo_height) = snd $ bounds (geo the_level)
-        geo_image = vert_cat [ geo_row | y <- [0..geo_height-1],
-                               let geo_row = horiz_cat [ i | x <- [0..geo_width-1],
-                                                         let i = image_for_geo (geo the_level ! (x,y))
-                                                       ]
-                             ]
-    return [dude_image, geo_image]
+    return [dude_image, geo_image the_level]
+
+build_geo_image geo =
+    let (geo_width, geo_height) = snd $ bounds geo
+    -- seems like a the repeated index operation should be removable. This is not performing random
+    -- access but (presumably) access in order of index.
+    in vert_cat [ geo_row
+                | y <- [0..geo_height-1]
+                , let geo_row = horiz_cat [ i
+                                          | x <- [0..geo_width-1]
+                                          , let i = image_for_geo (geo ! (x,y))
+                                          ]
+                ]

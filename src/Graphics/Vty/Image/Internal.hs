@@ -13,6 +13,8 @@ import qualified Data.Text.Lazy as TL
 -- TODO(corey): hm. there is an explicit equation for each type which goes to a lazy text. Each
 -- application probably uses a single type. Perhaps parameterize the entire vty interface by the
 -- input text type?
+-- TODO: Try using a builder instead of a TL.Text instance directly. That might improve performance
+-- for the usual case of appending a bunch of characters with the same attribute together.
 type DisplayText = TL.Text
 
 -- TODO: store a skip list in HorizText(?)
