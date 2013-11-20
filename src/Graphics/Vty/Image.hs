@@ -37,6 +37,8 @@ module Graphics.Vty.Image ( DisplayText
                           , resize_width
                           , resize_height
                           , translate
+                          , translate_x
+                          , translate_y
                           -- | The possible display attributes used in constructing an `Image`.
                           , module Graphics.Vty.Attributes
                           )
