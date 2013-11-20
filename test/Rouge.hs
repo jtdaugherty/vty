@@ -60,12 +60,12 @@ mkLevel _difficulty = do
 
 add_room (center_x, center_y) geo level_width level_height = do
     size <- randomRIO (5,15)
-    let x_min = max 0 (center_x - size)
-        x_max = min level_width (center_x + size)
-        y_min = max 0 (center_y - size)
-        y_max = min level_height (center_y + size)
-    let room = [((x,y), EmptySpace) | x <- [x_min..x_max], y <- [y_min..y_max]]
-    return $ accum (\_ v -> v) geo room
+    let x_min = max 1 (center_x - size)
+        x_max = min (level_width - 1) (center_x + size)
+        y_min = max 1 (center_y - size)
+        y_max = min (level_height - 1) (center_y + size)
+    let room = [((x,y), EmptySpace) | x <- [x_min..x_max - 1], y <- [y_min..y_max - 1]]
+    return (geo // room)
 
 image_for_geo EmptySpace = char (def_attr `with_back_color` green) ' '
 image_for_geo Rock = char (def_attr `with_fore_color` white) 'X'
@@ -96,10 +96,12 @@ move_dude dx dy = do
     vty <- ask
     world <- get
     let Dude x y = dude world
-    (w, h) <- gets (snd . bounds . geo . level)
-    put $ world { dude = Dude (min (w - 2) $ max 1 (x + dx))
-                              (min (h - 2) $ max 1 (y + dy))
-                }
+    let x' = x + dx
+        y' = y + dy
+    -- this is only valid because the level generation assures the border is always Rock
+    case geo (level world) ! (x',y') of
+        EmptySpace -> put $ world { dude = Dude x' y' }
+        _          -> return ()
 
 view :: Game ()
 view = do
