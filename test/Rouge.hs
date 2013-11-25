@@ -44,24 +44,29 @@ type Game = RWST Vty () World IO
 
 main = do 
     vty <- mkVty
-    level_0 <- mkLevel 0
+    level_0 <- mkLevel 1
     let world_0 = World (Dude (fst $ start level_0) (snd $ start level_0)) level_0
     (_final_world, ()) <- execRWST (play >> view) vty world_0
     shutdown vty
 
-mkLevel _difficulty = do
-    level_width <- randomRIO (200,300)
-    level_height <- randomRIO (200,300)
-    start <- (,) <$> randomRIO (2, level_width-3) <*> randomRIO (2, level_height-3)
-    end <- (,) <$> randomRIO (2, level_width-3) <*> randomRIO (2, level_height-3)
+mkLevel difficulty = do
+    let size = 80 * difficulty
+    [level_width, level_height] <- replicateM 2 $ randomRIO (size,size)
+    let randomP = (,) <$> randomRIO (2, level_width-3) <*> randomRIO (2, level_height-3)
+    start <- randomP
+    end <- randomP
     -- first the base geography: all rocks
     let base_geo = array ((0,0), (level_width, level_height))
                          [((x,y),Rock) | x <- [0..level_width-1], y <- [0..level_height-1]]
     -- next the empty spaces that make the rooms
-    geo <- add_room start base_geo level_width level_height
+    -- for this we generate a number of center points
+    centers <- replicateM (2 ^ difficulty + difficulty) randomP
+    -- generate rooms for all those points, plus the start and end
+    geo <- foldM (add_room level_width level_height) base_geo (start : end : centers)
     return $ Level start end geo (build_geo_image geo)
+    where
 
-add_room (center_x, center_y) geo level_width level_height = do
+add_room level_width level_height geo (center_x, center_y) = do
     size <- randomRIO (5,15)
     let x_min = max 1 (center_x - size)
         x_max = min (level_width - 1) (center_x + size)
@@ -71,9 +76,9 @@ add_room (center_x, center_y) geo level_width level_height = do
     return (geo // room)
 
 image_for_geo EmptySpace = char (def_attr `with_back_color` green) ' '
-image_for_geo Rock = char (def_attr `with_fore_color` white) 'X'
+image_for_geo Rock = char def_attr 'X'
 
-pieceA = def_attr `with_fore_color` red
+pieceA = def_attr `with_fore_color` blue `with_back_color` green
 dumpA = def_attr `with_style` reverse_video
 
 play = do
@@ -113,7 +118,7 @@ view = do
     DisplayRegion w h <- asks terminal >>= liftIO . display_bounds
     the_dude <- gets dude
     let ox = (w `div` 2) - dude_x the_dude
-        oy = (h `div` 2) - dude_y the_dude + image_height info
+        oy = (h `div` 2) - dude_y the_dude
     -- translate the world images to place the dude in the center of the level.
     world' <- map (translate ox oy) <$> world
     let pic = pic_for_layers $ info : world'
