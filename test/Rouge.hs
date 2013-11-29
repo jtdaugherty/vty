@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Main where
 
 import Graphics.Vty
@@ -7,6 +8,7 @@ import qualified Data.ByteString as B
 import Data.Word
 
 import Control.Applicative
+import Control.Lens hiding (Level)
 import Control.Monad
 import Control.Monad.RWS
 import Control.Monad.Writer
@@ -46,7 +48,7 @@ main = do
     vty <- mkVty
     level_0 <- mkLevel 1
     let world_0 = World (Dude (fst $ start level_0) (snd $ start level_0)) level_0
-    (_final_world, ()) <- execRWST (play >> view) vty world_0
+    (_final_world, ()) <- execRWST (play >> update_display) vty world_0
     shutdown vty
 
 mkLevel difficulty = do
@@ -82,7 +84,7 @@ pieceA = def_attr `with_fore_color` blue `with_back_color` green
 dumpA = def_attr `with_style` reverse_video
 
 play = do
-    view
+    update_display
     done <- process_event
     unless done play
 
@@ -111,8 +113,8 @@ move_dude dx dy = do
         EmptySpace -> put $ world { dude = Dude x' y' }
         _          -> return ()
 
-view :: Game ()
-view = do
+update_display :: Game ()
+update_display = do
     let info = string def_attr "Move with the arrows keys. Press ESC to exit."
     -- determine offsets to place the dude in the center of the level.
     DisplayRegion w h <- asks terminal >>= liftIO . display_bounds

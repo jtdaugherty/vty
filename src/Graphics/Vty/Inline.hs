@@ -25,14 +25,15 @@
 --
 -- Copyright 2009-2010 Corey O'Connor
 {-# LANGUAGE BangPatterns #-}
-module Graphics.Vty.Inline (module Graphics.Vty.Inline)
+module Graphics.Vty.Inline ( module Graphics.Vty.Inline
+                           , withVty
+                           )
     where
 
-import Graphics.Vty.Attributes
+import Graphics.Vty
 import Graphics.Vty.DisplayAttributes
 import Graphics.Vty.Inline.Unsafe
 import Graphics.Vty.Terminal.Interface
-import Graphics.Vty.Terminal
 
 import Control.Applicative
 import Control.Monad.State.Strict
@@ -103,13 +104,7 @@ put_attr_change t c = liftIO $ do
 -- This will flush the terminal output.
 put_attr_change_ :: ( Applicative m, MonadIO m ) => InlineM () -> m ()
 put_attr_change_ c = liftIO $ do
-    mt <- readIORef global_vty_terminal
-    t <- case mt of
-        Nothing -> do
-            t <- current_terminal
-            writeIORef global_vty_terminal (Just t)
-            return t
-        Just t -> return t
+    t <- withVty $ return . terminal
     hFlush stdout
     put_attr_change t c
     hFlush stdout
