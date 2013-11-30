@@ -28,6 +28,15 @@ instance Show Picture where
 instance NFData Picture where
     rnf (Picture c l b) = c `deepseq` l `deepseq` b `deepseq` ()
 
+empty_picture :: Picture
+empty_picture = Picture NoCursor [] ClearBackground
+
+add_to_top :: Picture -> Image -> Picture
+add_to_top p i = p {pic_layers = i : pic_layers p}
+
+add_to_bottom :: Picture -> Image -> Picture
+add_to_bottom p i = p {pic_layers = pic_layers p ++ [i]}
+
 -- | Create a picture for display for the given image. The picture will not have a displayed cursor
 -- and the background display attribute will be `current_attr`.
 pic_for_image :: Image -> Picture

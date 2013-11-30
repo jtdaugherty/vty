@@ -15,6 +15,8 @@
         * The transparent areas for a layer are the background image components.
         * If the background is clear there is no background layer.
         * If there is a background character then the bottom layer is the background layer.
+        * empty_picture is a Picture with no layers and no cursor
+        * add_to_top and add_to_bottom add a layer to the top and bottom of the given Picture.
     * compatibility improvements:
         * terminfo based terminals with no cursor support are silently accepted. The cursor
           visibility changes in the Picture will have no effect.

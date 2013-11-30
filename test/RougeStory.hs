@@ -6,6 +6,11 @@ import Text.Printf
 import Graphics.Vty
 import Graphics.Vty.Inline
 
+import Control.Monad.Trans.State.Strict
+
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+
 -- Characters are identified by Names
 type Character = Name
 type Name = String
@@ -28,7 +33,7 @@ class Story repr where
     -- Aspects are animate objects, inanimate objects or histories.
     animate_obj :: Type -> repr Object
     inanimate_obj :: Type -> repr Object
-    history :: Type -> repr History
+    history :: repr History
 
     -- The goal is to acquire, or dispose of an object.
     dispose_obj :: repr Object -> repr Goal
@@ -61,7 +66,7 @@ instance Story X where
     add_unknown_obj obj as =
     animate_obj t =
     inanimate_obj t =
-    history t =
+    history =
     dispose_obj obj =
     acquire_obj obj =
     named obj n =
@@ -78,7 +83,7 @@ instance Story ShowStory where
     add_unknown_obj obj as = ShowStory $ printf "Unknown(%s):%s" (unShowStory obj) (unShowStory as)
     animate_obj t = ShowStory $ printf "%s :: AnimateObj" t
     inanimate_obj t = ShowStory $ printf "%s :: InanimateObj" t
-    history t = ShowStory $ printf "%s :: History" t
+    history = ShowStory $ printf "History"
     dispose_obj obj = ShowStory $ printf "Goal(%s)" (unShowStory obj)
     acquire_obj obj = ShowStory $ printf "Acquire(%s)" (unShowStory obj)
     named obj n = ShowStory $ printf "%s+Name(%s)" (unShowStory obj) (show n)
@@ -99,7 +104,7 @@ instance Story TellStory where
     add_unknown_obj _ as = as
     animate_obj t = TellStory t
     inanimate_obj t = TellStory t
-    history t = TellStory t
+    history = TellStory "History"
     dispose_obj (TellStory obj)
         = TellStory $ "to dispose of the accursed " ++ obj
     acquire_obj (TellStory obj)
@@ -107,26 +112,43 @@ instance Story TellStory where
     named (TellStory obj) name
         = TellStory $ obj ++ " with the name " ++ name
 
-newtype PictureStory t = PictureStory { compose_to_picture :: Picture }
+newtype BuildPicture t = BuildPicture {build_picture :: Picture -> State PictureCtx Picture}
 
-{-
-instance Story X where
-    story c q =
-    quest g as =
-    empty_aspects =
-    add_known_history h as =
-    add_known_obj obj as =
-    add_unknown_history h as =
-    add_unknown_obj obj as =
-    animate_obj t =
-    inanimate_obj t =
-    history t =
-    dispose_obj obj =
-    acquire_obj obj =
-    named obj n =
--}
+type Sprite = (Int, Int, Image)
+data PictureCtx = PictureCtx
+    { next_ID          :: Int -- globally monotonic
+    , this_ID          :: Int
+    , known_sprites    :: Map Int Sprite
+    }
+
+get_ID :: State PictureCtx Int
+get_ID = gets this_ID
+
+new_ID :: Picture -> State PictureCtx Picture
+new_ID p = do
+    ctx <- get
+    let the_ID = next_ID ctx
+    put $ ctx {next_ID = the_ID + 1, this_ID = the_ID}
+    return p
+
+empty_picture_ctx = PictureCtx 0 1 Map.empty
+
+instance Story BuildPicture where
+    story _c (BuildPicture q) = BuildPicture q
+    quest _g (BuildPicture as) = BuildPicture as
+    empty_aspects = BuildPicture new_ID
+    add_known_history h (BuildPicture as) = BuildPicture as
+    add_known_obj obj (BuildPicture as) = BuildPicture as
+    add_unknown_history h (BuildPicture as) = BuildPicture as
+    add_unknown_obj obj (BuildPicture as) = BuildPicture as
+    animate_obj t = BuildPicture new_ID
+    inanimate_obj t = BuildPicture new_ID
+    history = BuildPicture new_ID
+    dispose_obj (BuildPicture obj) = BuildPicture obj
+    acquire_obj (BuildPicture obj) = BuildPicture obj
+    named (BuildPicture obj) n = BuildPicture obj
 
 main = do
     putStrLn $ unTellStory story_0
     putStrLn $ unShowStory story_0
-    withVty $ flip update (compose_to_picture story_0)
+    withVty $ flip update $ evalState (build_picture story_0 empty_picture) empty_picture_ctx
