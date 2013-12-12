@@ -1,4 +1,6 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
+-- investigation using typed tagless interpretter of an AST representation of a story.
+-- Use extensible effects instead?
 module RougeStory where
 
 import Text.Printf
@@ -6,10 +8,17 @@ import Text.Printf
 import Graphics.Vty
 import Graphics.Vty.Inline
 
+import Control.Applicative
+import Control.Concurrent (threadDelay)
+import Control.Monad
+import Control.Monad.Trans
 import Control.Monad.Trans.State.Strict
 
+import Data.Foldable
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+
+import System.Random
 
 -- Characters are identified by Names
 type Character = Name
@@ -112,43 +121,65 @@ instance Story TellStory where
     named (TellStory obj) name
         = TellStory $ obj ++ " with the name " ++ name
 
-newtype BuildPicture t = BuildPicture {build_picture :: Picture -> State PictureCtx Picture}
+newtype BuildSprites m t = BuildSprites {build_sprites :: StateT SpriteDB m ()}
 
 type Sprite = (Int, Int, Image)
-data PictureCtx = PictureCtx
-    { next_ID          :: Int -- globally monotonic
-    , this_ID          :: Int
-    , known_sprites    :: Map Int Sprite
+type Collider = (Int,Int,Int,Int)
+data SpriteDB = SpriteDB
+    { next_sprite_ID :: Int -- globally monotonic. H: Can fst . findMax + 1 be used?
+    , this_sprite_ID :: Int
+    , sprites        :: Map Int Sprite
     }
+    deriving (Show)
 
-get_ID :: State PictureCtx Int
-get_ID = gets this_ID
+get_sprite_ID :: MonadIO m => StateT SpriteDB m Int
+get_sprite_ID = gets this_sprite_ID
 
-new_ID :: Picture -> State PictureCtx Picture
-new_ID p = do
+new_sprite_ID :: MonadIO m => StateT SpriteDB m Int
+new_sprite_ID = do
     ctx <- get
-    let the_ID = next_ID ctx
-    put $ ctx {next_ID = the_ID + 1, this_ID = the_ID}
-    return p
+    let the_ID = next_sprite_ID ctx
+    put $ ctx {next_sprite_ID = the_ID + 1, this_sprite_ID = the_ID}
+    return the_ID
 
-empty_picture_ctx = PictureCtx 0 1 Map.empty
+empty_sprite_db = SpriteDB 0 1 Map.empty
 
-instance Story BuildPicture where
-    story _c (BuildPicture q) = BuildPicture q
-    quest _g (BuildPicture as) = BuildPicture as
-    empty_aspects = BuildPicture new_ID
-    add_known_history h (BuildPicture as) = BuildPicture as
-    add_known_obj obj (BuildPicture as) = BuildPicture as
-    add_unknown_history h (BuildPicture as) = BuildPicture as
-    add_unknown_obj obj (BuildPicture as) = BuildPicture as
-    animate_obj t = BuildPicture new_ID
-    inanimate_obj t = BuildPicture new_ID
-    history = BuildPicture new_ID
-    dispose_obj (BuildPicture obj) = BuildPicture obj
-    acquire_obj (BuildPicture obj) = BuildPicture obj
-    named (BuildPicture obj) n = BuildPicture obj
+add_sprite x y img i
+    = modify (\ctx -> ctx {sprites = Map.insert i (x,y,img) (sprites ctx)})
+
+add_random_sprite c i = do
+    let img = char def_attr c
+    [x,y] <- liftIO $ replicateM 2 $ randomRIO (-100,100)
+    add_sprite x y img i
+
+instance MonadIO m => Story (BuildSprites m) where
+    story _c (BuildSprites q) = BuildSprites q
+    quest (BuildSprites g) (BuildSprites as) = BuildSprites (g >> as)
+    empty_aspects = BuildSprites $ return ()
+    add_known_history h (BuildSprites as)   = BuildSprites as
+    add_known_obj obj (BuildSprites as)     = BuildSprites as
+    add_unknown_history h (BuildSprites as) = BuildSprites as
+    add_unknown_obj obj (BuildSprites as)   = BuildSprites as
+    animate_obj   _t = BuildSprites $ do
+        add_random_sprite '@' =<< new_sprite_ID
+    inanimate_obj _t = BuildSprites $ do
+        add_random_sprite 'X' =<< new_sprite_ID
+    history         = BuildSprites $ return ()
+    dispose_obj (BuildSprites obj)   = BuildSprites obj
+    acquire_obj (BuildSprites obj)   = BuildSprites obj
+    named       (BuildSprites obj) n = BuildSprites obj
+
+render_sprites = foldMap render_sprite . sprites
+render_sprite (x,y,img) = return $ translate x y img
 
 main = do
     putStrLn $ unTellStory story_0
     putStrLn $ unShowStory story_0
-    withVty $ flip update $ evalState (build_picture story_0 empty_picture) empty_picture_ctx
+    sprite_db <- execStateT (build_sprites story_0) empty_sprite_db
+    print sprite_db
+    let imgs = render_sprites sprite_db
+        p = pic_for_layers imgs
+    withVty $ flip update p
+    threadDelay 5000000
+    withVty $ shutdown
+    return ()

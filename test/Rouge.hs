@@ -66,7 +66,6 @@ mkLevel difficulty = do
     -- generate rooms for all those points, plus the start and end
     geo <- foldM (add_room level_width level_height) base_geo (start : end : centers)
     return $ Level start end geo (build_geo_image geo)
-    where
 
 add_room level_width level_height geo (center_x, center_y) = do
     size <- randomRIO (5,15)
