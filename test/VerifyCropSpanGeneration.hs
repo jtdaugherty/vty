@@ -2,7 +2,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module VerifyCropSpanGeneration where
 
-import Verify.Graphics.Vty.DisplayRegion
+import Verify.Graphics.Vty.Prelude
+
 import Verify.Graphics.Vty.Image
 import Verify.Graphics.Vty.Picture
 import Verify.Graphics.Vty.Span

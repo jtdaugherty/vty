@@ -2,13 +2,13 @@
  - This assumes appropriate definitions exist in the current environment for the terminals of
  - interest.
  -}
-module VerifyTerminal where
+module VerifyOutput where
 import Verify
 
 import Graphics.Vty
 
 import Verify.Graphics.Vty.Image
-import Verify.Graphics.Vty.Terminal
+import Verify.Graphics.Vty.Output
 
 import Control.Monad
 
@@ -49,7 +49,7 @@ smoke_test_term term_name i = do
     t <- terminal_with_name_and_io term_name null_out
     putStrLn $ "context color count: " ++ show (context_color_count t)
     reserve_display t
-    dc <- display_context t (DisplayRegion 100 100)
+    dc <- display_context t (100,100)
     -- always show the cursor to produce tests for terminals with no cursor support.
     let pic = (pic_for_image i) { pic_cursor = Cursor 0 0 }
     output_picture dc pic

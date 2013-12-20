@@ -5,8 +5,7 @@ import Graphics.Vty
 import Graphics.Vty.Attributes
 import Graphics.Vty.Inline
 import Graphics.Vty.Picture
-import Graphics.Vty.Terminal
-import Graphics.Vty.DisplayRegion
+import Graphics.Vty.Output
 
 import Control.Concurrent (threadDelay)
 import Control.Exception
@@ -224,7 +223,7 @@ display_bounds_test_0 = Test
     , test_action = do
         t <- current_terminal
         reserve_display t
-        DisplayRegion w h <- display_bounds t
+        (w,h) <- display_bounds t
         let row_0 = replicate (fromEnum w) 'X' ++ "\n"
             row_h = replicate (fromEnum w - 1) 'X'
             row_n = "X" ++ replicate (fromEnum w - 2) ' ' ++ "X\n"
@@ -245,7 +244,7 @@ display_bounds_test_1 = Test
     , test_action = do
         t <- current_terminal
         reserve_display t
-        DisplayRegion w h <- display_bounds t
+        (w,h) <- display_bounds t
         set_cursor_pos t 0 0
         let row_0 = replicate (fromEnum w) 'X' ++ "\n"
         putStr row_0
@@ -274,7 +273,7 @@ display_bounds_test_2 = Test
     , test_action = do
         t <- current_terminal
         reserve_display t
-        bounds@(DisplayRegion w h) <- display_bounds t
+        bounds@(w,h) <- display_bounds t
         let first_row = horiz_cat $ replicate (fromEnum w) (char def_attr 'X')
             middle_rows = vert_cat $ replicate (fromEnum h - 2) middle_row
             middle_row = (char def_attr 'X') <|> background_fill (w - 2) 1 <|> (char def_attr 'X')
@@ -297,7 +296,7 @@ display_bounds_test_3 = Test
     , test_action = do
         t <- current_terminal
         reserve_display t
-        DisplayRegion w h <- display_bounds t
+        (w,h) <- display_bounds t
         hide_cursor t
         set_cursor_pos t 0 0
         let row_0 = replicate (fromEnum w) 'X'

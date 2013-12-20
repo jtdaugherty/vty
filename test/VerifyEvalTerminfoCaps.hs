@@ -11,7 +11,7 @@ import Control.DeepSeq
 import qualified System.Console.Terminfo as Terminfo
 
 import Verify
-import Verify.Graphics.Vty.Terminal
+import Verify.Graphics.Vty.Output
 
 import Control.Applicative ( (<$>) )
 import Control.Exception ( try, SomeException(..) )

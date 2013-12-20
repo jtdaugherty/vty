@@ -8,13 +8,13 @@
  -}
 module Graphics.Vty.PictureToSpans where
 
-import Graphics.Vty.DisplayRegion
+import Graphics.Vty.Prelude
+
 import Graphics.Vty.Image
 import Graphics.Vty.Image.Internal
 import Graphics.Vty.Picture
 import Graphics.Vty.Span
 
-import Control.Applicative
 import Control.Lens hiding ( op )
 import Control.Monad.Reader
 import Control.Monad.State.Strict hiding ( state )
@@ -71,8 +71,7 @@ display_ops_for_pic pic r = Vector.create (combined_ops_for_layers pic r)
 --
 -- largerly used only for debugging.
 display_ops_for_image :: Image -> DisplayOps
-display_ops_for_image i = display_ops_for_pic (pic_for_image i)
-                                              (DisplayRegion (image_width i) (image_height i))
+display_ops_for_image i = display_ops_for_pic (pic_for_image i) (image_width i, image_height i)
 
 -- | Produces the span ops for each layer then combines them.
 --

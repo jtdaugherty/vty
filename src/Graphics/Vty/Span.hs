@@ -16,15 +16,14 @@
 module Graphics.Vty.Span
     where
 
-import Graphics.Vty.DisplayRegion
-import Graphics.Vty.Image
+import Graphics.Vty.Prelude
 
+import Graphics.Vty.Image
 import Graphics.Vty.Image.Internal ( clip_text )
 
+import qualified Data.Text.Lazy as TL
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
-
-import qualified Data.Text.Lazy as TL
 
 -- | This represents an operation on the terminal. Either an attribute change or the output of a
 -- text string.
@@ -112,7 +111,7 @@ display_ops_rows :: DisplayOps -> Int
 display_ops_rows ops = Vector.length ops
 
 effected_region :: DisplayOps -> DisplayRegion
-effected_region ops = DisplayRegion (display_ops_columns ops) (display_ops_rows ops)
+effected_region ops = (display_ops_columns ops, display_ops_rows ops)
 
 -- | The number of columns a SpanOps effects.
 span_ops_effected_columns :: SpanOps -> Int

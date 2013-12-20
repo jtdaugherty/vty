@@ -4,12 +4,13 @@ module Verify.Graphics.Vty.Picture ( module Verify.Graphics.Vty.Picture
                                    )
     where
 
+import Verify.Graphics.Vty.Prelude
+
 import Graphics.Vty.Picture
 import Graphics.Vty.Debug
 
 import Verify.Graphics.Vty.Attributes
 import Verify.Graphics.Vty.Image
-import Verify.Graphics.Vty.DisplayRegion
 
 import Verify
 

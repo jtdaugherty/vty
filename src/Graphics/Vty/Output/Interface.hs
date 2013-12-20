@@ -5,17 +5,18 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Graphics.Vty.Terminal.Interface ( module Graphics.Vty.Terminal.Interface
-                                       , OutputBuffer
-                                       )
+module Graphics.Vty.Output.Interface ( module Graphics.Vty.Output.Interface
+                                     , OutputBuffer
+                                     )
     where
+
+import Graphics.Vty.Prelude
 
 import Data.Marshalling
 
 import Graphics.Vty.Picture
 import Graphics.Vty.PictureToSpans
 import Graphics.Vty.Span
-import Graphics.Vty.DisplayRegion
 
 import Graphics.Vty.DisplayAttributes
 
@@ -27,19 +28,22 @@ import qualified Data.Text.Lazy as TL
 import Data.IORef
 import qualified Data.Vector as Vector 
 
-data Terminal = Terminal
-    { -- | Text identifier for the terminal. Used for debugging. 
+data Output = Output
+    { -- | Text identifier for the output device. Used for debugging. 
       terminal_ID :: String
     , release_terminal :: MonadIO m => m ()
     -- | Clear the display and initialize the terminal to some initial display state. 
     --
     -- The expectation of a program is that the display starts in some initial state. 
     -- The initial state would consist of fixed values:
+    --
     --  - cursor at top left
     --  - UTF-8 character encoding
     --  - drawing characteristics are the default
+    --
     -- The abstract operation I think all these behaviors are instances of is reserving exclusive
     -- access to a display such that:
+    --
     --  - The previous state cannot be determined
     --  - When exclusive access to a display is released the display returns to the previous state.
     , reserve_display :: MonadIO m => m ()
@@ -59,10 +63,10 @@ data Terminal = Terminal
     -- | Acquire display access to the given region of the display.
     -- Currently all regions have the upper left corner of (0,0) and the lower right corner at 
     -- (max display_width provided_width, max display_height provided_height)
-    , mk_display_context :: MonadIO m => Terminal -> DisplayRegion -> m DisplayContext
+    , mk_display_context :: MonadIO m => Output -> DisplayRegion -> m DisplayContext
     }
 
-display_context :: MonadIO m => Terminal -> DisplayRegion -> m DisplayContext
+display_context :: MonadIO m => Output -> DisplayRegion -> m DisplayContext
 display_context t = liftIO . mk_display_context t t
 
 data AssumedState = AssumedState
@@ -74,7 +78,7 @@ initial_assumed_state :: AssumedState
 initial_assumed_state = AssumedState Nothing Nothing
 
 data DisplayContext = DisplayContext
-    { context_device :: Terminal
+    { context_device :: Output
     -- | Provide the bounds of the display context. 
     , context_region :: DisplayRegion
     --  | sets the output position to the specified row and column. Where the number of bytes
@@ -103,7 +107,7 @@ data DisplayContext = DisplayContext
     , serialize_default_attr :: OutputBuffer -> IO OutputBuffer
     , row_end_required_bytes :: Int
     , serialize_row_end :: OutputBuffer -> IO OutputBuffer
-    -- | See Graphics.Vty.Terminal.XTermColor.inline_hack
+    -- | See Graphics.Vty.Output.XTermColor.inline_hack
     , inline_hack :: IO ()
     }
 
@@ -273,7 +277,7 @@ serialize_span_op dc (RowEnd _) out_ptr fattr = do
     out_ptr' <- serialize_row_end dc out_ptr
     return (out_ptr', fattr)
 
-send_to_terminal :: Terminal -> Int -> (Ptr Word8 -> IO (Ptr Word8)) -> IO ()
+send_to_terminal :: Output -> Int -> (Ptr Word8 -> IO (Ptr Word8)) -> IO ()
 send_to_terminal t c f = allocaBytes (fromEnum c) $ \start_ptr -> do
     end_ptr <- f start_ptr
     case end_ptr `minusPtr` start_ptr of
@@ -319,7 +323,7 @@ cursor_column_offset ops cx cy =
 
 -- | Not all terminals support all display attributes. This filters a display attribute to what the
 -- given terminal can display.
-limit_attr_for_display :: Terminal -> Attr -> Attr
+limit_attr_for_display :: Output -> Attr -> Attr
 limit_attr_for_display t attr 
     = attr { attr_fore_color = clamp_color $ attr_fore_color attr
            , attr_back_color = clamp_color $ attr_back_color attr

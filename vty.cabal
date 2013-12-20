@@ -65,7 +65,8 @@ library
                        Graphics.Vty.Input.Internal
                        Graphics.Vty.Input.Terminfo
                        Graphics.Vty.Picture
-                       Graphics.Vty.Terminal
+                       Graphics.Vty.Prelude
+                       Graphics.Vty.Output
                        Graphics.Text.Width
                        -- the modules below are only meant to be used by the tests.
                        Codec.Binary.UTF8.Debug
@@ -73,16 +74,15 @@ library
                        Data.Terminfo.Eval
                        Data.Marshalling
                        Graphics.Vty.Debug
-                       Graphics.Vty.DisplayRegion
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.Image.Internal
                        Graphics.Vty.PictureToSpans
                        Graphics.Vty.Span
-                       Graphics.Vty.Terminal.Mock
-                       Graphics.Vty.Terminal.Interface
-                       Graphics.Vty.Terminal.MacOSX
-                       Graphics.Vty.Terminal.XTermColor
-                       Graphics.Vty.Terminal.TerminfoBased
+                       Graphics.Vty.Output.Mock
+                       Graphics.Vty.Output.Interface
+                       Graphics.Vty.Output.MacOSX
+                       Graphics.Vty.Output.XTermColor
+                       Graphics.Vty.Output.TerminfoBased
 
   other-modules:       Graphics.Vty.Attributes.Color
                        Graphics.Vty.Attributes.Color240
@@ -139,11 +139,11 @@ test-suite verify-using-mock-terminal
 
   other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
-                       Verify.Graphics.Vty.DisplayRegion
+                       Verify.Graphics.Vty.Prelude
                        Verify.Graphics.Vty.Picture
                        Verify.Graphics.Vty.Image
                        Verify.Graphics.Vty.Span
-                       Verify.Graphics.Vty.Terminal
+                       Verify.Graphics.Vty.Output
 
   build-depends:       vty,
                        Cabal == 1.18.*,
@@ -168,15 +168,15 @@ test-suite verify-terminal
 
   hs-source-dirs:      test
 
-  test-module:         VerifyTerminal
+  test-module:         VerifyOutput
 
   other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
-                       Verify.Graphics.Vty.DisplayRegion
+                       Verify.Graphics.Vty.Prelude
                        Verify.Graphics.Vty.Picture
                        Verify.Graphics.Vty.Image
                        Verify.Graphics.Vty.Span
-                       Verify.Graphics.Vty.Terminal
+                       Verify.Graphics.Vty.Output
 
   build-depends:       vty,
                        Cabal == 1.18.*,
@@ -205,7 +205,7 @@ test-suite verify-display-attributes
 
   other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
-                       Verify.Graphics.Vty.DisplayRegion
+                       Verify.Graphics.Vty.Prelude
                        Verify.Graphics.Vty.Picture
                        Verify.Graphics.Vty.Image
                        Verify.Graphics.Vty.Span
@@ -261,7 +261,7 @@ test-suite verify-eval-terminfo-caps
   test-module:         VerifyEvalTerminfoCaps
 
   other-modules:       Verify
-                       Verify.Graphics.Vty.Terminal
+                       Verify.Graphics.Vty.Output
 
   build-depends:       vty,
                        Cabal == 1.18.*,
@@ -345,7 +345,7 @@ test-suite verify-inline
   test-module:         VerifyInline
 
   other-modules:       Verify
-                       Verify.Graphics.Vty.Terminal
+                       Verify.Graphics.Vty.Output
 
   build-depends:       vty,
                        Cabal == 1.18.*,
@@ -373,7 +373,7 @@ test-suite verify-parse-terminfo-caps
 
   other-modules:       Verify
                        Verify.Data.Terminfo.Parse
-                       Verify.Graphics.Vty.Terminal
+                       Verify.Graphics.Vty.Output
 
   build-depends:       vty,
                        Cabal == 1.18.*,
@@ -402,7 +402,7 @@ test-suite verify-simple-span-generation
 
   other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
-                       Verify.Graphics.Vty.DisplayRegion
+                       Verify.Graphics.Vty.Prelude
                        Verify.Graphics.Vty.Picture
                        Verify.Graphics.Vty.Image
                        Verify.Graphics.Vty.Span
@@ -434,7 +434,7 @@ test-suite verify-crop-span-generation
 
   other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
-                       Verify.Graphics.Vty.DisplayRegion
+                       Verify.Graphics.Vty.Prelude
                        Verify.Graphics.Vty.Picture
                        Verify.Graphics.Vty.Image
                        Verify.Graphics.Vty.Span
@@ -466,7 +466,7 @@ test-suite verify-layers-span-generation
 
   other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
-                       Verify.Graphics.Vty.DisplayRegion
+                       Verify.Graphics.Vty.Prelude
                        Verify.Graphics.Vty.Picture
                        Verify.Graphics.Vty.Image
                        Verify.Graphics.Vty.Span

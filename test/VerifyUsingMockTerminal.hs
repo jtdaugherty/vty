@@ -1,12 +1,13 @@
 module VerifyUsingMockTerminal where
 
-import Verify.Graphics.Vty.DisplayRegion
+import Verify.Graphics.Vty.Prelude
+
 import Verify.Graphics.Vty.Picture
 import Verify.Graphics.Vty.Image
 import Verify.Graphics.Vty.Span
-import Verify.Graphics.Vty.Terminal
-import Graphics.Vty.Terminal
-import Graphics.Vty.Terminal.Mock
+import Verify.Graphics.Vty.Output
+import Graphics.Vty.Output
+import Graphics.Vty.Output.Mock
 
 import Graphics.Vty.Debug
 
@@ -20,7 +21,7 @@ import System.IO
 
 unit_image_unit_bounds :: UnitImage -> Property
 unit_image_unit_bounds (UnitImage _ i) = liftIOResult $ do
-    (_,t) <- mock_terminal (DisplayRegion 1 1)
+    (_,t) <- mock_terminal (1,1)
     dc <- display_bounds t >>= display_context t
     let pic = pic_for_image i
     output_picture dc pic
@@ -28,7 +29,7 @@ unit_image_unit_bounds (UnitImage _ i) = liftIOResult $ do
 
 unit_image_arb_bounds :: UnitImage -> MockWindow -> Property
 unit_image_arb_bounds (UnitImage _ i) (MockWindow w h) = liftIOResult $ do
-    (_,t) <- mock_terminal (DisplayRegion w h)
+    (_,t) <- mock_terminal (w,h)
     dc <- display_bounds t >>= display_context t
     let pic = pic_for_image i
     output_picture dc pic
@@ -36,7 +37,7 @@ unit_image_arb_bounds (UnitImage _ i) (MockWindow w h) = liftIOResult $ do
 
 single_T_row :: MockWindow -> Property
 single_T_row (MockWindow w h) = liftIOResult $ do
-    (mock_data,t) <- mock_terminal (DisplayRegion w h)
+    (mock_data,t) <- mock_terminal (w,h)
     dc <- display_bounds t >>= display_context t
     -- create an image that contains just the character T repeated for a single row
     let i = horiz_cat $ replicate (fromEnum w) (char def_attr 'T')
@@ -51,7 +52,7 @@ single_T_row (MockWindow w h) = liftIOResult $ do
     
 many_T_rows :: MockWindow -> Property
 many_T_rows (MockWindow w h) = liftIOResult $ do
-    (mock_data, t) <- mock_terminal (DisplayRegion w h)
+    (mock_data, t) <- mock_terminal (w,h)
     dc <- display_bounds t >>= display_context t
     -- create an image that contains the character 'T' repeated for all the rows
     let i = vert_cat $ replicate (fromEnum h) $ horiz_cat $ replicate (fromEnum w) (char def_attr 'T')
@@ -64,7 +65,7 @@ many_T_rows (MockWindow w h) = liftIOResult $ do
 
 many_T_rows_cropped_width :: MockWindow -> Property
 many_T_rows_cropped_width (MockWindow w h) = liftIOResult $ do
-    (mock_data,t) <- mock_terminal (DisplayRegion w h)
+    (mock_data,t) <- mock_terminal (w,h)
     dc <- display_bounds t >>= display_context t
     -- create an image that contains the character 'T' repeated for all the rows
     let i = vert_cat $ replicate (fromEnum h) $ horiz_cat $ replicate (fromEnum w * 2) (char def_attr 'T')
@@ -77,7 +78,7 @@ many_T_rows_cropped_width (MockWindow w h) = liftIOResult $ do
 
 many_T_rows_cropped_height :: MockWindow -> Property
 many_T_rows_cropped_height (MockWindow w h) = liftIOResult $ do
-    (mock_data,t) <- mock_terminal (DisplayRegion w h)
+    (mock_data,t) <- mock_terminal (w,h)
     dc <- display_bounds t >>= display_context t
     -- create an image that contains the character 'T' repeated for all the rows
     let i = vert_cat $ replicate (fromEnum h * 2) $ horiz_cat $ replicate (fromEnum w) (char def_attr 'T')

@@ -1,10 +1,10 @@
 module VerifyInline where
 
 import Graphics.Vty.Inline
-import Graphics.Vty.Terminal
-import Graphics.Vty.Terminal.TerminfoBased as TerminfoBased
+import Graphics.Vty.Output
+import Graphics.Vty.Output.TerminfoBased as TerminfoBased
 
-import Verify.Graphics.Vty.Terminal
+import Verify.Graphics.Vty.Output
 
 import Verify
 

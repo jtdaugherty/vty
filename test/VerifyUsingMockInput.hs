@@ -6,7 +6,7 @@
  -}
 module Main where
 
-import Verify.Graphics.Vty.Terminal
+import Verify.Graphics.Vty.Output
 
 import Data.List (intersperse)
 
@@ -82,6 +82,7 @@ gen_events_using_io_actions max_duration input_action output_action = do
     Just () <- timeout max_duration' $ takeMVar read_complete
     return ()
 
+compare_events :: (Show a1, Show a, Eq a1) => a -> [a1] -> [a1] -> IO Bool
 compare_events input_spec expected_events out_events = compare_events' expected_events out_events
     where
         compare_events' [] []         = return True

@@ -1,6 +1,7 @@
 5.0.0
     * removed the typeclass based terminal and display context interface in favor of a data
       structure of properties interface.
+    * renamed the Terminal interface to Output
     * The default picture for an image now uses the "clear" background. This background fills
       background spans with spaces or just ends the line.
         * Previously the background defaulted to the space character. This causes issues copying

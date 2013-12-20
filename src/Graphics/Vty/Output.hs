@@ -1,25 +1,25 @@
---  | Terminal IO device.
+--  | Output interface.
 --
 --  Access to the current terminal or a specific terminal device.
 --
 --  See also:
 --
---  1. Graphics.Vty.Terminal: This instantiates an abtract interface to the terminal interface based
+--  1. "Graphics.Vty.Output": This instantiates an abtract interface to the terminal interface based
 --  on the TERM and COLORTERM environment variables. 
 --  
---  2. Graphics.Vty.Terminal.Interface: Defines the generic interface all terminals need to implement.
+--  2. Graphics.Vty.Output.Interface: Defines the generic interface all terminals need to implement.
 --
---  3. Graphics.Vty.Terminal.TerminfoBased: Defines a terminal instance that uses terminfo for all
+--  3. Graphics.Vty.Output.TerminfoBased: Defines a terminal instance that uses terminfo for all
 --  control strings.  No attempt is made to change the character set to UTF-8 for these terminals.
 --  I don't know a way to reliably determine if that is required or how to do so.
 --
---  4. Graphics.Vty.Terminal.XTermColor: This module contains an interface suitable for xterm-like
+--  4. Graphics.Vty.Output.XTermColor: This module contains an interface suitable for xterm-like
 --  terminals. These are the terminals where TERM == xterm. This does use terminfo for as many
 --  control codes as possible. 
 --
 -- Copyright 2009-2010 Corey O'Connor
-module Graphics.Vty.Terminal ( module Graphics.Vty.Terminal
-                             , Terminal(..) -- \todo hide constructors
+module Graphics.Vty.Output ( module Graphics.Vty.Output
+                             , Output(..) -- \todo hide constructors
                              , AssumedState(..)
                              , DisplayContext(..) -- \todo hide constructors
                              , output_picture
@@ -28,15 +28,14 @@ module Graphics.Vty.Terminal ( module Graphics.Vty.Terminal
     where
 
 
-import Graphics.Vty.DisplayRegion
-import Graphics.Vty.Terminal.Interface
-import Graphics.Vty.Terminal.MacOSX as MacOSX
-import Graphics.Vty.Terminal.XTermColor as XTermColor
-import Graphics.Vty.Terminal.TerminfoBased as TerminfoBased
+import Graphics.Vty.Prelude
 
-import Control.Applicative
+import Graphics.Vty.Output.Interface
+import Graphics.Vty.Output.MacOSX as MacOSX
+import Graphics.Vty.Output.XTermColor as XTermColor
+import Graphics.Vty.Output.TerminfoBased as TerminfoBased
+
 import Control.Exception ( SomeException, try )
-import Control.Monad
 import Control.Monad.Trans
 
 import Data.List ( isPrefixOf )
@@ -46,9 +45,9 @@ import GHC.IO.Handle
 import System.Environment
 import System.IO
 
--- | Returns a `Terminal` for the current terminal.
+-- | Returns a `Output` for the current terminal.
 --
--- The specific Terminal implementation used is hidden from the API user. All terminal
+-- The specific Output implementation used is hidden from the API user. All terminal
 -- implementations are assumed to perform more, or less, the same. Currently all implementations use
 -- terminfo for at least some terminal specific information. This is why platforms without terminfo
 -- are not supported. However, as mentioned before, any specifics about it being based on terminfo
@@ -80,16 +79,14 @@ import System.IO
 -- The file descriptor used for output will a duplicate of the current stdout file descriptor.
 --
 -- todo: add an implementation for windows that does not depend on terminfo. Should be installable
--- with only what is provided in the haskell platform.
---
--- todo: The Terminal interface does not provide any input support.
-current_terminal :: ( Applicative m, MonadIO m ) => m Terminal
+-- with only what is provided in the haskell platform. Use ansi-terminal
+current_terminal :: ( Applicative m, MonadIO m ) => m Output
 current_terminal = do
     term_type <- liftIO $ getEnv "TERM"
     out_handle <- liftIO $ hDuplicate stdout
     terminal_with_name_and_io term_type out_handle
 
-terminal_with_name_and_io :: (Applicative m, MonadIO m) => String -> Handle -> m Terminal
+terminal_with_name_and_io :: (Applicative m, MonadIO m) => String -> Handle -> m Output
 terminal_with_name_and_io term_type out_handle = do
     t <- if "xterm" `isPrefixOf` term_type
         then do
@@ -123,7 +120,7 @@ terminal_with_name_and_io term_type out_handle = do
 --
 -- Currently, the only way to set the cursor position to a given character coordinate is to specify
 -- the coordinate in the Picture instance provided to output_picture or refresh.
-set_cursor_pos :: MonadIO m => Terminal -> Int -> Int -> m ()
+set_cursor_pos :: MonadIO m => Output -> Int -> Int -> m ()
 set_cursor_pos t x y = do
     bounds <- display_bounds t
     when (x >= 0 && x < region_width bounds && y >= 0 && y < region_height bounds) $ do
@@ -131,16 +128,15 @@ set_cursor_pos t x y = do
         liftIO $ send_to_terminal t (move_cursor_required_bytes dc x y) (serialize_move_cursor dc x y)
 
 -- | Hides the cursor
-hide_cursor :: MonadIO m => Terminal -> m ()
+hide_cursor :: MonadIO m => Output -> m ()
 hide_cursor t = do
     bounds <- display_bounds t
     dc <- display_context t bounds
     liftIO $ send_to_terminal t (hide_cursor_required_bytes dc) (serialize_hide_cursor dc) 
     
 -- | Shows the cursor
-show_cursor :: MonadIO m => Terminal -> m ()
+show_cursor :: MonadIO m => Output -> m ()
 show_cursor t = do
     bounds <- display_bounds t
     dc <- display_context t bounds
     liftIO $ send_to_terminal t (show_cursor_required_bytes dc) (serialize_show_cursor dc) 
-

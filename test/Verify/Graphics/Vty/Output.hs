@@ -1,6 +1,6 @@
-module Verify.Graphics.Vty.Terminal where
+module Verify.Graphics.Vty.Output where
 
-import Graphics.Vty.Terminal.Mock
+import Graphics.Vty.Output.Mock
 
 import qualified Data.ByteString as BS
 import Data.IORef

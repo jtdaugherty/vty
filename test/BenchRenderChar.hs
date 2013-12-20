@@ -11,7 +11,7 @@ import Control.Monad ( forM_ )
 
 bench_0 = do
     vty <- mkVty
-    DisplayRegion w h <- display_bounds $ terminal vty
+    (w,h) <- display_bounds $ terminal vty
     let test_chars = return $ take 500 $ cycle $ [ c | c <- ['a'..'z']]
         bench d = do
             forM_ d $ \test_char -> do
@@ -27,7 +27,7 @@ test_image_using_char c w h
 
 bench_1 = do
     vty <- mkVty
-    DisplayRegion w h <- display_bounds $ terminal vty
+    (w,h) <- display_bounds $ terminal vty
     let test_chars = return $ take 500 $ cycle $ [ c | c <- ['a'..'z']]
         bench d = do
             forM_ d $ \test_char -> do

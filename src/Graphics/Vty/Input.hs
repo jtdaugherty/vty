@@ -56,19 +56,19 @@ defaultEscDelay = 10000
 --      - disables software flow control on outgoing data. This stops the process from being
 --        suspended if the output terminal cannot keep up. I presume this has little effect these
 --        days. I hope this means that output will be buffered if the terminal cannot keep up. In the
---        ol days the output might of been dropped.
+--        old days the output might of been dropped.
 -- 
 -- "raw" mode is used for input.
 --
 -- * ISIG disabled
---      - enables keyboard combinations that result in signals. People would probably want this to
---        be an option.
+--      - enables keyboard combinations that result in signals. This should probably be a dynamic
+--      option.
 --
 -- * ECHO disabled
---      - input is not echod to the output.
+--      - input is not echod to the output. Pobably should be a dynamic option.
 --
 -- * ICANON disabled
---      - canonical mode (line mode) input is not used.
+--      - canonical mode (line mode) input is not used. Probably should be a dynamic option.
 --
 -- * IEXTEN disabled
 --      - extended functions are disabled. Uh. Whatever these are.

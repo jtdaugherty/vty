@@ -8,11 +8,11 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
-module Graphics.Vty.Terminal.MacOSX ( reserve_terminal )
+module Graphics.Vty.Output.MacOSX ( reserve_terminal )
     where
 
-import Graphics.Vty.Terminal.Interface
-import qualified Graphics.Vty.Terminal.TerminfoBased as TerminfoBased
+import Graphics.Vty.Output.Interface
+import qualified Graphics.Vty.Output.TerminfoBased as TerminfoBased
 
 import Control.Applicative
 import Control.Monad.Trans
@@ -23,7 +23,7 @@ import System.IO
 -- "xterm-256color" is used.
 --
 -- This effects the terminfo lookup.
-reserve_terminal :: ( Applicative m, MonadIO m ) => String -> Handle -> m Terminal
+reserve_terminal :: ( Applicative m, MonadIO m ) => String -> Handle -> m Output
 reserve_terminal v out_handle = do
     let remap_term "iTerm.app" = "xterm-256color"
         remap_term _ = "xterm"
@@ -32,13 +32,10 @@ reserve_terminal v out_handle = do
             hPutStr out_handle str
             hFlush out_handle
     t <- TerminfoBased.reserve_terminal (remap_term v) out_handle
-    let t' = t
-             { terminal_ID = terminal_ID t ++ " (Mac)"
-             , reserve_display = terminal_app_reserve_display flushed_put
-             , release_display = terminal_app_release_display flushed_put
-             }
-    return t'
-
+    return $ t { terminal_ID = terminal_ID t ++ " (Mac)"
+               , reserve_display = terminal_app_reserve_display flushed_put
+               , release_display = terminal_app_release_display flushed_put
+               }
 
 -- | Terminal.app requires the xterm-color smcup and rmcup caps. Not the generic xterm ones.
 -- Otherwise, Terminal.app expects the xterm caps.

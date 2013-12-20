@@ -2,7 +2,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module VerifySimpleSpanGeneration where
 
-import Verify.Graphics.Vty.DisplayRegion
+import Verify.Graphics.Vty.Prelude
+
 import Verify.Graphics.Vty.Image
 import Verify.Graphics.Vty.Picture
 import Verify.Graphics.Vty.Span
@@ -152,7 +153,7 @@ single_attr_single_span_stack_op_coverage stack =
 image_coverage_matches_bounds :: Image -> Result
 image_coverage_matches_bounds i =
     let p = pic_for_image i
-        r = DisplayRegion (image_width i) (image_height i)
+        r = (image_width i,image_height i)
         ops = display_ops_for_pic p r
     in verify_all_spans_have_width i ops (image_width i)
 

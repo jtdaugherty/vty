@@ -6,7 +6,7 @@ import Prelude hiding ( catch )
 import qualified System.Console.Terminfo as Terminfo
 
 import Verify.Data.Terminfo.Parse
-import Verify.Graphics.Vty.Terminal
+import Verify.Graphics.Vty.Output
 import Verify
 
 import Data.Maybe ( catMaybes, fromJust )

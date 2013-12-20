@@ -7,19 +7,19 @@
 -- Copyright Corey O'Connor (coreyoconnor@gmail.com)
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -D_XOPEN_SOURCE=500 #-}
-module Graphics.Vty.Terminal.TerminfoBased ( reserve_terminal )
+{-# CFILES gwinsz.c #-}
+module Graphics.Vty.Output.TerminfoBased ( reserve_terminal )
     where
+
+import Graphics.Vty.Prelude
 
 import Data.Terminfo.Parse
 import Data.Terminfo.Eval
 
 import Graphics.Vty.Attributes
 import Graphics.Vty.DisplayAttributes
-import Graphics.Vty.Terminal.Interface
-import Graphics.Vty.DisplayRegion
+import Graphics.Vty.Output.Interface
 
-import Control.Applicative 
-import Control.Monad ( foldM, when )
 import Control.Monad.Trans
 
 import Data.Bits ( (.&.) )
@@ -59,7 +59,7 @@ data DisplayAttrCaps = DisplayAttrCaps
     , enter_bold_mode :: Maybe CapExpression
     }
     
-send_cap_to_terminal :: Terminal -> CapExpression -> [CapParam] -> IO ()
+send_cap_to_terminal :: Output -> CapExpression -> [CapParam] -> IO ()
 send_cap_to_terminal t cap cap_params = do
     send_to_terminal t (cap_expression_required_bytes cap cap_params)
                        (serialize_cap_expression cap cap_params)
@@ -74,7 +74,7 @@ send_cap_to_terminal t cap cap_params = do
  - todo: Some display attributes like underline and bold have independent string capabilities that
  - should be used instead of the generic "sgr" string capability.
  -}
-reserve_terminal :: ( Applicative m, MonadIO m ) => String -> Handle -> m Terminal
+reserve_terminal :: ( Applicative m, MonadIO m ) => String -> Handle -> m Output
 reserve_terminal in_ID out_handle = liftIO $ do
     ti <- Terminfo.setupTerm in_ID
     -- assumes set foreground always implies set background exists.
@@ -110,7 +110,7 @@ reserve_terminal in_ID out_handle = liftIO $ do
         <*> require_cap ti "el"
         <*> current_display_attr_caps ti
     new_assumed_state_ref <- newIORef initial_assumed_state
-    let t = Terminal
+    let t = Output
             { terminal_ID = in_ID
             , release_terminal = liftIO $ do
                 send_cap set_default_attr []
@@ -129,7 +129,7 @@ reserve_terminal in_ID out_handle = liftIO $ do
                 raw_size <- liftIO $ get_window_size
                 case raw_size of
                     (w, h)  | w < 0 || h < 0 -> fail $ "getwinsize returned < 0 : " ++ show raw_size
-                            | otherwise      -> return $ DisplayRegion (toEnum w) (toEnum h)
+                            | otherwise      -> return (w,h)
             , output_byte_buffer = \out_ptr out_byte_count -> do
                 hPutBuf out_handle out_ptr (fromEnum out_byte_count)
                 hFlush out_handle
@@ -189,7 +189,7 @@ get_window_size = do
     (a,b) <- (`divMod` 65536) `fmap` c_get_window_size
     return (fromIntegral b, fromIntegral a)
 
-terminfo_display_context :: Terminal -> TerminfoCaps -> DisplayRegion -> IO DisplayContext
+terminfo_display_context :: Output -> TerminfoCaps -> DisplayRegion -> IO DisplayContext
 terminfo_display_context t_actual terminfo_caps r =
     let dc = DisplayContext
              { context_device = t_actual
@@ -461,8 +461,8 @@ style_to_apply_seq s = concat
     , apply_if_required ApplyBlink bold
     ]
     where 
-        apply_if_required ap flag 
-            = if 0 == ( flag .&. s )
+        apply_if_required op flag 
+            = if 0 == (flag .&. s)
                 then []
-                else [ ap ]
+                else [op]
 

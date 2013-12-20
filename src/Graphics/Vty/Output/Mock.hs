@@ -3,13 +3,13 @@
 {-# LANGUAGE TypeFamilies #-}
 -- | This provides a mock terminal implementation that is nice for testing. This transforms the
 -- output operations to visible characters. Which is nice for some tests.
-module Graphics.Vty.Terminal.Mock ( MockData, mock_terminal )
+module Graphics.Vty.Output.Mock ( MockData, mock_terminal )
     where
 
-import Graphics.Vty.DisplayRegion
-import Graphics.Vty.Terminal.Interface
+import Graphics.Vty.Prelude
 
-import Control.Applicative
+import Graphics.Vty.Output.Interface
+
 import Control.Monad.Trans
 
 import qualified Data.ByteString as BS
@@ -32,15 +32,13 @@ type MockData = IORef (UTF8.UTF8 BS.ByteString)
 -- parsing the text representation and determining how the picture was mapped to terminal
 -- operations.
 --
--- All terminals support the operations specified in the Terminal class defined in
--- Graphics.Vty.Terminal. As an instance of the Terminal class is also an instance of the Monad
--- class there exists a monoid that defines it's algebra. The string representation is a sequence of
--- identifiers where each identifier is the name of an operation in the algebra.
-mock_terminal :: (Applicative m, MonadIO m) => DisplayRegion -> m (MockData, Terminal)
+-- The string representation is a sequence of identifiers where each identifier is the name of an
+-- operation in the algebra.
+mock_terminal :: (Applicative m, MonadIO m) => DisplayRegion -> m (MockData, Output)
 mock_terminal r = liftIO $ do
     out_ref <- newIORef undefined
     new_assumed_state_ref <- newIORef initial_assumed_state
-    let t = Terminal
+    let t = Output
             { terminal_ID = "mock terminal"
             , release_terminal = return ()
             , reserve_display = return ()

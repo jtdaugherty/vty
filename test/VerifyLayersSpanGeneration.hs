@@ -2,7 +2,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module VerifyLayersSpanGeneration where
 
-import Verify.Graphics.Vty.DisplayRegion
+import Verify.Graphics.Vty.Prelude
+
 import Verify.Graphics.Vty.Image
 import Verify.Graphics.Vty.Picture
 import Verify.Graphics.Vty.Span
@@ -21,7 +22,7 @@ larger_horiz_span_occlusion row_0 row_1 =
         (i_larger, i_smaller) = if image_width i_0 > image_width i_1 then (i_0, i_1) else (i_1, i_0)
         expected_ops = display_ops_for_image i_larger
         p = pic_for_layers [i_larger, i_smaller]
-        ops = display_ops_for_pic p $ DisplayRegion (image_width i_larger) (image_height i_larger)
+        ops = display_ops_for_pic p (image_width i_larger,image_height i_larger)
     in verify_ops_equality expected_ops ops
 
 -- | Two rows stacked vertical is equivalent to the first row rendered as the top layer and the
@@ -35,7 +36,7 @@ vert_stack_layer_equivalence_0 row_0 row_1 =
         i_lower = background_fill (image_width i_0) 1 <-> i_1
         p_layered = pic_for_layers [i_0, i_lower]
         expected_ops = display_ops_for_image i
-        ops_layered = display_ops_for_pic p_layered $ DisplayRegion (image_width i_lower) (image_height i_lower)
+        ops_layered = display_ops_for_pic p_layered (image_width i_lower,image_height i_lower)
     in verify_ops_equality expected_ops ops_layered
 
 vert_stack_layer_equivalence_1 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
@@ -48,7 +49,7 @@ vert_stack_layer_equivalence_1 row_0 row_1 =
         i_upper = background_fill (image_width i_0) 1 <-> i_1
         p_layered = pic_for_layers [i_upper, i_lower]
         expected_ops = display_ops_for_image i
-        ops_layered = display_ops_for_pic p_layered $ DisplayRegion (image_width i_lower) (image_height i_lower)
+        ops_layered = display_ops_for_pic p_layered (image_width i_lower,image_height i_lower)
     in verify_ops_equality expected_ops ops_layered
 
 -- | Two rows horiz joined is equivalent to the first row rendered as the top layer and the
@@ -62,7 +63,7 @@ horiz_join_layer_equivalence_0 row_0 row_1 =
         i_lower = background_fill (image_width i_0) 1 <|> i_1
         p_layered = pic_for_layers [i_0, i_lower]
         expected_ops = display_ops_for_image i
-        ops_layered = display_ops_for_pic p_layered $ DisplayRegion (image_width i_lower) (image_height i_lower)
+        ops_layered = display_ops_for_pic p_layered (image_width i_lower,image_height i_lower)
     in verify_ops_equality expected_ops ops_layered
 
 horiz_join_layer_equivalence_1 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
@@ -75,7 +76,7 @@ horiz_join_layer_equivalence_1 row_0 row_1 =
         i_upper = background_fill (image_width i_0) 1 <|> i_1
         p_layered = pic_for_layers [i_upper, i_lower]
         expected_ops = display_ops_for_image i
-        ops_layered = display_ops_for_pic p_layered $ DisplayRegion (image_width i_lower) (image_height i_lower)
+        ops_layered = display_ops_for_pic p_layered (image_width i_lower,image_height i_lower)
     in verify_ops_equality expected_ops ops_layered
 
 horiz_join_alternate_0 :: Result
@@ -90,7 +91,7 @@ horiz_join_alternate_0 =
         layer_1 = horiz_cat $ replicate size $ background_fill size 1 <|> i_1
         expected_ops = display_ops_for_image i
         ops_layered = display_ops_for_pic (pic_for_layers [layer_0, layer_1])
-                                          (DisplayRegion (image_width i) (image_height i))
+                                          (image_width i,image_height i)
     in verify_ops_equality expected_ops ops_layered
 
 horiz_join_alternate_1 :: Result
@@ -104,7 +105,7 @@ horiz_join_alternate_1 =
         layers = [l | b <- take 4 [0,size*2..], let l = background_fill b 1 <|> i_0 <|> i_1]
         expected_ops = display_ops_for_image i
         ops_layered = display_ops_for_pic (pic_for_layers layers)
-                                          (DisplayRegion (image_width i) (image_height i))
+                                          (image_width i,image_height i)
     in verify_ops_equality expected_ops ops_layered
 
 tests :: IO [Test]

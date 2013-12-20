@@ -4,10 +4,11 @@ module Graphics.Vty.Debug ( module Graphics.Vty.Debug
                           )
 where
 
+import Graphics.Vty.Prelude
+
 import Graphics.Vty.Attributes
 import Graphics.Vty.Debug.Image
 import Graphics.Vty.Span
-import Graphics.Vty.DisplayRegion
 
 import qualified Data.Vector as Vector 
 
@@ -35,5 +36,5 @@ data MockWindow = MockWindow Int Int
     deriving (Show, Eq)
 
 region_for_window :: MockWindow -> DisplayRegion
-region_for_window (MockWindow w h) = DisplayRegion w h
+region_for_window (MockWindow w h) = (w,h)
 

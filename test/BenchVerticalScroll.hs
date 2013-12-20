@@ -53,7 +53,7 @@ clines g maxll = map (pad maxll . horiz_cat . map (uncurry string))
   where (g1,g2)  = split g
 
 benchgen :: DisplayRegion -> [Picture]
-benchgen (DisplayRegion w h) 
+benchgen (w,h) 
     = take 2000 $ map ((\i -> pic_for_image i) . vert_cat . take (fromEnum h))
         $ tails
         $ clines (mkStdGen 80) w

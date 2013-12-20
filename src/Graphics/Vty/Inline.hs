@@ -33,7 +33,7 @@ module Graphics.Vty.Inline ( module Graphics.Vty.Inline
 import Graphics.Vty
 import Graphics.Vty.DisplayAttributes
 import Graphics.Vty.Inline.Unsafe
-import Graphics.Vty.Terminal.Interface
+import Graphics.Vty.Output.Interface
 
 import Control.Applicative
 import Control.Monad.State.Strict
@@ -79,7 +79,7 @@ default_all = put def_attr
 -- | Apply the provided display attribute changes to the given terminal.
 --
 -- This does not flush the terminal.
-put_attr_change :: ( Applicative m, MonadIO m ) => Terminal -> InlineM () -> m ()
+put_attr_change :: ( Applicative m, MonadIO m ) => Output -> InlineM () -> m ()
 put_attr_change t c = liftIO $ do
     bounds <- display_bounds t
     dc <- display_context t bounds

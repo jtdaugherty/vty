@@ -1,17 +1,22 @@
--- Copyright 2009-2010 Corey O'Connor
-{-# LANGUAGE ForeignFunctionInterface, BangPatterns, UnboxedTuples #-}
-{-# CFILES gwinsz.c #-}
-
+-- | Vty supports input and output to terminal devices. The input is provides as a sequence of
+-- 'Event's.  The output is defined by a 'Picture'. Which is one or more layers of 'Image's.
+-- 
+-- - References
+--
 -- Good sources of documentation for terminal programming are:
--- vt100 control sequences: http://vt100.net/docs/vt100-ug/chapter3.html#S3.3.3
--- Xterm control sequences: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
-
+--
+--  - <https://github.com/b4winckler/vim/blob/master/src/term.c>
+--  - <http://invisible-island.net/xterm/ctlseqs/ctlseqs.html>
+--  - <http://ulisse.elettra.trieste.it/services/doc/serial/config.html>
+--  - <http://www.leonerd.org.uk/hacks/hints/xterm-8bit.html>
+--  - <http://www.unixwiz.net/techtips/termios-vmin-vtime.html>
+--  - <<http://vt100.net/docs/vt100-ug/chapter3.html vt100 control sequences>
 module Graphics.Vty ( Vty(..)
                     , mkVty
                     , mkVtyEscDelay
-                    , module Graphics.Vty.Terminal
+                    , module Graphics.Vty.Output
                     , module Graphics.Vty.Picture
-                    , module Graphics.Vty.DisplayRegion
+                    , DisplayRegion
                     , Key(..)
                     , Modifier(..)
                     , Button(..)
@@ -19,11 +24,11 @@ module Graphics.Vty ( Vty(..)
                     ) 
     where
 
+import Graphics.Vty.Prelude
 
-import Graphics.Vty.Terminal
-import Graphics.Vty.Picture
-import Graphics.Vty.DisplayRegion
 import Graphics.Vty.Input
+import Graphics.Vty.Output
+import Graphics.Vty.Picture
 
 import Data.IORef
 
@@ -35,9 +40,6 @@ import qualified System.Console.Terminfo as Terminfo
 --
 -- This does not assure any thread safety. In theory, as long as an update action is not executed
 -- when another update action is already then it's safe to call this on multiple threads.
--- 
--- todo: Once the Terminal interface encompasses input this interface will be deprecated.
--- Currently, just using the Terminal interface there is no support for input events.
 data Vty = Vty 
     { -- | Outputs the given Picture. Equivalent to output_picture applied to a display context
       -- implicitly managed by Vty.  
@@ -56,11 +58,11 @@ data Vty = Vty
       --
       --    3. shutdown vty. 
       -- 
-      -- todo: provide a similar abstraction to Graphics.Vty.Terminal for input. Use haskeline's
+      -- todo: provide a similar abstraction to Graphics.Vty.Output for input. Use haskeline's
       -- input backend for implementation.
       -- 
       -- todo: remove explicit `shutdown` requirement. 
-    , terminal :: Terminal
+    , terminal :: Output
       -- | Refresh the display. Normally the library takes care of refreshing.  Nonetheless, some
       -- other program might output to the terminal and mess the display.  In that case the user
       -- might want to force a refresh.
@@ -87,15 +89,14 @@ mkVtyEscDelay escDelay = do
     (kvar, endi) <- initTermInput escDelay term_info
     intMkVty kvar ( endi >> release_display t >> release_terminal t ) t
 
-intMkVty :: IO Event -> IO () -> Terminal -> IO Vty
+intMkVty :: IO Event -> IO () -> Output -> IO Vty
 intMkVty kvar fend t = do
     last_pic_ref <- newIORef Nothing
     last_update_ref <- newIORef Nothing
 
     let inner_update in_pic = do
-            b <- display_bounds t
-            let DisplayRegion w h = b
-                cursor  = pic_cursor in_pic
+            b@(w,h) <- display_bounds t
+            let cursor  = pic_cursor in_pic
                 in_pic' = case cursor of
                   Cursor x y ->
                     let
@@ -136,9 +137,7 @@ intMkVty kvar fend t = do
                   case k of 
                     (EvResize _ _)  -> inner_refresh 
                                        >> display_bounds t 
-                                       >>= return . ( \(DisplayRegion w h) 
-                                                        -> EvResize (fromEnum w) (fromEnum h)
-                                                    )
+                                       >>= return . (\(w,h)-> EvResize w h)
                     _               -> return k
 
     return $ Vty { update = inner_update
