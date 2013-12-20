@@ -1,9 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
--- | The Picture data structure is representative of the final terminal view.
+-- | The 'Picture' data structure is representative of the final terminal view.
 --
--- This module re-exports most of the Graphics.Vty.Image and Graphics.Vty.Attributes modules.
---
--- Copyright 2009-2010 Corey O'Connor
+-- A 'Picture' is a background paired with a layer of 'Image's.
 module Graphics.Vty.Picture ( module Graphics.Vty.Picture
                             , module Graphics.Vty.Image
                             )
@@ -42,7 +40,7 @@ add_to_bottom :: Picture -> Image -> Picture
 add_to_bottom p i = p {pic_layers = pic_layers p ++ [i]}
 
 -- | Create a picture for display for the given image. The picture will not have a displayed cursor
--- and the background display attribute will be `current_attr`.
+-- and no background pattern (ClearBackground) will be used.
 pic_for_image :: Image -> Picture
 pic_for_image i = Picture 
     { pic_cursor = NoCursor
@@ -51,6 +49,9 @@ pic_for_image i = Picture
     }
 
 -- | Create a picture for display with the given layers. Ordered top to bottom.
+--
+-- The picture will not have a displayed cursor and no background apttern (ClearBackgroun) will be
+-- used.
 -- 
 -- The first 'Image' is the top layer.
 pic_for_layers :: [Image] -> Picture
@@ -79,8 +80,7 @@ instance NFData Cursor where
 -- | A 'Picture' has a background pattern. The background is either ClearBackground. Which shows the
 -- layer below or is blank if the bottom layer. Or the background pattern is a character and a
 -- display attribute. If the display attribute used previously should be used for a background fill
--- then use `current_attr` for the background attribute. This is the default background display
--- attribute.
+-- then use `current_attr` for the background attribute.
 --
 -- \todo The current attribute is always set to the default attributes at the start of updating the
 -- screen to a picture.
@@ -89,13 +89,11 @@ data Background
     { background_char :: Char
     , background_attr :: Attr
     }
-     -- | The background is: 
+     -- | A ClearBackground is: 
      --
      -- * the space character if there are remaining non-skip ops
-     -- * (?) nothing if there are no remaining non-skip ops.
      --
-     -- Might require the terminal interface to do a line clear?
-     -- Or should the nothing case be switched with crlf?
+     -- * End of line if there are no remaining non-skip ops.
     | ClearBackground
 
 instance NFData Background where

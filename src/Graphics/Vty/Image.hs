@@ -255,8 +255,8 @@ pad in_l in_t in_r in_b in_image
 
 -- | translates an image by padding or cropping the top and left.
 --
--- TODO: This has an unexpected effect - Translating an image off the screen and then back onto the
--- screen will result in an empty image.
+-- This can have an unexpected effect: Translating an image to less than (0,0) then to greater than
+-- (0,0) will crop the image.
 translate :: Int -> Int -> Image -> Image
 translate x y i = translate_x x (translate_y y i)
 
