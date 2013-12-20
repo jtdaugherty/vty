@@ -14,6 +14,7 @@ import Graphics.Vty.Image
 import Control.DeepSeq
 
 -- | The type of images to be displayed using 'update'.  
+--
 -- Can be constructed directly or using `pic_for_image`. Which provides an initial instance with
 -- reasonable defaults for pic_cursor and pic_background.
 data Picture = Picture
@@ -28,12 +29,15 @@ instance Show Picture where
 instance NFData Picture where
     rnf (Picture c l b) = c `deepseq` l `deepseq` b `deepseq` ()
 
+-- | a picture with no cursor, background or image layers
 empty_picture :: Picture
 empty_picture = Picture NoCursor [] ClearBackground
 
+-- | The given 'Image' is added as the top layer of the 'Picture'
 add_to_top :: Picture -> Image -> Picture
 add_to_top p i = p {pic_layers = i : pic_layers p}
 
+-- | The given 'Image' is added as the bottom layer of the 'Picture'
 add_to_bottom :: Picture -> Image -> Picture
 add_to_bottom p i = p {pic_layers = pic_layers p ++ [i]}
 
@@ -48,7 +52,7 @@ pic_for_image i = Picture
 
 -- | Create a picture for display with the given layers. Ordered top to bottom.
 -- 
--- The first image is the top layer.
+-- The first 'Image' is the top layer.
 pic_for_layers :: [Image] -> Picture
 pic_for_layers is = Picture 
     { pic_cursor = NoCursor
@@ -72,10 +76,11 @@ instance NFData Cursor where
     rnf NoCursor = ()
     rnf (Cursor w h) = w `seq` h `seq` ()
 
--- | Unspecified regions are filled with the picture's background pattern.  The background pattern
--- can specify a character and a display attribute. If the display attribute used previously should
--- be used for a background fill then use `current_attr` for the background attribute. This is the
--- default background display attribute.
+-- | A 'Picture' has a background pattern. The background is either ClearBackground. Which shows the
+-- layer below or is blank if the bottom layer. Or the background pattern is a character and a
+-- display attribute. If the display attribute used previously should be used for a background fill
+-- then use `current_attr` for the background attribute. This is the default background display
+-- attribute.
 --
 -- \todo The current attribute is always set to the default attributes at the start of updating the
 -- screen to a picture.

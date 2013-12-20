@@ -7,24 +7,22 @@
 --  1. "Graphics.Vty.Output": This instantiates an abtract interface to the terminal interface based
 --  on the TERM and COLORTERM environment variables. 
 --  
---  2. Graphics.Vty.Output.Interface: Defines the generic interface all terminals need to implement.
+--  2. "Graphics.Vty.Output.Interface": Defines the generic interface all terminals need to implement.
 --
---  3. Graphics.Vty.Output.TerminfoBased: Defines a terminal instance that uses terminfo for all
+--  3. "Graphics.Vty.Output.TerminfoBased": Defines a terminal instance that uses terminfo for all
 --  control strings.  No attempt is made to change the character set to UTF-8 for these terminals.
 --  I don't know a way to reliably determine if that is required or how to do so.
 --
---  4. Graphics.Vty.Output.XTermColor: This module contains an interface suitable for xterm-like
+--  4. "Graphics.Vty.Output.XTermColor": This module contains an interface suitable for xterm-like
 --  terminals. These are the terminals where TERM == xterm. This does use terminfo for as many
 --  control codes as possible. 
---
--- Copyright 2009-2010 Corey O'Connor
 module Graphics.Vty.Output ( module Graphics.Vty.Output
-                             , Output(..) -- \todo hide constructors
-                             , AssumedState(..)
-                             , DisplayContext(..) -- \todo hide constructors
-                             , output_picture
-                             , display_context
-                             )
+                           , Output(..) -- \todo hide constructors
+                           , AssumedState(..)
+                           , DisplayContext(..) -- \todo hide constructors
+                           , output_picture
+                           , display_context
+                           )
     where
 
 

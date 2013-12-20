@@ -1,6 +1,4 @@
--- Copyright 2009-2010 Corey O'Connor
---
--- Right, I'm mostly guessing on these details. So, as far as I can figure:
+-- | Right, I'm mostly guessing on these details. So, as far as I can figure:
 --
 -- There are two input modes:
 --  1. 7 bit

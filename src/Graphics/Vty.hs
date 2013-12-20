@@ -1,15 +1,26 @@
--- | Vty supports input and output to terminal devices. The input is provides as a sequence of
--- 'Event's.  The output is defined by a 'Picture'. Which is one or more layers of 'Image's.
--- 
--- - References
+-- | Vty supports input and output to terminal devices.
 --
+--  - The input is provides as a sequence of 'Event's.
+--
+--  - The output is defined by a 'Picture'. Which is one or more layers of 'Image's.
+--      The constructors in "Graphics.Vty.Image.Internal" should not be used directly. The module
+--      "Graphics.Vty.Image" provides a number of constructor equations that will build correct
+--      'Image' values. See 'string', '<|>', and '<->' for starters.
+--
+--  - 'Image's can be styled using 'Attr'. See "Graphics.Vty.Attributes".
+-- 
 -- Good sources of documentation for terminal programming are:
 --
 --  - <https://github.com/b4winckler/vim/blob/master/src/term.c>
+--
 --  - <http://invisible-island.net/xterm/ctlseqs/ctlseqs.html>
+--
 --  - <http://ulisse.elettra.trieste.it/services/doc/serial/config.html>
+--
 --  - <http://www.leonerd.org.uk/hacks/hints/xterm-8bit.html>
+--
 --  - <http://www.unixwiz.net/techtips/termios-vmin-vtime.html>
+--
 --  - <<http://vt100.net/docs/vt100-ug/chapter3.html vt100 control sequences>
 module Graphics.Vty ( Vty(..)
                     , mkVty

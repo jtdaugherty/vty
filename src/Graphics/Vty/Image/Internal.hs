@@ -1,4 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# OPTIONS_HADDOCK hide #-}
 module Graphics.Vty.Image.Internal where
 
 import Graphics.Vty.Attributes
@@ -37,21 +38,29 @@ clip_text txt left_skip right_clip =
         clip_for_char_width _ _ _ = error "clip_for_char_width applied to undefined"
     in txt''
 
--- | An image in VTY is
+-- | This is the internal representation of Images. Use the constructors in "Graphics.Vty.Image" to
+-- create instances.
 --
--- * a horizontal line of characters with a single attribute.
--- * a fill of the picture's background. (background_fill)
--- * a horizontal and vertical crops from both directions.
--- * horizontal and vertical combinations
+-- Images are:
+--
+-- * a horizontal span of text
+--
+-- * a horizontal or vertical join of two images
+--
+-- * a two dimensional fill of the 'Picture's background character
+--
+-- * a cropped image
+--
+-- * an empty image of no size or content.
 data Image = 
     -- | A horizontal text span is always >= 1 column and has a row height of 1.
       HorizText
       { attr :: Attr
       -- | The text to display. The display width of the text is always output_width.
       , display_text :: DisplayText
-      -- | The number of display columns for the text.
+      -- | The number of display columns for the text. Always > 0.
       , output_width :: Int
-      -- | the number of characters in the text.
+      -- | the number of characters in the text. Always > 0.
       , char_width :: Int
       }
     -- | A horizontal join can be constructed between any two images. However a HorizJoin instance is
