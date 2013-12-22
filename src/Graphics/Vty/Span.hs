@@ -63,7 +63,8 @@ split_ops_at in_w in_ops = split_ops_at' in_w in_ops
         split_ops_at' 0 ops = (Vector.empty, ops)
         split_ops_at' remaining_columns ops = case Vector.head ops of
             t@(TextSpan {}) -> if remaining_columns >= text_span_output_width t
-                then let (pre,post) = split_ops_at' (remaining_columns - text_span_output_width t) (Vector.tail ops)
+                then let (pre,post) = split_ops_at' (remaining_columns - text_span_output_width t)
+                                                    (Vector.tail ops)
                      in (Vector.cons t pre, post)
                 else let pre_txt = clip_text (text_span_text t) 0 remaining_columns
                          pre_op = TextSpan { text_span_attr = text_span_attr t

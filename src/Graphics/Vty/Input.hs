@@ -1,24 +1,5 @@
--- | Right, I'm mostly guessing on these details. So, as far as I can figure:
---
--- There are two input modes:
---  1. 7 bit
---  2. 8 bit
---
--- Which is better? Well, depends on if you want to enter Unicode as UTF-8 or not.
---
--- * 7 bit mode: UTF-8 can be input unambiguiously.
--- * 8 bit mode: UTF-8 cannot be input. Does not require an escape delay.
---
--- vty uses 7 bit mode.
---
--- To differentiate between ESC and control keys that contain ESC:
--- vty using the timing of the input to differentiate.
--- This, I best I can figure, is what VMIN and VTIME are supposed to be for.
--- For some reason, I don't yet know, vty implements the timing in the library.
--- I'm not sure if this is an advantage or not!
---
--- By default, the escape delay is 10000 microseconds.  Which is assumed to be well above the
--- sampling rate required to detect a keyup for a person typing 200 wpm.
+-- | The input layer for VTY. This provides methods for initializing an 'Input' structure which can
+-- then be used to read 'Event's from the terminal.
 module Graphics.Vty.Input ( Key(..)
                           , Modifier(..)
                           , Button(..)
@@ -39,6 +20,25 @@ import System.Console.Terminfo
 import System.Posix.Signals.Exts
 import System.Posix.Terminal
 import System.Posix.IO (stdInput)
+
+-- Right, I'm mostly guessing on these details. So, as far as I can figure:
+--
+-- There are two input modes:
+--  1. 7 bit
+--  2. 8 bit
+--
+-- Which is better? Well, depends on if you want to enter Unicode as UTF-8 or not.
+--
+-- * 7 bit mode: UTF-8 can be input unambiguiously.
+-- * 8 bit mode: UTF-8 cannot be input. Does not require an escape delay.
+--
+-- vty uses 7 bit mode.
+--
+-- To differentiate between ESC and control keys that contain ESC:
+-- vty using the timing of the input to differentiate.
+-- This, I best I can figure, is what VMIN and VTIME are supposed to be for.
+-- For some reason, I don't yet know, vty implements the timing in the library.
+-- I'm not sure if this is an advantage or not!
 
 -- | By default, the escape delay is 10000 microseconds.  Which is assumed to be well above the
 -- sampling rate required to detect a keyup for a person typing 200 wpm.

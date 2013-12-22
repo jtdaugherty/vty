@@ -177,7 +177,7 @@ swap_skips_for_char_span w c a = Vector.map f
 --
 -- Crops to the given display region.
 --
--- TODO: I'm pretty sure there is an algorithm that does not require a mutable buffer.
+-- \todo I'm pretty sure there is an algorithm that does not require a mutable buffer.
 build_spans :: Image -> DisplayRegion -> ST s (MRowOps s)
 build_spans image out_region = do
     -- First we create a mutable vector for each rows output operations.
@@ -228,7 +228,7 @@ is_out_of_bounds i s
 -- implementations are odd. They pass the current tests but something seems terribly wrong about all
 -- this.
 --
--- TODO: prove this cannot be called in an out of bounds case.
+-- \todo prove this cannot be called in an out of bounds case.
 add_maybe_clipped :: forall s . Image -> BlitM s ()
 add_maybe_clipped EmptyImage = return ()
 add_maybe_clipped (HorizText a text_str ow _cw) = do
@@ -342,4 +342,3 @@ snoc_op !op !row = do
         when (span_ops_effected_columns ops' > region_width the_region)
              $ fail $ "row " ++ show row ++ " now exceeds region width"
         MVector.write the_mrow_ops row ops'
-

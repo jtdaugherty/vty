@@ -80,22 +80,22 @@ default_all = put def_attr
 --
 -- This does not flush the terminal.
 put_attr_change :: ( Applicative m, MonadIO m ) => Output -> InlineM () -> m ()
-put_attr_change t c = liftIO $ do
-    bounds <- display_bounds t
-    dc <- display_context t bounds
-    mfattr <- prev_fattr <$> readIORef (assumed_state_ref t)
+put_attr_change out c = liftIO $ do
+    bounds <- display_bounds out
+    dc <- display_context out bounds
+    mfattr <- prev_fattr <$> readIORef (assumed_state_ref out)
     fattr <- case mfattr of
                 Nothing -> do
-                    liftIO $ send_to_terminal t (default_attr_required_bytes dc) (serialize_default_attr dc)
+                    liftIO $ send_to_terminal out (default_attr_required_bytes dc) (serialize_default_attr dc)
                     return $ FixedAttr default_style_mask Nothing Nothing
                 Just v -> return v
     let attr = execState c current_attr
-        attr' = limit_attr_for_display t attr
+        attr' = limit_attr_for_display out attr
         fattr' = fix_display_attr fattr attr'
         diffs = display_attr_diffs fattr fattr'
-    send_to_terminal t (attr_required_bytes dc fattr attr' diffs)
-                       (serialize_set_attr dc fattr attr' diffs)
-    modifyIORef (assumed_state_ref t) $ \s -> s { prev_fattr = Just fattr' }
+    send_to_terminal out (attr_required_bytes dc fattr attr' diffs)
+                         (serialize_set_attr dc fattr attr' diffs)
+    modifyIORef (assumed_state_ref out) $ \s -> s { prev_fattr = Just fattr' }
     inline_hack dc
 
 -- | Apply the provided display attributes changes to the terminal that was current at the time this
@@ -104,8 +104,7 @@ put_attr_change t c = liftIO $ do
 -- This will flush the terminal output.
 put_attr_change_ :: ( Applicative m, MonadIO m ) => InlineM () -> m ()
 put_attr_change_ c = liftIO $ do
-    t <- withVty $ return . terminal
+    out <- withVty $ return . output_iface
     hFlush stdout
-    put_attr_change t c
+    put_attr_change out c
     hFlush stdout
-

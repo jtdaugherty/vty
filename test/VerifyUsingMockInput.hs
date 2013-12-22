@@ -87,7 +87,7 @@ compare_events input_spec expected_events out_events = compare_events' expected_
     where
         compare_events' [] []         = return True
         compare_events' [] out_events' = do
-            printf "extra events %s\n" (show out_events) :: IO ()
+            printf "extra events %s\n" (show out_events') :: IO ()
             return False
         compare_events' expected_events' [] = do
             printf "events %s were not produced for input %s\n" (show expected_events') (show input_spec) :: IO ()

@@ -46,7 +46,7 @@ smoke_test_term_mac term_name i = liftIOResult $ do
 smoke_test_term :: String -> Image -> IO Result
 smoke_test_term term_name i = do
     null_out <- openFile "/dev/null" WriteMode
-    t <- terminal_with_name_and_io term_name null_out
+    t <- output_for_name_and_io term_name null_out
     putStrLn $ "context color count: " ++ show (context_color_count t)
     reserve_display t
     dc <- display_context t (100,100)

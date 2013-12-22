@@ -43,13 +43,13 @@ import GHC.IO.Handle
 import System.Environment
 import System.IO
 
--- | Returns a `Output` for the current terminal.
+-- | Returns a `Output` for the current terminal as determined by TERM.
 --
--- The specific Output implementation used is hidden from the API user. All terminal
--- implementations are assumed to perform more, or less, the same. Currently all implementations use
--- terminfo for at least some terminal specific information. This is why platforms without terminfo
--- are not supported. However, as mentioned before, any specifics about it being based on terminfo
--- are hidden from the API user.  If a terminal implementation is developed for a terminal for a
+-- The specific Output implementation used is hidden from the API user. All terminal implementations
+-- are assumed to perform more, or less, the same. Currently all implementations use terminfo for at
+-- least some terminal specific information. This is why platforms without terminfo are not
+-- supported. However, as mentioned before, any specifics about it being based on terminfo are
+-- hidden from the API user.  If a terminal implementation is developed for a terminal for a
 -- platform without terminfo support then Vty should work as expected on that terminal.
 --
 -- Selection of a terminal is done as follows:
@@ -61,11 +61,6 @@ import System.IO
 --
 --      * for any other TERM value TerminfoBased is used.
 --
---
--- The terminal has to be determined dynamically at runtime. To satisfy this requirement all
--- terminals instances are lifted into an abstract terminal handle via existential qualification.
--- This implies that the only equations that can used are those in the terminal class.
---
 -- To differentiate between Mac OS X terminals this uses the TERM_PROGRAM environment variable.
 -- However, an xterm started by Terminal or iTerm *also* has TERM_PROGRAM defined since the
 -- environment variable is not reset/cleared by xterm. However a Terminal.app or iTerm.app started
@@ -73,19 +68,19 @@ import System.IO
 -- environment variables (I think?) this assumes that XTERM_VERSION will never be set for a true
 -- Terminal.app or iTerm.app session.
 --
+-- The file descriptor used for output will a be a duplicate of the current stdout file descriptor.
 --
--- The file descriptor used for output will a duplicate of the current stdout file descriptor.
---
--- todo: add an implementation for windows that does not depend on terminfo. Should be installable
+-- \todo add an implementation for windows that does not depend on terminfo. Should be installable
 -- with only what is provided in the haskell platform. Use ansi-terminal
-current_terminal :: ( Applicative m, MonadIO m ) => m Output
-current_terminal = do
+output_for_current_terminal :: ( Applicative m, MonadIO m ) => m Output
+output_for_current_terminal = do
     term_type <- liftIO $ getEnv "TERM"
     out_handle <- liftIO $ hDuplicate stdout
-    terminal_with_name_and_io term_type out_handle
+    output_for_name_and_io term_type out_handle
 
-terminal_with_name_and_io :: (Applicative m, MonadIO m) => String -> Handle -> m Output
-terminal_with_name_and_io term_type out_handle = do
+-- | gives an output method structure for a terminal with the given name and the given 'Handle'.
+output_for_name_and_io :: (Applicative m, MonadIO m) => String -> Handle -> m Output
+output_for_name_and_io term_type out_handle = do
     t <- if "xterm" `isPrefixOf` term_type
         then do
             maybe_terminal_app <- get_env "TERM_PROGRAM"

@@ -3,7 +3,54 @@
 {-# LANGUAGE RankNTypes #-}
 -- | Display attributes
 --
--- For efficiency, this could be encoded into a single 32 bit word. The 32 bit word is first divided
+-- Typically the values 'def_attr' or 'current_attr' are modified to form attributes:
+--
+-- @
+--     def_attr `with_fore_color` red
+-- @
+--
+-- Is the attribute that will set the foreground color to red and the background color to the
+-- default.
+--
+-- This can then be used to build an image wiht a red foreground like so:
+--
+-- @
+--      string (def_attr `with_fore_color` red) "this text will be red"
+-- @
+--
+-- The default attributes set by 'def_attr' have a presentation determined by the terminal.  This is
+-- not something VTY can control. The user is free to define the color scheme of the terminal as
+-- they see fit. Up to the limits of the terminal anyways.
+--
+-- The value 'current_attr' will keep the attributes of whatever was output previously.
+--
+-- \todo This API is very verbose IMO. I'd like something more succinct.
+module Graphics.Vty.Attributes ( module Graphics.Vty.Attributes
+                               , module Graphics.Vty.Attributes.Color
+                               , module Graphics.Vty.Attributes.Color240
+                               )
+    where
+
+import Data.Bits
+import Data.Monoid
+import Data.Word
+
+import Graphics.Vty.Attributes.Color
+import Graphics.Vty.Attributes.Color240
+
+-- | A display attribute defines the Color and Style of all the characters rendered after the
+-- attribute is applied.
+--
+--  At most 256 colors, picked from a 240 and 16 color palette, are possible for the background and
+--  foreground. The 240 colors and 16 colors are points in different palettes. See Color for more
+--  information.
+data Attr = Attr
+    { attr_style :: !(MaybeDefault Style)
+    , attr_fore_color :: !(MaybeDefault Color)
+    , attr_back_color :: !(MaybeDefault Color)
+    } deriving ( Eq, Show )
+
+-- This could be encoded into a single 32 bit word. The 32 bit word is first divided
 -- into 4 groups of 8 bits where: The first group codes what action should be taken with regards to
 -- the other groups.
 --      XXYYZZ__
@@ -33,31 +80,6 @@
 --
 --  Then the foreground color encoded into 8 bits.
 --  Then the background color encoded into 8 bits.
---
-module Graphics.Vty.Attributes ( module Graphics.Vty.Attributes
-                               , module Graphics.Vty.Attributes.Color
-                               , module Graphics.Vty.Attributes.Color240
-                               )
-    where
-
-import Data.Bits
-import Data.Monoid
-import Data.Word
-
-import Graphics.Vty.Attributes.Color
-import Graphics.Vty.Attributes.Color240
-
--- | A display attribute defines the Color and Style of all the characters rendered after the
--- attribute is applied.
---
---  At most 256 colors, picked from a 240 and 16 color palette, are possible for the background and
---  foreground. The 240 colors and 16 colors are points in different palettes. See Color for more
---  information.
-data Attr = Attr 
-    { attr_style :: !(MaybeDefault Style)
-    , attr_fore_color :: !(MaybeDefault Color)
-    , attr_back_color :: !(MaybeDefault Color)
-    } deriving ( Eq, Show )
 
 instance Monoid Attr where
     mempty = Attr mempty mempty mempty
