@@ -41,6 +41,8 @@ import Graphics.Vty.Input
 import Graphics.Vty.Output
 import Graphics.Vty.Picture
 
+import Control.Concurrent
+
 import Data.IORef
 
 import qualified System.Console.Terminfo as Terminfo
@@ -69,7 +71,9 @@ data Vty = Vty
       update :: Picture -> IO ()
       -- | Get one Event object, blocking if necessary.
     , next_event :: IO Event
-      -- | The output interface. See `Output`
+      -- | The input interface. See 'Input'
+    , input_iface :: Input
+      -- | The output interface. See 'Output'
     , output_iface :: Output
       -- | Refresh the display. Normally the library takes care of refreshing.  Nonetheless, some
       -- other program might output to the terminal and mess the display.  In that case the user
@@ -91,14 +95,17 @@ mkVty = mkVtyEscDelay defaultEscDelay
 -- \todo move input init into terminal interface
 mkVtyEscDelay :: Int -> IO Vty
 mkVtyEscDelay escDelay = do
-    term_info <- Terminfo.setupTermFromEnv
-    t <- output_for_current_terminal
-    reserve_display t
-    (kvar, endi) <- initTermInput escDelay term_info
-    intMkVty kvar ( endi >> release_display t >> release_terminal t ) t
+    input <- input_for_current_terminal escDelay
+    out <- output_for_current_terminal
+    reserve_display out
+    intMkVty input out
 
-intMkVty :: IO Event -> IO () -> Output -> IO Vty
-intMkVty kvar fend out = do
+intMkVty :: Input -> Output -> IO Vty
+intMkVty input out = do
+    let shutdown_io = do
+            shutdown_input input
+            release_display out
+            release_terminal out
     last_pic_ref <- newIORef Nothing
     last_update_ref <- newIORef Nothing
 
@@ -141,7 +148,7 @@ intMkVty kvar fend out = do
             >>  readIORef last_pic_ref 
             >>= maybe ( return () ) ( \pic -> inner_update pic ) 
 
-    let gkey = do k <- kvar
+    let gkey = do k <- readChan $ event_channel input
                   case k of 
                     (EvResize _ _)  -> inner_refresh
                                        >> display_bounds out
@@ -150,8 +157,9 @@ intMkVty kvar fend out = do
 
     return $ Vty { update = inner_update
                  , next_event = gkey
+                 , input_iface = input
                  , output_iface = out
                  , refresh = inner_refresh
-                 , shutdown = fend 
+                 , shutdown = shutdown_io
                  }
 

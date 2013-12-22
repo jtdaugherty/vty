@@ -4,8 +4,10 @@ module Graphics.Vty.Input ( Key(..)
                           , Modifier(..)
                           , Button(..)
                           , Event(..)
-                          , initTermInput
+                          , Input(..)
                           , defaultEscDelay
+                          , input_for_current_terminal
+                          , input_for_name_and_io
                           )
     where
 
@@ -15,11 +17,12 @@ import Graphics.Vty.Input.Terminfo
 
 import Control.Concurrent
 
-import System.Console.Terminfo
-
+import qualified System.Console.Terminfo as Terminfo
+import System.Environment
 import System.Posix.Signals.Exts
 import System.Posix.Terminal
 import System.Posix.IO (stdInput)
+import System.Posix.Types (Fd)
 
 -- Right, I'm mostly guessing on these details. So, as far as I can figure:
 --
@@ -44,6 +47,13 @@ import System.Posix.IO (stdInput)
 -- sampling rate required to detect a keyup for a person typing 200 wpm.
 defaultEscDelay :: Int
 defaultEscDelay = 10000
+
+-- | Set up the current terminal for input.
+-- This determines the current terminal then invokes 'input_for_name_and_io'
+input_for_current_terminal :: Int -> IO Input
+input_for_current_terminal escDelay = do
+    term_name <- getEnv "TERM"
+    input_for_name_and_io escDelay term_name stdInput
 
 -- | Set up the terminal for input.  Returns a function which reads key
 -- events, and a function for shutting down the terminal access.
@@ -71,26 +81,29 @@ defaultEscDelay = 10000
 -- * IEXTEN disabled
 --      - extended functions are disabled. Uh. Whatever these are.
 --
-initTermInput :: Int -> Terminal -> IO (IO Event, IO ())
-initTermInput escDelay terminal = do
-    attr <- getTerminalAttributes stdInput
+input_for_name_and_io :: Int -> String -> Fd -> IO Input
+input_for_name_and_io escDelay term_name term_in = do
+    terminal <- Terminfo.setupTerm term_name
+    attr <- getTerminalAttributes term_in
     let attr' = foldl withoutMode attr [ StartStopOutput, KeyboardInterrupts
                                        , EnableEcho, ProcessInput, ExtendedFunctions
                                        ]
-    setTerminalAttributes stdInput attr' Immediately
+    setTerminalAttributes term_in attr' Immediately
+    -- TODO: pass Fd to set_term_timing
     set_term_timing
     let classify_table = classify_table_for_term terminal
-    (eventChannel, shutdown_input) <- initInputForFd escDelay classify_table stdInput
+    (eventChannel, shutdown_event_processing) <- initInputForFd escDelay classify_table term_in
     let pokeIO = Catch $ do
             let e = error "(getsize in input layer)"
-            setTerminalAttributes stdInput attr' Immediately
+            setTerminalAttributes term_in attr' Immediately
             writeChan eventChannel (EvResize e e)
     _ <- installHandler windowChange pokeIO Nothing
     _ <- installHandler continueProcess pokeIO Nothing
-    let shutdown_input' = do
-            shutdown_input
+    return $ Input
+        { event_channel  = eventChannel
+        , shutdown_input = do
+            shutdown_event_processing
             _ <- installHandler windowChange Ignore Nothing
             _ <- installHandler continueProcess Ignore Nothing
-            setTerminalAttributes stdInput attr Immediately
-    return (readChan eventChannel, shutdown_input')
-
+            setTerminalAttributes term_in attr Immediately
+        }

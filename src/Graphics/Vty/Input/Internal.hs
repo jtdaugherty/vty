@@ -22,6 +22,11 @@ import System.Posix.IO ( fdReadBuf
                        )
 import System.Posix.Types (Fd(..))
 
+data Input = Input
+    { event_channel  :: Chan Event
+    , shutdown_input :: IO ()
+    }
+
 data KClass
     = Valid Key [Modifier]
     | Invalid
@@ -141,11 +146,11 @@ initInputForFd escDelay classify_table input_fd = do
     noInputThreadId <- forkIO $ noInputThread
     -- TODO(corey): killThread is a bit risky for my tastes.
     -- H - somewhat mitigated by sending a magic terminate character?
-    let shutdown_input = do
+    let shutdown_event_processing = do
             writeChan inputChannel '\xFFFD' 
             killThread noInputThreadId
             killThread eventThreadId
             killThread inputThreadId
-    return (eventChannel, shutdown_input)
+    return (eventChannel, shutdown_event_processing)
 
 foreign import ccall "vty_set_term_timing" set_term_timing :: IO ()

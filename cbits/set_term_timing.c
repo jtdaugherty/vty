@@ -11,4 +11,3 @@ void vty_set_term_timing(void)
     trm.c_cc[VTIME] = 0;
     tcsetattr(STDIN_FILENO, TCSANOW, &trm); 
 }
-

@@ -107,12 +107,12 @@ assert_events_from_syn_input table input_spec expected_events = do
     let max_duration = sum [t | Delay t <- input_spec] + min_detectable_delay
         event_count = length expected_events
     (output_fd, input_fd) <- createPipe
-    (output, shutdown_input) <- initInputForFd test_esc_sample_delay table output_fd
+    (output, shutdown_event_processing) <- initInputForFd test_esc_sample_delay table output_fd
     events_ref <- newIORef []
     let write_wait_close = do
             synthesize_input input_spec input_fd
             threadDelay min_detectable_delay
-            shutdown_input
+            shutdown_event_processing
             threadDelay min_detectable_delay
             closeFd input_fd
             closeFd output_fd
