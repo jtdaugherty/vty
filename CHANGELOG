@@ -1,6 +1,13 @@
 5.0.0
     * removed the typeclass based terminal and display context interface in favor of a data
       structure of properties interface.
+    * input handling changes
+        * KASCII is not KChar
+        * KPN5 is now KCenter
+        * tests exist.
+        * the default amount of time between ESC and a subsequent character that causes VTY to
+          interpret the input as "ESC" then the character, versus some special key, has been
+          increased to 4000 microseconds; 4 milliseconds.
     * renamed the Terminal interface to Output
     * The default picture for an image now uses the "clear" background. This background fills
       background spans with spaces or just ends the line.
@@ -24,11 +31,6 @@
         * alternate (setf/setb) color maps supported. Though colors beyond the first 8 are just a
           guess.
         * added "rgb_color" for easy support of RGB specified colors.
-    * input handling changes
-        * tests exist.
-        * the default amount of time between ESC and a subsequent character that causes VTY to
-          interpret the input as "ESC" then the character, versus some special key, has been
-          increased to 4000 microseconds; 4 milliseconds.
     * examples moved to vty-examples package. See test directory for cabal file.
         * vty-interactive-terminal-test
             * interactive test. Useful for building a bug report for vty's author.

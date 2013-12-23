@@ -1,13 +1,15 @@
-module Graphics.Vty.Input.Data.ANSI where
+module Graphics.Vty.Input.Terminfo.ANSI where
 
 import Graphics.Vty.Input.Events
 
+-- | Terminals augmented by the built in ANSI input mapping.
+supports "ansi" = True
+supports _      = False
+
 -- | Encoding for navigation keys.
---
--- TODO: This is not the same as the input bytes pulled from teh caps table.
-nav_keys_0 :: ClassifyTableV1
+nav_keys_0 :: ClassifyTable
 nav_keys_0 =
-    [ k "G" KNP5
+    [ k "G" KCenter
     , k "P" KPause
     , k "A" KUp
     , k "B" KDown
@@ -17,16 +19,17 @@ nav_keys_0 =
     , k "F" KEnd
     , k "E" KBegin
     ]
-    where k c s = ("\ESC["++c,(s,[]))
+    where k c s = ("\ESC["++c, EvKey s [])
 
 -- | VT 100 (?) encoding for shift, meta and ctrl plus arrows/home/end
-nav_keys_1 :: ClassifyTableV1
+nav_keys_1 :: ClassifyTable
 nav_keys_1 =
    [("\ESC[" ++ charCnt ++ show mc++c,(s,m))
     | charCnt <- ["1;", ""], -- we can have a count or not
     (m,mc) <- [([MShift],2::Int), ([MCtrl],5), ([MMeta],3),
                ([MShift, MCtrl],6), ([MShift, MMeta],4)], -- modifiers and their codes
-    (c,s) <- [("A", KUp), ("B", KDown), ("C", KRight), ("D", KLeft), ("H", KHome), ("F", KEnd)] -- directions and their codes
+    -- directions and their codes
+    (c,s) <- [("A", KUp), ("B", KDown), ("C", KRight), ("D", KLeft), ("H", KHome), ("F", KEnd)]
    ]
 
 -- | VT 100 (?) encoding for ins, del, pageup, pagedown, home, end
@@ -42,16 +45,6 @@ nav_keys_3 =
     let k n s = ("\ESC["++show n++";5~",(s,[MCtrl]))
     in zipWith k [2::Int,3,5,6,1,4]
                  [KIns,KDel,KPageUp,KPageDown,KHome,KEnd]
-
--- | Support for simple characters.
---
--- we limit to < 0xC1. The UTF8 sequence detector will catch all values 0xC2 and above before this
--- classify table is reached.
---
--- TODO: resolve
--- 1. start at ' '. The earlier characters are all ctrl_char_keys
-simple_chars :: ClassifyTableV1
-simple_chars = [(x:[],(KASCII x,[])) | x <- [' ' .. toEnum 0xC1]]
 
 -- | VT 100 (?) encoding for shift plus function keys
 -- 
@@ -80,46 +73,13 @@ function_keys_2 :: ClassifyTableV1
 function_keys_2 = [ ('\ESC':[x],(KASCII x,[MMeta])) | x <- '\t':[' ' .. '~'],
                                                       x /= '[']
 
--- | Ctrl+Char
-ctrl_char_keys :: ClassifyTableV1
-ctrl_char_keys =
-    [ ([toEnum x],(KASCII y,[MCtrl]))
-    | (x,y) <- zip ([0..31]) ('@':['a'..'z']++['['..'_']),
-               y /= 'i' -- Resolve issue #3 where CTRL-i hides TAB.
-    ]
-
--- | Ctrl+Meta+Char
--- 
--- TODO: CTRL-i is the same as tab thing
-ctrl_meta_keys :: ClassifyTableV1
-ctrl_meta_keys =
-    [ ('\ESC':[toEnum x],(KASCII y,[MMeta,MCtrl])) | (x,y) <- zip [0..31] ('@':['a'..'z']++['['..'_']),
-                                                     y /= 'i'
-    ]
-
--- | Special support
-special_support_keys :: ClassifyTableV1
-special_support_keys =
-    [ -- special support for ESC
-      ("\ESC",(KEsc,[])) , ("\ESC\ESC",(KEsc,[MMeta]))
-    -- Special support for backspace
-    , ("\DEL",(KBS,[])), ("\ESC\DEL",(KBS,[MMeta]))
-    -- Special support for Enter
-    , ("\ESC\^J",(KEnter,[MMeta])), ("\^J",(KEnter,[]))
-    ]
-
--- | classify table for ANSI terminals
-ansi_classify_table :: [ClassifyTableV1]
-ansi_classify_table =
+tables :: [ClassifyTableV1]
+tables =
     [ nav_keys_0
     , nav_keys_1
     , nav_keys_2
     , nav_keys_3
-    , simple_chars
     , function_keys_1
     , function_keys_2
-    , ctrl_char_keys
-    , ctrl_meta_keys
-    , special_support_keys
     ]
 

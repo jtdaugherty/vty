@@ -3,11 +3,11 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-void vty_set_term_timing(void)
+void vty_set_term_timing(int fd)
 {
     struct termios trm;
-    tcgetattr(STDIN_FILENO, &trm);
+    tcgetattr(fd, &trm);
     trm.c_cc[VMIN] = 0;
     trm.c_cc[VTIME] = 0;
-    tcsetattr(STDIN_FILENO, TCSANOW, &trm); 
+    tcsetattr(fd, TCSANOW, &trm); 
 }

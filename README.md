@@ -31,15 +31,16 @@ git clone git://github.com/coreyoconnor/vty.git
 * Supports all ANSI SGR-modes (defined in console_codes(4)) with
   a type-safe interface. 
 
-* Properly handles cleanup.
+* Properly handles cleanup, but not due to signals.
 
 # Known Issues
 
-* The character encoding of the output terminal is assumed to be UTF-8.
+* Signal handling of STOP, TERM and INT are non existent.
 
-* Minimal support for special keys on terminals other than the
-  linux-console.  (F1-5 and arrow keys should work, but anything
-  shifted isn't likely to.)
+* The character encoding of the terminal is assumed to be UTF-8.
+
+* Terminfo is assumed to be correct unless the terminal (as declared by TERM) starts with xterm or
+  ansi. This means that some terminals will not have correct special key support (shifted F10 etc)
 
 * Uses the TIOCGWINSZ ioctl to find the current window size, which
   appears to be limited to Linux and *BSD.

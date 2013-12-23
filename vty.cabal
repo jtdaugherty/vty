@@ -18,7 +18,7 @@ description:
   executable should be sent to the Vty maintainter to aid in debugging the issue.
   .
   Notable infelicities: Sometimes poor efficiency; Assumes UTF-8 character encoding support by the
-  terminal;
+  terminal; Poor signal handling; Requires terminfo.
   .
   Project is hosted on github.com: https:\/\/github.com\/coreyoconnor\/vty
   .
@@ -34,7 +34,7 @@ data-files:          README.md,
                      AUTHORS,
                      CHANGELOG,
                      LICENSE
-tested-with:         ghc >= 7.6.2
+tested-with:         GHC >= 7.6.2
 
 library
   default-language:    Haskell2010
@@ -62,9 +62,7 @@ library
                        Graphics.Vty.Inline
                        Graphics.Vty.Inline.Unsafe
                        Graphics.Vty.Input
-                       Graphics.Vty.Input.Data
-                       Graphics.Vty.Input.Internal
-                       Graphics.Vty.Input.Terminfo
+                       Graphics.Vty.Input.Events
                        Graphics.Vty.Picture
                        Graphics.Vty.Prelude
                        Graphics.Vty.Output
@@ -77,6 +75,8 @@ library
                        Graphics.Vty.Debug
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.Image.Internal
+                       Graphics.Vty.Input.Internal
+                       Graphics.Vty.Input.Terminfo
                        Graphics.Vty.PictureToSpans
                        Graphics.Vty.Span
                        Graphics.Vty.Output.Mock
@@ -87,8 +87,8 @@ library
 
   other-modules:       Graphics.Vty.Attributes.Color
                        Graphics.Vty.Attributes.Color240
-                       Graphics.Vty.Input.Data.ANSI
-                       Graphics.Vty.Input.Events
+                       Graphics.Vty.Input.Terminfo.ANSI
+                       Graphics.Vty.Input.Terminfo.XTerm7Bit
 
   c-sources:           cbits/gwinsz.c
                        cbits/set_term_timing.c

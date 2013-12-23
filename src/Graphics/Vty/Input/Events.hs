@@ -2,10 +2,17 @@ module Graphics.Vty.Input.Events where
 
 -- | Representations of non-modifier keys.
 --
--- KFun is indexed from 0 to 63. Range of supported FKeys varies by terminal and keyboard.
-data Key = KEsc | KFun Int | KBackTab | KPrtScr | KPause | KASCII Char | KBS | KIns
-         | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin |  KNP5 | KUp | KMenu
-         | KLeft | KDown | KRight | KEnter
+-- * KFun is indexed from 0 to 63. Range of supported FKeys varies by terminal and keyboard.
+--
+-- * KUpLeft, KUpRight, KDownLeft, KDownRight, KCenter support varies by terminal and keyboard.
+--
+-- * Actually, support for most of these but KEsc, KChar, KBS, and KEnter vary by terminal and
+-- keyboard.
+data Key = KEsc  | KChar Char | KBS | KEnter
+         | KLeft | KRight | KUp | KDown
+         | KUpLeft | KUpRight | KDownLeft | KDownRight | KCenter
+         | KFun Int | KBackTab | KPrtScr | KPause | KIns
+         | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin | KMenu
     deriving (Eq,Show,Ord)
 
 -- | Modifier keys.  Key codes are interpreted such that users are more likely to
@@ -14,20 +21,32 @@ data Key = KEsc | KFun Int | KBackTab | KPrtScr | KPause | KASCII Char | KBS | K
 data Modifier = MShift | MCtrl | MMeta | MAlt
     deriving (Eq,Show,Ord)
 
--- | Mouse buttons.  Not yet used.
+-- | Mouse buttons.
+--
+-- \todo not supported.
 data Button = BLeft | BMiddle | BRight
     deriving (Eq,Show,Ord)
 
 -- | Events.
-data Event = EvKey Key [Modifier] | EvMouse Int Int Button [Modifier]
-           | EvResize Int Int
+data Event
+    = EvKey Key [Modifier]
+    -- | \todo mouse events are not supported
+    | EvMouse Int Int Button [Modifier]
+    -- | if read from 'event_channel' this is the size at the time of the signal. If read from
+    -- 'next_event' this is the size at the time the event was processed by Vty. Typically these are
+    -- the same, but if somebody is resizing the terminal quickly they can be different.
+    | EvResize Int Int
     deriving (Eq,Show,Ord)
 
 -- | representation of mapping from input bytes to key and modifier.
 --
--- deprecated
+-- Deprecated. Only used internally
 type ClassifyTableV1 = [(String, (Key, [Modifier]))]
 
 -- | representation of mapping from input bytes to event
 type ClassifyTable = [(String, Event)]
 
+map_to_legacy_table :: ClassifyTable -> ClassifyTableV1
+map_to_legacy_table = map f
+    where f (s, EvKey k mods) = (s, (k, mods))
+          f _                 = error "no mapping for mouse or resize events"

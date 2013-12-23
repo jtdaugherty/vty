@@ -66,18 +66,19 @@ import qualified System.Console.Terminfo as Terminfo
 --
 -- \todo Remove explicit `shutdown` requirement.
 data Vty = Vty 
-    { -- | Outputs the given Picture. Equivalent to output_picture applied to a display context
-      -- implicitly managed by Vty.  
+    { -- | Outputs the given Picture. Equivalent to 'output_picture' applied to a display context
+      -- implicitly managed by Vty. The managed display context is reset on resize.
       update :: Picture -> IO ()
-      -- | Get one Event object, blocking if necessary.
+      -- | Get one Event object, blocking if necessary. This will refresh the terminal if the event
+      -- is a 'EvResize'.
     , next_event :: IO Event
       -- | The input interface. See 'Input'
     , input_iface :: Input
       -- | The output interface. See 'Output'
     , output_iface :: Output
       -- | Refresh the display. Normally the library takes care of refreshing.  Nonetheless, some
-      -- other program might output to the terminal and mess the display.  In that case the user
-      -- might want to force a refresh.
+      -- other program might output to the terminal and mess up the display.  In that case the
+      -- application might want to force a refresh.
     , refresh :: IO ()
       -- | Clean up after vty.
       -- The above methods will throw an exception if executed after this is executed.
@@ -97,11 +98,11 @@ mkVtyEscDelay :: Int -> IO Vty
 mkVtyEscDelay escDelay = do
     input <- input_for_current_terminal escDelay
     out <- output_for_current_terminal
-    reserve_display out
     intMkVty input out
 
 intMkVty :: Input -> Output -> IO Vty
 intMkVty input out = do
+    reserve_display out
     let shutdown_io = do
             shutdown_input input
             release_display out

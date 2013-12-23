@@ -11,7 +11,7 @@ module Graphics.Vty.Input ( Key(..)
                           )
     where
 
-import Graphics.Vty.Input.Data
+import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Internal
 import Graphics.Vty.Input.Terminfo
 
@@ -55,8 +55,7 @@ input_for_current_terminal escDelay = do
     term_name <- getEnv "TERM"
     input_for_name_and_io escDelay term_name stdInput
 
--- | Set up the terminal for input.  Returns a function which reads key
--- events, and a function for shutting down the terminal access.
+-- | Set up the terminal attached to the given Fd for input.  Returns a 'Input'.
 --
 -- The terminal is modified as follows:
 --
@@ -89,8 +88,7 @@ input_for_name_and_io escDelay term_name term_in = do
                                        , EnableEcho, ProcessInput, ExtendedFunctions
                                        ]
     setTerminalAttributes term_in attr' Immediately
-    -- TODO: pass Fd to set_term_timing
-    set_term_timing
+    set_term_timing term_in
     let classify_table = classify_table_for_term terminal
     (eventChannel, shutdown_event_processing) <- initInputForFd escDelay classify_table term_in
     let pokeIO = Catch $ do

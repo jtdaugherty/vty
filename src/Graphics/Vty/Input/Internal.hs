@@ -1,6 +1,6 @@
 module Graphics.Vty.Input.Internal where
 
-import Graphics.Vty.Input.Data
+import Graphics.Vty.Input.Events
 
 import Codec.Binary.UTF8.Generic (decode)
 import Control.Concurrent
@@ -23,7 +23,11 @@ import System.Posix.IO ( fdReadBuf
 import System.Posix.Types (Fd(..))
 
 data Input = Input
-    { event_channel  :: Chan Event
+    { -- | Channel of events direct from input processing. Unlike 'next_event' this will not refresh
+      -- the display if the next event is an 'EvResize'.
+      event_channel  :: Chan Event
+      -- | Shuts down the input processing. This should return the terminal input state to before
+      -- the input initialized.
     , shutdown_input :: IO ()
     }
 
@@ -35,6 +39,11 @@ data KClass
     | MisPfx Key [Modifier] [Char]
     deriving(Show)
 
+-- The input uses two magic character:
+--
+--  * '\xFFFD' for "stop processing"
+--  * '\xFFFE' for "previous input chunk is complete" Which is used to differentiate a single ESC
+--  from using ESC as meta or to indicate a control sequence.
 inputToEventThread :: (String -> KClass) -> Chan Char -> Chan Event -> IO ()
 inputToEventThread classifier inputChannel eventChannel = loop []
     where loop kb = case classifier kb of
@@ -129,7 +138,7 @@ initInputForFd escDelay classify_table input_fd = do
                             readAll
                 loop
             return ()
-        -- | If there is no input for some time, this thread puts '\xFFFE' in the
+        -- If there is no input for some time, this thread puts '\xFFFE' in the
         -- inputChannel.
         noInputThread :: IO ()
         noInputThread = when (escDelay > 0) loop
@@ -153,4 +162,4 @@ initInputForFd escDelay classify_table input_fd = do
             killThread inputThreadId
     return (eventChannel, shutdown_event_processing)
 
-foreign import ccall "vty_set_term_timing" set_term_timing :: IO ()
+foreign import ccall "vty_set_term_timing" set_term_timing :: Fd -> IO ()
