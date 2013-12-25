@@ -116,7 +116,7 @@ update_display :: Game ()
 update_display = do
     let info = string def_attr "Move with the arrows keys. Press ESC to exit."
     -- determine offsets to place the dude in the center of the level.
-    (w,h) <- asks terminal >>= liftIO . display_bounds
+    (w,h) <- asks output_iface >>= liftIO . display_bounds
     the_dude <- gets dude
     let ox = (w `div` 2) - dude_x the_dude
         oy = (h `div` 2) - dude_y the_dude

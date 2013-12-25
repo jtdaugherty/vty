@@ -19,7 +19,7 @@ bench_0 = do
     let fixed_gen = mkStdGen 0
     setStdGen fixed_gen
     vty <- mkVty
-    (w,h) <- display_bounds $ terminal vty
+    (w,h) <- display_bounds $ output_iface vty
     let images = return $ (image_0, image_1)
         image_0 = char_fill def_attr 'X' w h
         image_1 = char_fill def_attr '0' w h

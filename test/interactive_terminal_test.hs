@@ -77,7 +77,7 @@ failure".
                                                 ( \ (_ :: SomeException) -> return (env_name, "") ) 
                            ) 
                            [ "TERM", "COLORTERM", "LANG", "TERM_PROGRAM", "XTERM_VERSION" ]
-    t <- current_terminal
+    t <- output_for_current_terminal
     let results_txt = show env_attributes ++ "\n" 
                       ++ terminal_ID t ++ "\n"
                       ++ show results ++ "\n"
@@ -188,7 +188,7 @@ reserve_output_test = Test
     { test_name = "Initialize and reserve terminal output then restore previous state."
     , test_ID = "reserve_output_test"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         putStrLn "Line 1"
         putStrLn "Line 2"
@@ -221,7 +221,7 @@ display_bounds_test_0 = Test
     { test_name = "Verify display bounds are correct test 0: Using spaces."
     , test_ID = "display_bounds_test_0"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         (w,h) <- display_bounds t
         let row_0 = replicate (fromEnum w) 'X' ++ "\n"
@@ -242,7 +242,7 @@ display_bounds_test_1 = Test
     { test_name = "Verify display bounds are correct test 0: Using cursor movement."
     , test_ID = "display_bounds_test_1"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         (w,h) <- display_bounds t
         set_cursor_pos t 0 0
@@ -271,7 +271,7 @@ display_bounds_test_2 = Test
     { test_name = "Verify display bounds are correct test 0: Using Image ops."
     , test_ID = "display_bounds_test_2"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         bounds@(w,h) <- display_bounds t
         let first_row = horiz_cat $ replicate (fromEnum w) (char def_attr 'X')
@@ -294,7 +294,7 @@ display_bounds_test_3 = Test
     { test_name = "Verify display bounds are correct test 0: Hide cursor; Set cursor pos."
     , test_ID = "display_bounds_test_3"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         (w,h) <- display_bounds t
         hide_cursor t
@@ -406,7 +406,7 @@ unicode_single_width_0 = Test
     { test_name = "Verify terminal can display unicode single-width characters. (Direct UTF-8)"
     , test_ID = "unicode_single_width_0"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         hide_cursor t
         withArrayLen (concat utf8_txt_0) (flip $ hPutBuf stdout)
@@ -425,7 +425,7 @@ unicode_single_width_1 = Test
     { test_name = "Verify terminal can display unicode single-width characters. (Image ops)"
     , test_ID = "unicode_single_width_1"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = line_0 <-> line_1
@@ -488,7 +488,7 @@ unicode_double_width_0 = Test
     { test_name = "Verify terminal can display unicode double-width characters. (Direct UTF-8)"
     , test_ID = "unicode_double_width_0"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         hide_cursor t
         withArrayLen (concat utf8_txt_1) (flip $ hPutBuf stdout)
@@ -507,7 +507,7 @@ unicode_double_width_1 = Test
     { test_name = "Verify terminal can display unicode double-width characters. (Image ops)"
     , test_ID = "unicode_double_width_1"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = line_0 <-> line_1
@@ -561,7 +561,7 @@ attributes_test_0 = Test
     { test_name = "Character attributes: foreground colors."
     , test_ID = "attributes_test_0"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = border <|> column_0 <|> border <|> column_1 <|> border
@@ -607,7 +607,7 @@ attributes_test_1 = Test
     { test_name = "Character attributes: background colors."
     , test_ID = "attributes_test_1"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = border <|> column_0 <|> border <|> column_1 <|> border
@@ -662,7 +662,7 @@ attributes_test_2 = Test
     { test_name = "Character attributes: Vivid foreground colors."
     , test_ID = "attributes_test_2"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = horiz_cat [border, column_0, border, column_1, border, column_2, border]
@@ -721,7 +721,7 @@ attributes_test_3 = Test
     { test_name = "Character attributes: Vivid background colors."
     , test_ID = "attributes_test_3"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = horiz_cat [border, column_0, border, column_1, border, column_2, border]
@@ -799,7 +799,7 @@ attributes_test_4 = Test
     { test_name = "Character attributes: Bold; Blink; Underline."
     , test_ID = "attributes_test_4"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = horiz_cat [border, column_0, border, column_1, border]
@@ -851,7 +851,7 @@ attributes_test_5 = Test
     { test_name = "Character attributes: 240 color palette"
     , test_ID = "attributes_test_5"
     , test_action = do
-        t <- current_terminal
+        t <- output_for_current_terminal
         reserve_display t
         let pic = pic_for_image image
             image = vert_cat $ map horiz_cat $ split_color_images color_images
@@ -938,10 +938,10 @@ cursor_hide_test_0 = Test
     , test_ID = "cursor_hide_test_0"
     , test_action = do
         vty <- mkVty
-        show_cursor $ terminal vty
-        set_cursor_pos (terminal vty) 5 5
+        show_cursor $ output_iface vty
+        set_cursor_pos (output_iface vty) 5 5
         next_event vty
-        hide_cursor $ terminal vty
+        hide_cursor $ output_iface vty
         next_event vty
         shutdown vty
         return ()
@@ -962,7 +962,7 @@ output_image_and_wait image = do
 
 output_pic_and_wait :: Picture -> IO ()
 output_pic_and_wait pic = do
-    t <- current_terminal
+    t <- output_for_current_terminal
     reserve_display t
     d <- display_bounds t >>= display_context t
     output_picture d pic
@@ -1145,13 +1145,13 @@ layer_1 = Test
 
 cheesy_anim_0 :: Image -> [Image] -> IO ()
 cheesy_anim_0 i background = do
-    t <- current_terminal
+    t <- output_for_current_terminal
     reserve_display t
     bounds <- display_bounds t
     d <- display_context t bounds
     forM_ [0..100] $ \t -> do
-        let i_offset = translate (t `mod` region_width bounds)
-                                 (t `div` 2 `mod` region_height bounds)
+        let i_offset = translate (t `mod` fst bounds)
+                                 (t `div` 2 `mod` snd bounds)
                                  i
         let pic = pic_for_layers $ i_offset : background
         output_picture d pic

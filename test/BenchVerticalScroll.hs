@@ -18,7 +18,7 @@ bench_0 = do
     setStdGen fixed_gen
     return $ Bench (return ()) (\() -> mkVty >>= liftM2 (>>) run shutdown)
 
-run vt  = mapM_ (\p -> update vt p) . benchgen =<< display_bounds (terminal vt)
+run vt  = mapM_ (\p -> update vt p) . benchgen =<< display_bounds (output_iface vt)
 
 -- Currently, we just do scrolling.
 takem :: (a -> Int) -> Int -> [a] -> ([a],[a])
