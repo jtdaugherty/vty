@@ -87,6 +87,8 @@ special_support_keys =
     , ("\DEL",EvKey KBS []), ("\ESC\DEL",EvKey KBS [MMeta])
     -- Special support for Enter
     , ("\ESC\^J",EvKey KEnter [MMeta]), ("\^J",EvKey KEnter [])
+    -- explicit support for tab
+    , ("\t", EvKey KChar '\t' []
     ]
 
 -- | classify table directly generated from terminfo cap strings
