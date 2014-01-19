@@ -38,15 +38,5 @@ data Event
     | EvResize Int Int
     deriving (Eq,Show,Ord)
 
--- | representation of mapping from input bytes to key and modifier.
---
--- Deprecated. Only used internally
-type ClassifyTableV1 = [(String, (Key, [Modifier]))]
-
 -- | representation of mapping from input bytes to event
 type ClassifyTable = [(String, Event)]
-
-map_to_legacy_table :: ClassifyTable -> ClassifyTableV1
-map_to_legacy_table = map f
-    where f (s, EvKey k mods) = (s, (k, mods))
-          f _                 = error "no mapping for mouse or resize events"

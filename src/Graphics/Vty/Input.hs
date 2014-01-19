@@ -89,7 +89,7 @@ input_for_name_and_io escDelay term_name term_in = do
                                        ]
     setTerminalAttributes term_in attr' Immediately
     set_term_timing term_in
-    let classify_table = classify_table_for_term terminal
+    let classify_table = classify_table_for_term term_name terminal
     (eventChannel, shutdown_event_processing) <- initInputForFd escDelay classify_table term_in
     let pokeIO = Catch $ do
             let e = error "(getsize in input layer)"

@@ -1,3 +1,7 @@
+-- Much of the input layer used to be in a single module with a few large functions. I've refactored
+-- the input layer into many small bits. Now, I think, the code is a better position to be
+-- incrementally refined. Still, until there are proper tests in place much of the refinement must
+-- wait.
 module Graphics.Vty.Input.Internal where
 
 import Graphics.Vty.Input.Events
@@ -15,6 +19,7 @@ import qualified Data.Set as S( fromList, member )
 import Data.Word
 
 import Foreign ( alloca, poke, peek, Ptr )
+import Foreign.C.Types (CInt(..))
 
 import System.Posix.IO ( fdReadBuf
                        , setFdOption
@@ -52,6 +57,10 @@ inputToEventThread classifier inputChannel eventChannel = loop []
                 if c == '\xFFFD'
                     then return ()
                     else loop (kb ++ [c])
+            -- drop the entirety of invalid sequences. Probably better to drop only the first
+            -- character. However, the read behavior of terminals (a single read corresponds to the
+            -- bytes of a single event) might mean this results in quicker error recovery from a
+            -- users perspective.
             Invalid      -> do
                 c <- readChan inputChannel
                 if c == '\xFFFD'
@@ -61,7 +70,12 @@ inputToEventThread classifier inputChannel eventChannel = loop []
             MisPfx k m s -> writeChan eventChannel (EvKey k m) >> loop s
             Valid k m    -> writeChan eventChannel (EvKey k m) >> loop ""
 
-compile :: ClassifyTableV1 -> [Char] -> KClass
+-- This makes a kind of tri. Has space efficiency issues with large input blocks.
+-- Likely building a parser and just applying that would be better.
+-- I did not write this so I might just rewrite it for better understanding. Not the best of
+-- reasons...
+-- TODO: measure and rewrite if required.
+compile :: ClassifyTable -> [Char] -> KClass
 compile table = cl' where
     -- take all prefixes and create a set of these
     prefix_set = S.fromList $ concatMap (init . inits . fst) $ table
@@ -73,19 +87,18 @@ compile table = cl' where
             -- if the input_block is exactly what is expected for an event then consume the whole
             -- block and return the event
             False -> case event_for_input input_block of
-                Just (k,m) -> Valid k m
+                Just (EvKey k m) -> Valid k m
                 -- look up progressively large prefixes of the input block until an event is found
                 -- H: There will always be one match. The prefix_set contains, by definition, all
                 -- prefixes of an event. 
                 Nothing -> 
                     let input_prefixes = init $ inits input_block
                     in case mapMaybe (\s -> (,) s `fmap` event_for_input s) input_prefixes of
-                        (s,(k,m)) : _ -> MisPfx k m (drop (length s) input_block)
-                        [] -> error $ "vty internal inconsistency - "
-                                    ++ "input not a prefix nor contains any event data "
-                                    ++ show input_block
+                        (s,EvKey k m) : _ -> MisPfx k m (drop (length s) input_block)
+                        -- neither a prefix or a full event. Might be interesting to log.
+                        [] -> error $ show input_block
 
-classify, classifyTab :: ClassifyTableV1 -> [Char] -> KClass
+classify, classifyTab :: ClassifyTable -> [Char] -> KClass
 
 -- As soon as
 classify _table "\xFFFD" = EndLoop
@@ -97,7 +110,7 @@ classify table other
 
 classifyUtf8 :: [Char] -> KClass
 classifyUtf8 s = case decode ((map (fromIntegral . ord) s) :: [Word8]) of
-    Just (unicodeChar, _) -> Valid (KASCII unicodeChar) []
+    Just (unicodeChar, _) -> Valid (KChar unicodeChar) []
     _ -> Invalid -- something bad happened; just ignore and continue.
 
 classifyTab table = compile table
@@ -112,7 +125,15 @@ utf8Length c
     | c < 0xF0 = 3
     | otherwise = 4
 
-initInputForFd :: Int -> ClassifyTableV1 -> Fd -> IO (Chan Event, IO ())
+-- I gave a quick shot at replacing this code with some that removed the "odd" bits. The "obvious"
+-- changes all failed testing. This is timing sensitive code.
+-- I now think I can replace this wil code that makes the time sensitivity explicit. I am waiting
+-- until I have a good set of characterization tests to verify the input to event timing is still
+-- correct for a user. I estimate the current tests cover ~70% of the required cases.
+--
+-- This is an example of an algorithm where code coverage could be high, even 100%, but the
+-- algorithm still under tested. I should collect more of these examples...
+initInputForFd :: Int -> ClassifyTable -> Fd -> IO (Chan Event, IO ())
 initInputForFd escDelay classify_table input_fd = do
     inputChannel <- newChan
     eventChannel <- newChan

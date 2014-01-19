@@ -93,7 +93,7 @@ process_event = do
         then return True
         else do
             case k of
-                EvKey (KASCII 'r') [MCtrl] -> ask >>= liftIO . refresh
+                EvKey (KChar 'r') [MCtrl]  -> ask >>= liftIO . refresh
                 EvKey KLeft  []            -> move_dude (-1) 0
                 EvKey KRight []            -> move_dude 1 0
                 EvKey KUp    []            -> move_dude 0 (-1)

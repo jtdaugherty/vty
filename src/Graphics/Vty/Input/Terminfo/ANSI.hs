@@ -24,7 +24,7 @@ nav_keys_0 =
 -- | VT 100 (?) encoding for shift, meta and ctrl plus arrows/home/end
 nav_keys_1 :: ClassifyTable
 nav_keys_1 =
-   [("\ESC[" ++ charCnt ++ show mc++c,(s,m))
+   [("\ESC[" ++ charCnt ++ show mc++c,EvKey s m)
     | charCnt <- ["1;", ""], -- we can have a count or not
     (m,mc) <- [([MShift],2::Int), ([MCtrl],5), ([MMeta],3),
                ([MShift, MCtrl],6), ([MShift, MMeta],4)], -- modifiers and their codes
@@ -33,16 +33,16 @@ nav_keys_1 =
    ]
 
 -- | VT 100 (?) encoding for ins, del, pageup, pagedown, home, end
-nav_keys_2 :: ClassifyTableV1
+nav_keys_2 :: ClassifyTable
 nav_keys_2 =
-    let k n s = ("\ESC["++show n++"~",(s,[]))
+    let k n s = ("\ESC["++show n++"~",EvKey s [])
     in zipWith k [2::Int,3,5,6,1,4]
                  [KIns,KDel,KPageUp,KPageDown,KHome,KEnd]
 
 -- | VT 100 (?) encoding for ctrl + ins, del, pageup, pagedown, home, end
-nav_keys_3 :: ClassifyTableV1
+nav_keys_3 :: ClassifyTable
 nav_keys_3 =
-    let k n s = ("\ESC["++show n++";5~",(s,[MCtrl]))
+    let k n s = ("\ESC["++show n++";5~", EvKey s [MCtrl])
     in zipWith k [2::Int,3,5,6,1,4]
                  [KIns,KDel,KPageUp,KPageDown,KHome,KEnd]
 
@@ -55,9 +55,9 @@ nav_keys_3 =
 -- ``meta mode'' on and off, they can be given as smm and rmm."
 --
 -- That is more complex than below. I cannot fault the original author for just hard coding a table.
-function_keys_1 :: ClassifyTableV1
+function_keys_1 :: ClassifyTable
 function_keys_1 =
-    let f ff nrs m = [ ("\ESC["++show n++"~",(KFun (n-(nrs!!0)+ff), m)) | n <- nrs ] in
+    let f ff nrs m = [ ("\ESC["++show n++"~",EvKey (KFun $ n-(nrs!!0)+ff) m) | n <- nrs ] in
     concat [f 1 [25,26] [MShift], f 3 [28,29] [MShift], f 5 [31..34] [MShift] ]
 
 -- | VT 100 (?) encoding for meta plus char
@@ -69,11 +69,13 @@ function_keys_1 =
 -- the same as ESC should examine km and current encoding.
 -- 3. stopped enumeration at '~' instead of '\DEL'. The latter is mapped to KBS by
 -- special_support_keys.
-function_keys_2 :: ClassifyTableV1
-function_keys_2 = [ ('\ESC':[x],(KASCII x,[MMeta])) | x <- '\t':[' ' .. '~'],
-                                                      x /= '[']
+function_keys_2 :: ClassifyTable
+function_keys_2 = [ ('\ESC':[x],EvKey (KChar x) [MMeta])
+                  | x <- '\t':[' ' .. '~']
+                  , x /= '['
+                  ]
 
-tables :: [ClassifyTableV1]
+tables :: [ClassifyTable]
 tables =
     [ nav_keys_0
     , nav_keys_1

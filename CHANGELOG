@@ -2,7 +2,7 @@
     * removed the typeclass based terminal and display context interface in favor of a data
       structure of properties interface.
     * input handling changes
-        * KASCII is not KChar
+        * KASCII is now KChar
         * KPN5 is now KCenter
         * tests exist.
         * the default amount of time between ESC and a subsequent character that causes VTY to

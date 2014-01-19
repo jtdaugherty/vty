@@ -1,9 +1,10 @@
 module Graphics.Vty.Input.Terminfo where
 
 import Graphics.Vty.Input.Events
-import qualified Graphics.Vty.Input.Terminfo.VT100 as VT100
+import qualified Graphics.Vty.Input.Terminfo.ANSI as ANSI
 import qualified Graphics.Vty.Input.Terminfo.XTerm7Bit as XTerm7Bit
 
+import Control.Arrow
 import System.Console.Terminfo
 
 -- | queries the terminal for all capability based input sequences then adds on a terminal dependent
@@ -33,21 +34,23 @@ import System.Console.Terminfo
 --
 -- \todo terminfo meta is not supported.
 -- \todo no 8bit
-classify_table_for_term :: String -> Terminal -> ClassifyTableV1
+classify_table_for_term :: String -> Terminal -> ClassifyTable
 classify_table_for_term term_name term =
-    concatMap map_to_legacy_table
-              $ caps_classify_table term keys_from_caps_table
-                : visible_chars
-                : ctrl_chars
-                : ctrl_meta_chars
-                : special_support_keys
-                : internal_tables term_name
+    concat $ caps_classify_table term keys_from_caps_table
+           : universal_table
+           : term_specific_tables term_name
 
-caps_classify_table :: Terminal -> [(String,Event)] -> [(String,Event)]
+-- | key table assumed to be applicable to all terminals.
+universal_table :: ClassifyTable
+universal_table = concat [visible_chars, ctrl_chars, ctrl_meta_chars, special_support_keys]
+
+caps_classify_table :: Terminal -> [(String,Event)] -> ClassifyTable
 caps_classify_table terminal table = [(x,y) | (Just x,y) <- map extract_cap table]
     where extract_cap = first (getCapability terminal . tiGetStr)
 
-internal_tables term_name
+-- | tables specific to a given terminal that are not derivable from terminfo.
+term_specific_tables :: String -> [ClassifyTable]
+term_specific_tables term_name
     | ANSI.supports term_name = ANSI.tables
     | XTerm7Bit.supports term_name = XTerm7Bit.tables
     | otherwise = []
@@ -64,19 +67,20 @@ visible_chars = [ ([x], EvKey (KChar x) [])
                  | x <- [' ' .. toEnum 0xC1]
                  ]
 
--- | Non visible cahracters in the ISO-8859-1 and UTF-8 common set translated to ctrl + char.
+-- | Non visible characters in the ISO-8859-1 and UTF-8 common set translated to ctrl + char.
 --
 -- \todo resolve CTRL-i is the same as tab
 ctrl_chars :: ClassifyTable
 ctrl_chars =
     [ ([toEnum x],EvKey (KChar y) [MCtrl])
     | (x,y) <- zip ([0..31]) ('@':['a'..'z']++['['..'_']),
-      y /= 'i' -- Resolve issue #3 where CTRL-i hides TAB.
+      y /= 'i', -- Resolve issue #3 where CTRL-i hides TAB.
+      y /= 'h'  -- CTRL-h should not hide BS
     ]
 
 -- | Ctrl+Meta+Char
 ctrl_meta_chars :: ClassifyTable
-ctrl_meta_chars = map (\(s,EvKey c m) -> ('\ESC':s, EvKey c (MMeta:m)))
+ctrl_meta_chars = map (\(s,EvKey c m) -> ('\ESC':s, EvKey c (MMeta:m))) ctrl_chars
 
 -- | esc, meta esc, delete, meta delete, enter, meta enter
 special_support_keys :: ClassifyTable
@@ -88,7 +92,7 @@ special_support_keys =
     -- Special support for Enter
     , ("\ESC\^J",EvKey KEnter [MMeta]), ("\^J",EvKey KEnter [])
     -- explicit support for tab
-    , ("\t", EvKey KChar '\t' []
+    , ("\t", EvKey (KChar '\t') [])
     ]
 
 -- | classify table directly generated from terminfo cap strings

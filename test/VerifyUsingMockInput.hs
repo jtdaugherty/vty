@@ -11,7 +11,7 @@ import Verify.Graphics.Vty.Output
 import Data.List (intersperse)
 
 import Graphics.Vty hiding (resize)
-import Graphics.Vty.Input.Data
+import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Internal
 import Graphics.Vty.Input.Terminfo
 
@@ -102,7 +102,7 @@ compare_events input_spec expected_events out_events = compare_events' expected_
                 printf "received events %s\n" (show out_events) :: IO ()
                 return False
 
-assert_events_from_syn_input :: ClassifyTableV1 -> InputSpec -> ExpectedSpec -> IO Bool
+assert_events_from_syn_input :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Bool
 assert_events_from_syn_input table input_spec expected_events = do
     let max_duration = sum [t | Delay t <- input_spec] + min_detectable_delay
         event_count = length expected_events
@@ -127,7 +127,7 @@ assert_events_from_syn_input table input_spec expected_events = do
     out_events <- reverse <$> readIORef events_ref
     compare_events input_spec expected_events out_events
 
-assert_events_from_input_block :: ClassifyTableV1 -> InputSpec -> ExpectedSpec -> IO Bool
+assert_events_from_input_block :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Bool
 assert_events_from_input_block table input_spec expected_events = do
     let classifier = classify table
         max_duration = sum [t | Delay t <- input_spec] + min_detectable_delay
@@ -168,12 +168,12 @@ instance Monad m => Serial m (InputBlocksUsingTable event) where
             selections []     = []
             selections (x:xs) = let z = selections xs in [x] : (z ++ map ((:) x) z)
 
-verify_simple_input_block_to_event :: Property IO
-verify_simple_input_block_to_event = forAll $ \(InputBlocksUsingTable gen) -> do
-    let input_seq = gen simple_chars
+verify_visible_input_block_to_event :: Property IO
+verify_visible_input_block_to_event = forAll $ \(InputBlocksUsingTable gen) -> do
+    let input_seq = gen visible_chars
         input     = Bytes $ concat [s | (s,_) <- input_seq]
-        events    = [e | (_,(k,ms)) <- input_seq, let e = EvKey k ms]
-    monadic $ assert_events_from_input_block simple_chars [input] events
+        events    = map snd input_seq
+    monadic $ assert_events_from_input_block visible_chars [input] events
 
 verify_keys_from_caps_table_block_to_event :: Property IO
 verify_keys_from_caps_table_block_to_event = forAll $ \(InputBlocksUsingTable gen) ->
@@ -181,19 +181,19 @@ verify_keys_from_caps_table_block_to_event = forAll $ \(InputBlocksUsingTable ge
         term <- setupTerm term_name
         let table         = caps_classify_table term keys_from_caps_table
             input_seq     = gen table
-            events        = [e       | (_,e) <- input_seq]
-            keydowns      = [Bytes s | (s,_) <- input_seq]
+            events        = map snd input_seq
+            keydowns      = map (Bytes . fst) input_seq
             input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
-        assert_events_from_input_block (map_to_legacy_table table) input events
+        assert_events_from_input_block table input events
 
-verify_simple_syn_input_to_event :: Property IO
-verify_simple_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) -> monadic $ do
-    let table         = simple_chars
+verify_visible_syn_input_to_event :: Property IO
+verify_visible_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) -> monadic $ do
+    let table         = visible_chars
         input_seq     = gen table
-        events        = [EvKey k ms | (_,(k,ms)) <- input_seq]
-        keydowns      = [Bytes s    | (s,_) <- input_seq]
+        events        = map snd input_seq
+        keydowns      = map (Bytes . fst) input_seq
         input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
-    assert_events_from_syn_input (concat ansi_classify_table) input events
+    assert_events_from_syn_input universal_table input events
 
 verify_caps_syn_input_to_event :: Property IO
 verify_caps_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) ->
@@ -201,39 +201,39 @@ verify_caps_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) ->
         term <- setupTerm term_name
         let table         = caps_classify_table term keys_from_caps_table
             input_seq     = gen table
-            events        = [e       | (_,e) <- input_seq]
-            keydowns      = [Bytes s | (s,_) <- input_seq]
+            events        = map snd input_seq
+            keydowns      = map (Bytes . fst) input_seq
             input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
-        assert_events_from_syn_input (map_to_legacy_table table) input events
+        assert_events_from_syn_input table input events
 
 verify_special_syn_input_to_event :: Property IO
 verify_special_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) -> monadic $ do
-    let table         = function_keys_1 ++ function_keys_2
+    let table         = special_support_keys
         input_seq     = gen table
-        events        = [EvKey k ms | (_,(k,ms)) <- input_seq]
-        keydowns      = [Bytes s    | (s,_) <- input_seq]
+        events        = map snd input_seq
+        keydowns      = map (Bytes . fst) input_seq
         input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
-    assert_events_from_syn_input (concat ansi_classify_table) input events
+    assert_events_from_syn_input universal_table input events
 
 verify_full_syn_input_to_event :: Property IO
 verify_full_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) ->
     forEachOf terminals_of_interest $ \term_name -> monadic $ do
         term <- setupTerm term_name
-        let table         = classify_table_for_term term
+        let table         = classify_table_for_term term_name term
             input_seq     = gen table
-            events        = [EvKey k ms | (_,(k,ms)) <- input_seq]
-            keydowns      = [Bytes s    | (s,_) <- input_seq]
+            events        = map snd input_seq
+            keydowns      = map (Bytes . fst) input_seq
             input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
         assert_events_from_syn_input table input events
 
 main :: IO ()
 main = defaultMain
     [ testProperty "basic block generated from a single visible chars to event translation"
-        verify_simple_input_block_to_event
+        verify_visible_input_block_to_event
     , testProperty "key sequences read from caps table map to expected events"
         verify_keys_from_caps_table_block_to_event
     , testProperty "synthesized typing from single visible chars translates to expected events"
-        verify_simple_syn_input_to_event
+        verify_visible_syn_input_to_event
     , testProperty "synthesized typing from keys from capabilities tables translates to expected events"
         verify_caps_syn_input_to_event
     , testProperty "synthesized typing from hard coded special keys translates to expected events"

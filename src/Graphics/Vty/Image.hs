@@ -50,7 +50,6 @@ import Graphics.Text.Width
 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
-import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
@@ -59,75 +58,6 @@ import Data.Word
 
 infixr 5 <|>
 infixr 4 <->
-
--- | Append in the Monoid instance is equivalent to <->. 
-instance Monoid Image where
-    mempty = EmptyImage
-    mappend = vert_join
-
--- | combines two images side by side
---
--- Combines text chunks where possible. Assures output_width and output_height properties are not
--- violated.
---
--- The result image will have a width equal to the sum of the two images width.  And the height will
--- equal the largest height of the two images.  The area not defined in one image due to a height
--- missmatch will be filled with the background pattern.
---
--- TODO: the bg fill is biased towards top to bottom languages(?)
-horiz_join :: Image -> Image -> Image
-horiz_join EmptyImage i          = i
-horiz_join i          EmptyImage = i
-horiz_join i_0@(HorizText a_0 t_0 w_0 cw_0) i_1@(HorizText a_1 t_1 w_1 cw_1)
-    | a_0 == a_1 = HorizText a_0 (TL.append t_0 t_1) (w_0 + w_1) (cw_0 + cw_1)
-    -- TODO: assumes horiz text height is always 1
-    | otherwise  = HorizJoin i_0 i_1 (w_0 + w_1) 1
-horiz_join i_0 i_1
-    -- If the images are of the same height then no padding is required
-    | h_0 == h_1 = HorizJoin i_0 i_1 w h_0
-    -- otherwise one of the images needs to be padded to the right size.
-    | h_0 < h_1  -- Pad i_0
-        = let pad_amount = h_1 - h_0
-          in HorizJoin (VertJoin i_0 (BGFill w_0 pad_amount) w_0 h_1) i_1 w h_1
-    | h_0 > h_1  -- Pad i_1
-        = let pad_amount = h_0 - h_1
-          in HorizJoin i_0 (VertJoin i_1 (BGFill w_1 pad_amount) w_1 h_0) w h_0
-    where
-        w_0 = image_width i_0
-        w_1 = image_width i_1
-        w   = w_0 + w_1
-        h_0 = image_height i_0
-        h_1 = image_height i_1
-horiz_join _ _ = error "horiz_join applied to undefined values."
-
--- | combines two images vertically
---
--- The result image will have a height equal to the sum of the heights of both images.
--- The width will equal the largest width of the two images.
--- The area not defined in one image due to a width missmatch will be filled with the background
--- pattern.
---
--- TODO: the bg fill is biased towards right to left languages(?)
-vert_join :: Image -> Image -> Image
-vert_join EmptyImage i          = i
-vert_join i          EmptyImage = i
-vert_join i_0 i_1
-    -- If the images are of the same width then no background padding is required
-    | w_0 == w_1 = VertJoin i_0 i_1 w_0 h
-    -- Otherwise one of the images needs to be padded to the size of the other image.
-    | w_0 < w_1
-        = let pad_amount = w_1 - w_0
-          in VertJoin (HorizJoin i_0 (BGFill pad_amount h_0) w_1 h_0) i_1 w_1 h
-    | w_0 > w_1
-        = let pad_amount = w_0 - w_1
-          in VertJoin i_0 (HorizJoin i_1 (BGFill pad_amount h_1) w_0 h_1) w_0 h
-    where
-        w_0 = image_width i_0
-        w_1 = image_width i_1
-        h_0 = image_height i_0
-        h_1 = image_height i_1
-        h   = h_0 + h_1
-vert_join _ _ = error "vert_join applied to undefined values."
 
 -- | An area of the picture's bacground (See Background) of w columns and h rows.
 background_fill :: Int -> Int -> Image
