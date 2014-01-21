@@ -40,23 +40,19 @@ from_capname ti name = fromJust $ Terminfo.getCapability ti (Terminfo.tiGetStr n
 
 tests :: IO [Test]
 tests = do
-    parse_tests <- concat <$> forM terminals_of_interest ( \term_name -> do
-        mti <- liftIO $ try $ Terminfo.setupTerm term_name
-        case mti of
-            Left (_e :: SomeException)
-                -> return []
-            Right ti -> do
-                concat <$> forM caps_of_interest ( \cap_name -> do
-                    liftIO $ putStrLn $ "\tparsing cap: " ++ cap_name
-                    case Terminfo.getCapability ti (Terminfo.tiGetStr cap_name) of
-                        Just cap_def -> do
-                            return [ verify ( "\tparse cap " ++ cap_name ++ " -> " ++ show cap_def )
-                                            ( verify_parse_cap cap_def $ const (return succeeded)  ) ]
-                        Nothing      -> do
-                            return []
+    parse_tests <- concat <$> forM terminals_of_interest (\term_name ->
+        liftIO (try $ Terminfo.setupTerm term_name)
+        >>= either (\(_e :: SomeException) -> return [])
+                   (\ti -> concat <$> forM caps_of_interest (\cap_name -> do
+                        let case_name = "\tparsing cap: " ++ cap_name
+                        liftIO $ putStrLn case_name
+                        return $ case Terminfo.getCapability ti (Terminfo.tiGetStr cap_name) of
+                            Just cap_def -> [verify (case_name ++ " -> " ++ show cap_def)
+                                                    (verify_parse_cap cap_def $ const (return succeeded))]
+                            Nothing      -> []
                     )
+                   )
         )
-    -- The quickcheck tests
     return $ [ verify "parse_non_paramaterized_caps" non_paramaterized_caps
              , verify "parse cap string with literal %" literal_percent_caps
              , verify "parse cap string with %i op" inc_first_two_caps
