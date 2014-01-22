@@ -1,10 +1,9 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE CPP #-}
--- Much of the input layer used to be in a single module with a few large functions. I've refactored
--- the input layer into many small bits. Now, I think, the code is a better position to be
--- incrementally refined. Still, until there are proper tests in place much of the refinement must
--- wait.
+-- | The input layer used to be a single function that correctly accounted for the non-threaded
+-- runtime by emulating the terminal VMIN adn VTIME handling. This has been removed and replace with
+-- a more straightforward parser. The non-threaded runtime is no longer supported.
 module Graphics.Vty.Input.Internal where
 
 import Graphics.Vty.Input.Events
