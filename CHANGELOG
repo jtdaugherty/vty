@@ -1,13 +1,16 @@
 5.0.0
-    * removed the typeclass based terminal and display context interface in favor of a data
-      structure of properties interface.
     * input handling changes
         * KASCII is now KChar
         * KPN5 is now KCenter
         * tests exist.
-        * the default amount of time between ESC and a subsequent character that causes VTY to
-          interpret the input as "ESC" then the character, versus some special key, has been
-          increased to 4000 microseconds; 4 milliseconds.
+        * terminal timing is now handled by selecting an appropriate VTIME. Previously this was
+          implemented within Vty itself. This reduced complexity in vty but potentially affects
+          meta key handling.
+        * The time vty will wait to verify an ESC byte means a single ESC key is the
+          singleEscPeriod of the Input Config structure.
+        * The input config can be changed dynamically.
+    * removed the typeclass based terminal and display context interface in favor of a data
+      structure of properties interface.
     * renamed the Terminal interface to Output
     * The default picture for an image now uses the "clear" background. This background fills
       background spans with spaces or just ends the line.

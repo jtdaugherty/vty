@@ -36,7 +36,7 @@ module Graphics.Vty.Input ( Key(..)
                           , Button(..)
                           , Event(..)
                           , Input(..)
-                          , defaultEscDelay
+                          , Config(..)
                           , input_for_current_terminal
                           , input_for_name_and_io
                           )
@@ -90,29 +90,26 @@ input_for_current_terminal config = do
 --      - extended functions are disabled. Uh. Whatever these are.
 --
 input_for_name_and_io :: Config -> String -> Fd -> IO Input
-input_for_name_and_io config term_name term_in = do
+input_for_name_and_io config term_name term_fd = do
     terminal <- Terminfo.setupTerm term_name
-    attr <- getTerminalAttributes term_in
+    attr <- getTerminalAttributes term_fd
     let attr' = foldl withoutMode attr [ StartStopOutput, KeyboardInterrupts
                                        , EnableEcho, ProcessInput, ExtendedFunctions
                                        ]
-    setTerminalAttributes term_in attr' Immediately
-    set_term_timing term_in
+    setTerminalAttributes term_fd attr' Immediately
     let classify_table = classify_table_for_term term_name terminal
-    config_ref <- newIORef config
-    (eventChannel, shutdown_event_processing) <- initInputForFd config_ref classify_table term_in
+    apply_timing_config term_fd config
+    input <- newIORef config >>= \ref -> initInputForFd ref classify_table term_fd 
     let pokeIO = Catch $ do
             let e = error "(getsize in input layer)"
-            setTerminalAttributes term_in attr' Immediately
-            writeChan eventChannel (EvResize e e)
+            setTerminalAttributes term_fd attr' Immediately
+            writeChan (_event_channel input) (EvResize e e)
     _ <- installHandler windowChange pokeIO Nothing
     _ <- installHandler continueProcess pokeIO Nothing
-    return $ Input
-        { event_channel  = eventChannel
-        , shutdown_input = do
-            shutdown_event_processing
+    return $ input
+        { shutdown_input = do
+            shutdown_input input
             _ <- installHandler windowChange Ignore Nothing
             _ <- installHandler continueProcess Ignore Nothing
-            setTerminalAttributes term_in attr Immediately
-        , config_ref = config_ref
+            setTerminalAttributes term_fd attr Immediately
         }

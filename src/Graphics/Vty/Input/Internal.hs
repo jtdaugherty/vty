@@ -16,7 +16,7 @@ import Control.Lens
 import Control.Exception (try, IOException)
 import Control.Monad (when, void, mzero)
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans.State (StateT(..))
+import Control.Monad.Trans.State (StateT(..), evalStateT)
 import Control.Monad.Trans.Reader (ReaderT(..))
 
 import Data.Char
@@ -28,7 +28,7 @@ import Data.Maybe ( mapMaybe )
 import qualified Data.Set as S( fromList, member )
 import Data.Word
 
-import Foreign ( alloca, poke, peek, peekArray, Ptr )
+import Foreign ( allocaArray, peekArray, Ptr )
 import Foreign.C.Types (CInt(..))
 
 import System.Posix.IO ( fdReadBuf
@@ -38,16 +38,12 @@ import System.Posix.IO ( fdReadBuf
 import System.Posix.Types (Fd(..))
 
 data Config = Config
-    { controlSeqPeriod :: Int -- ^ default control sequence period is 10000 microseconds.  Which is
-                              -- assumed to be well above the sampling rate required to detect a 
-                              -- keyup for a person typing 200 wpm.
-    , metaComboPeriod :: Int -- ^ The default meta combo period is 100000 microseconds.
+    { singleEscPeriod :: Int -- ^ The default is 100000 microseconds or 0.1 seconds.
     } deriving (Show, Eq)
 
 instance Default Config where
     def = Config
-        { controlSeqPeriod = 10000
-        , metaComboPeriod = 100000
+        { singleEscPeriod = 100000
         }
 
 data Input = Input
@@ -95,7 +91,7 @@ loop_input_processor = do
     read_from_device >>= add_bytes_to_process
     _ <- many $ parse_event >>= emit
     drop_invalid
-    stop_requested <|> loop_input_processor
+    stop_if_requested <|> loop_input_processor
 
 add_bytes_to_process :: String -> InputM ()
 add_bytes_to_process block = unprocessed_bytes <>= block
@@ -109,14 +105,18 @@ read_from_device = do
     old_config <- use applied_config
     fd <- view input_fd
     when (new_config /= old_config) $ do
-        let vtime = min 255 $ metaComboPeriod new_config `div` 100000
-        liftIO $ set_term_timing fd 0 vtime
+        liftIO $ apply_timing_config fd new_config
         applied_config .= new_config
     buffer_ptr <- use $ input_buffer.ptr
     max_bytes  <- use $ input_buffer.size
     liftIO $ do
         bytes_read <- fdReadBuf fd buffer_ptr (fromIntegral max_bytes)
         fmap (map $ chr . fromIntegral) $ peekArray (fromIntegral bytes_read) buffer_ptr
+
+apply_timing_config :: Fd -> Config -> IO ()
+apply_timing_config fd config =
+    let vtime = min 255 $ singleEscPeriod config `div` 100000
+    in set_term_timing fd 1 vtime
 
 parse_event :: InputM Event
 parse_event = do
@@ -134,67 +134,10 @@ drop_invalid = do
     b <- use unprocessed_bytes
     when (c b == Invalid) $ unprocessed_bytes .= []
 
-stop_requested :: InputM ()
-stop_requested = do
+stop_if_requested :: InputM ()
+stop_if_requested = do
     True <- (liftIO . readIORef) =<< use stop_request_ref
     return ()
-
-#if 0
-data InputChunk
-    = StopInput
-    | InputChunk String
-    | InputBreak
-
--- The input uses two magic character:
---
---  * '\xFFFD' for "stop processing"
---  * '\xFFFE' for "previous input chunk is complete" Which is used to differentiate a single ESC
---  from using ESC as meta or to indicate a control sequence.
---
--- | Read 'InputChunk' from the input channel, parse into one or more 'Event's, output to event
--- channel.
---
--- Each input chunk is added to the current chunk being processed. The current chunk is processed
--- with the provided function to determine events.
-inputToEventThread :: (String -> KClass) -> Chan InputChunk -> Chan Event -> IO ()
-inputToEventThread classifier inputChannel eventChannel = loop []
-    where
-        loop current =
-            c <- readChan inputChannel
-            case c of
-                StopInput        -> return ()
-                -- the prefix is missing bytes and there are bytes available.
-                InputChunk chunk -> parse_until_prefix (current ++ chunk)
-                                    >>= loop
-                -- if there are bytes remaining after all events are parsed then the spacing after 
-                InputBreak       -> parse_until_prefix current
-                                    >> loop []
-        parse_until_prefix current = case classifier current of
-            Prefix  -> return current
-            Invalid -> return []
-            Valid k m remaining -> do
-                writeChan eventChannel (EvKey k m)
-                parse_until_prefix remaining
-
-            Prefix       -> do
-                c <- readChan inputChannel
-                case c of
-                    StopInput             -> return ()
-                    -- the prefix is missing bytes and there are bytes available.
-                    InputChunk chunk      -> loop (current ++ chunk)
-                    -- the prefix is a control sequence that is unknown. Drop and move on to the next
-                    MetaShiftChunk chunk  -> loop chunk 
-            -- drop the entirety of invalid sequences. Probably better to drop only the first
-            -- character. However, the read behavior of terminals (a single read corresponds to the
-            -- bytes of a single event) might mean this results in quicker error recovery from a
-            -- users perspective.
-            Invalid      -> do
-                c <- readChan inputChannel
-                case c of
-                    EndChunk         -> return ()
-                    InputChunk chunk -> loop chunk
-            Valid k m remaining -> writeChan eventChannel (EvKey k m) >> loop remaining
-#endif
 
 -- This makes a kind of tri. Has space efficiency issues with large input blocks.
 -- Likely building a parser and just applying that would be better.
@@ -249,6 +192,16 @@ utf8Length c
     | c < 0xF0 = 3
     | otherwise = 4
 
+run_input_processor_loop :: ClassifyTable -> Input -> IORef Bool -> IO ()
+run_input_processor_loop classify_table input stop_flag = do
+    let buffer_size = 1024
+    allocaArray buffer_size $ \(buffer_ptr :: Ptr Word8) -> do
+        s0 <- InputState [] <$> readIORef (_config_ref input)
+                            <*> pure (InputBuffer buffer_ptr buffer_size)
+                            <*> pure stop_flag
+                            <*> pure (classify classify_table)
+        runReaderT (evalStateT loop_input_processor s0) input
+
 -- I gave a quick shot at replacing this code with some that removed the "odd" bits. The "obvious"
 -- changes all failed testing. This is timing sensitive code.
 -- I now think I can replace this wil code that makes the time sensitivity explicit. I am waiting
@@ -257,60 +210,14 @@ utf8Length c
 --
 -- This is an example of an algorithm where code coverage could be high, even 100%, but the
 -- algorithm still under tested. I should collect more of these examples...
-initInputForFd :: IORef Config -> ClassifyTable -> Fd -> IO (Chan Event, IO ())
+initInputForFd :: IORef Config -> ClassifyTable -> Fd -> IO Input
 initInputForFd config_ref classify_table input_fd = do
-    eventChannel <- newChan
-#if 0
-    should_exit <- newIORef False
-    let -- initial state: read bytes until a ESC. Emit bytes. Go to possible-control-seq state.
-        -- possible-control-seq: read available bytes.
-        --  If time is < controlSeqPeriod then emit as chunk with ESC prefix.
-        --  If time is < metaComboPeriod then emit chunk with Meta shift.
-        --  If time is > metaComboPeriod then emit ESC event then chunk of bytes.
-        inputThread :: IO ()
-        inputThread = do
-            let k = 1024
-            _ <- allocaArray k $ \(input_buffer :: Ptr Word8) -> do
-                let loop = do
-                        setFdOption input_fd NonBlockingRead False
-                        threadWaitRead input_fd
-                        setFdOption input_fd NonBlockingRead True
-                        _ <- try readAll :: IO (Either IOException ())
-                        when (escDelay == 0) finishAtomicInput
-                        loop
-                    readAll = do
-                        poke input_buffer 0
-                        bytes_read <- fdReadBuf input_fd input_buffer 1
-                        input_char <- fmap (chr . fromIntegral) $ peek input_buffer
-                        when (bytes_read > 0) $ do
-                            _ <- tryPutMVar hadInput () -- signal input
-                            writeChan inputChannel input_char
-                            readAll
-                loop
-            return ()
-        -- If there is no input for some time, this thread puts '\xFFFE' in the
-        -- inputChannel.
-        noInputThread :: IO ()
-        noInputThread = when (escDelay > 0) loop
-            where loop = do
-                    takeMVar hadInput -- wait for some input
-                    threadDelay escDelay -- microseconds
-                    hadNoInput <- isEmptyMVar hadInput -- no input yet?
-                    -- TODO(corey): there is a race between here and the inputThread.
-                    when hadNoInput finishAtomicInput
-                    loop
-        classifier = classify classify_table
-    eventThreadId <- forkIO $ void $ inputToEventThread classifier inputChannel eventChannel
-    inputThreadId <- forkIO $ input_thread
-    noInputThreadId <- forkIO $ noInputThread
-    -- TODO(corey): killThread is a bit risky for my tastes.
-    -- H - somewhat mitigated by sending a magic terminate character?
-    let shutdown_event_processing = do
-            killThread eventThreadId
-            killThread inputThreadId
-#endif
-    let shutdown_event_processing = return ()
-
-    return (eventChannel, shutdown_event_processing)
+    stop_flag <- newIORef False
+    input <- Input <$> newChan
+                   <*> pure (writeIORef stop_flag True)
+                   <*> pure config_ref
+                   <*> pure input_fd
+    _ <- forkIO $ run_input_processor_loop classify_table input stop_flag
+    return input
 
 foreign import ccall "vty_set_term_timing" set_term_timing :: Fd -> Int -> Int -> IO ()

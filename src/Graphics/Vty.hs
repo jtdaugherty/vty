@@ -43,6 +43,7 @@ import Graphics.Vty.Picture
 
 import Control.Concurrent
 
+import Data.Default
 import Data.IORef
 
 import qualified System.Console.Terminfo as Terminfo
@@ -88,15 +89,15 @@ data Vty = Vty
 -- | Set up the state object for using vty.  At most one state object should be
 -- created at a time.
 mkVty :: IO Vty
-mkVty = mkVtyEscDelay defaultEscDelay
+mkVty = mkVtyEscDelay def
 
 -- | Set up the state object for using vty.  At most one state object should be
 -- created at a time. The delay, in microseconds, specifies the period of time to wait for a key
 -- following reading ESC from the terminal before considering the ESC key press as a discrete event.
 -- \todo move input init into terminal interface
-mkVtyEscDelay :: Int -> IO Vty
-mkVtyEscDelay escDelay = do
-    input <- input_for_current_terminal escDelay
+mkVtyEscDelay :: Config -> IO Vty
+mkVtyEscDelay config = do
+    input <- input_for_current_terminal config
     out <- output_for_current_terminal
     intMkVty input out
 
@@ -149,7 +150,7 @@ intMkVty input out = do
             >>  readIORef last_pic_ref 
             >>= maybe ( return () ) ( \pic -> inner_update pic ) 
 
-    let gkey = do k <- readChan $ event_channel input
+    let gkey = do k <- readChan $ _event_channel input
                   case k of 
                     (EvResize _ _)  -> inner_refresh
                                        >> display_bounds out
