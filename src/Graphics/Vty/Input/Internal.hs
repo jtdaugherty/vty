@@ -14,7 +14,7 @@ import Control.Applicative
 import Control.Concurrent
 import Control.Lens
 import Control.Exception (try, IOException)
-import Control.Monad (when, void, mzero)
+import Control.Monad (when, void, mzero, forM_)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.State (StateT(..), evalStateT)
 import Control.Monad.Trans.Reader (ReaderT(..))
@@ -89,7 +89,8 @@ type InputM a = StateT InputState (ReaderT Input IO) a
 loop_input_processor :: InputM ()
 loop_input_processor = do
     read_from_device >>= add_bytes_to_process
-    _ <- many $ parse_event >>= emit
+    valid_events <- many parse_event
+    forM_ valid_events emit
     drop_invalid
     stop_if_requested <|> loop_input_processor
 
@@ -116,7 +117,7 @@ read_from_device = do
 apply_timing_config :: Fd -> Config -> IO ()
 apply_timing_config fd config =
     let vtime = min 255 $ singleEscPeriod config `div` 100000
-    in set_term_timing fd 1 vtime
+    in set_term_timing fd 0 vtime
 
 parse_event :: InputM Event
 parse_event = do

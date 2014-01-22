@@ -72,7 +72,7 @@ input_for_current_terminal config = do
 --      - disables software flow control on outgoing data. This stops the process from being
 --        suspended if the output terminal cannot keep up. I presume this has little effect these
 --        days. I hope this means that output will be buffered if the terminal cannot keep up. In the
---        old days the output might of been dropped.
+--        old days the output might of been dropped?
 -- 
 -- "raw" mode is used for input.
 --
