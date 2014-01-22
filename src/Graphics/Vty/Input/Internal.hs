@@ -101,6 +101,9 @@ add_bytes_to_process block = unprocessed_bytes <>= block
 emit :: Event -> InputM ()
 emit event = view event_channel >>= liftIO . flip writeChan event
 
+-- There should be two versions of this method:
+-- 1. using VMIN and VTIME when under the threaded runtime
+-- 2. emulating VMIN and VTIME in userspace when under the non-threaded runtime.
 read_from_device :: InputM String
 read_from_device = do
     new_config <- view config_ref >>= liftIO . readIORef
