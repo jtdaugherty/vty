@@ -207,12 +207,6 @@ run_input_processor_loop classify_table input stop_flag = do
                             <*> pure (classify classify_table)
         runReaderT (evalStateT loop_input_processor s0) input
 
--- I gave a quick shot at replacing this code with some that removed the "odd" bits. The "obvious"
--- changes all failed testing. This is timing sensitive code.
--- I now think I can replace this wil code that makes the time sensitivity explicit. I am waiting
--- until I have a good set of characterization tests to verify the input to event timing is still
--- correct for a user. I estimate the current tests cover ~70% of the required cases.
---
 -- This is an example of an algorithm where code coverage could be high, even 100%, but the
 -- algorithm still under tested. I should collect more of these examples...
 initInputForFd :: IORef Config -> ClassifyTable -> Fd -> IO Input
