@@ -28,9 +28,11 @@
 -- 3. ESC used as meta in a key combination: ESC byte, no other bytes read within
 -- control-seq-period. Bytes up until next valid input block are the input events plus meta.
 --
--- This, as best I can figure, is what VMIN and VTIME are supposed to be for.  For some reason vty
--- implements the timing in the library.  I'm not sure if this is an advantage or not. Getting this
--- right has provided a strangely interesting task so I haven't cared to determine.
+-- If the current runtime is the threaded runtime then the terminal's VMIN and VTIME parameters can
+-- be applied to implement the above rules.
+-- If the current runtime does not support forkOS then there is currently no implementation. Vty
+-- used to implement a parser which did tricky things with non-blocking reads and timers. This could
+-- be revived.
 module Graphics.Vty.Input ( Key(..)
                           , Modifier(..)
                           , Button(..)

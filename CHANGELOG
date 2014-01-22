@@ -1,4 +1,5 @@
 5.0.0
+    * all projects using vty must be compiled with -threaded.
     * input handling changes
         * KASCII is now KChar
         * KPN5 is now KCenter

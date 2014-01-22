@@ -86,6 +86,8 @@ makeLenses ''InputState
 
 type InputM a = StateT InputState (ReaderT Input IO) a
 
+-- this must be run on an OS thread dedicated to this input handling.
+-- otherwise the terminal timing read behavior will block the execution of the lightweight threads.
 loop_input_processor :: InputM ()
 loop_input_processor = do
     read_from_device >>= add_bytes_to_process
@@ -117,7 +119,7 @@ read_from_device = do
 apply_timing_config :: Fd -> Config -> IO ()
 apply_timing_config fd config =
     let vtime = min 255 $ singleEscPeriod config `div` 100000
-    in set_term_timing fd 0 vtime
+    in set_term_timing fd 1 vtime
 
 parse_event :: InputM Event
 parse_event = do
@@ -152,16 +154,16 @@ compile table = cl' where
     -- create a map from strings to event
     event_for_input = flip M.lookup (M.fromList table)
     cl' [] = Prefix
-    cl' input_block = case S.member input_block prefix_set of
-            True -> Prefix
-            -- if the input_block is exactly what is expected for an event then consume the whole
-            -- block and return the event
-            False -> case event_for_input input_block of
-                Just (EvKey k m) -> Valid k m []
+    cl' input_block = case event_for_input input_block of
+            Just (EvKey k m) -> Valid k m []
+            Nothing -> case S.member input_block prefix_set of
+                True -> Prefix
+                -- if the input_block is exactly what is expected for an event then consume the whole
+                -- block and return the event
                 -- look up progressively large prefixes of the input block until an event is found
                 -- H: There will always be one match. The prefix_set contains, by definition, all
                 -- prefixes of an event. 
-                Nothing -> 
+                False ->
                     let input_prefixes = init $ inits input_block
                     in case mapMaybe (\s -> (,) s `fmap` event_for_input s) input_prefixes of
                         (s,EvKey k m) : _ -> Valid k m (drop (length s) input_block)
@@ -218,7 +220,7 @@ initInputForFd config_ref classify_table input_fd = do
                    <*> pure (writeIORef stop_flag True)
                    <*> pure config_ref
                    <*> pure input_fd
-    _ <- forkIO $ run_input_processor_loop classify_table input stop_flag
+    _ <- forkOS $ run_input_processor_loop classify_table input stop_flag
     return input
 
 foreign import ccall "vty_set_term_timing" set_term_timing :: Fd -> Int -> Int -> IO ()
