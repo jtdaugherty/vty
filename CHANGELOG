@@ -1,5 +1,8 @@
 5.0.0
-    * all projects using vty must be compiled with -threaded.
+    * all projects using vty must be compiled with -threaded. This can be resolved without API
+      changes, but I don't know if this matters.
+    * mkVtyEscDelay has been removed. Use "mkVty def". Which initialized vty with the default
+      configuration.
     * input handling changes
         * KASCII is now KChar
         * KPN5 is now KCenter
