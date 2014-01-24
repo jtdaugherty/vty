@@ -37,7 +37,7 @@ import System.Posix.IO ( fdReadBuf
 import System.Posix.Types (Fd(..))
 
 data Config = Config
-    { singleEscPeriod :: Int -- ^ The default is 100000 microseconds or 0.1 seconds.
+    { singleEscPeriod :: Int -- ^ AKA VTIME. The default is 100000 microseconds or 0.1 seconds.
     } deriving (Show, Eq)
 
 instance Default Config where

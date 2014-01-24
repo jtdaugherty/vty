@@ -2,6 +2,7 @@ module Graphics.Vty.Inline.Unsafe where
 
 import Graphics.Vty
 
+import Data.Default
 import Data.IORef
 
 import System.IO.Unsafe
@@ -17,7 +18,7 @@ withVty f = do
     mvty <- readIORef global_vty
     vty <- case mvty of
         Nothing -> do
-            vty <- mkVty
+            vty <- mkVty def
             writeIORef global_vty (Just vty)
             return vty
         Just vty -> return vty

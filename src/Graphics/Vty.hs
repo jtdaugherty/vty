@@ -24,14 +24,10 @@
 --  - <http://vt100.net/docs/vt100-ug/chapter3.html vt100 control sequences>
 module Graphics.Vty ( Vty(..)
                     , mkVty
-                    , mkVtyEscDelay
+                    , module Graphics.Vty.Input
                     , module Graphics.Vty.Output
                     , module Graphics.Vty.Picture
                     , DisplayRegion
-                    , Key(..)
-                    , Modifier(..)
-                    , Button(..)
-                    , Event(..)
                     ) 
     where
 
@@ -88,15 +84,8 @@ data Vty = Vty
 
 -- | Set up the state object for using vty.  At most one state object should be
 -- created at a time.
-mkVty :: IO Vty
-mkVty = mkVtyEscDelay def
-
--- | Set up the state object for using vty.  At most one state object should be
--- created at a time. The delay, in microseconds, specifies the period of time to wait for a key
--- following reading ESC from the terminal before considering the ESC key press as a discrete event.
--- \todo move input init into terminal interface
-mkVtyEscDelay :: Config -> IO Vty
-mkVtyEscDelay config = do
+mkVty :: Config -> IO Vty
+mkVty config = do
     input <- input_for_current_terminal config
     out <- output_for_current_terminal
     intMkVty input out
