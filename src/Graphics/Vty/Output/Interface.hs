@@ -242,7 +242,7 @@ serialize_output_ops dc start_ptr in_fattr diffs ops = do
         serialize_output_ops' ( y, out_ptr, fattr, False : diffs' ) _span_ops
             = return ( y + 1, out_ptr, fattr, diffs' )
         serialize_output_ops' (_y, _out_ptr, _fattr, [] ) _span_ops
-            = error "shouldn't be possible"
+            = error "vty - output spans without a corresponding diff."
 
 serialize_span_ops :: DisplayContext
                       -> Int 
@@ -345,4 +345,3 @@ limit_attr_for_display t attr
                 = let p :: Double = fromIntegral v / 240.0 
                       v' = floor $ p * (fromIntegral $ context_color_count t)
                   in SetTo $ Color240 v'
-
