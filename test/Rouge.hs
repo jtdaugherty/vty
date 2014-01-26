@@ -5,6 +5,7 @@ import Graphics.Vty
 
 import Data.Array
 import qualified Data.ByteString as B
+import Data.Default (def)
 import Data.Word
 
 import Control.Applicative
@@ -45,7 +46,7 @@ data LevelPiece
 type Game = RWST Vty () World IO
 
 main = do 
-    vty <- mkVty
+    vty <- mkVty def
     level_0 <- mkLevel 1
     let world_0 = World (Dude (fst $ start level_0) (snd $ start level_0)) level_0
     (_final_world, ()) <- execRWST (play >> update_display) vty world_0

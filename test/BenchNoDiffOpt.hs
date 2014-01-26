@@ -9,6 +9,7 @@ import Control.Concurrent( threadDelay )
 import Control.Monad( liftM2 )
 
 import qualified Data.ByteString.Char8 as B
+import Data.Default (def)
 import Data.List
 
 import System.Environment( getArgs )
@@ -18,7 +19,7 @@ import System.Random
 bench_0 = do 
     let fixed_gen = mkStdGen 0
     setStdGen fixed_gen
-    vty <- mkVty
+    vty <- mkVty def
     (w,h) <- display_bounds $ output_iface vty
     let images = return $ (image_0, image_1)
         image_0 = char_fill def_attr 'X' w h

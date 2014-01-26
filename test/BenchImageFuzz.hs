@@ -8,6 +8,8 @@ import Verify
 import Control.Applicative
 import Control.Monad
 
+import Data.Default (def)
+
 import System.Random
 
 rand :: Arbitrary a => IO a
@@ -19,7 +21,7 @@ random_image = rand
 random_picture = pic_for_image <$> random_image
 
 bench_0 = do
-    vty <- mkVty
+    vty <- mkVty def
     (w,h) <- display_bounds $ output_iface vty
     let pictures = replicateM 3000 random_picture
         bench ps = do

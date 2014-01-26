@@ -6,6 +6,7 @@ import Control.Applicative
 import Control.Arrow
 import Control.Monad.RWS
 
+import Data.Default (def)
 import Data.Sequence (Seq, (<|) )
 import qualified Data.Sequence as Seq
 import Data.Foldable
@@ -15,7 +16,7 @@ event_buffer_size = 1000
 type App = RWST Vty () (Seq String) IO
 
 main = do
-    vty <- mkVty
+    vty <- mkVty def
     _ <- execRWST vty_interact vty Seq.empty
     shutdown vty
 

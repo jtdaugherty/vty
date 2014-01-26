@@ -9,8 +9,10 @@ import Verify
 
 import Control.Monad ( forM_ )
 
+import Data.Default (def)
+
 bench_0 = do
-    vty <- mkVty
+    vty <- mkVty def
     (w,h) <- display_bounds $ output_iface vty
     let test_chars = return $ take 500 $ cycle $ [ c | c <- ['a'..'z']]
         bench d = do
@@ -26,7 +28,7 @@ test_image_using_char c w h
                $ horiz_cat $ map (char def_attr) (replicate (fromIntegral w) c)
 
 bench_1 = do
-    vty <- mkVty
+    vty <- mkVty def
     (w,h) <- display_bounds $ output_iface vty
     let test_chars = return $ take 500 $ cycle $ [ c | c <- ['a'..'z']]
         bench d = do
