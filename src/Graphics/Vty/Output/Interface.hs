@@ -12,8 +12,6 @@ module Graphics.Vty.Output.Interface ( module Graphics.Vty.Output.Interface
 
 import Graphics.Vty.Prelude
 
-import Data.Marshalling
-
 import Graphics.Vty.Picture
 import Graphics.Vty.PictureToSpans
 import Graphics.Vty.Span

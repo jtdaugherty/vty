@@ -15,7 +15,6 @@ module Data.Terminfo.Eval ( cap_expression_required_bytes
     where
 
 import Data.ByteString.Internal ( memcpy ) 
-import Data.Marshalling
 import Data.Terminfo.Parse
 
 import Control.Monad.Identity

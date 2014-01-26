@@ -12,8 +12,7 @@ import Codec.Binary.UTF8.Generic (decode)
 import Control.Applicative
 import Control.Concurrent
 import Control.Lens
-import Control.Exception (try, IOException)
-import Control.Monad (when, void, mzero, forM_)
+import Control.Monad (when, mzero, forM_)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.State (StateT(..), evalStateT)
 import Control.Monad.Trans.Reader (ReaderT(..))
@@ -30,10 +29,7 @@ import Data.Word
 import Foreign ( allocaArray, peekArray, Ptr )
 import Foreign.C.Types (CInt(..))
 
-import System.Posix.IO ( fdReadBuf
-                       , setFdOption
-                       , FdOption(..)
-                       )
+import System.Posix.IO (fdReadBuf)
 import System.Posix.Types (Fd(..))
 
 data Config = Config
