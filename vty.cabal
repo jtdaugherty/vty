@@ -44,7 +44,6 @@ library
                        containers,
                        data-default >= 0.5.3,
                        deepseq >= 1.1 && < 1.4,
-                       ghc-prim,
                        lens >= 3.9.0.2,
                        -- required for nice installation with yi
                        hashable >= 1.2,

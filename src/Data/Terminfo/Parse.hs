@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# OPTIONS_GHC -funbox-strict-fields -O #-}
@@ -8,29 +7,22 @@ module Data.Terminfo.Parse ( module Data.Terminfo.Parse
                            )
     where
 
-import Control.Applicative ( Applicative(..), pure, (<*>) )  
 import Control.Monad ( liftM )
-import Control.Monad.Trans
 import Control.DeepSeq
 
 import Data.Monoid
 import Data.Word
-
-import Foreign.C.Types
-import Foreign.Marshal.Array
-import Foreign.Ptr
+import qualified Data.Vector.Unboxed as Vector
 
 import Numeric (showHex)
 
 import Text.ParserCombinators.Parsec
 
-type CapBytes = ( Ptr Word8, CSize )
-
 data CapExpression = CapExpression
     { cap_ops :: !CapOps
-    , cap_bytes :: !CapBytes
+    , cap_bytes :: !(Vector.Vector Word8)
     , source_string :: !String
-    , param_count :: !Word
+    , param_count :: !Int
     , param_ops :: !ParamOps
     } deriving (Eq)
 
@@ -51,7 +43,7 @@ type CapParam = Word
 
 type CapOps = [CapOp]
 data CapOp = 
-      Bytes !Int !CSize !Int
+      Bytes !Int !Int -- offset count
     | DecOut | CharOut
     -- This stores a 0-based index to the parameter. However the operation that implies this op is
     -- 1-based
@@ -68,7 +60,7 @@ data CapOp =
     deriving (Show, Eq)
 
 instance NFData CapOp where
-    rnf (Bytes offset _count next_offset) = rnf offset `seq` rnf next_offset
+    rnf (Bytes offset byte_count ) = rnf offset `seq` rnf byte_count
     rnf (PushParam pn) = rnf pn
     rnf (PushValue v) = rnf v 
     rnf (Conditional c_expr c_parts) = rnf c_expr `seq` rnf c_parts 
@@ -91,33 +83,28 @@ data ParamOp =
 instance NFData ParamOp where
     rnf IncFirstTwo = ()
 
-parse_cap_expression :: ( Applicative m
-                        , MonadIO m
-                        )
-                     => String 
-                     -> m ( Either ParseError CapExpression )
+parse_cap_expression :: String -> Either ParseError CapExpression
 parse_cap_expression cap_string = 
     let v = runParser cap_expression_parser
                            initial_build_state
                            "terminfo cap" 
                            cap_string 
     in case v of
-        Left e -> return $ Left e
-        Right build_results -> pure Right <*> construct_cap_expression cap_string build_results
+        Left e -> Left e
+        Right build_results -> Right $ construct_cap_expression cap_string build_results
 
-construct_cap_expression :: MonadIO m => [Char] -> BuildResults -> m CapExpression
-construct_cap_expression cap_string build_results = do
-    byte_array <- liftIO $ newArray (map ( toEnum . fromEnum ) cap_string )
+construct_cap_expression :: [Char] -> BuildResults -> CapExpression
+construct_cap_expression cap_string build_results =
     let expr = CapExpression
                 { cap_ops = out_cap_ops build_results
                 -- The cap bytes are the lower 8 bits of the input string's characters.
                 -- \todo Verify the input string actually contains an 8bit byte per character.
-                , cap_bytes = ( byte_array, toEnum $! length cap_string )
+                , cap_bytes = Vector.fromList $ map (toEnum.fromEnum) cap_string
                 , source_string = cap_string
                 , param_count = out_param_count build_results
                 , param_ops = out_param_ops build_results
                 } 
-    return $! rnf expr `seq` expr
+    in rnf expr `seq` expr
 
 type CapParser a = GenParser Char BuildState a 
 
@@ -137,7 +124,7 @@ literal_percent_parser = do
     _ <- char '%'
     start_offset <- getState >>= return . next_offset
     inc_offset 1
-    return $ BuildResults 0 [Bytes start_offset 1 1] []
+    return $ BuildResults 0 [Bytes start_offset 1] []
 
 param_op_parser :: CapParser BuildResults
 param_op_parser
@@ -163,7 +150,7 @@ push_op_parser = do
     _ <- char 'p'
     param_n <- digit >>= return . (\d -> read [d])
     inc_offset 2
-    return $ BuildResults param_n [ PushParam $ param_n - 1 ] []
+    return $ BuildResults (fromEnum param_n) [PushParam $ param_n - 1] []
 
 dec_out_parser :: CapParser BuildResults
 dec_out_parser = do
@@ -311,7 +298,7 @@ bytes_op_parser = do
     !s <- getState
     let s' = s { next_offset = start_offset + c }
     setState s'
-    return $ BuildResults 0 [Bytes start_offset ( toEnum c ) c ] []
+    return $ BuildResults 0 [Bytes start_offset c] []
 
 char_const_parser :: CapParser BuildResults
 char_const_parser = do
@@ -335,7 +322,7 @@ initial_build_state :: BuildState
 initial_build_state = BuildState 0
 
 data BuildResults = BuildResults
-    { out_param_count :: !Word
+    { out_param_count :: !Int
     , out_cap_ops :: !CapOps
     , out_param_ops :: !ParamOps
     }

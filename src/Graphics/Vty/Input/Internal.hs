@@ -206,12 +206,12 @@ run_input_processor_loop classify_table input stop_flag = do
 -- This is an example of an algorithm where code coverage could be high, even 100%, but the
 -- algorithm still under tested. I should collect more of these examples...
 initInputForFd :: IORef Config -> ClassifyTable -> Fd -> IO Input
-initInputForFd config_ref classify_table input_fd = do
+initInputForFd in_config_ref classify_table in_input_fd = do
     stop_flag <- newIORef False
     input <- Input <$> newChan
                    <*> pure (writeIORef stop_flag True)
-                   <*> pure config_ref
-                   <*> pure input_fd
+                   <*> pure in_config_ref
+                   <*> pure in_input_fd
     _ <- forkOS $ run_input_processor_loop classify_table input stop_flag
     return input
 
