@@ -5,10 +5,8 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Graphics.Vty.Output.Interface ( module Graphics.Vty.Output.Interface
-                                     , OutputBuffer
-                                     )
-    where
+module Graphics.Vty.Output.Interface
+where
 
 import Graphics.Vty.Prelude
 
@@ -18,13 +16,16 @@ import Graphics.Vty.Span
 
 import Graphics.Vty.DisplayAttributes
 
+import Blaze.ByteString.Builder (Write)
+import Blaze.ByteString.Builder.ByteString (writeByteString)
+
 import Control.Monad.Trans
 
-import qualified Data.ByteString.Internal as BS
+import qualified Data.ByteString as BS
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 import Data.IORef
-import qualified Data.Vector as Vector 
+import qualified Data.Vector.Unboxed as Vector 
 
 data Output = Output
     { -- | Text identifier for the output device. Used for debugging. 
@@ -50,9 +51,8 @@ data Output = Output
     , release_display :: MonadIO m => m ()
     -- | Returns the current display bounds.
     , display_bounds :: MonadIO m => m DisplayRegion
-    -- | Output the byte buffer of the specified size to the terminal device.  The size is equal to
-    -- end_ptr - start_ptr
-    , output_byte_buffer :: OutputBuffer -> Int -> IO ()
+    -- | Output the byte string to the terminal device.
+    , output_byte_buffer :: BS.ByteString -> IO ()
     -- | Maximum number of colors supported by the context.
     , context_color_count :: Int
     -- | if the cursor can be shown / hidden
@@ -81,12 +81,9 @@ data DisplayContext = DisplayContext
     , context_region :: DisplayRegion
     --  | sets the output position to the specified row and column. Where the number of bytes
     --  required for the control codes can be specified seperate from the actual byte sequence.
-    , move_cursor_required_bytes :: Int -> Int -> Int
-    , serialize_move_cursor :: Int -> Int -> OutputBuffer -> IO OutputBuffer
-    , show_cursor_required_bytes :: Int
-    , serialize_show_cursor :: OutputBuffer -> IO OutputBuffer
-    , hide_cursor_required_bytes :: Int
-    , serialize_hide_cursor :: OutputBuffer -> IO OutputBuffer
+    , write_move_cursor :: Int -> Int -> Write
+    , write_show_cursor :: Write
+    , write_hide_cursor :: Write
     --  | Assure the specified output attributes will be applied to all the following text until the
     --  next output attribute change. Where the number of bytes required for the control codes can
     --  be specified seperate from the actual byte sequence.  The required number of bytes must be
@@ -98,31 +95,17 @@ data DisplayContext = DisplayContext
     --  attributes. In order to support this the currently applied display attributes are required.
     --  In addition it may be possible to optimize the state changes based off the currently applied
     --  display attributes.
-    , attr_required_bytes :: FixedAttr -> Attr -> DisplayAttrDiff -> Int
-    , serialize_set_attr :: FixedAttr -> Attr -> DisplayAttrDiff -> OutputBuffer -> IO OutputBuffer
+    , write_set_attr :: FixedAttr -> Attr -> DisplayAttrDiff -> Write
     -- | Reset the display attributes to the default display attributes
-    , default_attr_required_bytes :: Int
-    , serialize_default_attr :: OutputBuffer -> IO OutputBuffer
-    , row_end_required_bytes :: Int
-    , serialize_row_end :: OutputBuffer -> IO OutputBuffer
+    , write_default_attr :: Write
+    , write_row_end :: Write
     -- | See Graphics.Vty.Output.XTermColor.inline_hack
     , inline_hack :: IO ()
     }
 
 -- | All terminals serialize UTF8 text to the terminal device exactly as serialized in memory.
-utf8_text_required_bytes ::  BS.ByteString -> Int
-utf8_text_required_bytes str =
-    let (_, _, src_bytes_length) = BS.toForeignPtr str
-    in src_bytes_length
-
--- | All terminals serialize UTF8 text to the terminal device exactly as serialized in memory.
-serialize_utf8_text  :: BS.ByteString -> OutputBuffer -> IO OutputBuffer
-serialize_utf8_text str dest_ptr =
-    let (src_fptr, src_ptr_offset, src_bytes_length) = BS.toForeignPtr str
-    in withForeignPtr src_fptr $ \src_ptr -> do
-        let src_ptr' = src_ptr `plusPtr` src_ptr_offset
-        BS.memcpy dest_ptr src_ptr' (toEnum src_bytes_length) 
-        return (dest_ptr `plusPtr` src_bytes_length)
+write_utf8_text  :: BS.ByteString -> Write
+write_utf8_text str dest_ptr = writeByteString
 
 -- | Displays the given `Picture`.
 --
