@@ -193,23 +193,22 @@ get_window_size = do
     return (fromIntegral b, fromIntegral a)
 
 terminfo_display_context :: Output -> TerminfoCaps -> DisplayRegion -> IO DisplayContext
-terminfo_display_context t_actual terminfo_caps r =
-    let dc = DisplayContext
-             { context_device = t_actual
-             , context_region = r
-             , write_move_cursor = \x y -> write_cap_expr (cup terminfo_caps) [toEnum y, toEnum x]
-             , write_show_cursor = case cnorm terminfo_caps of
-                 Nothing -> error "this terminal does not support show cursor"
-                 Just c -> write_cap_expr c []
-             , write_hide_cursor = case civis terminfo_caps of
-                 Nothing -> error "this terminal does not support hide cursor"
-                 Just c -> write_cap_expr c []
-             , write_set_attr = terminfo_write_set_attr dc terminfo_caps
-             , write_default_attr = write_cap_expr (set_default_attr terminfo_caps) []
-             , write_row_end = write_cap_expr (clear_eol terminfo_caps) []
-             , inline_hack = return ()
-             }
-    in return dc
+terminfo_display_context t_actual terminfo_caps r = return dc
+    where dc = DisplayContext
+            { context_device = t_actual
+            , context_region = r
+            , write_move_cursor = \x y -> write_cap_expr (cup terminfo_caps) [toEnum y, toEnum x]
+            , write_show_cursor = case cnorm terminfo_caps of
+                Nothing -> error "this terminal does not support show cursor"
+                Just c -> write_cap_expr c []
+            , write_hide_cursor = case civis terminfo_caps of
+                Nothing -> error "this terminal does not support hide cursor"
+                Just c -> write_cap_expr c []
+            , write_set_attr = terminfo_write_set_attr dc terminfo_caps
+            , write_default_attr = write_cap_expr (set_default_attr terminfo_caps) []
+            , write_row_end = write_cap_expr (clear_eol terminfo_caps) []
+            , inline_hack = return ()
+            }
 
 -- | Portably setting the display attributes is a giant pain in the ass.
 --
