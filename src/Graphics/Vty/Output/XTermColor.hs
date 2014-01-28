@@ -5,6 +5,8 @@ module Graphics.Vty.Output.XTermColor ( reserve_terminal )
 import Graphics.Vty.Output.Interface
 import qualified Graphics.Vty.Output.TerminfoBased as TerminfoBased
 
+import Blaze.ByteString.Builder (writeToByteString)
+
 import Control.Applicative
 import Control.Monad.Trans
 
@@ -48,6 +50,5 @@ set_default_char_set = "\ESC%@"
 xterm_inline_hack :: Output -> IO ()
 xterm_inline_hack t = do
     let s_utf8 = T.encodeUtf8 $ T.pack "\ESC[K"
-    send_to_terminal t (utf8_text_required_bytes s_utf8)
-                       (serialize_utf8_text s_utf8)
+    output_byte_buffer t $ writeToByteString $ write_utf8_text s_utf8
 

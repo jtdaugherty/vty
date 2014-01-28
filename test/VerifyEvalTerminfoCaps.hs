@@ -2,8 +2,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module VerifyEvalTerminfoCaps where
 
-import Data.Marshalling
-
+import Blaze.ByteString.Builder.Internal.Write (runWrite)
 import Data.Terminfo.Eval 
 import Data.Terminfo.Parse
 import Control.DeepSeq
@@ -63,8 +62,8 @@ tests = do
                             let test_name = term_name ++ "(" ++ cap_name ++ ")"
                             parse_result <- parse_cap_expression cap_def
                             case parse_result of
-                                Left error -> return [ verify test_name ( failed { reason = "parse error " ++ show error } ) ]
-                                Right !cap_expr -> return [ verify test_name ( verify_eval_cap eval_buffer cap_expr ) ]
+                                Left error -> return [verify test_name (failed {reason = "parse error " ++ show error})]
+                                Right !cap_expr -> return [verify test_name (verify_eval_cap eval_buffer cap_expr)]
                         Nothing      -> do
                             return []
 
@@ -75,8 +74,8 @@ verify_eval_cap eval_buffer expr !junk_int = do
         let !byte_count = cap_expression_required_bytes expr input_values
         in liftIOResult $ do
             let start_ptr :: Ptr Word8 = eval_buffer
-            forM_ [0..100] $ \i -> serialize_cap_expression expr input_values start_ptr
-            end_ptr <- serialize_cap_expression expr input_values start_ptr
+            forM_ [0..100] $ \i -> runWrite (write_cap_expr expr input_values) start_ptr
+            end_ptr <- runWrite(write_cap_expr expr input_values) start_ptr
             case end_ptr `minusPtr` start_ptr of
                 count | count < 0        -> 
                             return $ failed { reason = "End pointer before start pointer." }

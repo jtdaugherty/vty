@@ -10,15 +10,13 @@ import Graphics.Vty.Prelude
 
 import Graphics.Vty.Output.Interface
 
+import Blaze.ByteString.Builder.Word (writeWord8)
+
 import Control.Monad.Trans
 
 import qualified Data.ByteString as BS
 import Data.IORef
 import qualified Data.String.UTF8 as UTF8
-
-import Foreign.Marshal.Array ( peekArray )
-import Foreign.Ptr ( plusPtr )
-import Foreign.Storable ( poke )
 
 type MockData = IORef (UTF8.UTF8 BS.ByteString)
 
@@ -44,11 +42,9 @@ mock_terminal r = liftIO $ do
             , reserve_display = return ()
             , release_display = return ()
             , display_bounds = return r
-            , output_byte_buffer = \out_buffer buffer_size -> do
-                putStrLn $ "mock output_byte_buffer of " ++ show buffer_size ++ " bytes"
-                peekArray (fromEnum buffer_size) out_buffer 
-                >>= return . UTF8.fromRep . BS.pack
-                >>= writeIORef out_ref
+            , output_byte_buffer = \bytes -> do
+                putStrLn $ "mock output_byte_buffer of " ++ show (BS.length bytes) ++ " bytes"
+                writeIORef out_ref $ UTF8.fromRep bytes
             , context_color_count = 16
             , supports_cursor_visibility = True
             , assumed_state_ref = new_assumed_state_ref
@@ -56,35 +52,17 @@ mock_terminal r = liftIO $ do
                 { context_region = r_actual
                 , context_device = t_actual
                 -- A cursor move is always visualized as the single character 'M'
-                , move_cursor_required_bytes = \_x _y -> 1
-                , serialize_move_cursor = \_x _y ptr -> do
-                    poke ptr (toEnum $ fromEnum 'M') 
-                    return $ ptr `plusPtr` 1
+                , write_move_cursor = \_x _y -> writeWord8 $ toEnum $ fromEnum 'M'
                 -- Show cursor is always visualized as the single character 'S'
-                , show_cursor_required_bytes = 1
-                , serialize_show_cursor = \ptr -> do
-                    poke ptr (toEnum $ fromEnum 'S') 
-                    return $ ptr `plusPtr` 1
+                , write_show_cursor =  writeWord8 $ toEnum $ fromEnum 'S'
                 -- Hide cursor is always visualized as the single character 'H'
-                , hide_cursor_required_bytes = 1
-                , serialize_hide_cursor = \ptr -> do
-                    poke ptr (toEnum $ fromEnum 'H') 
-                    return $ ptr `plusPtr` 1
+                , write_hide_cursor = writeWord8 $ toEnum $ fromEnum 'H'
                 -- An attr change is always visualized as the single character 'A'
-                , attr_required_bytes = \_fattr _diffs _attr -> 1
-                , serialize_set_attr = \_fattr _diffs _attr ptr -> do
-                    poke ptr (toEnum $ fromEnum 'A')
-                    return $ ptr `plusPtr` 1
+                , write_set_attr = \_fattr _diffs _attr -> writeWord8 $ toEnum $ fromEnum 'A'
                 -- default attr is always visualized as the single character 'D'
-                , default_attr_required_bytes = 1
-                , serialize_default_attr = \ptr -> do
-                    poke ptr (toEnum $ fromEnum 'D')
-                    return $ ptr `plusPtr` 1
+                , write_default_attr = writeWord8 $ toEnum $ fromEnum 'D'
                 -- row end is always visualized as the single character 'E'
-                , row_end_required_bytes = 1
-                , serialize_row_end = \ptr -> do
-                    poke ptr (toEnum $ fromEnum 'E')
-                    return $ ptr `plusPtr` 1
+                , write_row_end = writeWord8 $ toEnum $ fromEnum 'E'
                 , inline_hack = return ()
                 }
             }

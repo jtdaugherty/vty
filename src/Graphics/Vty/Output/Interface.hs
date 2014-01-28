@@ -16,16 +16,17 @@ import Graphics.Vty.Span
 
 import Graphics.Vty.DisplayAttributes
 
-import Blaze.ByteString.Builder (Write)
+import Blaze.ByteString.Builder (Write, writeToByteString)
 import Blaze.ByteString.Builder.ByteString (writeByteString)
 
 import Control.Monad.Trans
 
 import qualified Data.ByteString as BS
+import Data.IORef
+import Data.Monoid (mempty, mappend)
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
-import Data.IORef
-import qualified Data.Vector.Unboxed as Vector 
+import qualified Data.Vector as Vector
 
 data Output = Output
     { -- | Text identifier for the output device. Used for debugging. 
@@ -105,7 +106,7 @@ data DisplayContext = DisplayContext
 
 -- | All terminals serialize UTF8 text to the terminal device exactly as serialized in memory.
 write_utf8_text  :: BS.ByteString -> Write
-write_utf8_text str dest_ptr = writeByteString
+write_utf8_text = writeByteString
 
 -- | Displays the given `Picture`.
 --
@@ -125,9 +126,9 @@ output_picture :: MonadIO m => DisplayContext -> Picture -> m ()
 output_picture dc pic = liftIO $ do
     as <- readIORef (assumed_state_ref $ context_device dc)
     let manip_cursor = supports_cursor_visibility (context_device dc)
-    let !r = context_region dc
-        !ops = display_ops_for_pic pic r
-        !initial_attr = FixedAttr default_style_mask Nothing Nothing
+        r = context_region dc
+        ops = display_ops_for_pic pic r
+        initial_attr = FixedAttr default_style_mask Nothing Nothing
         -- Diff the previous output against the requested output. Differences are currently on a per-row
         -- basis.
         -- \todo handle resizes that crop the dominate directions better.
@@ -137,134 +138,60 @@ output_picture dc pic = liftIO $ do
                 then replicate (display_ops_rows ops) True
                 else zipWith (/=) (Vector.toList previous_ops)
                                   (Vector.toList ops)
-        -- determine the number of bytes required to completely serialize the output ops.
-        total =   (if manip_cursor then hide_cursor_required_bytes dc else 0)
-                + default_attr_required_bytes dc
-                + required_bytes dc initial_attr diffs ops 
-                + case pic_cursor pic of
-                    _ | not manip_cursor -> 0
-                    NoCursor -> 0
+        -- build the Write corresponding to the output image
+        out = write_default_attr dc
+              `mappend` write_output_ops dc initial_attr diffs ops
+              `mappend`
+                (case pic_cursor pic of
+                    _ | not manip_cursor -> mempty
+                    NoCursor -> write_hide_cursor dc
                     Cursor x y ->
-                        let { m = cursor_output_map ops $ pic_cursor pic; (ox, oy) = char_to_output_pos m ( x, y ) }
-		                in show_cursor_required_bytes dc + move_cursor_required_bytes dc ox oy
+                        let m = cursor_output_map ops $ pic_cursor pic
+                            (ox, oy) = char_to_output_pos m (x,y)
+                        in write_show_cursor dc `mappend` write_move_cursor dc ox oy
+                )
     -- ... then serialize
-    allocaBytes (fromEnum total) $ \start_ptr -> do
-        ptr <- case manip_cursor of
-                True  -> serialize_hide_cursor dc start_ptr
-                False -> return start_ptr
-        ptr' <- serialize_default_attr dc ptr
-        ptr'' <- serialize_output_ops dc ptr' initial_attr diffs ops
-        end_ptr <- case pic_cursor pic of
-                        _ | not manip_cursor -> return ptr''
-                        NoCursor -> return ptr''
-                        Cursor x y -> do
-                            let m = cursor_output_map ops $ pic_cursor pic
-                                (ox, oy) = char_to_output_pos m (x,y)
-                            serialize_show_cursor dc ptr'' >>= serialize_move_cursor dc ox oy
-        -- todo: How to handle exceptions?
-        -- probably set the prev_output_ops to Nothing
-        case end_ptr `minusPtr` start_ptr of
-            count | count < 0 -> fail "End pointer before start of buffer."
-                  | toEnum count > total -> fail $ "End pointer past end of buffer by " ++ show (toEnum count - total)
-                  | otherwise -> output_byte_buffer (context_device dc) start_ptr (toEnum count)
-        -- Cache the output spans.
-        let as' = as { prev_output_ops = Just ops }
-        writeIORef (assumed_state_ref $ context_device dc) as'
+    output_byte_buffer (context_device dc) (writeToByteString out)
+    -- Cache the output spans.
+    let as' = as { prev_output_ops = Just ops }
+    writeIORef (assumed_state_ref $ context_device dc) as'
 
-required_bytes :: DisplayContext -> FixedAttr -> [Bool] -> DisplayOps -> Int
-required_bytes dc in_fattr diffs ops = 
-    let (_, n, _, _) = Vector.foldl' required_bytes' (0, 0, in_fattr, diffs) ops
-    in n
+write_output_ops :: DisplayContext -> FixedAttr -> [Bool] -> DisplayOps -> Write
+write_output_ops dc in_fattr diffs ops =
+    let (_, out, _, _) = Vector.foldl' write_output_ops' 
+                            (0, mempty, in_fattr, diffs) 
+                            ops
+    in out
     where 
-        required_bytes' (y, current_sum, fattr, True : diffs') span_ops
-            =   let (s, fattr') = span_ops_required_bytes dc y fattr span_ops 
-                in ( y + 1, s + current_sum, fattr', diffs' )
-        required_bytes' (y, current_sum, fattr, False : diffs') _span_ops
-            = ( y + 1, current_sum, fattr, diffs' )
-        required_bytes' (_y, _current_sum, _fattr, [] ) _span_ops
-            = error "shouldn't be possible"
-
-span_ops_required_bytes :: DisplayContext -> Int -> FixedAttr -> SpanOps -> (Int, FixedAttr)
-span_ops_required_bytes dc y in_fattr span_ops =
-    -- The first operation is to set the cursor to the start of the row
-    let header_required_bytes = move_cursor_required_bytes dc 0 y
-    -- then the span ops are serialized in the order specified
-    in Vector.foldl' ( \(current_sum, fattr) op -> let (c, fattr') = span_op_required_bytes dc fattr op 
-                                                   in (c + current_sum, fattr') 
-                     ) 
-                     (header_required_bytes, in_fattr)
-                     span_ops
-
-span_op_required_bytes :: DisplayContext -> FixedAttr -> SpanOp -> (Int, FixedAttr)
-span_op_required_bytes dc fattr (TextSpan attr _ _ str) =
-    let attr' = limit_attr_for_display (context_device dc) attr
-        diffs = display_attr_diffs fattr fattr'
-        c = attr_required_bytes dc fattr attr' diffs
-        fattr' = fix_display_attr fattr attr'
-    in (c + utf8_text_required_bytes (T.encodeUtf8 $ TL.toStrict str), fattr')
-span_op_required_bytes _dc _fattr (Skip _) = error "span_op_required_bytes for Skip."
-span_op_required_bytes dc fattr (RowEnd _) = (row_end_required_bytes dc, fattr)
-
-serialize_output_ops :: DisplayContext
-                        -> OutputBuffer 
-                        -> FixedAttr 
-                        -> [Bool]
-                        -> DisplayOps 
-                        -> IO OutputBuffer
-serialize_output_ops dc start_ptr in_fattr diffs ops = do
-    (_, end_ptr, _, _) <- Vector.foldM' serialize_output_ops' 
-                              ( 0, start_ptr, in_fattr, diffs ) 
-                              ops
-    return end_ptr
-    where 
-        serialize_output_ops' ( y, out_ptr, fattr, True : diffs' ) span_ops
-            =   serialize_span_ops dc y out_ptr fattr span_ops 
-                >>= return . ( \(out_ptr', fattr') -> ( y + 1, out_ptr', fattr', diffs' ) )
-        serialize_output_ops' ( y, out_ptr, fattr, False : diffs' ) _span_ops
-            = return ( y + 1, out_ptr, fattr, diffs' )
-        serialize_output_ops' (_y, _out_ptr, _fattr, [] ) _span_ops
+        write_output_ops' (y, out, fattr, True : diffs') span_ops
+            = let (span_out, fattr') = write_span_ops dc y fattr span_ops
+              in (y+1, out `mappend` span_out, fattr', diffs')
+        write_output_ops' (y, out, fattr, False : diffs') _span_ops
+            = (y + 1, out, fattr, diffs')
+        write_output_ops' (_y, _out, _fattr, []) _span_ops
             = error "vty - output spans without a corresponding diff."
 
-serialize_span_ops :: DisplayContext
-                      -> Int 
-                      -> OutputBuffer 
-                      -> FixedAttr 
-                      -> SpanOps 
-                      -> IO (OutputBuffer, FixedAttr)
-serialize_span_ops dc y out_ptr in_fattr span_ops = do
+write_span_ops :: DisplayContext -> Int -> FixedAttr -> SpanOps -> (Write, FixedAttr)
+write_span_ops dc y in_fattr span_ops =
     -- The first operation is to set the cursor to the start of the row
-    out_ptr' <- serialize_move_cursor dc 0 y out_ptr
+    let start = write_move_cursor dc 0 y
     -- then the span ops are serialized in the order specified
-    Vector.foldM ( \(out_ptr'', fattr) op -> serialize_span_op dc op out_ptr'' fattr ) 
-                 (out_ptr', in_fattr)
-                 span_ops
+    in Vector.foldl' (\(out, fattr) op -> case write_span_op dc op fattr of
+                            (op_out, fattr') -> (out `mappend` op_out, fattr')
+                     )
+                     (start, in_fattr)
+                     span_ops
 
--- | 
--- TODO: move this into the terminal implementation?
-serialize_span_op :: DisplayContext
-                     -> SpanOp 
-                     -> OutputBuffer 
-                     -> FixedAttr
-                     -> IO (OutputBuffer, FixedAttr)
-serialize_span_op dc (TextSpan attr _ _ str) out_ptr fattr = do
+write_span_op :: DisplayContext -> SpanOp -> FixedAttr -> (Write, FixedAttr)
+write_span_op dc (TextSpan attr _ _ str) fattr =
     let attr' = limit_attr_for_display (context_device dc) attr
         fattr' = fix_display_attr fattr attr'
         diffs = display_attr_diffs fattr fattr'
-    out_ptr' <- serialize_set_attr dc fattr attr' diffs out_ptr
-    out_ptr'' <- serialize_utf8_text (T.encodeUtf8 $ TL.toStrict str) out_ptr'
-    return (out_ptr'', fattr')
-serialize_span_op _dc (Skip _) _out_ptr _fattr = error "serialize_span_op for Skip"
-serialize_span_op dc (RowEnd _) out_ptr fattr = do
-    out_ptr' <- serialize_row_end dc out_ptr
-    return (out_ptr', fattr)
-
-send_to_terminal :: Output -> Int -> (Ptr Word8 -> IO (Ptr Word8)) -> IO ()
-send_to_terminal t c f = allocaBytes (fromEnum c) $ \start_ptr -> do
-    end_ptr <- f start_ptr
-    case end_ptr `minusPtr` start_ptr of
-        count | count < 0 -> fail "End pointer before start pointer."
-              | toEnum count > c -> fail $ "End pointer past end of buffer by " ++ show (toEnum count - c)
-              | otherwise -> output_byte_buffer t start_ptr (toEnum count)
+        out =  write_set_attr dc fattr attr' diffs
+               `mappend` write_utf8_text (T.encodeUtf8 $ TL.toStrict str)
+    in (out, fattr')
+write_span_op _dc (Skip _) _fattr = error "serialize_span_op for Skip"
+write_span_op dc (RowEnd _) fattr = (write_row_end dc, fattr)
 
 -- | The cursor position is given in X,Y character offsets. Due to multi-column characters this
 -- needs to be translated to column, row positions.

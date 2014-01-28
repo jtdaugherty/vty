@@ -13,6 +13,7 @@ module Graphics.Vty.Output.TerminfoBased ( reserve_terminal )
 
 import Graphics.Vty.Prelude
 
+import qualified Data.ByteString as BS
 import Data.Terminfo.Parse
 import Data.Terminfo.Eval
 
@@ -20,11 +21,15 @@ import Graphics.Vty.Attributes
 import Graphics.Vty.DisplayAttributes
 import Graphics.Vty.Output.Interface
 
+import Blaze.ByteString.Builder (Write, writeToByteString)
+
 import Control.Monad.Trans
 
-import Data.Bits ( (.&.) )
+import Data.Bits ((.&.))
+import Data.Foldable (foldMap)
 import Data.IORef
-import Data.Maybe ( isJust, isNothing, fromJust )
+import Data.Maybe (isJust, isNothing, fromJust)
+import Data.Monoid
 
 import Foreign.C.Types ( CLong(..) )
 
@@ -61,8 +66,7 @@ data DisplayAttrCaps = DisplayAttrCaps
     
 send_cap_to_terminal :: Output -> CapExpression -> [CapParam] -> IO ()
 send_cap_to_terminal t cap cap_params = do
-    send_to_terminal t (cap_expression_required_bytes cap cap_params)
-                       (serialize_cap_expression cap cap_params)
+    output_byte_buffer t $ writeToByteString $ write_cap_expr cap cap_params
 
 {- | Uses terminfo for all control codes. While this should provide the most compatible terminal
  - terminfo does not support some features that would increase efficiency and improve compatibility:
@@ -130,8 +134,8 @@ reserve_terminal in_ID out_handle = liftIO $ do
                 case raw_size of
                     (w, h)  | w < 0 || h < 0 -> fail $ "getwinsize returned < 0 : " ++ show raw_size
                             | otherwise      -> return (w,h)
-            , output_byte_buffer = \out_ptr out_byte_count -> do
-                hPutBuf out_handle out_ptr (fromEnum out_byte_count)
+            , output_byte_buffer = \out_bytes -> do
+                BS.hPut out_handle out_bytes
                 hFlush out_handle
             , context_color_count
                 = case supports_no_colors terminfo_caps of
@@ -163,8 +167,7 @@ probe_cap ti cap_name
 
 parse_cap :: (Applicative m, MonadIO m) => String -> m CapExpression
 parse_cap cap_str = do
-    parse_result <- parse_cap_expression cap_str
-    case parse_result of
+    case parse_cap_expression cap_str of
         Left e -> fail $ show e
         Right cap -> return cap
 
@@ -194,44 +197,19 @@ terminfo_display_context t_actual terminfo_caps r =
     let dc = DisplayContext
              { context_device = t_actual
              , context_region = r
-             , move_cursor_required_bytes = \x y -> cap_expression_required_bytes (cup terminfo_caps)
-                                                                                  [toEnum y, toEnum x]
-             , serialize_move_cursor = \x y out_ptr -> serialize_cap_expression (cup terminfo_caps)
-                                                                                [toEnum y, toEnum x]
-                                                                                out_ptr
-             , show_cursor_required_bytes = case cnorm terminfo_caps of
+             , write_move_cursor = \x y -> write_cap_expr (cup terminfo_caps) [toEnum y, toEnum x]
+             , write_show_cursor = case cnorm terminfo_caps of
                  Nothing -> error "this terminal does not support show cursor"
-                 Just c -> cap_expression_required_bytes c []
-             , serialize_show_cursor = \out_ptr -> do
-                 case cnorm terminfo_caps of
-                     Nothing -> fail "this terminal does not support show cursor"
-                     Just c -> serialize_cap_expression c [] out_ptr
-             , hide_cursor_required_bytes = case civis terminfo_caps of
+                 Just c -> write_cap_expr c []
+             , write_hide_cursor = case civis terminfo_caps of
                  Nothing -> error "this terminal does not support hide cursor"
-                 Just c -> cap_expression_required_bytes c []
-             , serialize_hide_cursor = \out_ptr -> do
-                 case civis terminfo_caps of
-                     Nothing -> fail "this terminal does not support hide cursor"
-                     Just c -> serialize_cap_expression c [] out_ptr
-             , attr_required_bytes = \_prev_attr _req_attr _diffs -> assumed_attr_required_bytes
-             , serialize_set_attr = terminfo_serialize_set_attr dc terminfo_caps
-             , default_attr_required_bytes = cap_expression_required_bytes (set_default_attr terminfo_caps) []
-             , serialize_default_attr = serialize_cap_expression (set_default_attr terminfo_caps) []
-             , row_end_required_bytes = cap_expression_required_bytes (clear_eol terminfo_caps) []
-             , serialize_row_end = serialize_cap_expression (clear_eol terminfo_caps) []
+                 Just c -> write_cap_expr c []
+             , write_set_attr = terminfo_write_set_attr dc terminfo_caps
+             , write_default_attr = write_cap_expr (set_default_attr terminfo_caps) []
+             , write_row_end = write_cap_expr (clear_eol terminfo_caps) []
              , inline_hack = return ()
              }
     in return dc
-
--- | Instead of evaluating all the rules related to setting display attributes twice (once in
--- required bytes and again in serialize) or some memoization scheme just return a size
--- requirement as big the longest possible control string.
--- 
--- Which is assumed to the be less than 512 for now. 
---
--- \todo Not verified as safe and wastes memory.
-assumed_attr_required_bytes :: Int
-assumed_attr_required_bytes = 512
 
 -- | Portably setting the display attributes is a giant pain in the ass.
 --
@@ -260,32 +238,29 @@ assumed_attr_required_bytes = 512
 --
 -- \todo This assumes that fewer state changes, followed by fewer bytes, is what to optimize. I
 -- haven't measured this or even examined terminal implementations. *shrug*
-terminfo_serialize_set_attr :: DisplayContext
-                            -> TerminfoCaps
-                            -> FixedAttr -> Attr -> DisplayAttrDiff -> OutputBuffer -> IO OutputBuffer
-terminfo_serialize_set_attr dc terminfo_caps prev_attr req_attr diffs out_ptr = do
+terminfo_write_set_attr :: DisplayContext -> TerminfoCaps -> FixedAttr -> Attr -> DisplayAttrDiff -> Write
+terminfo_write_set_attr dc terminfo_caps prev_attr req_attr diffs = do
     case (fore_color_diff diffs == ColorToDefault) || (back_color_diff diffs == ColorToDefault) of
         -- The only way to reset either color, portably, to the default is to use either the set
         -- state capability or the set default capability.
         True  -> do
-            case req_display_cap_seq_for ( display_attr_caps terminfo_caps )
-                                         ( fixed_style attr )
-                                         ( style_to_apply_seq $ fixed_style attr )
-                of
-                    EnterExitSeq caps 
-                        -- only way to reset a color to the defaults
-                        ->  serialize_default_attr dc out_ptr
-                        >>= (\out_ptr' -> liftIO $ foldM (\ptr cap -> serialize_cap_expression cap [] ptr) out_ptr' caps)
-                        >>= set_colors
-                    SetState state
-                        -- implicitly resets the colors to the defaults
-                        ->  liftIO $ serialize_cap_expression ( fromJust $ set_attr_states 
-                                                                $ display_attr_caps 
-                                                                $ terminfo_caps
-                                                              )
-                                                              ( sgr_args_for_state state )
-                                                              out_ptr
-                        >>= set_colors
+            case req_display_cap_seq_for (display_attr_caps terminfo_caps)
+                                         (fixed_style attr )
+                                         (style_to_apply_seq $ fixed_style attr) of
+                -- only way to reset a color to the defaults
+                EnterExitSeq caps -> write_default_attr dc
+                                     `mappend` 
+                                     foldMap (\cap -> write_cap_expr cap []) caps
+                                     `mappend`
+                                     set_colors
+                -- implicitly resets the colors to the defaults
+                SetState state -> write_cap_expr (fromJust $ set_attr_states 
+                                                           $ display_attr_caps 
+                                                           $ terminfo_caps
+                                                 )
+                                                 (sgr_args_for_state state)
+                                  `mappend`
+                                  set_colors
         -- Otherwise the display colors are not changing or changing between two non-default
         -- points.
         False -> do
@@ -293,50 +268,43 @@ terminfo_serialize_set_attr dc terminfo_caps prev_attr req_attr diffs out_ptr = 
             -- colors to be reset because the required capability was not available.
             case req_display_cap_seq_for (display_attr_caps terminfo_caps)
                                          (fixed_style attr)
-                                         (style_diffs diffs)
-                of
-                    -- Really, if terminals were re-implemented with modern concepts instead of
-                    -- bowing down to 40 yr old dumb terminal requirements this would be the
-                    -- only case ever reached! 
-                    -- Changes the style and color states according to the differences with the
-                    -- currently applied states.
-                    EnterExitSeq caps 
-                        ->   foldM (\ptr cap -> serialize_cap_expression cap [] ptr) out_ptr caps
-                        >>=  apply_color_diff set_fore_color (fore_color_diff diffs)
-                        >>=  apply_color_diff set_back_color (back_color_diff diffs)
-                    SetState state
-                        -- implicitly resets the colors to the defaults
-                        ->  serialize_cap_expression (fromJust $ set_attr_states 
-                                                               $ display_attr_caps terminfo_caps
-                                                     )
-                                                     (sgr_args_for_state state)
-                                                     out_ptr
-                        >>= set_colors
+                                         (style_diffs diffs) of
+                -- Really, if terminals were re-implemented with modern concepts instead of bowing
+                -- down to 40 yr old dumb terminal requirements this would be the only case ever
+                -- reached!  Changes the style and color states according to the differences with
+                -- the currently applied states.
+                EnterExitSeq caps -> foldMap (\cap -> write_cap_expr cap []) caps
+                                     `mappend`
+                                     write_color_diff set_fore_color (fore_color_diff diffs)
+                                     `mappend`
+                                     write_color_diff set_back_color (back_color_diff diffs)
+                -- implicitly resets the colors to the defaults
+                SetState state -> write_cap_expr (fromJust $ set_attr_states 
+                                                           $ display_attr_caps terminfo_caps
+                                                 )
+                                                 (sgr_args_for_state state)
+                                  `mappend` set_colors
     where 
         color_map = case use_alt_color_map terminfo_caps of
                         False -> ansi_color_index
                         True -> alt_color_index
         attr = fix_display_attr prev_attr req_attr
-        set_colors ptr = do
-            ptr' <- case fixed_fore_color attr of
-                Just c -> serialize_cap_expression (set_fore_color terminfo_caps)
-                                                   [ toEnum $ color_map c ]
-                                                   ptr
-                Nothing -> return ptr
-            ptr'' <- case fixed_back_color attr of
-                Just c -> serialize_cap_expression (set_back_color terminfo_caps)
-                                                   [ toEnum $ color_map c ]
-                                                   ptr'
-                Nothing -> return ptr'
-            return ptr''
-        apply_color_diff _f NoColorChange ptr
-            = return ptr
-        apply_color_diff _f ColorToDefault _ptr
-            = fail "ColorToDefault is not a possible case for apply_color_diffs"
-        apply_color_diff f ( SetColor c ) ptr
-            = serialize_cap_expression (f terminfo_caps)
-                                       [ toEnum $ color_map c ]
-                                       ptr
+        set_colors =
+            (case fixed_fore_color attr of
+                Just c -> write_cap_expr (set_fore_color terminfo_caps)
+                                         [toEnum $ color_map c]
+                Nothing -> mempty)
+            `mappend`
+            (case fixed_back_color attr of
+                Just c -> write_cap_expr (set_back_color terminfo_caps)
+                                         [toEnum $ color_map c]
+                Nothing -> mempty)
+        write_color_diff _f NoColorChange
+            = mempty
+        write_color_diff _f ColorToDefault
+            = error "ColorToDefault is not a possible case for apply_color_diffs"
+        write_color_diff f (SetColor c)
+            = write_cap_expr (f terminfo_caps) [toEnum $ color_map c]
 
 -- | The color table used by a terminal is a 16 color set followed by a 240 color set that might not
 -- be supported by the terminal.

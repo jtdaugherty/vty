@@ -33,6 +33,8 @@ import Graphics.Vty.Output.MacOSX as MacOSX
 import Graphics.Vty.Output.XTermColor as XTermColor
 import Graphics.Vty.Output.TerminfoBased as TerminfoBased
 
+import Blaze.ByteString.Builder (writeToByteString)
+
 import Control.Exception ( SomeException, try )
 import Control.Monad.Trans
 
@@ -118,18 +120,19 @@ set_cursor_pos t x y = do
     bounds <- display_bounds t
     when (x >= 0 && x < region_width bounds && y >= 0 && y < region_height bounds) $ do
         dc <- display_context t bounds
-        liftIO $ send_to_terminal t (move_cursor_required_bytes dc x y) (serialize_move_cursor dc x y)
+        liftIO $ output_byte_buffer t $ writeToByteString $ write_move_cursor dc x y
 
 -- | Hides the cursor
 hide_cursor :: MonadIO m => Output -> m ()
 hide_cursor t = do
     bounds <- display_bounds t
     dc <- display_context t bounds
-    liftIO $ send_to_terminal t (hide_cursor_required_bytes dc) (serialize_hide_cursor dc) 
+    liftIO $ output_byte_buffer t $ writeToByteString $ write_hide_cursor dc
     
 -- | Shows the cursor
 show_cursor :: MonadIO m => Output -> m ()
 show_cursor t = do
     bounds <- display_bounds t
     dc <- display_context t bounds
-    liftIO $ send_to_terminal t (show_cursor_required_bytes dc) (serialize_show_cursor dc) 
+    liftIO $ output_byte_buffer t $ writeToByteString $ write_show_cursor dc
+

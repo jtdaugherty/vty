@@ -35,6 +35,8 @@ import Graphics.Vty.DisplayAttributes
 import Graphics.Vty.Inline.Unsafe
 import Graphics.Vty.Output.Interface
 
+import Blaze.ByteString.Builder (writeToByteString)
+
 import Control.Applicative
 import Control.Monad.State.Strict
 
@@ -86,15 +88,14 @@ put_attr_change out c = liftIO $ do
     mfattr <- prev_fattr <$> readIORef (assumed_state_ref out)
     fattr <- case mfattr of
                 Nothing -> do
-                    liftIO $ send_to_terminal out (default_attr_required_bytes dc) (serialize_default_attr dc)
+                    liftIO $ output_byte_buffer out $ writeToByteString $ write_default_attr dc
                     return $ FixedAttr default_style_mask Nothing Nothing
                 Just v -> return v
     let attr = execState c current_attr
         attr' = limit_attr_for_display out attr
         fattr' = fix_display_attr fattr attr'
         diffs = display_attr_diffs fattr fattr'
-    send_to_terminal out (attr_required_bytes dc fattr attr' diffs)
-                         (serialize_set_attr dc fattr attr' diffs)
+    output_byte_buffer out $ writeToByteString $ write_set_attr dc fattr attr' diffs
     modifyIORef (assumed_state_ref out) $ \s -> s { prev_fattr = Just fattr' }
     inline_hack dc
 
