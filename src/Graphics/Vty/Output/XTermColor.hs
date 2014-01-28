@@ -12,8 +12,6 @@ import Control.Applicative
 import Control.Monad.Trans
 
 import Data.Foldable (foldMap)
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
 
 import System.IO
 

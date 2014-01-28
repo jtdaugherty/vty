@@ -39,10 +39,7 @@ import Graphics.Vty.Picture
 
 import Control.Concurrent
 
-import Data.Default
 import Data.IORef
-
-import qualified System.Console.Terminfo as Terminfo
 
 -- | The main object.  At most one should be created.
 --

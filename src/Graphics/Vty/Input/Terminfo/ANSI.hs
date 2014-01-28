@@ -3,6 +3,7 @@ module Graphics.Vty.Input.Terminfo.ANSI where
 import Graphics.Vty.Input.Events
 
 -- | Terminals augmented by the built in ANSI input mapping.
+supports :: String -> Bool
 supports "ansi" = True
 supports _      = False
 
