@@ -139,13 +139,14 @@ output_picture dc pic = liftIO $ do
                 else zipWith (/=) (Vector.toList previous_ops)
                                   (Vector.toList ops)
         -- build the Write corresponding to the output image
-        out = write_default_attr dc
+        out = (if manip_cursor then write_hide_cursor dc else mempty)
+              `mappend` write_default_attr dc
               `mappend` write_output_ops dc initial_attr diffs ops
               `mappend`
                 (case pic_cursor pic of
                     _ | not manip_cursor -> mempty
-                    NoCursor -> write_hide_cursor dc
-                    Cursor x y ->
+                    NoCursor             -> mempty
+                    Cursor x y           ->
                         let m = cursor_output_map ops $ pic_cursor pic
                             (ox, oy) = char_to_output_pos m (x,y)
                         in write_show_cursor dc `mappend` write_move_cursor dc ox oy
