@@ -112,7 +112,9 @@ read_from_device = do
     max_bytes  <- use $ input_buffer.size
     liftIO $ do
         bytes_read <- fdReadBuf fd buffer_ptr (fromIntegral max_bytes)
-        fmap (map $ chr . fromIntegral) $ peekArray (fromIntegral bytes_read) buffer_ptr
+        if bytes_read > 0
+        then fmap (map $ chr . fromIntegral) $ peekArray (fromIntegral bytes_read) buffer_ptr
+        else return []
 
 apply_timing_config :: Fd -> Config -> IO ()
 apply_timing_config fd config =
@@ -149,10 +151,9 @@ compile :: ClassifyTable -> [Char] -> KClass
 compile table = cl' where
     -- take all prefixes and create a set of these
     prefix_set = S.fromList $ concatMap (init . inits . fst) $ table
-    -- create a map from strings to event
-    event_for_input = flip M.lookup (M.fromList table)
+    event_for_input = M.fromList table
     cl' [] = Prefix
-    cl' input_block = case event_for_input input_block of
+    cl' input_block = case M.lookup input_block event_for_input of
             Just (EvKey k m) -> Valid k m []
             Nothing -> case S.member input_block prefix_set of
                 True -> Prefix
@@ -163,7 +164,7 @@ compile table = cl' where
                 -- prefixes of an event. 
                 False ->
                     let input_prefixes = init $ inits input_block
-                    in case mapMaybe (\s -> (,) s `fmap` event_for_input s) input_prefixes of
+                    in case mapMaybe (\s -> (,) s `fmap` M.lookup s event_for_input) input_prefixes of
                         (s,EvKey k m) : _ -> Valid k m (drop (length s) input_block)
                         -- neither a prefix or a full event. Might be interesting to log.
                         [] -> Invalid
