@@ -17,14 +17,13 @@ type App = RWST Vty () (Seq String) IO
 
 main = do
     vty <- mkVty def
-    _ <- execRWST vty_interact vty Seq.empty
+    _ <- execRWST (vty_interact False) vty Seq.empty
     shutdown vty
 
-vty_interact :: App ()
-vty_interact = do
+vty_interact :: Bool -> App ()
+vty_interact should_exit = do
     update_display
-    done <- handle_next_event
-    unless done vty_interact
+    unless should_exit $ handle_next_event >>= vty_interact
 
 update_display :: App ()
 update_display = do
@@ -36,8 +35,7 @@ update_display = do
 
 handle_next_event = ask >>= liftIO . next_event >>= handle_event
     where
-        handle_event (EvKey KEsc []) = return True
         handle_event e               = do
             modify $ (<|) (show e) >>> Seq.take event_buffer_size
-            return False
+            return $ e == EvKey KEsc []
 
