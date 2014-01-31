@@ -20,7 +20,7 @@ import Control.Monad.Trans.Reader (ReaderT(..))
 import Data.Char
 import Data.Default
 import Data.IORef
-import Data.List( inits )
+import Data.List(tails,inits)
 import qualified Data.Map as M( fromList, lookup )
 import Data.Maybe ( mapMaybe )
 import qualified Data.Set as S( fromList, member )
@@ -160,12 +160,15 @@ compile table = cl' where
                 True -> Prefix
                 -- if the input_block is exactly what is expected for an event then consume the whole
                 -- block and return the event
-                -- look up progressively large prefixes of the input block until an event is found
+                -- look up progressively smaller tails of the input block until an event is found
+                -- The assumption is that the event that consumes the most input bytes should be
+                -- produced.
+                -- The test verify_full_syn_input_to_event_2x verifies this.
                 -- H: There will always be one match. The prefix_set contains, by definition, all
                 -- prefixes of an event. 
                 False ->
-                    let input_prefixes = init $ inits input_block
-                    in case mapMaybe (\s -> (,) s `fmap` M.lookup s event_for_input) input_prefixes of
+                    let input_tails = init $ tail $ tails input_block
+                    in case mapMaybe (\s -> (,) s `fmap` M.lookup s event_for_input) input_tails of
                         (s,e) : _ -> Valid e (drop (length s) input_block)
                         -- neither a prefix or a full event. Might be interesting to log.
                         [] -> Invalid
