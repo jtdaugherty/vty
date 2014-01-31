@@ -186,15 +186,28 @@ verify_full_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) ->
             input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
         assert_events_from_syn_input table input events
 
+verify_full_syn_input_to_event_2x :: Property IO
+verify_full_syn_input_to_event_2x = forAll $ \(InputBlocksUsingTable gen) ->
+    forEachOf terminals_of_interest $ \term_name -> monadic $ do
+        term <- setupTerm term_name
+        let table         = classify_table_for_term term_name term
+            input_seq     = gen table
+            events        = concatMap ((\s -> [s,s]) . snd) input_seq
+            keydowns      = map (Bytes . (\s -> s ++ s) . fst) input_seq
+            input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
+        assert_events_from_syn_input table input events
+
 main :: IO ()
 main = defaultMain
-    [ testProperty "synthesized typing from single visible chars translates to expected events"
+    [ testProperty "synthesized typing of single visible chars translates to expected events"
         verify_visible_syn_input_to_event
-    , testProperty "synthesized typing from keys from capabilities tables translates to expected events"
+    , testProperty "synthesized typing of keys from capabilities tables translates to expected events"
         verify_caps_syn_input_to_event
-    , testProperty "synthesized typing from hard coded special keys translates to expected events"
+    , testProperty "synthesized typing of hard coded special keys translates to expected events"
         verify_special_syn_input_to_event
-    , testProperty "synthesized typing from any key in the table translates to expected events"
+    , testProperty "synthesized typing of any key in the table translates to its paired event"
         verify_full_syn_input_to_event
+    , testProperty "synthesized typing of 2x any key in the table translates to 2x paired event"
+        verify_full_syn_input_to_event_2x
     ]
 
