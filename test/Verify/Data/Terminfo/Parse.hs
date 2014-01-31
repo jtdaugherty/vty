@@ -8,6 +8,7 @@ import Data.Terminfo.Eval
 import Verify
 
 import Data.Word
+import qualified Data.Vector.Unboxed as Vector
 
 import Numeric
 
@@ -46,26 +47,26 @@ instance Arbitrary IncFirstTwoCap where
             return $ IncFirstTwoCap s' bytes
           ) `suchThat` ( \(IncFirstTwoCap str _) -> length str < 255 ) 
 
-data PushParamCap = PushParamCap String Word [Word8]
+data PushParamCap = PushParamCap String Int [Word8]
     deriving ( Show )
 
 instance Arbitrary PushParamCap where
     arbitrary
         = ( do
             NonParamCapString s <- arbitrary
-            n :: Word <- choose (1,9) >>= return . toEnum
+            n <- choose (1,9)
             (s', bytes) <- insert_escape_op ("p" ++ show n) [] s
             return $ PushParamCap s' n bytes
           ) `suchThat` ( \(PushParamCap str _ _) -> length str < 255 ) 
 
-data DecPrintCap = DecPrintCap String Word [Word8]
+data DecPrintCap = DecPrintCap String Int [Word8]
     deriving ( Show )
 
 instance Arbitrary DecPrintCap where
     arbitrary
         = ( do
             NonParamCapString s <- arbitrary
-            n :: Word <- choose (1,9) >>= return . toEnum
+            n <- choose (1,9)
             (s', bytes) <- insert_escape_op ("p" ++ show n ++ "%d") [] s
             return $ DecPrintCap s' n bytes
           ) `suchThat` ( \(DecPrintCap str _ _) -> length str < 255 ) 
@@ -87,15 +88,13 @@ is_bytes_op :: CapOp -> Bool
 is_bytes_op (Bytes {}) = True
 -- is_bytes_op _ = False
 
-bytes_for_range cap offset c
-    = take (fromEnum c)
-    $ drop (fromEnum offset)
-    $ ( map ( toEnum . fromEnum ) $! source_string cap )
+bytes_for_range cap offset count
+    = Vector.toList $ Vector.take count $ Vector.drop offset $ cap_bytes cap
 
 collect_bytes :: CapExpression -> [Word8]
 collect_bytes e = concat [ bytes 
-                         | Bytes offset c _ <- cap_ops e
-                         , let bytes = bytes_for_range e offset c
+                         | Bytes offset count <- cap_ops e
+                         , let bytes = bytes_for_range e offset count
                          ]
     
 

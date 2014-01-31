@@ -2,7 +2,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module VerifyEvalTerminfoCaps where
 
-import Blaze.ByteString.Builder.Internal.Write (runWrite)
+import Blaze.ByteString.Builder.Internal.Write (runWrite, getBound)
 import Data.Terminfo.Eval 
 import Data.Terminfo.Parse
 import Control.DeepSeq
@@ -20,6 +20,8 @@ import Control.Monad ( mapM_, forM, forM_ )
 import Data.Maybe ( fromJust )
 import Data.Word
 
+import Foreign.Marshal.Alloc (mallocBytes)
+import Foreign.Ptr (Ptr, minusPtr)
 import Numeric
 
 -- If a terminal defines one of the caps then it's expected to be parsable.
@@ -60,8 +62,7 @@ tests = do
                         Just cap_def -> do
                             putStrLn $ "\tadding test for cap: " ++ cap_name
                             let test_name = term_name ++ "(" ++ cap_name ++ ")"
-                            parse_result <- parse_cap_expression cap_def
-                            case parse_result of
+                            case parse_cap_expression cap_def of
                                 Left error -> return [verify test_name (failed {reason = "parse error " ++ show error})]
                                 Right !cap_expr -> return [verify test_name (verify_eval_cap eval_buffer cap_expr)]
                         Nothing      -> do
@@ -71,11 +72,12 @@ tests = do
 verify_eval_cap :: Ptr Word8 -> CapExpression -> Int -> Property
 verify_eval_cap eval_buffer expr !junk_int = do
     forAll (vector 9) $ \input_values -> 
-        let !byte_count = cap_expression_required_bytes expr input_values
+        let write = write_cap_expr expr input_values
+            !byte_count = getBound write
         in liftIOResult $ do
             let start_ptr :: Ptr Word8 = eval_buffer
-            forM_ [0..100] $ \i -> runWrite (write_cap_expr expr input_values) start_ptr
-            end_ptr <- runWrite(write_cap_expr expr input_values) start_ptr
+            forM_ [0..100] $ \i -> runWrite write start_ptr
+            end_ptr <- runWrite write start_ptr
             case end_ptr `minusPtr` start_ptr of
                 count | count < 0        -> 
                             return $ failed { reason = "End pointer before start pointer." }

@@ -269,6 +269,7 @@ test-suite verify-eval-terminfo-caps
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        base >= 4 && < 5,
+                       blaze-builder >= 0.3.3.2 && < 0.4,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
