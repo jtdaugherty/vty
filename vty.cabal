@@ -44,7 +44,7 @@ library
                        containers,
                        data-default >= 0.5.3,
                        deepseq >= 1.1 && < 1.4,
-                       lens >= 3.9.0.2,
+                       lens >= 3.9.0.2 && < 4.0,
                        -- required for nice installation with yi
                        hashable >= 1.2,
                        mtl >= 1.1.1.0 && < 2.2,
@@ -525,6 +525,7 @@ test-suite verify-using-mock-input
 
   build-depends:       vty,
                        Cabal == 1.18.*,
+                       data-default >= 0.5.3,
                        QuickCheck >= 2.4,
                        smallcheck == 1.*,
                        quickcheck-assertions >= 0.1.1,
@@ -535,6 +536,7 @@ test-suite verify-using-mock-input
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
+                       lens >= 3.9.0.2 && < 4.0,
                        mtl >= 1.1.1.0 && < 2.2,
                        terminfo >= 0.3 && < 0.4,
                        text >= 0.11.3,

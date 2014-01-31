@@ -18,12 +18,15 @@ import Graphics.Vty.Input.Terminfo
 import Control.Applicative
 import Control.Concurrent
 import Control.Exception
+import Control.Lens ((^.))
 import Control.Monad
 
+import Data.Default
 import Data.IORef
 
 import System.Console.Terminfo
 import System.Posix.IO
+import System.Posix.Terminal (openPseudoTerminal)
 import System.Posix.Types
 import System.Timeout
 
@@ -76,8 +79,8 @@ gen_events_using_io_actions max_duration input_action output_action = do
     let max_duration' = max min_timout max_duration
     read_complete <- newEmptyMVar
     write_complete <- newEmptyMVar
-    _ <- forkIO $ input_action `finally` putMVar write_complete ()
-    _ <- forkIO $ output_action `finally` putMVar read_complete ()
+    _ <- forkOS $ input_action `finally` putMVar write_complete ()
+    _ <- forkOS $ output_action `finally` putMVar read_complete ()
     Just () <- timeout max_duration' $ takeMVar write_complete
     Just () <- timeout max_duration' $ takeMVar read_complete
     return ()
@@ -106,53 +109,28 @@ assert_events_from_syn_input :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO
 assert_events_from_syn_input table input_spec expected_events = do
     let max_duration = sum [t | Delay t <- input_spec] + min_detectable_delay
         event_count = length expected_events
-    (output_fd, input_fd) <- createPipe
-    (output, shutdown_event_processing) <- initInputForFd test_esc_sample_delay table output_fd
+    (write_fd, read_fd) <- openPseudoTerminal
+    (set_term_attr,_) <- attributeControl read_fd
+    set_term_attr
+    input <- initInputForFd def table read_fd
     events_ref <- newIORef []
     let write_wait_close = do
-            synthesize_input input_spec input_fd
+            synthesize_input input_spec write_fd
             threadDelay min_detectable_delay
-            shutdown_event_processing
+            shutdown_input input
             threadDelay min_detectable_delay
-            closeFd input_fd
-            closeFd output_fd
+            closeFd write_fd
+            closeFd read_fd
     -- drain output pipe
     let read_events = read_loop event_count
         read_loop 0 = return ()
         read_loop n = do
-            e <- readChan output
+            e <- readChan $ input^.event_channel
             modifyIORef events_ref ((:) e)
             read_loop (n - 1)
     gen_events_using_io_actions max_duration write_wait_close read_events
     out_events <- reverse <$> readIORef events_ref
     compare_events input_spec expected_events out_events
-
-assert_events_from_input_block :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Bool
-assert_events_from_input_block table input_spec expected_events = do
-    let classifier = classify table
-        max_duration = sum [t | Delay t <- input_spec] + min_detectable_delay
-    input <- newChan
-    output <- newChan
-    gen_events_using_io_actions
-        max_duration
-        (write_input_spec_to_chan input_spec input)
-        (inputToEventThread classifier input output)
-    -- TODO: use STM TChan?
-    -- assures reading "length expected_events" from the channel does not block.
-    let min_event_count = length expected_events
-    writeList2Chan output $ replicate min_event_count undefined
-    out_events <- take min_event_count <$> getChanContents output
-    return $ out_events == expected_events
-
-write_input_spec_to_chan :: InputSpec -> Chan Char -> IO ()
-write_input_spec_to_chan [] chan = do
-    writeChan chan '\xFFFD'
-write_input_spec_to_chan (Bytes str : input_spec') chan = do
-    writeList2Chan chan str
-    write_input_spec_to_chan input_spec' chan
-write_input_spec_to_chan (Delay _t : input_spec') chan = do
-    writeChan chan '\xFFFE'
-    write_input_spec_to_chan input_spec' chan
 
 newtype InputBlocksUsingTable event
     = InputBlocksUsingTable ([(String,event)] -> [(String, event)])
@@ -167,24 +145,6 @@ instance Monad m => Serial m (InputBlocksUsingTable event) where
         where
             selections []     = []
             selections (x:xs) = let z = selections xs in [x] : (z ++ map ((:) x) z)
-
-verify_visible_input_block_to_event :: Property IO
-verify_visible_input_block_to_event = forAll $ \(InputBlocksUsingTable gen) -> do
-    let input_seq = gen visible_chars
-        input     = Bytes $ concat [s | (s,_) <- input_seq]
-        events    = map snd input_seq
-    monadic $ assert_events_from_input_block visible_chars [input] events
-
-verify_keys_from_caps_table_block_to_event :: Property IO
-verify_keys_from_caps_table_block_to_event = forAll $ \(InputBlocksUsingTable gen) ->
-    forEachOf terminals_of_interest $ \term_name -> monadic $ do
-        term <- setupTerm term_name
-        let table         = caps_classify_table term keys_from_caps_table
-            input_seq     = gen table
-            events        = map snd input_seq
-            keydowns      = map (Bytes . fst) input_seq
-            input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
-        assert_events_from_input_block table input events
 
 verify_visible_syn_input_to_event :: Property IO
 verify_visible_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) -> monadic $ do
@@ -228,11 +188,7 @@ verify_full_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) ->
 
 main :: IO ()
 main = defaultMain
-    [ testProperty "basic block generated from a single visible chars to event translation"
-        verify_visible_input_block_to_event
-    , testProperty "key sequences read from caps table map to expected events"
-        verify_keys_from_caps_table_block_to_event
-    , testProperty "synthesized typing from single visible chars translates to expected events"
+    [ testProperty "synthesized typing from single visible chars translates to expected events"
         verify_visible_syn_input_to_event
     , testProperty "synthesized typing from keys from capabilities tables translates to expected events"
         verify_caps_syn_input_to_event

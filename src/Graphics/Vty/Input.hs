@@ -49,13 +49,11 @@ import Graphics.Vty.Input.Internal
 import Graphics.Vty.Input.Terminfo
 
 import Control.Concurrent
-
-import Data.IORef
+import Control.Lens
 
 import qualified System.Console.Terminfo as Terminfo
 import System.Environment
 import System.Posix.Signals.Exts
-import System.Posix.Terminal
 import System.Posix.IO (stdInput)
 import System.Posix.Types (Fd)
 
@@ -94,18 +92,14 @@ input_for_current_terminal config = do
 input_for_name_and_io :: Config -> String -> Fd -> IO Input
 input_for_name_and_io config term_name term_fd = do
     terminal <- Terminfo.setupTerm term_name
-    attr <- getTerminalAttributes term_fd
-    let attr' = foldl withoutMode attr [ StartStopOutput, KeyboardInterrupts
-                                       , EnableEcho, ProcessInput, ExtendedFunctions
-                                       ]
-    setTerminalAttributes term_fd attr' Immediately
     let classify_table = classify_table_for_term term_name terminal
-    apply_timing_config term_fd config
-    input <- newIORef config >>= \ref -> initInputForFd ref classify_table term_fd 
+    (set_attrs,unset_attrs) <- attributeControl term_fd
+    set_attrs
+    input <- initInputForFd config classify_table term_fd 
     let pokeIO = Catch $ do
             let e = error "(getsize in input layer)"
-            setTerminalAttributes term_fd attr' Immediately
-            writeChan (_event_channel input) (EvResize e e)
+            set_attrs
+            writeChan (input^.event_channel) (EvResize e e)
     _ <- installHandler windowChange pokeIO Nothing
     _ <- installHandler continueProcess pokeIO Nothing
     return $ input
@@ -113,5 +107,5 @@ input_for_name_and_io config term_name term_fd = do
             shutdown_input input
             _ <- installHandler windowChange Ignore Nothing
             _ <- installHandler continueProcess Ignore Nothing
-            setTerminalAttributes term_fd attr Immediately
+            unset_attrs
         }

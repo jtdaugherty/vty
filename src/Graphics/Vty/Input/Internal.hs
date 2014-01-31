@@ -30,6 +30,7 @@ import Foreign ( allocaArray, peekArray, Ptr )
 import Foreign.C.Types (CInt(..))
 
 import System.Posix.IO (fdReadBuf)
+import System.Posix.Terminal
 import System.Posix.Types (Fd(..))
 
 data Config = Config
@@ -57,7 +58,7 @@ data Input = Input
 makeLenses ''Input
 
 data KClass
-    = Valid Key [Modifier] [Char]
+    = Valid Event [Char]
     | Invalid
     | Prefix
     deriving(Show, Eq)
@@ -126,9 +127,9 @@ parse_event = do
     c <- use classifier
     b <- use unprocessed_bytes
     case c b of
-        Valid k m remaining -> do
+        Valid e remaining -> do
             unprocessed_bytes .= remaining
-            return $ EvKey k m
+            return e
         _                   -> mzero 
 
 drop_invalid :: InputM ()
@@ -154,7 +155,7 @@ compile table = cl' where
     event_for_input = M.fromList table
     cl' [] = Prefix
     cl' input_block = case M.lookup input_block event_for_input of
-            Just (EvKey k m) -> Valid k m []
+            Just e -> Valid e []
             Nothing -> case S.member input_block prefix_set of
                 True -> Prefix
                 -- if the input_block is exactly what is expected for an event then consume the whole
@@ -165,7 +166,7 @@ compile table = cl' where
                 False ->
                     let input_prefixes = init $ inits input_block
                     in case mapMaybe (\s -> (,) s `fmap` M.lookup s event_for_input) input_prefixes of
-                        (s,EvKey k m) : _ -> Valid k m (drop (length s) input_block)
+                        (s,e) : _ -> Valid e (drop (length s) input_block)
                         -- neither a prefix or a full event. Might be interesting to log.
                         [] -> Invalid
 
@@ -179,7 +180,7 @@ classify table other
 
 classifyUtf8 :: [Char] -> KClass
 classifyUtf8 s = case decode ((map (fromIntegral . ord) s) :: [Word8]) of
-    Just (unicodeChar, _) -> Valid (KChar unicodeChar) [] []
+    Just (unicodeChar, _) -> Valid (EvKey (KChar unicodeChar) []) []
     _ -> Invalid -- something bad happened; just ignore and continue.
 
 classifyTab table = compile table
@@ -204,15 +205,26 @@ run_input_processor_loop classify_table input stop_flag = do
                             <*> pure (classify classify_table)
         runReaderT (evalStateT loop_input_processor s0) input
 
+attributeControl :: Fd -> IO (IO (), IO ())
+attributeControl fd = do
+    original <- getTerminalAttributes fd
+    let vtyMode = foldl withoutMode original [ StartStopOutput, KeyboardInterrupts
+                                             , EnableEcho, ProcessInput, ExtendedFunctions
+                                             ]
+    let set_attrs = setTerminalAttributes fd vtyMode Immediately
+        unset_attrs = setTerminalAttributes fd original Immediately
+    return (set_attrs,unset_attrs)
+
 -- This is an example of an algorithm where code coverage could be high, even 100%, but the
 -- algorithm still under tested. I should collect more of these examples...
-initInputForFd :: IORef Config -> ClassifyTable -> Fd -> IO Input
-initInputForFd in_config_ref classify_table in_input_fd = do
+initInputForFd :: Config -> ClassifyTable -> Fd -> IO Input
+initInputForFd config classify_table in_fd = do
+    apply_timing_config in_fd config
     stop_flag <- newIORef False
     input <- Input <$> newChan
                    <*> pure (writeIORef stop_flag True)
-                   <*> pure in_config_ref
-                   <*> pure in_input_fd
+                   <*> newIORef config
+                   <*> pure in_fd
     _ <- forkOS $ run_input_processor_loop classify_table input stop_flag
     return input
 
