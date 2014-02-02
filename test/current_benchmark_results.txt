@@ -1,14 +1,18 @@
 post-blaze-builder
-Phenom II X4, Konsole
+Phenom II X4, GHC 7.6.3 on linux, Konsole
   [("no-diff-opt-0",81,6),("render-char-0",318,10),("render-char-1",126,9),("vertical-scroll-0",745,39),("image-fuzz-0",182,7)]
   [("no-diff-opt-0",94,6),("render-char-0",322,10),("render-char-1",137,7),("vertical-scroll-0",770,36),("image-fuzz-0",186,8)]
 
-2 ghz core i7. NixOS over screen + ssh using Mac iTerm
+2 ghz core i7, GHC 7.6.3 on Mac using iTerm
+  [("no-diff-opt-0",30,3),("render-char-0",118,8),("render-char-1",49,5),("vertical-scroll-0",307,27),("image-fuzz-0",194,13)]
+  [("no-diff-opt-0",29,3),("render-char-0",119,9),("render-char-1",49,5),("vertical-scroll-0",307,27),("image-fuzz-0",192,13)]
+
+2 ghz core i7. GHC 7.6.3 on NixOS over screen + ssh using Mac iTerm
   [("no-diff-opt-0",18,26),("render-char-0",93,140),("render-char-1",26,46),("vertical-scroll-0",190,279),("image-fuzz-0",117,107)]
 
 pre-blaze-builder
 
-Phenom II X4, Konsole
+Phenom II X4, GHC 7.6.3 on linux, Konsole
   [("no-diff-opt-0",79,6),("render-char-0",474,10),("render-char-1",154,12),("vertical-scroll-0",702,37),("image-fuzz-0",144,6)]
   [("no-diff-opt-0",76,6),("render-char-0",485,11),("render-char-1",152,13),("vertical-scroll-0",701,37),("image-fuzz-0",149,7)]
 
