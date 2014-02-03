@@ -1,0 +1,4 @@
+#!/bin/sh
+ghc-core --no-asm --no-cast -- \
+  -hide-package vty-5.0.0 -i../src -XScopedTypeVariables ../dist/build/cbits/*.o \
+  benchmark
