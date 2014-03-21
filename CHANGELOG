@@ -1,6 +1,6 @@
 5.0.0
-    * all projects using vty must be compiled with -threaded. This can be resolved without API
-      changes, but I don't know if this matters.
+    * all projects using vty for input must be compiled with -threaded. This could be resolved but
+      would like to avoid the complexity for now.
     * mkVtyEscDelay has been removed. Use "mkVty def". Which initialized vty with the default
       configuration.
     * input handling changes
@@ -8,26 +8,23 @@
         * KPN5 is now KCenter
         * tests exist.
         * terminal timing is now handled by selecting an appropriate VTIME. Previously this was
-          implemented within Vty itself. This reduced complexity in vty but potentially affects
-          meta key handling.
+          implemented within Vty itself. This reduced complexity in vty but potentially provides
+          a different meta key behavior.
         * The time vty will wait to verify an ESC byte means a single ESC key is the
           singleEscPeriod of the Input Config structure.
-        * The input config can be changed dynamically.
     * removed the typeclass based terminal and display context interface in favor of a data
       structure of properties interface.
     * renamed the Terminal interface to Output
     * The default picture for an image now uses the "clear" background. This background fills
       background spans with spaces or just ends the line.
         * Previously the background defaulted to the space character. This causes issues copying
-          text from a text editor. The text would end up with many extra spaces at the end of the
-          line.
+          text from a text editor. The text would end up with extra spaces at the end of the line.
     * Layer support
         * Each layer is an image.
         * The layers for a picture are a list of images.
-        * The first image is the top-most layer.
-        * The final rendering is as if the bottom layer (last image) was rendered, then the next
-          (second to last image) etc.
-        * The transparent areas for a layer are the background image components.
+        * The first image is the top-most layer. The images are ordered from top to bottom.
+        * The transparent areas for a layer are the background_fill areas. These will be implicitly
+          added to to pad images when images of different sizes are joined.
         * If the background is clear there is no background layer.
         * If there is a background character then the bottom layer is the background layer.
         * empty_picture is a Picture with no layers and no cursor
@@ -46,8 +43,7 @@
             * view a input event log for vty. Example of interacting with user.
             * test/EventEcho.hs
         * vty-rouge
-            * A bad rouge-like game. Go from the entrance to exit. Example of layers
-              and image build operations.
+            * A bad rouge-like game. Example of layers and image build operations.
             * test/Rouge.hs
         * vty-benchmark
             * benchmarks vty. A series of tests that push random pictures to the terminal. The
