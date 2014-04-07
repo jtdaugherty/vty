@@ -50,7 +50,7 @@ library
                        mtl >= 1.1.1.0 && < 2.2,
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
-                       terminfo >= 0.3 && < 0.4,
+                       terminfo >= 0.3 && < 0.5,
                        transformers >= 0.3.0.0,
                        text >= 0.11.3,
                        unix,
