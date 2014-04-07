@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -ex
+
+source /etc/profile
+
+function init-sandbox() {
+  cabal sandbox init
+}
+
+function build() {
+  if [[ "${GHCVER}" > "7.4.2" ]] ; then
+    cabal install --enable-tests --only-dependencies --force-reinstalls
+  else
+    echo "Skipping tests on ${GHCVER}"
+    cabal install --only-dependencies --force-reinstalls
+  fi
+}
+
+function rebuild() {
+  rm -rf dist
+  build
+}
+
+function rebuild-including-deps() {
+  rm -rf .cabal-sandbox
+  rm -rf cabal.sandbox.config
+  init-sandbox
+  build
+}
+
+set -ex
+
+cd vty
+if [[ ! -f cabal.sandbox.config ]] ; then
+  init-sandbox
+fi
+
+build || rebuild || rebuild-including-deps
+
+if [[ "${GHCVER}" > "7.4.2" ]] ; then
+  cabal test
+fi
