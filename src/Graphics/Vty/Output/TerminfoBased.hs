@@ -1,3 +1,8 @@
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -D_XOPEN_SOURCE=500 #-}
+{-# CFILES gwinsz.c #-}
 -- |  Terminfo based terminal handling.
 --
 -- The color handling assumes tektronix like. No HP support provided. If the terminal is not one I
@@ -5,9 +10,6 @@
 -- assumptions mixed in.
 --
 -- Copyright Corey O'Connor (coreyoconnor@gmail.com)
-{-# LANGUAGE FlexibleInstances #-}
-{-# OPTIONS_GHC -D_XOPEN_SOURCE=500 #-}
-{-# CFILES gwinsz.c #-}
 module Graphics.Vty.Output.TerminfoBased ( reserve_terminal )
     where
 
@@ -31,11 +33,31 @@ import Data.IORef
 import Data.Maybe (isJust, isNothing, fromJust)
 import Data.Monoid
 
-import Foreign.C.Types ( CLong(..) )
+import Foreign.C.Types ( CInt(..), CLong(..) )
 
 import GHC.IO.Handle
+#ifdef __GLASGOW_HASKELL__
+#if __GLASGOW_HASKELL__ >= 611
+import GHC.IO.Handle.Internals (withHandle_)
+import GHC.IO.Handle.Types (Handle__(..))
+import qualified GHC.IO.FD as FD
+-- import qualified GHC.IO.Handle.FD as FD
+import GHC.IO.Exception
+import Data.Typeable (cast)
+#else
+import GHC.IOBase
+import GHC.Handle hiding (fdToHandle)
+import qualified GHC.Handle
+#endif
+#endif
 
 import qualified System.Console.Terminfo as Terminfo
+#ifdef __GLASGOW_HASKELL__
+#if __GLASGOW_HASKELL__ >= 611
+import System.IO.Error
+#endif
+#endif 
+import System.Posix.Types (Fd(..))
 
 data TerminfoCaps = TerminfoCaps 
     { smcup :: Maybe CapExpression
@@ -130,7 +152,7 @@ reserve_terminal in_ID out_handle = liftIO $ do
                 maybe_send_cap rmcup []
                 maybe_send_cap cnorm []
             , display_bounds = do
-                raw_size <- liftIO $ get_window_size
+                raw_size <- liftIO $ withFd out_handle get_window_size
                 case raw_size of
                     (w, h)  | w < 0 || h < 0 -> fail $ "getwinsize returned < 0 : " ++ show raw_size
                             | otherwise      -> return (w,h)
@@ -185,11 +207,11 @@ current_display_attr_caps ti
     <*> probe_cap ti "dim"
     <*> probe_cap ti "bold"
 
-foreign import ccall "gwinsz.h vty_c_get_window_size" c_get_window_size :: IO CLong
+foreign import ccall "gwinsz.h vty_c_get_window_size" c_get_window_size :: Fd -> IO CLong
 
-get_window_size :: IO (Int,Int)
-get_window_size = do 
-    (a,b) <- (`divMod` 65536) `fmap` c_get_window_size
+get_window_size :: Fd -> IO (Int,Int)
+get_window_size fd = do 
+    (a,b) <- (`divMod` 65536) `fmap` c_get_window_size fd
     return (fromIntegral b, fromIntegral a)
 
 terminfo_display_context :: Output -> TerminfoCaps -> DisplayRegion -> IO DisplayContext
@@ -433,3 +455,22 @@ style_to_apply_seq s = concat
                 then []
                 else [op]
 
+-- from https://patch-tag.com/r/mae/sendfile/snapshot/current/content/pretty/src/Network/Socket/SendFile/Internal.hs
+-- The Fd should not be used after the action returns because the
+-- Handler may be garbage collected and than will cause the finalizer
+-- to close the fd.
+withFd :: Handle -> (Fd -> IO a) -> IO a
+#ifdef __GLASGOW_HASKELL__
+#if __GLASGOW_HASKELL__ >= 611
+withFd h f = withHandle_ "withFd" h $ \ Handle__{..} -> do
+  case cast haDevice of
+    Nothing -> ioError (ioeSetErrorString (mkIOError IllegalOperation
+                                           "withFd" (Just h) Nothing)
+                        "handle is not a file descriptor")
+    Just fd -> f (Fd (fromIntegral (FD.fdFD fd)))
+#else
+withFd h f =
+    withHandle_ "withFd" h $ \ h_ ->
+      f (Fd (fromIntegral (haFD h_)))
+#endif
+#endif
