@@ -6,3 +6,6 @@ Setup
 dist
 test/benchmark
 .hpc
+.cabal-sandbox
+cabal.sandbox.config
+test/cabal.sandbox.config
