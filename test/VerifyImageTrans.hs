@@ -9,26 +9,26 @@ import Verify
 
 import Data.Word
 
-is_horiz_text_of_columns :: Image -> Int -> Bool
-is_horiz_text_of_columns (HorizText { output_width = in_w }) expected_w = in_w == expected_w
-is_horiz_text_of_columns (BGFill { output_width = in_w }) expected_w = in_w == expected_w
-is_horiz_text_of_columns _image _expected_w = False
+isHorizTextOfColumns :: Image -> Int -> Bool
+isHorizTextOfColumns (HorizText { outputWidth = inW }) expectedW = inW == expectedW
+isHorizTextOfColumns (BGFill { outputWidth = inW }) expectedW = inW == expectedW
+isHorizTextOfColumns _image _expectedW = False
 
-verify_horiz_contat_wo_attr_change_simplifies :: SingleRowSingleAttrImage -> Bool
-verify_horiz_contat_wo_attr_change_simplifies (SingleRowSingleAttrImage _attr char_count image) =
-    is_horiz_text_of_columns image char_count
+verifyHorizContatWoAttrChangeSimplifies :: SingleRowSingleAttrImage -> Bool
+verifyHorizContatWoAttrChangeSimplifies (SingleRowSingleAttrImage _attr charCount image) =
+    isHorizTextOfColumns image charCount
 
-verify_horiz_contat_w_attr_change_simplifies :: SingleRowTwoAttrImage -> Bool
-verify_horiz_contat_w_attr_change_simplifies ( SingleRowTwoAttrImage (SingleRowSingleAttrImage attr0 char_count0 _image0)
-                                                                     (SingleRowSingleAttrImage attr1 char_count1 _image1)
-                                                                     i
+verifyHorizContatWAttrChangeSimplifies :: SingleRowTwoAttrImage -> Bool
+verifyHorizContatWAttrChangeSimplifies ( SingleRowTwoAttrImage (SingleRowSingleAttrImage attr0 charCount0 _image0)
+                                                               (SingleRowSingleAttrImage attr1 charCount1 _image1)
+                                                               i
                                              ) 
-    | char_count0 == 0 || char_count1 == 0 || attr0 == attr1 = is_horiz_text_of_columns i (char_count0 + char_count1)
-    | otherwise = False == is_horiz_text_of_columns i (char_count0 + char_count1)
+    | charCount0 == 0 || charCount1 == 0 || attr0 == attr1 = isHorizTextOfColumns i (charCount0 + charCount1)
+    | otherwise = False == isHorizTextOfColumns i (charCount0 + charCount1)
 
 tests :: IO [Test]
 tests = return
-    [ verify "verify_horiz_contat_wo_attr_change_simplifies" verify_horiz_contat_wo_attr_change_simplifies
-    , verify "verify_horiz_contat_w_attr_change_simplifies" verify_horiz_contat_w_attr_change_simplifies
+    [ verify "verifyHorizContatWoAttrChangeSimplifies" verifyHorizContatWoAttrChangeSimplifies
+    , verify "verifyHorizContatWAttrChangeSimplifies" verifyHorizContatWAttrChangeSimplifies
     ]
 

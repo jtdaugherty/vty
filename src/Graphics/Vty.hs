@@ -60,16 +60,16 @@ import Data.IORef
 --
 -- \todo Remove explicit `shutdown` requirement.
 data Vty = Vty 
-    { -- | Outputs the given Picture. Equivalent to 'output_picture' applied to a display context
+    { -- | Outputs the given Picture. Equivalent to 'outputPicture' applied to a display context
       -- implicitly managed by Vty. The managed display context is reset on resize.
       update :: Picture -> IO ()
       -- | Get one Event object, blocking if necessary. This will refresh the terminal if the event
       -- is a 'EvResize'.
-    , next_event :: IO Event
+    , nextEvent :: IO Event
       -- | The input interface. See 'Input'
-    , input_iface :: Input
+    , inputIface :: Input
       -- | The output interface. See 'Output'
-    , output_iface :: Output
+    , outputIface :: Output
       -- | Refresh the display. Normally the library takes care of refreshing.  Nonetheless, some
       -- other program might output to the terminal and mess up the display.  In that case the
       -- application might want to force a refresh.
@@ -83,24 +83,24 @@ data Vty = Vty
 -- created at a time.
 mkVty :: Config -> IO Vty
 mkVty config = do
-    input <- input_for_current_terminal config
-    out <- output_for_current_terminal
+    input <- inputForCurrentTerminal config
+    out <- outputForCurrentTerminal
     intMkVty input out
 
 intMkVty :: Input -> Output -> IO Vty
 intMkVty input out = do
-    reserve_display out
-    let shutdown_io = do
-            shutdown_input input
-            release_display out
-            release_terminal out
-    last_pic_ref <- newIORef Nothing
-    last_update_ref <- newIORef Nothing
+    reserveDisplay out
+    let shutdownIo = do
+            shutdownInput input
+            releaseDisplay out
+            releaseTerminal out
+    lastPicRef <- newIORef Nothing
+    lastUpdateRef <- newIORef Nothing
 
-    let inner_update in_pic = do
-            b@(w,h) <- display_bounds out
-            let cursor  = pic_cursor in_pic
-                in_pic' = case cursor of
+    let innerUpdate inPic = do
+            b@(w,h) <- displayBounds out
+            let cursor  = picCursor inPic
+                inPic' = case cursor of
                   Cursor x y ->
                     let
                        x'      = case x of
@@ -111,43 +111,43 @@ intMkVty input out = do
                                    _ | y < 0     -> 0
                                      | y >= h    -> h - 1
                                      | otherwise -> y
-                     in in_pic { pic_cursor = Cursor x' y' }
-                  _          -> in_pic
-            mlast_update <- readIORef last_update_ref
-            update_data <- case mlast_update of
+                     in inPic { picCursor = Cursor x' y' }
+                  _ -> inPic
+            mlastUpdate <- readIORef lastUpdateRef
+            updateData <- case mlastUpdate of
                 Nothing -> do
-                    dc <- display_context out b
-                    output_picture dc in_pic'
+                    dc <- displayContext out b
+                    outputPicture dc inPic'
                     return (b, dc)
-                Just (last_bounds, last_context) -> do
+                Just (last_bounds, lastContext) -> do
                     if b /= last_bounds
                         then do
-                            dc <- display_context out b
-                            output_picture dc in_pic'
+                            dc <- displayContext out b
+                            outputPicture dc inPic'
                             return (b, dc)
                         else do
-                            output_picture last_context in_pic'
-                            return (b, last_context)
-            writeIORef last_update_ref $ Just update_data
-            writeIORef last_pic_ref $ Just in_pic'
+                            outputPicture lastContext inPic'
+                            return (b, lastContext)
+            writeIORef lastUpdateRef $ Just updateData
+            writeIORef lastPicRef $ Just inPic'
 
-    let inner_refresh 
-            =   writeIORef last_update_ref Nothing
-            >>  readIORef last_pic_ref 
-            >>= maybe ( return () ) ( \pic -> inner_update pic ) 
+    let innerRefresh 
+            =   writeIORef lastUpdateRef Nothing
+            >>  readIORef lastPicRef 
+            >>= maybe ( return () ) ( \pic -> innerUpdate pic ) 
 
-    let gkey = do k <- readChan $ _event_channel input
+    let gkey = do k <- readChan $ _eventChannel input
                   case k of 
-                    (EvResize _ _)  -> inner_refresh
-                                       >> display_bounds out
+                    (EvResize _ _)  -> innerRefresh
+                                       >> displayBounds out
                                        >>= return . (\(w,h)-> EvResize w h)
                     _               -> return k
 
-    return $ Vty { update = inner_update
-                 , next_event = gkey
-                 , input_iface = input
-                 , output_iface = out
-                 , refresh = inner_refresh
-                 , shutdown = shutdown_io
+    return $ Vty { update = innerUpdate
+                 , nextEvent = gkey
+                 , inputIface = input
+                 , outputIface = out
+                 , refresh = innerRefresh
+                 , shutdown = shutdownIo
                  }
 

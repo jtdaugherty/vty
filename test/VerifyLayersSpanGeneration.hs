@@ -15,114 +15,114 @@ import Verify
 
 import qualified Data.Vector as Vector 
 
-larger_horiz_span_occlusion :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
-larger_horiz_span_occlusion row_0 row_1 =
-    let i_0 = row_image row_0
-        i_1 = row_image row_1
-        (i_larger, i_smaller) = if image_width i_0 > image_width i_1 then (i_0, i_1) else (i_1, i_0)
-        expected_ops = display_ops_for_image i_larger
-        p = pic_for_layers [i_larger, i_smaller]
-        ops = display_ops_for_pic p (image_width i_larger,image_height i_larger)
-    in verify_ops_equality expected_ops ops
+largerHorizSpanOcclusion :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
+largerHorizSpanOcclusion row0 row1 =
+    let i0 = rowImage row0
+        i1 = rowImage row1
+        (iLarger, iSmaller) = if imageWidth i0 > imageWidth i1 then (i0, i1) else (i1, i0)
+        expectedOps = displayOpsForImage iLarger
+        p = picForLayers [iLarger, iSmaller]
+        ops = displayOpsForPic p (imageWidth iLarger,imageHeight iLarger)
+    in verifyOpsEquality expectedOps ops
 
 -- | Two rows stacked vertical is equivalent to the first row rendered as the top layer and the
 -- second row rendered as a bottom layer with a background fill where the first row would be.
-vert_stack_layer_equivalence_0 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
-vert_stack_layer_equivalence_0 row_0 row_1 =
-    let i_0 = row_image row_0
-        i_1 = row_image row_1
-        i = i_0 <-> i_1
-        p = pic_for_image i
-        i_lower = background_fill (image_width i_0) 1 <-> i_1
-        p_layered = pic_for_layers [i_0, i_lower]
-        expected_ops = display_ops_for_image i
-        ops_layered = display_ops_for_pic p_layered (image_width i_lower,image_height i_lower)
-    in verify_ops_equality expected_ops ops_layered
+vertStackLayerEquivalence0 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
+vertStackLayerEquivalence0 row0 row1 =
+    let i0 = rowImage row0
+        i1 = rowImage row1
+        i = i0 <-> i1
+        p = picForImage i
+        iLower = backgroundFill (imageWidth i0) 1 <-> i1
+        pLayered = picForLayers [i0, iLower]
+        expectedOps = displayOpsForImage i
+        opsLayered = displayOpsForPic pLayered (imageWidth iLower,imageHeight iLower)
+    in verifyOpsEquality expectedOps opsLayered
 
-vert_stack_layer_equivalence_1 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
-vert_stack_layer_equivalence_1 row_0 row_1 =
-    let i_0 = row_image row_0
-        i_1 = row_image row_1
-        i = i_0 <-> i_1
-        p = pic_for_image i
-        i_lower = i_0 <-> background_fill (image_width i_1) 1
-        i_upper = background_fill (image_width i_0) 1 <-> i_1
-        p_layered = pic_for_layers [i_upper, i_lower]
-        expected_ops = display_ops_for_image i
-        ops_layered = display_ops_for_pic p_layered (image_width i_lower,image_height i_lower)
-    in verify_ops_equality expected_ops ops_layered
+vertStackLayerEquivalence1 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
+vertStackLayerEquivalence1 row0 row1 =
+    let i0 = rowImage row0
+        i1 = rowImage row1
+        i = i0 <-> i1
+        p = picForImage i
+        iLower = i0 <-> backgroundFill (imageWidth i1) 1
+        iUpper = backgroundFill (imageWidth i0) 1 <-> i1
+        pLayered = picForLayers [iUpper, iLower]
+        expectedOps = displayOpsForImage i
+        opsLayered = displayOpsForPic pLayered (imageWidth iLower,imageHeight iLower)
+    in verifyOpsEquality expectedOps opsLayered
 
 -- | Two rows horiz joined is equivalent to the first row rendered as the top layer and the
 -- second row rendered as a bottom layer with a background fill where the first row would be.
-horiz_join_layer_equivalence_0 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
-horiz_join_layer_equivalence_0 row_0 row_1 =
-    let i_0 = row_image row_0
-        i_1 = row_image row_1
-        i = i_0 <|> i_1
-        p = pic_for_image i
-        i_lower = background_fill (image_width i_0) 1 <|> i_1
-        p_layered = pic_for_layers [i_0, i_lower]
-        expected_ops = display_ops_for_image i
-        ops_layered = display_ops_for_pic p_layered (image_width i_lower,image_height i_lower)
-    in verify_ops_equality expected_ops ops_layered
+horizJoinLayerEquivalence0 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
+horizJoinLayerEquivalence0 row0 row1 =
+    let i0 = rowImage row0
+        i1 = rowImage row1
+        i = i0 <|> i1
+        p = picForImage i
+        iLower = backgroundFill (imageWidth i0) 1 <|> i1
+        pLayered = picForLayers [i0, iLower]
+        expectedOps = displayOpsForImage i
+        opsLayered = displayOpsForPic pLayered (imageWidth iLower,imageHeight iLower)
+    in verifyOpsEquality expectedOps opsLayered
 
-horiz_join_layer_equivalence_1 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
-horiz_join_layer_equivalence_1 row_0 row_1 =
-    let i_0 = row_image row_0
-        i_1 = row_image row_1
-        i = i_0 <|> i_1
-        p = pic_for_image i
-        i_lower = i_0 <|> background_fill (image_width i_1) 1
-        i_upper = background_fill (image_width i_0) 1 <|> i_1
-        p_layered = pic_for_layers [i_upper, i_lower]
-        expected_ops = display_ops_for_image i
-        ops_layered = display_ops_for_pic p_layered (image_width i_lower,image_height i_lower)
-    in verify_ops_equality expected_ops ops_layered
+horizJoinLayerEquivalence1 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
+horizJoinLayerEquivalence1 row0 row1 =
+    let i0 = rowImage row0
+        i1 = rowImage row1
+        i = i0 <|> i1
+        p = picForImage i
+        iLower = i0 <|> backgroundFill (imageWidth i1) 1
+        iUpper = backgroundFill (imageWidth i0) 1 <|> i1
+        pLayered = picForLayers [iUpper, iLower]
+        expectedOps = displayOpsForImage i
+        opsLayered = displayOpsForPic pLayered (imageWidth iLower,imageHeight iLower)
+    in verifyOpsEquality expectedOps opsLayered
 
-horiz_join_alternate_0 :: Result
-horiz_join_alternate_0 =
+horizJoinAlternate0 :: Result
+horizJoinAlternate0 =
     let size = 4
-        str_0 = replicate size 'a'
-        str_1 = replicate size 'b'
-        i_0 = string def_attr str_0
-        i_1 = string def_attr str_1
-        i = horiz_cat $ zipWith horiz_join (replicate size i_0) (replicate size i_1)
-        layer_0 = horiz_cat $ replicate size $ i_0 <|> background_fill size 1
-        layer_1 = horiz_cat $ replicate size $ background_fill size 1 <|> i_1
-        expected_ops = display_ops_for_image i
-        ops_layered = display_ops_for_pic (pic_for_layers [layer_0, layer_1])
-                                          (image_width i,image_height i)
-    in verify_ops_equality expected_ops ops_layered
+        str0 = replicate size 'a'
+        str1 = replicate size 'b'
+        i0 = string defAttr str0
+        i1 = string defAttr str1
+        i = horizCat $ zipWith horizJoin (replicate size i0) (replicate size i1)
+        layer0 = horizCat $ replicate size $ i0 <|> backgroundFill size 1
+        layer1 = horizCat $ replicate size $ backgroundFill size 1 <|> i1
+        expectedOps = displayOpsForImage i
+        opsLayered = displayOpsForPic (picForLayers [layer0, layer1])
+                                      (imageWidth i,imageHeight i)
+    in verifyOpsEquality expectedOps opsLayered
 
-horiz_join_alternate_1 :: Result
-horiz_join_alternate_1 =
+horizJoinAlternate1 :: Result
+horizJoinAlternate1 =
     let size = 4
-        str_0 = replicate size 'a'
-        str_1 = replicate size 'b'
-        i_0 = string def_attr str_0
-        i_1 = string def_attr str_1
-        i = horiz_cat $ zipWith horiz_join (replicate size i_0) (replicate size i_1)
-        layers = [l | b <- take 4 [0,size*2..], let l = background_fill b 1 <|> i_0 <|> i_1]
-        expected_ops = display_ops_for_image i
-        ops_layered = display_ops_for_pic (pic_for_layers layers)
-                                          (image_width i,image_height i)
-    in verify_ops_equality expected_ops ops_layered
+        str0 = replicate size 'a'
+        str1 = replicate size 'b'
+        i0 = string defAttr str0
+        i1 = string defAttr str1
+        i = horizCat $ zipWith horizJoin (replicate size i0) (replicate size i1)
+        layers = [l | b <- take 4 [0,size*2..], let l = backgroundFill b 1 <|> i0 <|> i1]
+        expectedOps = displayOpsForImage i
+        opsLayered = displayOpsForPic (picForLayers layers)
+                                      (imageWidth i,imageHeight i)
+    in verifyOpsEquality expectedOps opsLayered
 
 tests :: IO [Test]
 tests = return 
     [ verify "a larger horiz span occludes a smaller span on a lower layer"
-        larger_horiz_span_occlusion
+        largerHorizSpanOcclusion
     , verify "two rows stack vertical equiv to first image layered on top of second with padding (0)"
-        vert_stack_layer_equivalence_0
+        vertStackLayerEquivalence0
     , verify "two rows stack vertical equiv to first image layered on top of second with padding (1)"
-        vert_stack_layer_equivalence_1
+        vertStackLayerEquivalence1
     -- , verify "two rows horiz joined equiv to first image layered on top of second with padding (0)"
-    --     horiz_join_layer_equivalence_0
+    --     horizJoinLayerEquivalence0
     -- , verify "two rows horiz joined equiv to first image layered on top of second with padding (1)"
-    --     horiz_join_layer_equivalence_1
+    --     horizJoinLayerEquivalence1
     -- , verify "alternating images using joins is the same as alternating images using layers (0)"
-    --     horiz_join_alternate_0
+    --     horizJoinAlternate0
     -- , verify "alternating images using joins is the same as alternating images using layers (1)"
-    --     horiz_join_alternate_1
+    --     horizJoinAlternate1
     ]
 

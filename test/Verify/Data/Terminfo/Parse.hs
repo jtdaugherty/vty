@@ -12,8 +12,8 @@ import qualified Data.Vector.Unboxed as Vector
 
 import Numeric
 
-hex_dump :: [Word8] -> String
-hex_dump bytes = foldr (\b s -> showHex b s) "" bytes
+hexDump :: [Word8] -> String
+hexDump bytes = foldr (\b s -> showHex b s) "" bytes
 
 data NonParamCapString = NonParamCapString String
     deriving Show
@@ -32,7 +32,7 @@ instance Arbitrary LiteralPercentCap where
     arbitrary 
         = ( do
             NonParamCapString s <- arbitrary
-            (s', bytes) <- insert_escape_op "%" [toEnum $ fromEnum '%'] s
+            (s', bytes) <- insertEscapeOp "%" [toEnum $ fromEnum '%'] s
             return $ LiteralPercentCap s' bytes
           ) `suchThat` ( \(LiteralPercentCap str _) -> length str < 255 ) 
 
@@ -43,7 +43,7 @@ instance Arbitrary IncFirstTwoCap where
     arbitrary
         = ( do
             NonParamCapString s <- arbitrary
-            (s', bytes) <- insert_escape_op "i" [] s
+            (s', bytes) <- insertEscapeOp "i" [] s
             return $ IncFirstTwoCap s' bytes
           ) `suchThat` ( \(IncFirstTwoCap str _) -> length str < 255 ) 
 
@@ -55,7 +55,7 @@ instance Arbitrary PushParamCap where
         = ( do
             NonParamCapString s <- arbitrary
             n <- choose (1,9)
-            (s', bytes) <- insert_escape_op ("p" ++ show n) [] s
+            (s', bytes) <- insertEscapeOp ("p" ++ show n) [] s
             return $ PushParamCap s' n bytes
           ) `suchThat` ( \(PushParamCap str _ _) -> length str < 255 ) 
 
@@ -67,46 +67,46 @@ instance Arbitrary DecPrintCap where
         = ( do
             NonParamCapString s <- arbitrary
             n <- choose (1,9)
-            (s', bytes) <- insert_escape_op ("p" ++ show n ++ "%d") [] s
+            (s', bytes) <- insertEscapeOp ("p" ++ show n ++ "%d") [] s
             return $ DecPrintCap s' n bytes
           ) `suchThat` ( \(DecPrintCap str _ _) -> length str < 255 ) 
 
-insert_escape_op op_str repl_bytes s = do
-    insert_points <- listOf1 $ elements [0 .. length s - 1]
-    let s' = f s ('%' : op_str)
-        remaining_bytes = f (map (toEnum . fromEnum) s) repl_bytes
+insertEscapeOp opStr replBytes s = do
+    insertPoints <- listOf1 $ elements [0 .. length s - 1]
+    let s' = f s ('%' : opStr)
+        remainingBytes = f (map (toEnum . fromEnum) s) replBytes
         f in_vs out_v = concat [ vs
                                | vi <- zip in_vs [0 .. length s - 1]
-                               , let vs = fst vi : ( if snd vi `elem` insert_points
+                               , let vs = fst vi : ( if snd vi `elem` insertPoints
                                                         then out_v
                                                         else []
                                                    )
                                ]
-    return (s', remaining_bytes)
+    return (s', remainingBytes)
 
-is_bytes_op :: CapOp -> Bool
-is_bytes_op (Bytes {}) = True
--- is_bytes_op _ = False
+isBytesOp :: CapOp -> Bool
+isBytesOp (Bytes {}) = True
+-- isBytesOp _ = False
 
-bytes_for_range cap offset count
-    = Vector.toList $ Vector.take count $ Vector.drop offset $ cap_bytes cap
+bytesForRange cap offset count
+    = Vector.toList $ Vector.take count $ Vector.drop offset $ capBytes cap
 
-collect_bytes :: CapExpression -> [Word8]
-collect_bytes e = concat [ bytes 
-                         | Bytes offset count <- cap_ops e
-                         , let bytes = bytes_for_range e offset count
-                         ]
+collectBytes :: CapExpression -> [Word8]
+collectBytes e = concat [ bytes 
+                        | Bytes offset count <- capOps e
+                        , let bytes = bytesForRange e offset count
+                        ]
     
 
-verify_bytes_equal :: [Word8] -> [Word8] -> Result
-verify_bytes_equal out_bytes expected_bytes 
-    = if out_bytes == expected_bytes
+verifyBytesEqual :: [Word8] -> [Word8] -> Result
+verifyBytesEqual outBytes expectedBytes 
+    = if outBytes == expectedBytes
         then succeeded
         else failed 
-             { reason = "out_bytes [" 
-                       ++ hex_dump out_bytes
-                       ++ "] /= expected_bytes ["
-                       ++ hex_dump expected_bytes
-                       ++ "]"
+             { reason = "outBytes [" 
+                      ++ hexDump outBytes
+                      ++ "] /= expectedBytes ["
+                      ++ hexDump expectedBytes
+                      ++ "]"
              }
 

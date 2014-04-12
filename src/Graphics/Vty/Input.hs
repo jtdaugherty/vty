@@ -39,8 +39,8 @@ module Graphics.Vty.Input ( Key(..)
                           , Event(..)
                           , Input(..)
                           , Config(..)
-                          , input_for_current_terminal
-                          , input_for_name_and_io
+                          , inputForCurrentTerminal
+                          , inputForNameAndIO
                           )
     where
 
@@ -58,11 +58,11 @@ import System.Posix.IO (stdInput)
 import System.Posix.Types (Fd)
 
 -- | Set up the current terminal for input.
--- This determines the current terminal then invokes 'input_for_name_and_io'
-input_for_current_terminal :: Config -> IO Input
-input_for_current_terminal config = do
-    term_name <- getEnv "TERM"
-    input_for_name_and_io config term_name stdInput
+-- This determines the current terminal then invokes 'inputForNameAndIO'
+inputForCurrentTerminal :: Config -> IO Input
+inputForCurrentTerminal config = do
+    termName <- getEnv "TERM"
+    inputForNameAndIO config termName stdInput
 
 -- | Set up the terminal attached to the given Fd for input.  Returns a 'Input'.
 --
@@ -89,23 +89,23 @@ input_for_current_terminal config = do
 -- * IEXTEN disabled
 --      - extended functions are disabled. Uh. Whatever these are.
 --
-input_for_name_and_io :: Config -> String -> Fd -> IO Input
-input_for_name_and_io config term_name term_fd = do
-    terminal <- Terminfo.setupTerm term_name
-    let classify_table = classify_table_for_term term_name terminal
-    (set_attrs,unset_attrs) <- attributeControl term_fd
-    set_attrs
-    input <- initInputForFd config classify_table term_fd 
+inputForNameAndIO :: Config -> String -> Fd -> IO Input
+inputForNameAndIO config termName termFd = do
+    terminal <- Terminfo.setupTerm termName
+    let classifyTable = classifyTableForTerm termName terminal
+    (setAttrs,unsetAttrs) <- attributeControl termFd
+    setAttrs
+    input <- initInputForFd config classifyTable termFd 
     let pokeIO = Catch $ do
             let e = error "(getsize in input layer)"
-            set_attrs
-            writeChan (input^.event_channel) (EvResize e e)
+            setAttrs
+            writeChan (input^.eventChannel) (EvResize e e)
     _ <- installHandler windowChange pokeIO Nothing
     _ <- installHandler continueProcess pokeIO Nothing
     return $ input
-        { shutdown_input = do
-            shutdown_input input
+        { shutdownInput = do
+            shutdownInput input
             _ <- installHandler windowChange Ignore Nothing
             _ <- installHandler continueProcess Ignore Nothing
-            unset_attrs
+            unsetAttrs
         }

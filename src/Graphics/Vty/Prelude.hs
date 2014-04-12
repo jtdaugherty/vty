@@ -11,8 +11,8 @@ import Control.Monad
 -- | Named alias for a Int pair
 type DisplayRegion = (Int,Int)
 
-region_width :: DisplayRegion -> Int
-region_width = fst
+regionWidth :: DisplayRegion -> Int
+regionWidth = fst
 
-region_height :: DisplayRegion -> Int
-region_height = snd
+regionHeight :: DisplayRegion -> Int
+regionHeight = snd

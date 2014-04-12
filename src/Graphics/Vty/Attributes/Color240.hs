@@ -11,9 +11,9 @@ import Text.Printf
 --
 -- generated from 256colres.pl which is forked from xterm 256colres.pl
 -- todo: all values get clamped high.
-rgb_color :: Integral i => i -> i -> i -> Color
-rgb_color r g b
-    | r < 0 && g < 0 && b < 0 = error "rgb_color with negative color component intensity"
+rgbColor :: Integral i => i -> i -> i -> Color
+rgbColor r g b
+    | r < 0 && g < 0 && b < 0 = error "rgbColor with negative color component intensity"
     | r == 8 && g == 8 && b == 8 = Color240 216
     | r == 18 && g == 18 && b == 18 = Color240 217
     | r == 28 && g == 28 && b == 28 = Color240 218

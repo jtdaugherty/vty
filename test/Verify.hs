@@ -50,11 +50,11 @@ import Control.Monad.State.Strict
 import Numeric ( showHex )
 
 verify :: Testable t => String -> t -> Test
-verify test_name p = Test $ TestInstance
-  { name = test_name
+verify testName p = Test $ TestInstance
+  { name = testName
   , run = do
-    qc_result <- quickCheckResult p
-    case qc_result of
+    qcResult <- quickCheckResult p
+    case qcResult of
         QC.Success {..} -> return $ Finished TS.Pass
         QC.Failure {numShrinks,reason} -> return $ Finished
             $ TS.Fail $ "After " 

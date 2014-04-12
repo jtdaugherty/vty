@@ -16,24 +16,24 @@ import System.Environment( getArgs )
 import System.IO
 import System.Random
 
-bench_0 = do 
-    let fixed_gen = mkStdGen 0
-    setStdGen fixed_gen
+bench0 = do 
+    let fixedGen = mkStdGen 0
+    setStdGen fixedGen
     vty <- mkVty def
-    (w,h) <- display_bounds $ output_iface vty
-    let images = return $ (image_0, image_1)
-        image_0 = char_fill def_attr 'X' w h
-        image_1 = char_fill def_attr '0' w h
+    (w,h) <- displayBounds $ outputIface vty
+    let images = return $ (image0, image1)
+        image0 = charFill defAttr 'X' w h
+        image1 = charFill defAttr '0' w h
         bench d = do
-            flip_out vty 300 image_0 image_1
+            flipOut vty 300 image0 image1
             shutdown vty
     return $ Bench images bench
 
-flip_out vty n image_0 image_1 = 
-    let !p_left  = pic_for_image image_0
-        !p_right = pic_for_image image_1
-        w_left  0 = return ()
-        w_left  n = update vty p_left  >> w_right (n-1)
-        w_right 0 = return ()
-        w_right n = update vty p_right >> w_left  (n-1)
-    in w_left n
+flipOut vty n image0 image1 = 
+    let !pLeft  = picForImage image0
+        !pRight = picForImage image1
+        wLeft  0 = return ()
+        wLeft  n = update vty pLeft  >> wRight (n-1)
+        wRight 0 = return ()
+        wRight n = update vty pRight >> wLeft  (n-1)
+    in wLeft n

@@ -15,79 +15,79 @@ import Verify
 
 import qualified Data.Vector as Vector 
 
-crop_op_display_ops :: (Int -> Image -> Image) ->
-                       Int -> Image -> (DisplayOps, Image)
-crop_op_display_ops crop_op v i =
-    let i_out = crop_op v i
-        p = pic_for_image i_out
-        w = MockWindow (image_width i_out) (image_height i_out)
-    in (display_ops_for_pic p (region_for_window w), i_out)
+cropOpDisplayOps :: (Int -> Image -> Image) ->
+                    Int -> Image -> (DisplayOps, Image)
+cropOpDisplayOps cropOp v i =
+    let iOut = cropOp v i
+        p = picForImage iOut
+        w = MockWindow (imageWidth iOut) (imageHeight iOut)
+    in (displayOpsForPic p (regionForWindow w), iOut)
 
-width_crop_output_columns :: (Int -> Image -> Image) ->
-                             SingleAttrSingleSpanStack ->
-                             NonNegative Int ->
-                             Property
-width_crop_output_columns crop_op s (NonNegative w) = stack_width s > w ==>
-    let (ops, i_out) = crop_op_display_ops crop_op w (stack_image s)
-    in verify_all_spans_have_width i_out ops w
+widthCropOutputColumns :: (Int -> Image -> Image) ->
+                          SingleAttrSingleSpanStack ->
+                          NonNegative Int ->
+                          Property
+widthCropOutputColumns cropOp s (NonNegative w) = stackWidth s > w ==>
+    let (ops, iOut) = cropOpDisplayOps cropOp w (stackImage s)
+    in verifyAllSpansHaveWidth iOut ops w
 
-height_crop_output_columns :: (Int -> Image -> Image) ->
-                              SingleAttrSingleSpanStack ->
-                              NonNegative Int ->
-                              Property
-height_crop_output_columns crop_op s (NonNegative h) = stack_height s > h ==>
-    let (ops, _) = crop_op_display_ops crop_op h (stack_image s)
-    in display_ops_rows ops == h
+heightCropOutputColumns :: (Int -> Image -> Image) ->
+                           SingleAttrSingleSpanStack ->
+                           NonNegative Int ->
+                           Property
+heightCropOutputColumns cropOp s (NonNegative h) = stackHeight s > h ==>
+    let (ops, _) = cropOpDisplayOps cropOp h (stackImage s)
+    in displayOpsRows ops == h
 
-crop_right_output_columns :: SingleAttrSingleSpanStack -> NonNegative Int -> Property
-crop_right_output_columns = width_crop_output_columns crop_right
+cropRightOutputColumns :: SingleAttrSingleSpanStack -> NonNegative Int -> Property
+cropRightOutputColumns = widthCropOutputColumns cropRight
 
-crop_left_output_columns :: SingleAttrSingleSpanStack -> NonNegative Int -> Property
-crop_left_output_columns = width_crop_output_columns crop_left
+cropLeftOutputColumns :: SingleAttrSingleSpanStack -> NonNegative Int -> Property
+cropLeftOutputColumns = widthCropOutputColumns cropLeft
 
-crop_top_output_rows :: SingleAttrSingleSpanStack -> NonNegative Int -> Property
-crop_top_output_rows = height_crop_output_columns crop_top
+cropTopOutputRows :: SingleAttrSingleSpanStack -> NonNegative Int -> Property
+cropTopOutputRows = heightCropOutputColumns cropTop
 
-crop_bottom_output_rows :: SingleAttrSingleSpanStack -> NonNegative Int -> Property
-crop_bottom_output_rows = height_crop_output_columns crop_bottom
+cropBottomOutputRows :: SingleAttrSingleSpanStack -> NonNegative Int -> Property
+cropBottomOutputRows = heightCropOutputColumns cropBottom
 
 -- TODO: known benign failure.
-crop_right_and_left_rejoined_equivalence :: SingleAttrSingleSpanStack -> Property
-crop_right_and_left_rejoined_equivalence stack = image_width (stack_image stack) `mod` 2 == 0 ==>
-    let i = stack_image stack
+cropRightAndLeftRejoinedEquivalence :: SingleAttrSingleSpanStack -> Property
+cropRightAndLeftRejoinedEquivalence stack = imageWidth (stackImage stack) `mod` 2 == 0 ==>
+    let i = stackImage stack
         -- the right part is made by cropping the image from the left.
-        i_r = crop_left (image_width i `div` 2) i
+        i_r = cropLeft (imageWidth i `div` 2) i
         -- the left part is made by cropping the image from the right
-        i_l = crop_right (image_width i `div` 2) i
+        i_l = cropRight (imageWidth i `div` 2) i
         i_alt = i_l <|> i_r
-        i_ops = display_ops_for_image i
-        i_alt_ops = display_ops_for_image i_alt
-    in verify_ops_equality i_ops i_alt_ops
+        i_ops = displayOpsForImage i
+        i_alt_ops = displayOpsForImage i_alt
+    in verifyOpsEquality i_ops i_alt_ops
 
-crop_top_and_bottom_rejoined_equivalence :: SingleAttrSingleSpanStack -> Property
-crop_top_and_bottom_rejoined_equivalence stack = image_height (stack_image stack) `mod` 2 == 0 ==>
-    let i = stack_image stack
+cropTopAndBottomRejoinedEquivalence :: SingleAttrSingleSpanStack -> Property
+cropTopAndBottomRejoinedEquivalence stack = imageHeight (stackImage stack) `mod` 2 == 0 ==>
+    let i = stackImage stack
         -- the top part is made by cropping the image from the bottom.
-        i_t = crop_bottom (image_height i `div` 2) i
+        i_t = cropBottom (imageHeight i `div` 2) i
         -- the bottom part is made by cropping the image from the top.
-        i_b = crop_top (image_height i `div` 2) i
+        i_b = cropTop (imageHeight i `div` 2) i
         i_alt = i_t <-> i_b
-    in display_ops_for_image i == display_ops_for_image i_alt
+    in displayOpsForImage i == displayOpsForImage i_alt
 
 tests :: IO [Test]
 tests = return 
     [ verify "cropping from the bottom produces display operations covering the expected rows"
-        crop_bottom_output_rows
+        cropBottomOutputRows
     , verify "cropping from the top produces display operations covering the expected rows"
-        crop_top_output_rows
+        cropTopOutputRows
     , verify "cropping from the left produces display operations covering the expected columns"
-        crop_left_output_columns
+        cropLeftOutputColumns
     , verify "cropping from the right produces display operations covering the expected columns"
-        crop_right_output_columns
+        cropRightOutputColumns
     -- TODO: known benign failure.
     -- , verify "the output of a stack is the same as that stack cropped left & right and joined together"
-    --     crop_right_and_left_rejoined_equivalence
+    --     cropRightAndLeftRejoinedEquivalence
     , verify "the output of a stack is the same as that stack cropped top & bottom and joined together"
-        crop_top_and_bottom_rejoined_equivalence
+        cropTopAndBottomRejoinedEquivalence
     ]
 

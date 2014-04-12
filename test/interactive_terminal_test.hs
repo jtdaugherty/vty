@@ -25,11 +25,11 @@ import qualified System.Environment as Env
 import System.IO ( hFlush, hPutStr, hPutBuf, stdout )
 
 main = do
-    print_intro
+    printIntro
 
-output_file_path = "test_results.list"
+outputFilePath = "test_results.list"
 
-print_intro = do
+printIntro = do
     putStr $ [s| 
 This is an interactive verification program for the terminal input and output
 support of the VTY library. This will ask a series of questions about what you
@@ -37,7 +37,7 @@ see on screen. The goal is to verify that VTY's output and input support
 performs as expected with your terminal.
 
 This program produces a file named 
-    |] ++ output_file_path ++ [s| 
+    |] ++ outputFilePath ++ [s| 
 in the current directory that contains the results for each test assertion. This
 can  be emailed to coreyoconnor@gmail.com and used by the VTY authors to improve
 support for your terminal. No personal information is contained in the report.
@@ -72,35 +72,35 @@ with the test_results.list file pasted into the issue. The issue summary can
 mention the specific tests that failed or just say "interactive terminal test
 failure".
 |]
-    wait_for_return
-    results <- do_test_menu 1
-    env_attributes <- mapM ( \env_name -> Control.Exception.catch ( Env.getEnv env_name >>= return . (,) env_name ) 
+    waitForReturn
+    results <- doTestMenu 1
+    envAttributes <- mapM ( \env_name -> Control.Exception.catch ( Env.getEnv env_name >>= return . (,) env_name ) 
                                                 ( \ (_ :: SomeException) -> return (env_name, "") ) 
-                           ) 
-                           [ "TERM", "COLORTERM", "LANG", "TERM_PROGRAM", "XTERM_VERSION" ]
-    t <- output_for_current_terminal
-    let results_txt = show env_attributes ++ "\n" 
-                      ++ terminal_ID t ++ "\n"
-                      ++ show results ++ "\n"
-    release_terminal t
-    writeFile output_file_path results_txt
+                          ) 
+                          [ "TERM", "COLORTERM", "LANG", "TERM_PROGRAM", "XTERM_VERSION" ]
+    t <- outputForCurrentTerminal
+    let resultsTxt = show envAttributes ++ "\n" 
+                     ++ terminalID t ++ "\n"
+                     ++ show results ++ "\n"
+    releaseTerminal t
+    writeFile outputFilePath resultsTxt
 
-wait_for_return = do
+waitForReturn = do
     putStr "\n(press return to continue)"
     hFlush stdout
     getLine
 
-test_menu :: [(String, Test)]
-test_menu = zip (map show [1..]) all_tests
+testMenu :: [(String, Test)]
+testMenu = zip (map show [1..]) allTests
 
-do_test_menu :: Int -> IO [(String, Bool)]
-do_test_menu next_ID 
-    | next_ID > length all_tests = do
-        putStrLn $ "Done! Please email the " ++ output_file_path ++ " file to coreyoconnor@gmail.com"
+doTestMenu :: Int -> IO [(String, Bool)]
+doTestMenu nextID 
+    | nextID > length allTests = do
+        putStrLn $ "Done! Please email the " ++ outputFilePath ++ " file to coreyoconnor@gmail.com"
         return []
     | otherwise = do
-        display_test_menu
-        putStrLn $ "Press return to start with #" ++ show next_ID ++ "."
+        displayTestMenu
+        putStrLn $ "Press return to start with #" ++ show nextID ++ "."
         putStrLn "Enter a test number to perform only that test."
         putStrLn "q (or control-C) to quit."
         putStr "> "
@@ -109,98 +109,98 @@ do_test_menu next_ID
         case s of
             "q" -> return mempty
             "" -> do 
-                r <- run_test $ show next_ID 
-                rs <- do_test_menu ( next_ID + 1 )
+                r <- runTest $ show nextID 
+                rs <- doTestMenu ( nextID + 1 )
                 return $ r : rs
-            i | isJust ( lookup i test_menu ) -> do
-                r <- run_test i 
-                rs <- do_test_menu ( read i + 1 )
+            i | isJust ( lookup i testMenu ) -> do
+                r <- runTest i 
+                rs <- doTestMenu ( read i + 1 )
                 return $ r : rs
         where
-            display_test_menu 
-                = mapM_ display_test_menu' test_menu
-            display_test_menu' ( i, t ) 
-                = putStrLn $ ( if i == show next_ID 
+            displayTestMenu 
+                = mapM_ displayTestMenu' testMenu
+            displayTestMenu' ( i, t ) 
+                = putStrLn $ ( if i == show nextID 
                                 then "> " 
                                 else "  "
-                             ) ++ i ++ ". " ++ test_name t
+                             ) ++ i ++ ". " ++ testName t
 
-run_test :: String -> IO (String, Bool)
-run_test i = do
-    let t = fromJust $ lookup i test_menu 
-    print_summary t
-    wait_for_return
-    test_action t
-    r <- confirm_results t
-    return (test_ID t, r)
+runTest :: String -> IO (String, Bool)
+runTest i = do
+    let t = fromJust $ lookup i testMenu 
+    printSummary t
+    waitForReturn
+    testAction t
+    r <- confirmResults t
+    return (testID t, r)
 
-default_success_confirm_results = do
+defaultSuccessConfirmResults = do
     putStr "\n"
     putStr "[Y/n] "
     hFlush stdout
     r <- getLine
     case r of
-        "" -> return True
+        ""  -> return True
         "y" -> return True
         "Y" -> return True
         "n" -> return False
 
 data Test = Test
-    { test_name :: String
-    , test_ID :: String
-    , test_action :: IO ()
-    , print_summary :: IO ()
-    , confirm_results :: IO Bool
+    { testName :: String
+    , testID :: String
+    , testAction :: IO ()
+    , printSummary :: IO ()
+    , confirmResults :: IO Bool
     }
 
-all_tests 
-    = [ reserve_output_test 
-      , display_bounds_test_0
-      , display_bounds_test_1
-      , display_bounds_test_2
-      , display_bounds_test_3
-      , unicode_single_width_0
-      , unicode_single_width_1
-      , unicode_double_width_0
-      , unicode_double_width_1
-      , attributes_test_0
-      , attributes_test_1
-      , attributes_test_2
-      , attributes_test_3
-      , attributes_test_4
-      , attributes_test_5
-      , inline_test_0
-      , inline_test_1
-      , inline_test_2
-      , cursor_hide_test_0
-      , vert_crop_test_0
-      , vert_crop_test_1
-      , vert_crop_test_2
-      , vert_crop_test_3
-      , horiz_crop_test_0
-      , horiz_crop_test_1
-      , horiz_crop_test_2
-      , horiz_crop_test_3
-      , layer_0
-      , layer_1
+allTests 
+    = [ reserveOutputTest 
+      , displayBoundsTest0
+      , displayBoundsTest1
+      , displayBoundsTest2
+      , displayBoundsTest3
+      , unicodeSingleWidth0
+      , unicodeSingleWidth1
+      , unicodeDoubleWidth0
+      , unicodeDoubleWidth1
+      , attributesTest0
+      , attributesTest1
+      , attributesTest2
+      , attributesTest3
+      , attributesTest4
+      , attributesTest5
+      , inlineTest0
+      , inlineTest1
+      , inlineTest2
+      , cursorHideTest0
+      , vertCropTest0
+      , vertCropTest1
+      , vertCropTest2
+      , vertCropTest3
+      , horizCropTest0
+      , horizCropTest1
+      , horizCropTest2
+      , horizCropTest3
+      , layer0
+      , layer1
       ]
 
-reserve_output_test = Test 
-    { test_name = "Initialize and reserve terminal output then restore previous state."
-    , test_ID = "reserve_output_test"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
+reserveOutputTest = Test 
+    { testName = "Initialize and reserve terminal output then restore previous state."
+    , testID = "reserveOutputTest"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
         putStrLn "Line 1"
         putStrLn "Line 2"
         putStrLn "Line 3"
         putStrLn "Line 4 (press return)"
         hFlush stdout
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = do
+    , printSummary = do
         putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared. 
@@ -211,123 +211,123 @@ After return is pressed for the second time this test then:
     * The screen containing the test summary should be restored;
     * The cursor is visible.
 |]
-    , confirm_results = do
+    , confirmResults = do
         putStr $ [s|
 Did the test output match the description?
 |]
-        default_success_confirm_results
+        defaultSuccessConfirmResults
     }
 
-display_bounds_test_0 = Test
-    { test_name = "Verify display bounds are correct test 0: Using spaces."
-    , test_ID = "display_bounds_test_0"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        (w,h) <- display_bounds t
-        let row_0 = replicate (fromEnum w) 'X' ++ "\n"
-            row_h = replicate (fromEnum w - 1) 'X'
-            row_n = "X" ++ replicate (fromEnum w - 2) ' ' ++ "X\n"
-            image = row_0 ++ (concat $ replicate (fromEnum h - 2) row_n) ++ row_h
+displayBoundsTest0 = Test
+    { testName = "Verify display bounds are correct test 0: Using spaces."
+    , testID = "displayBoundsTest0"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        (w,h) <- displayBounds t
+        let row0 = replicate (fromEnum w) 'X' ++ "\n"
+            rowH = replicate (fromEnum w - 1) 'X'
+            rowN = "X" ++ replicate (fromEnum w - 2) ' ' ++ "X\n"
+            image = row0 ++ (concat $ replicate (fromEnum h - 2) rowN) ++ rowH
         putStr image
         hFlush stdout
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = display_bounds_test_summary True
-    , confirm_results = generic_output_match_confirm
+    , printSummary = displayBoundsTestSummary True
+    , confirmResults = genericOutputMatchConfirm
     }
 
-display_bounds_test_1 = Test
-    { test_name = "Verify display bounds are correct test 0: Using cursor movement."
-    , test_ID = "display_bounds_test_1"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        (w,h) <- display_bounds t
-        set_cursor_pos t 0 0
-        let row_0 = replicate (fromEnum w) 'X' ++ "\n"
-        putStr row_0
+displayBoundsTest1 = Test
+    { testName = "Verify display bounds are correct test 0: Using cursor movement."
+    , testID = "displayBoundsTest1"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        (w,h) <- displayBounds t
+        setCursorPos t 0 0
+        let row0 = replicate (fromEnum w) 'X' ++ "\n"
+        putStr row0
         forM_ [1 .. h - 2] $ \y -> do
-            set_cursor_pos t 0 y
+            setCursorPos t 0 y
             putStr "X"
             hFlush stdout
-            set_cursor_pos t (w - 1) y
+            setCursorPos t (w - 1) y
             putStr "X"
             hFlush stdout
-        set_cursor_pos t 0 (h - 1)
-        let row_h = replicate (fromEnum w - 1) 'X'
-        putStr row_h
+        setCursorPos t 0 (h - 1)
+        let rowH = replicate (fromEnum w - 1) 'X'
+        putStr rowH
         hFlush stdout
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = display_bounds_test_summary True
-    , confirm_results = generic_output_match_confirm
+    , printSummary = displayBoundsTestSummary True
+    , confirmResults = genericOutputMatchConfirm
     }
 
-display_bounds_test_2 = Test
-    { test_name = "Verify display bounds are correct test 0: Using Image ops."
-    , test_ID = "display_bounds_test_2"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        bounds@(w,h) <- display_bounds t
-        let first_row = horiz_cat $ replicate (fromEnum w) (char def_attr 'X')
-            middle_rows = vert_cat $ replicate (fromEnum h - 2) middle_row
-            middle_row = (char def_attr 'X') <|> background_fill (w - 2) 1 <|> (char def_attr 'X')
-            end_row = first_row
-            image = first_row <-> middle_rows <-> end_row
-            pic = (pic_for_image image) { pic_cursor = Cursor (w - 1) (h - 1) }
-        d <- display_context t bounds
-        output_picture d pic
+displayBoundsTest2 = Test
+    { testName = "Verify display bounds are correct test 0: Using Image ops."
+    , testID = "displayBoundsTest2"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        bounds@(w,h) <- displayBounds t
+        let firstRow = horizCat $ replicate (fromEnum w) (char defAttr 'X')
+            middleRows = vertCat $ replicate (fromEnum h - 2) middleRow
+            middleRow = (char defAttr 'X') <|> backgroundFill (w - 2) 1 <|> (char defAttr 'X')
+            endRow = firstRow
+            image = firstRow <-> middleRows <-> endRow
+            pic = (picForImage image) { picCursor = Cursor (w - 1) (h - 1) }
+        d <- displayContext t bounds
+        outputPicture d pic
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = display_bounds_test_summary True
-    , confirm_results = generic_output_match_confirm
+    , printSummary = displayBoundsTestSummary True
+    , confirmResults = genericOutputMatchConfirm
     }
 
-display_bounds_test_3 = Test
-    { test_name = "Verify display bounds are correct test 0: Hide cursor; Set cursor pos."
-    , test_ID = "display_bounds_test_3"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        (w,h) <- display_bounds t
-        hide_cursor t
-        set_cursor_pos t 0 0
-        let row_0 = replicate (fromEnum w) 'X'
-        putStrLn row_0
+displayBoundsTest3 = Test
+    { testName = "Verify display bounds are correct test 0: Hide cursor; Set cursor pos."
+    , testID = "displayBoundsTest3"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        (w,h) <- displayBounds t
+        hideCursor t
+        setCursorPos t 0 0
+        let row0 = replicate (fromEnum w) 'X'
+        putStrLn row0
         forM_ [1 .. h - 2] $ \y -> do
-            set_cursor_pos t 0 y
+            setCursorPos t 0 y
             putStr "X"
             hFlush stdout
-            set_cursor_pos t (w - 1) y
+            setCursorPos t (w - 1) y
             putStr "X"
             hFlush stdout
-        set_cursor_pos t 0 (h - 1)
-        let row_h = row_0
-        putStr row_h
+        setCursorPos t 0 (h - 1)
+        let rowH = row0
+        putStr rowH
         hFlush stdout
         getLine
-        show_cursor t
-        release_display t
-        release_terminal t
+        showCursor t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = display_bounds_test_summary False
-    , confirm_results = generic_output_match_confirm
+    , printSummary = displayBoundsTestSummary False
+    , confirmResults = genericOutputMatchConfirm
     }
 
-display_bounds_test_summary has_cursor = do
+displayBoundsTestSummary hasCursor = do
     putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
 |]
-    if has_cursor
+    if hasCursor
         then putStr "    1. The cursor will be visible."
         else putStr "    1. The cursor will NOT be visible."
     putStr [s|
@@ -338,7 +338,7 @@ Once return is pressed:
          |XXXXXXXXXXXXX|
          |X           X||]
 
-    if has_cursor
+    if hasCursor
         then putStr $ [s|
 
          |XXXXXXXXXXXXC| |]
@@ -359,11 +359,11 @@ After return is pressed for the second time:
     1. The cursor should be visible.
 |]
 
-generic_output_match_confirm = do
+genericOutputMatchConfirm = do
     putStr $ [s|
 Did the test output match the description?
 |]
-    default_success_confirm_results
+    defaultSuccessConfirmResults
 
 -- Explicitely definethe bytes that encode each example text.
 -- This avoids any issues with how the compiler represents string literals.
@@ -376,21 +376,21 @@ Did the test output match the description?
 --
 -- txt_0 = ↑↑↓↓←→←→BA
 
-utf8_txt_0 :: [[Word8]]
-utf8_txt_0 = [ [ 0xe2 , 0x86 , 0x91 ]
-             , [ 0xe2 , 0x86 , 0x91 ]
-             , [ 0xe2 , 0x86 , 0x93 ]
-             , [ 0xe2 , 0x86 , 0x93 ]
-             , [ 0xe2 , 0x86 , 0x90 ]
-             , [ 0xe2 , 0x86 , 0x92 ]
-             , [ 0xe2 , 0x86 , 0x90 ]
-             , [ 0xe2 , 0x86 , 0x92 ]
-             , [ 0x42 ]
-             , [ 0x41 ]
-             ]
+utf8Txt0 :: [[Word8]]
+utf8Txt0 = [ [ 0xe2 , 0x86 , 0x91 ]
+           , [ 0xe2 , 0x86 , 0x91 ]
+           , [ 0xe2 , 0x86 , 0x93 ]
+           , [ 0xe2 , 0x86 , 0x93 ]
+           , [ 0xe2 , 0x86 , 0x90 ]
+           , [ 0xe2 , 0x86 , 0x92 ]
+           , [ 0xe2 , 0x86 , 0x90 ]
+           , [ 0xe2 , 0x86 , 0x92 ]
+           , [ 0x42 ]
+           , [ 0x41 ]
+           ]
 
-iso_10646_txt_0 :: String
-iso_10646_txt_0 = map toEnum
+iso10646Txt0 :: String
+iso10646Txt0 = map toEnum
     [ 8593 
     , 8593
     , 8595
@@ -403,46 +403,46 @@ iso_10646_txt_0 = map toEnum
     , 65
     ]
 
-unicode_single_width_0 = Test
-    { test_name = "Verify terminal can display unicode single-width characters. (Direct UTF-8)"
-    , test_ID = "unicode_single_width_0"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        hide_cursor t
-        withArrayLen (concat utf8_txt_0) (flip $ hPutBuf stdout)
+unicodeSingleWidth0 = Test
+    { testName = "Verify terminal can display unicode single-width characters. (Direct UTF-8)"
+    , testID = "unicodeSingleWidth0"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        hideCursor t
+        withArrayLen (concat utf8Txt0) (flip $ hPutBuf stdout)
         hPutStr stdout "\n"
         hPutStr stdout "0123456789\n"
         hFlush stdout
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = unicode_single_width_summary
-    , confirm_results = generic_output_match_confirm
+    , printSummary = unicodeSingleWidthSummary
+    , confirmResults = genericOutputMatchConfirm
     }
 
-unicode_single_width_1 = Test
-    { test_name = "Verify terminal can display unicode single-width characters. (Image ops)"
-    , test_ID = "unicode_single_width_1"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        let pic = pic_for_image image
-            image = line_0 <-> line_1
-            line_0 = iso_10646_string def_attr iso_10646_txt_0
-            line_1 = string def_attr "0123456789"
-        d <- display_bounds t >>= display_context t
-        output_picture d pic
+unicodeSingleWidth1 = Test
+    { testName = "Verify terminal can display unicode single-width characters. (Image ops)"
+    , testID = "unicodeSingleWidth1"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        let pic = picForImage image
+            image = line0 <-> line1
+            line0 = iso10646String defAttr iso10646Txt0
+            line1 = string defAttr "0123456789"
+        d <- displayBounds t >>= displayContext t
+        outputPicture d pic
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = unicode_single_width_summary
-    , confirm_results = generic_output_match_confirm
+    , printSummary = unicodeSingleWidthSummary
+    , confirmResults = genericOutputMatchConfirm
     }
 
-unicode_single_width_summary = putStr [s|
+unicodeSingleWidthSummary = putStr [s|
 Once return is pressed:
     0. The screen will be cleared.
     1. The cursor will be hidden.
@@ -476,55 +476,55 @@ After return is pressed for the second time:
 
 -- The second example is a unicode string containing double-width glyphs
 -- 你好吗
-utf8_txt_1 :: [[Word8]]
-utf8_txt_1 = [ [0xe4,0xbd,0xa0]
-             , [0xe5,0xa5,0xbd]
-             , [0xe5,0x90,0x97]
-             ]
+utf8Txt1 :: [[Word8]]
+utf8Txt1 = [ [0xe4,0xbd,0xa0]
+           , [0xe5,0xa5,0xbd]
+           , [0xe5,0x90,0x97]
+           ]
 
-iso_10646_txt_1 :: String
-iso_10646_txt_1 = map toEnum [20320,22909,21527]
+iso10646Txt1 :: String
+iso10646Txt1 = map toEnum [20320,22909,21527]
 
-unicode_double_width_0 = Test
-    { test_name = "Verify terminal can display unicode double-width characters. (Direct UTF-8)"
-    , test_ID = "unicode_double_width_0"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        hide_cursor t
-        withArrayLen (concat utf8_txt_1) (flip $ hPutBuf stdout)
+unicodeDoubleWidth0 = Test
+    { testName = "Verify terminal can display unicode double-width characters. (Direct UTF-8)"
+    , testID = "unicodeDoubleWidth0"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        hideCursor t
+        withArrayLen (concat utf8Txt1) (flip $ hPutBuf stdout)
         hPutStr stdout "\n"
         hPutStr stdout "012345\n"
         hFlush stdout
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = unicode_double_width_summary
-    , confirm_results = generic_output_match_confirm
+    , printSummary = unicodeDoubleWidthSummary
+    , confirmResults = genericOutputMatchConfirm
     }
 
-unicode_double_width_1 = Test
-    { test_name = "Verify terminal can display unicode double-width characters. (Image ops)"
-    , test_ID = "unicode_double_width_1"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        let pic = pic_for_image image
-            image = line_0 <-> line_1
-            line_0 = iso_10646_string def_attr iso_10646_txt_1
-            line_1 = string def_attr "012345"
-        d <- display_bounds t >>= display_context t
-        output_picture d pic
+unicodeDoubleWidth1 = Test
+    { testName = "Verify terminal can display unicode double-width characters. (Image ops)"
+    , testID = "unicodeDoubleWidth1"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        let pic = picForImage image
+            image = line0 <-> line1
+            line0 = iso10646String defAttr iso10646Txt1
+            line1 = string defAttr "012345"
+        d <- displayBounds t >>= displayContext t
+        outputPicture d pic
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = unicode_double_width_summary
-    , confirm_results = generic_output_match_confirm
+    , printSummary = unicodeDoubleWidthSummary
+    , confirmResults = genericOutputMatchConfirm
     }
 
-unicode_double_width_summary = putStr [s|
+unicodeDoubleWidthSummary = putStr [s|
 Once return is pressed:
     0. The screen will be cleared.
     1. The cursor will be hidden.
@@ -551,32 +551,32 @@ After return is pressed for the second time:
     1. The cursor should be visible.
 |]
 
-all_colors = zip [ black, red, green, yellow, blue, magenta, cyan, white ]
-                 [ "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white" ]
+allColors = zip [ black, red, green, yellow, blue, magenta, cyan, white ]
+                [ "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white" ]
 
-all_bright_colors 
-    = zip [ bright_black, bright_red, bright_green, bright_yellow, bright_blue, bright_magenta, bright_cyan, bright_white ]
+allBrightColors 
+    = zip [ brightBlack, brightRed, brightGreen, brightYellow, brightBlue, brightMagenta, brightCyan, brightWhite ]
           [ "bright black", "bright red", "bright green", "bright yellow", "bright blue", "bright magenta", "bright cyan", "bright white" ]
 
-attributes_test_0 = Test 
-    { test_name = "Character attributes: foreground colors."
-    , test_ID = "attributes_test_0"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        let pic = pic_for_image image
-            image = border <|> column_0 <|> border <|> column_1 <|> border
-            column_0 = vert_cat $ map line_with_color all_colors
-            border = vert_cat $ replicate (length all_colors) $ string def_attr " | "
-            column_1 = vert_cat $ map (string def_attr . snd) all_colors
-            line_with_color (c, c_name) = string (def_attr `with_fore_color` c) c_name
-        d <- display_bounds t >>= display_context t
-        output_picture d pic
+attributesTest0 = Test 
+    { testName = "Character attributes: foreground colors."
+    , testID = "attributesTest0"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        let pic = picForImage image
+            image = border <|> column0 <|> border <|> column1 <|> border
+            column0 = vertCat $ map lineWithColor allColors
+            border = vertCat $ replicate (length allColors) $ string defAttr " | "
+            column1 = vertCat $ map (string defAttr . snd) allColors
+            lineWithColor (c, cName) = string (defAttr `withForeColor` c) cName
+        d <- displayBounds t >>= displayContext t
+        outputPicture d pic
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = do
+    , printSummary = do
         putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
@@ -597,32 +597,32 @@ After return is pressed for the second time:
     0. The screen containing the test summary should be restored.
     1. The cursor should be visible.
 |]
-    , confirm_results = do
+    , confirmResults = do
         putStr $ [s|
 Did the test output match the description?
 |]
-        default_success_confirm_results
+        defaultSuccessConfirmResults
     }
 
-attributes_test_1 = Test 
-    { test_name = "Character attributes: background colors."
-    , test_ID = "attributes_test_1"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        let pic = pic_for_image image
-            image = border <|> column_0 <|> border <|> column_1 <|> border
-            column_0 = vert_cat $ map line_with_color all_colors
-            border = vert_cat $ replicate (length all_colors) $ string def_attr " | "
-            column_1 = vert_cat $ map (string def_attr . snd) all_colors
-            line_with_color (c, c_name) = string (def_attr `with_back_color` c) c_name
-        d <- display_bounds t >>= display_context t
-        output_picture d pic
+attributesTest1 = Test 
+    { testName = "Character attributes: background colors."
+    , testID = "attributesTest1"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        let pic = picForImage image
+            image = border <|> column0 <|> border <|> column1 <|> border
+            column0 = vertCat $ map lineWithColor allColors
+            border = vertCat $ replicate (length allColors) $ string defAttr " | "
+            column1 = vertCat $ map (string defAttr . snd) allColors
+            lineWithColor (c, cName) = string (defAttr `withBackColor` c) cName
+        d <- displayBounds t >>= displayContext t
+        outputPicture d pic
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = do
+    , printSummary = do
         putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
@@ -652,34 +652,34 @@ After return is pressed for the second time:
     0. The screen containing the test summary should be restored.
     1. The cursor should be visible.
 |]
-    , confirm_results = do
+    , confirmResults = do
         putStr $ [s|
 Did the test output match the description?
 |]
-        default_success_confirm_results
+        defaultSuccessConfirmResults
     }
 
-attributes_test_2 = Test 
-    { test_name = "Character attributes: Vivid foreground colors."
-    , test_ID = "attributes_test_2"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        let pic = pic_for_image image
-            image = horiz_cat [border, column_0, border, column_1, border, column_2, border]
-            border = vert_cat $ replicate (length all_colors) $ string def_attr " | "
-            column_0 = vert_cat $ map line_with_color_0 all_colors
-            column_1 = vert_cat $ map line_with_color_1 all_bright_colors
-            column_2 = vert_cat $ map (string def_attr . snd) all_colors
-            line_with_color_0 (c, c_name) = string (def_attr `with_fore_color` c) c_name
-            line_with_color_1 (c, c_name) = string (def_attr `with_fore_color` c) c_name
-        d <- display_bounds t >>= display_context t
-        output_picture d pic
+attributesTest2 = Test 
+    { testName = "Character attributes: Vivid foreground colors."
+    , testID = "attributesTest2"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        let pic = picForImage image
+            image = horizCat [border, column0, border, column1, border, column2, border]
+            border = vertCat $ replicate (length allColors) $ string defAttr " | "
+            column0 = vertCat $ map lineWithColor0 allColors
+            column1 = vertCat $ map lineWithColor1 allBrightColors
+            column2 = vertCat $ map (string defAttr . snd) allColors
+            lineWithColor0 (c, cName) = string (defAttr `withForeColor` c) cName
+            lineWithColor1 (c, cName) = string (defAttr `withForeColor` c) cName
+        d <- displayBounds t >>= displayContext t
+        outputPicture d pic
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = do
+    , printSummary = do
         putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
@@ -711,34 +711,34 @@ After return is pressed for the second time:
     0. The screen containing the test summary should be restored.
     1. The cursor should be visible.
 |]
-    , confirm_results = do
+    , confirmResults = do
         putStr $ [s|
 Did the test output match the description?
 |]
-        default_success_confirm_results
+        defaultSuccessConfirmResults
     }
 
-attributes_test_3 = Test 
-    { test_name = "Character attributes: Vivid background colors."
-    , test_ID = "attributes_test_3"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        let pic = pic_for_image image
-            image = horiz_cat [border, column_0, border, column_1, border, column_2, border]
-            border = vert_cat $ replicate (length all_colors) $ string def_attr " | "
-            column_0 = vert_cat $ map line_with_color_0 all_colors
-            column_1 = vert_cat $ map line_with_color_1 all_bright_colors
-            column_2 = vert_cat $ map (string def_attr . snd) all_colors
-            line_with_color_0 (c, c_name) = string (def_attr `with_back_color` c) c_name
-            line_with_color_1 (c, c_name) = string (def_attr `with_back_color` c) c_name
-        d <- display_bounds t >>= display_context t
-        output_picture d pic
+attributesTest3 = Test 
+    { testName = "Character attributes: Vivid background colors."
+    , testID = "attributesTest3"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        let pic = picForImage image
+            image = horizCat [border, column0, border, column1, border, column2, border]
+            border = vertCat $ replicate (length allColors) $ string defAttr " | "
+            column0 = vertCat $ map lineWithColor0 allColors
+            column1 = vertCat $ map lineWithColor1 allBrightColors
+            column2 = vertCat $ map (string defAttr . snd) allColors
+            lineWithColor0 (c, cName) = string (defAttr `withBackColor` c) cName
+            lineWithColor1 (c, cName) = string (defAttr `withBackColor` c) cName
+        d <- displayBounds t >>= displayContext t
+        outputPicture d pic
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = do
+    , printSummary = do
         putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
@@ -778,43 +778,43 @@ After return is pressed for the second time:
     0. The screen containing the test summary should be restored.
     1. The cursor should be visible.
 |]
-    , confirm_results = do
+    , confirmResults = do
         putStr $ [s|
 Did the test output match the description?
 |]
-        default_success_confirm_results
+        defaultSuccessConfirmResults
     }
 
-attr_combos = 
+attrCombos = 
     [ ( "default", id )
-    , ( "bold", flip with_style bold )
-    , ( "blink", flip with_style blink )
-    , ( "underline", flip with_style underline )
-    , ( "bold + blink", flip with_style (bold + blink) )
-    , ( "bold + underline", flip with_style (bold + underline) )
-    , ( "underline + blink", flip with_style (underline + blink) )
-    , ( "bold + blink + underline", flip with_style (bold + blink + underline) )
+    , ( "bold", flip withStyle bold )
+    , ( "blink", flip withStyle blink )
+    , ( "underline", flip withStyle underline )
+    , ( "bold + blink", flip withStyle (bold + blink) )
+    , ( "bold + underline", flip withStyle (bold + underline) )
+    , ( "underline + blink", flip withStyle (underline + blink) )
+    , ( "bold + blink + underline", flip withStyle (bold + blink + underline) )
     ]
 
-attributes_test_4 = Test 
-    { test_name = "Character attributes: Bold; Blink; Underline."
-    , test_ID = "attributes_test_4"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        let pic = pic_for_image image
-            image = horiz_cat [border, column_0, border, column_1, border]
-            border = vert_cat $ replicate (length attr_combos) $ string def_attr " | "
-            column_0 = vert_cat $ map line_with_attrs attr_combos
-            column_1 = vert_cat $ map (string def_attr . fst) attr_combos
-            line_with_attrs (desc, attr_f) = string (attr_f def_attr) desc
-        d <- display_bounds t >>= display_context t
-        output_picture d pic
+attributesTest4 = Test 
+    { testName = "Character attributes: Bold; Blink; Underline."
+    , testID = "attributesTest4"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        let pic = picForImage image
+            image = horizCat [border, column0, border, column1, border]
+            border = vertCat $ replicate (length attrCombos) $ string defAttr " | "
+            column0 = vertCat $ map lineWithAttrs attrCombos
+            column1 = vertCat $ map (string defAttr . fst) attrCombos
+            lineWithAttrs (desc, attrF) = string (attrF defAttr) desc
+        d <- displayBounds t >>= displayContext t
+        outputPicture d pic
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = do
+    , printSummary = do
         putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
@@ -841,31 +841,31 @@ After return is pressed for the second time:
     0. The screen containing the test summary should be restored.
     1. The cursor should be visible.
 |]
-    , confirm_results = do
+    , confirmResults = do
         putStr $ [s|
 Did the test output match the description?
 |]
-        default_success_confirm_results
+        defaultSuccessConfirmResults
     }
 
-attributes_test_5 = Test 
-    { test_name = "Character attributes: 240 color palette"
-    , test_ID = "attributes_test_5"
-    , test_action = do
-        t <- output_for_current_terminal
-        reserve_display t
-        let pic = pic_for_image image
-            image = vert_cat $ map horiz_cat $ split_color_images color_images
-            color_images = map (\i -> string (current_attr `with_back_color` Color240 i) " ") [0..239]
-            split_color_images [] = []
-            split_color_images is = (take 20 is ++ [string def_attr " "]) : (split_color_images (drop 20 is))
-        d <- display_bounds t >>= display_context t
-        output_picture d pic
+attributesTest5 = Test 
+    { testName = "Character attributes: 240 color palette"
+    , testID = "attributesTest5"
+    , testAction = do
+        t <- outputForCurrentTerminal
+        reserveDisplay t
+        let pic = picForImage image
+            image = vertCat $ map horizCat $ splitColorImages colorImages
+            colorImages = map (\i -> string (currentAttr `withBackColor` Color240 i) " ") [0..239]
+            splitColorImages [] = []
+            splitColorImages is = (take 20 is ++ [string defAttr " "]) : (splitColorImages (drop 20 is))
+        d <- displayBounds t >>= displayContext t
+        outputPicture d pic
         getLine
-        release_display t
-        release_terminal t
+        releaseDisplay t
+        releaseTerminal t
         return ()
-    , print_summary = do
+    , printSummary = do
         putStr $ [s|
 Once return is pressed:
     0. The screen will be cleared.
@@ -879,290 +879,290 @@ After return is pressed for the second time:
     0. The screen containing the test summary should be restored.
     1. The cursor should be visible.
 |]
-    , confirm_results = do
+    , confirmResults = do
         putStr $ [s|
 Did the test output match the description?
 |]
-        default_success_confirm_results
+        defaultSuccessConfirmResults
     }
 
-inline_test_0 = Test
-    { test_name = "Verify styled output can be performed without clearing the screen."
-    , test_ID = "inline_test_0"
-    , test_action = do
+inlineTest0 = Test
+    { testName = "Verify styled output can be performed without clearing the screen."
+    , testID = "inlineTest0"
+    , testAction = do
         putStrLn "line 1."
-        put_attr_change_ $ back_color red >> apply_style underline
+        putAttrChange_ $ backColor red >> applyStyle underline
         putStrLn "line 2."
-        put_attr_change_ $ default_all
+        putAttrChange_ $ defaultAll
         putStrLn "line 3."
-    , print_summary = putStr $ [s|
+    , printSummary = putStr $ [s|
 lines are in order.
 The second line "line 2" should have a red background and the text underline.
 The third line "line 3" should be drawn in the same style as the first line.
 |]
 
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-inline_test_1 = Test
-    { test_name = "Verify styled output can be performed without clearing the screen."
-    , test_ID = "inline_test_1"
-    , test_action = do
+inlineTest1 = Test
+    { testName = "Verify styled output can be performed without clearing the screen."
+    , testID = "inlineTest1"
+    , testAction = do
         putStr "Not styled. "
-        put_attr_change_ $ back_color red >> apply_style underline
+        putAttrChange_ $ backColor red >> applyStyle underline
         putStr " Styled! "
-        put_attr_change_ $ default_all
+        putAttrChange_ $ defaultAll
         putStrLn "Not styled."
-    , print_summary = putStr $ [s|
+    , printSummary = putStr $ [s|
 |]
 
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-inline_test_2 = Test
-    { test_name = "Verify styled output can be performed without clearing the screen."
-    , test_ID = "inline_test_1"
-    , test_action = do
+inlineTest2 = Test
+    { testName = "Verify styled output can be performed without clearing the screen."
+    , testID = "inlineTest1"
+    , testAction = do
         putStr "Not styled. "
-        put_attr_change_ $ back_color red >> apply_style underline
+        putAttrChange_ $ backColor red >> applyStyle underline
         putStr " Styled! "
-        put_attr_change_ $ default_all
+        putAttrChange_ $ defaultAll
         putStr "Not styled.\n"
-    , print_summary = putStr $ [s|
+    , printSummary = putStr $ [s|
 |]
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-cursor_hide_test_0 :: Test
-cursor_hide_test_0 = Test
-    { test_name = "Verify the cursor is hid and re-shown. issue #7"
-    , test_ID = "cursor_hide_test_0"
-    , test_action = do
+cursorHideTest0 :: Test
+cursorHideTest0 = Test
+    { testName = "Verify the cursor is hid and re-shown. issue #7"
+    , testID = "cursorHideTest0"
+    , testAction = do
         vty <- mkVty def
-        show_cursor $ output_iface vty
-        set_cursor_pos (output_iface vty) 5 5
-        next_event vty
-        hide_cursor $ output_iface vty
-        next_event vty
+        showCursor $ outputIface vty
+        setCursorPos (outputIface vty) 5 5
+        nextEvent vty
+        hideCursor $ outputIface vty
+        nextEvent vty
         shutdown vty
         return ()
-    , print_summary = putStr $ [s|
+    , printSummary = putStr $ [s|
     1. verify the cursor is displayed.
     2. press enter
     3. verify the cursor is hid.
     4. press enter.
     5. the display should return to the state before the test.
 |]
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-output_image_and_wait :: Image -> IO ()
-output_image_and_wait image = do
-    let pic = pic_for_image image
-    output_pic_and_wait pic
+outputImageAndWait :: Image -> IO ()
+outputImageAndWait image = do
+    let pic = picForImage image
+    outputPicAndWait pic
 
-output_pic_and_wait :: Picture -> IO ()
-output_pic_and_wait pic = do
-    t <- output_for_current_terminal
-    reserve_display t
-    d <- display_bounds t >>= display_context t
-    output_picture d pic
+outputPicAndWait :: Picture -> IO ()
+outputPicAndWait pic = do
+    t <- outputForCurrentTerminal
+    reserveDisplay t
+    d <- displayBounds t >>= displayContext t
+    outputPicture d pic
     getLine
-    release_display t
-    release_terminal t
+    releaseDisplay t
+    releaseTerminal t
     return ()
     
-vert_crop_test_0 :: Test
-vert_crop_test_0 = Test
-    { test_name = "Verify bottom cropping works as expected with single column chars"
-    , test_ID = "crop_test_0"
-    , test_action = do
-        let block_0 = crop_bottom 2 $ vert_cat $ map (string def_attr) lorum_ipsum
-            block_1 = vert_cat $ map (string def_attr) $ take 2 lorum_ipsum
-            image = block_0 <-> background_fill 10 2 <-> block_1
-        output_image_and_wait image
-    , print_summary = putStr $ [s|
+vertCropTest0 :: Test
+vertCropTest0 = Test
+    { testName = "Verify bottom cropping works as expected with single column chars"
+    , testID = "crop_test_0"
+    , testAction = do
+        let block0 = cropBottom 2 $ vertCat $ map (string defAttr) lorumIpsum
+            block1 = vertCat $ map (string defAttr) $ take 2 lorumIpsum
+            image = block0 <-> backgroundFill 10 2 <-> block1
+        outputImageAndWait image
+    , printSummary = putStr $ [s|
     1. Verify the two text blocks are identical.
     2. press enter.
     3. the display should return to the state before the test.
 |]
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-vert_crop_test_1 :: Test
-vert_crop_test_1 = Test
-    { test_name = "Verify bottom cropping works as expected with double column chars"
-    , test_ID = "crop_test_0"
-    , test_action = do
-        let block_0 = crop_bottom 2 $ vert_cat $ map (string def_attr) lorum_ipsum_chinese
-            block_1 = vert_cat $ map (string def_attr) $ take 2 lorum_ipsum_chinese
-            image = block_0 <-> background_fill 10 2 <-> block_1
-        output_image_and_wait image
-    , print_summary = putStr $ [s|
+vertCropTest1 :: Test
+vertCropTest1 = Test
+    { testName = "Verify bottom cropping works as expected with double column chars"
+    , testID = "crop_test_0"
+    , testAction = do
+        let block0 = cropBottom 2 $ vertCat $ map (string defAttr) lorumIpsumChinese
+            block1 = vertCat $ map (string defAttr) $ take 2 lorumIpsumChinese
+            image = block0 <-> backgroundFill 10 2 <-> block1
+        outputImageAndWait image
+    , printSummary = putStr $ [s|
     1. Verify the two text blocks are identical.
     2. press enter.
     3. the display should return to the state before the test.
 |]
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-vert_crop_test_2 :: Test
-vert_crop_test_2 = Test
-    { test_name = "Verify top cropping works as expected with single column chars"
-    , test_ID = "crop_test_0"
-    , test_action = do
-        let block_0 = crop_top 2 $ vert_cat $ map (string def_attr) lorum_ipsum
-            block_1 = vert_cat $ map (string def_attr) $ drop (length lorum_ipsum - 2) lorum_ipsum
-            image = block_0 <-> background_fill 10 2 <-> block_1
-        output_image_and_wait image
-    , print_summary = putStr $ [s|
+vertCropTest2 :: Test
+vertCropTest2 = Test
+    { testName = "Verify top cropping works as expected with single column chars"
+    , testID = "crop_test_2"
+    , testAction = do
+        let block0 = cropTop 2 $ vertCat $ map (string defAttr) lorumIpsum
+            block1 = vertCat $ map (string defAttr) $ drop (length lorumIpsum - 2) lorumIpsum
+            image = block0 <-> backgroundFill 10 2 <-> block1
+        outputImageAndWait image
+    , printSummary = putStr $ [s|
     1. Verify the two text blocks are identical.
     2. press enter.
     3. the display should return to the state before the test.
 |]
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-vert_crop_test_3 :: Test
-vert_crop_test_3 = Test
-    { test_name = "Verify top cropping works as expected with double column chars"
-    , test_ID = "crop_test_0"
-    , test_action = do
-        let block_0 = crop_top 2 $ vert_cat $ map (string def_attr) lorum_ipsum_chinese
-            block_1 = vert_cat $ map (string def_attr) $ drop (length lorum_ipsum_chinese - 2 ) lorum_ipsum_chinese
-            image = block_0 <-> background_fill 10 2 <-> block_1
-        output_image_and_wait image
-    , print_summary = putStr $ [s|
+vertCropTest3 :: Test
+vertCropTest3 = Test
+    { testName = "Verify top cropping works as expected with double column chars"
+    , testID = "crop_test_0"
+    , testAction = do
+        let block0 = cropTop 2 $ vertCat $ map (string defAttr) lorumIpsumChinese
+            block1 = vertCat $ map (string defAttr) $ drop (length lorumIpsumChinese - 2 ) lorumIpsumChinese
+            image = block0 <-> backgroundFill 10 2 <-> block1
+        outputImageAndWait image
+    , printSummary = putStr $ [s|
     1. Verify the two text blocks are identical.
     2. press enter.
     3. the display should return to the state before the test.
 |]
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-horiz_crop_test_0 :: Test
-horiz_crop_test_0 = Test
-    { test_name = "Verify right cropping works as expected with single column chars"
-    , test_ID = "crop_test_0"
-    , test_action = do
-        let base_image = vert_cat $ map (string def_attr) lorum_ipsum
-            cropped_image = crop_right (image_width base_image `div` 2) base_image 
-            image = base_image <-> background_fill 10 2 <-> cropped_image
-        output_image_and_wait image
-    , print_summary = putStr $ [s|
+horizCropTest0 :: Test
+horizCropTest0 = Test
+    { testName = "Verify right cropping works as expected with single column chars"
+    , testID = "crop_test_0"
+    , testAction = do
+        let baseImage = vertCat $ map (string defAttr) lorumIpsum
+            croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage 
+            image = baseImage <-> backgroundFill 10 2 <-> croppedImage
+        outputImageAndWait image
+    , printSummary = putStr $ [s|
     1. Verify the bottom text block is about half the width of the top text block.
     2. press enter.
     3. the display should return to the state before the test.
 |]
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-horiz_crop_test_1 :: Test
-horiz_crop_test_1 = Test
-    { test_name = "Verify right cropping works as expected with double column chars"
-    , test_ID = "crop_test_0"
-    , test_action = do
-        let base_image = vert_cat $ map (string def_attr) lorum_ipsum_chinese
-            cropped_image = crop_right (image_width base_image `div` 2) base_image 
-            image = base_image <-> background_fill 10 2 <-> cropped_image
-        output_image_and_wait image
-    , print_summary = putStr $ [s|
+horizCropTest1 :: Test
+horizCropTest1 = Test
+    { testName = "Verify right cropping works as expected with double column chars"
+    , testID = "crop_test_0"
+    , testAction = do
+        let baseImage = vertCat $ map (string defAttr) lorumIpsumChinese
+            croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage 
+            image = baseImage <-> backgroundFill 10 2 <-> croppedImage
+        outputImageAndWait image
+    , printSummary = putStr $ [s|
     1. Verify the bottom text block is the left half of the top block. Ellipses on the right edge are OK.
     2. press enter.
     3. the display should return to the state before the test.
 |]
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-horiz_crop_test_2 :: Test
-horiz_crop_test_2 = Test
-    { test_name = "Verify left cropping works as expected with single column chars"
-    , test_ID = "crop_test_0"
-    , test_action = do
-        let base_image = vert_cat $ map (string def_attr) lorum_ipsum
-            cropped_image = crop_left (image_width base_image `div` 2) base_image 
-            image = base_image <-> background_fill 10 2 <-> cropped_image
-        output_image_and_wait image
-    , print_summary = putStr $ [s|
+horizCropTest2 :: Test
+horizCropTest2 = Test
+    { testName = "Verify left cropping works as expected with single column chars"
+    , testID = "crop_test_0"
+    , testAction = do
+        let baseImage = vertCat $ map (string defAttr) lorumIpsum
+            croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage 
+            image = baseImage <-> backgroundFill 10 2 <-> croppedImage
+        outputImageAndWait image
+    , printSummary = putStr $ [s|
     1. Verify the bottom text block is the right half of the top text block.
     2. press enter.
     3. the display should return to the state before the test.
 |]
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-horiz_crop_test_3 :: Test
-horiz_crop_test_3 = Test
-    { test_name = "Verify right cropping works as expected with double column chars"
-    , test_ID = "crop_test_0"
-    , test_action = do
-        let base_image = vert_cat $ map (string def_attr) lorum_ipsum_chinese
-            cropped_image = crop_left (image_width base_image `div` 2) base_image 
-            image = base_image <-> background_fill 10 2 <-> cropped_image
-        output_image_and_wait image
-    , print_summary = putStr $ [s|
+horizCropTest3 :: Test
+horizCropTest3 = Test
+    { testName = "Verify right cropping works as expected with double column chars"
+    , testID = "crop_test_0"
+    , testAction = do
+        let baseImage = vertCat $ map (string defAttr) lorumIpsumChinese
+            croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage 
+            image = baseImage <-> backgroundFill 10 2 <-> croppedImage
+        outputImageAndWait image
+    , printSummary = putStr $ [s|
     1. Verify the bottom text block is the right half of the top block. Ellipses on the left edge are OK.
     2. press enter.
     3. the display should return to the state before the test.
 |]
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-layer_0 :: Test
-layer_0 = Test
-    { test_name = "verify layer 0"
-    , test_ID = "layer_0"
-    , test_action = do
-        let upper_image = vert_cat $ map (string def_attr) lorum_ipsum_chinese
-            lower_image = vert_cat $ map (string def_attr) lorum_ipsum
-            p = pic_for_layers [upper_image, lower_image]
-        output_pic_and_wait p
-    , print_summary = putStr $ [s|
+layer0 :: Test
+layer0 = Test
+    { testName = "verify layer 0"
+    , testID = "layer0"
+    , testAction = do
+        let upperImage = vertCat $ map (string defAttr) lorumIpsumChinese
+            lowerImage = vertCat $ map (string defAttr) lorumIpsum
+            p = picForLayers [upperImage, lowerImage]
+        outputPicAndWait p
+    , printSummary = putStr $ [s|
     1. Verify the text block appears to be Chinese text placed on top Latin text.
     2. press enter.
     3. the display should return to the state before the test.
 |]
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-layer_1 :: Test
-layer_1 = Test
-    { test_name = "verify layer 1"
-    , test_ID = "layer_1"
-    , test_action = do
-        let upper_image = vert_cat $ map (string def_attr) lorum_ipsum_chinese
-            block = resize 10 10 upper_image
-            layer_0 = vert_cat $ map (string def_attr) lorum_ipsum
-            layer_1 = char_fill (def_attr `with_back_color` blue) '#' 1000 1000
-        cheesy_anim_0 block [layer_0, layer_1]
-    , print_summary = putStr $ [s|
+layer1 :: Test
+layer1 = Test
+    { testName = "verify layer 1"
+    , testID = "layer1"
+    , testAction = do
+        let upperImage = vertCat $ map (string defAttr) lorumIpsumChinese
+            block = resize 10 10 upperImage
+            layer0 = vertCat $ map (string defAttr) lorumIpsum
+            layer1 = charFill (defAttr `withBackColor` blue) '#' 1000 1000
+        cheesyAnim0 block [layer0, layer1]
+    , printSummary = putStr $ [s|
     1. Verify the text block appears to be Chinese text moving on top a Latin text.
        Which is all on a background of '#' characters over blue.
     2. press enter.
     3. the display should return to the state before the test.
 |]
-    , confirm_results = generic_output_match_confirm
+    , confirmResults = genericOutputMatchConfirm
     }
 
-cheesy_anim_0 :: Image -> [Image] -> IO ()
-cheesy_anim_0 i background = do
-    t <- output_for_current_terminal
-    reserve_display t
-    bounds <- display_bounds t
-    d <- display_context t bounds
+cheesyAnim0 :: Image -> [Image] -> IO ()
+cheesyAnim0 i background = do
+    t <- outputForCurrentTerminal
+    reserveDisplay t
+    bounds <- displayBounds t
+    d <- displayContext t bounds
     forM_ [0..100] $ \t -> do
         let i_offset = translate (t `mod` fst bounds)
                                  (t `div` 2 `mod` snd bounds)
                                  i
-        let pic = pic_for_layers $ i_offset : background
-        output_picture d pic
+        let pic = picForLayers $ i_offset : background
+        outputPicture d pic
         threadDelay 50000
-    release_display t
-    release_terminal t
+    releaseDisplay t
+    releaseTerminal t
     return ()
 
-lorum_ipsum :: [String]
-lorum_ipsum = lines [s|
+lorumIpsum :: [String]
+lorumIpsum = lines [s|
 Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium,
 totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae
 dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit,
@@ -1174,8 +1174,8 @@ commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate v
 molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
 |]
 
-lorum_ipsum_chinese :: [String]
-lorum_ipsum_chinese = lines [s|
+lorumIpsumChinese :: [String]
+lorumIpsumChinese = lines [s|
 輐銛 螷蟞覮 裌覅詵 暕 鴅噮 槶 惝掭掝 婸媥媕 耏胠臿, 汫汭沎 忕汌卣 蚡袀 僣 蒮 瀁瀎瀊 渮湸湤 緌翢,
 腠腶舝 糲蘥蠩 樏殣氀 蒮 蹢鎒 滍 鸄齴 櫧櫋瀩 鬄鵊鵙 莃荶衒, 毸溠 橀 簎艜薤 莃荶衒 翣聜蒢
 斔櫅檷 晛桼桾 拻敁柧 犿玒 膣, 墐 笓粊紒 bacon 鼀齕, 蔝蓶蓨 顊顃餭 姴怤 骱 暕 蹢鎒鎛 藒襓謥 鄻鎟霣

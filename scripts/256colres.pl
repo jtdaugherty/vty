@@ -59,9 +59,9 @@ import Text.Printf
 --
 -- generated from 256colres.pl which is forked from xterm 256colres.pl
 -- todo: all values get clamped high.
-rgb_color :: Integral i => i -> i -> i -> Color
-rgb_color r g b
-    | r < 0 && g < 0 && b < 0 = error "rgb_color with negative color component intensity"
+rgbColor :: Integral i => i -> i -> i -> Color
+rgbColor r g b
+    | r < 0 && g < 0 && b < 0 = error "rgbColor with negative color component intensity"
 EOF
 
 my $grey_line="    | r == %d && g == %d && b == %d = Color240 %d\n";

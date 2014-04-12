@@ -4,41 +4,41 @@
 {-# LANGUAGE DisambiguateRecordFields #-}
 module Graphics.Vty.Image ( DisplayText
                           , Image
-                          , image_width
-                          , image_height
-                          , horiz_join
+                          , imageWidth
+                          , imageHeight
+                          , horizJoin
                           , (<|>)
-                          , vert_join
+                          , vertJoin
                           , (<->)
-                          , horiz_cat
-                          , vert_cat
-                          , background_fill
+                          , horizCat
+                          , vertCat
+                          , backgroundFill
                           , text
                           , text'
                           , char
                           , string
-                          , iso_10646_string
-                          , utf8_string
-                          , utf8_bytestring
-                          , utf8_bytestring'
-                          , char_fill
-                          , empty_image
-                          , safe_wcwidth
-                          , safe_wcswidth
+                          , iso10646String
+                          , utf8String
+                          , utf8Bytestring
+                          , utf8Bytestring'
+                          , charFill
+                          , emptyImage
+                          , safeWcwidth
+                          , safeWcswidth
                           , wcwidth
                           , wcswidth
                           , crop
-                          , crop_right
-                          , crop_left
-                          , crop_bottom
-                          , crop_top
+                          , cropRight
+                          , cropLeft
+                          , cropBottom
+                          , cropTop
                           , pad
                           , resize
-                          , resize_width
-                          , resize_height
+                          , resizeWidth
+                          , resizeHeight
                           , translate
-                          , translate_x
-                          , translate_y
+                          , translateX
+                          , translateY
                           -- | The possible display attributes used in constructing an `Image`.
                           , module Graphics.Vty.Attributes
                           )
@@ -60,52 +60,52 @@ infixr 5 <|>
 infixr 4 <->
 
 -- | An area of the picture's bacground (See Background) of w columns and h rows.
-background_fill :: Int -> Int -> Image
-background_fill w h 
+backgroundFill :: Int -> Int -> Image
+backgroundFill w h 
     | w == 0    = EmptyImage
     | h == 0    = EmptyImage
     | otherwise = BGFill w h
 
--- | Combines two images horizontally. Alias for horiz_join
+-- | Combines two images horizontally. Alias for horizJoin
 --
 -- infixr 5
 (<|>) :: Image -> Image -> Image
-(<|>) = horiz_join
+(<|>) = horizJoin
 
--- | Combines two images vertically. Alias for vert_join
+-- | Combines two images vertically. Alias for vertJoin
 --
 -- infixr 4
 (<->) :: Image -> Image -> Image
-(<->) = vert_join
+(<->) = vertJoin
 
 -- | Compose any number of images horizontally.
-horiz_cat :: [Image] -> Image
-horiz_cat = foldr horiz_join EmptyImage
+horizCat :: [Image] -> Image
+horizCat = foldr horizJoin EmptyImage
 
 -- | Compose any number of images vertically.
-vert_cat :: [Image] -> Image
-vert_cat = foldr vert_join EmptyImage
+vertCat :: [Image] -> Image
+vertCat = foldr vertJoin EmptyImage
 
 -- | A Data.Text.Lazy value
 text :: Attr -> TL.Text -> Image
 text a txt
     | TL.length txt == 0 = EmptyImage
-    | otherwise          = let display_width = safe_wcswidth (TL.unpack txt)
-                           in HorizText a txt display_width (fromIntegral $! TL.length txt)
+    | otherwise          = let displayWidth = safeWcswidth (TL.unpack txt)
+                           in HorizText a txt displayWidth (fromIntegral $! TL.length txt)
 
 -- | A Data.Text value
 text' :: Attr -> T.Text -> Image
 text' a txt
     | T.length txt == 0 = EmptyImage
-    | otherwise         = let display_width = safe_wcswidth (T.unpack txt)
-                          in HorizText a (TL.fromStrict txt) display_width (T.length txt)
+    | otherwise         = let displayWidth = safeWcswidth (T.unpack txt)
+                          in HorizText a (TL.fromStrict txt) displayWidth (T.length txt)
 
 -- | an image of a single character. This is a standard Haskell 31-bit character assumed to be in
 -- the ISO-10646 encoding.
 char :: Attr -> Char -> Image
 char a c =
-    let display_width = safe_wcwidth c
-    in HorizText a (TL.singleton c) display_width 1
+    let displayWidth = safeWcwidth c
+    in HorizText a (TL.singleton c) displayWidth 1
 
 -- | A string of characters layed out on a single row with the same display attribute. The string is
 -- assumed to be a sequence of ISO-10646 characters. 
@@ -114,51 +114,51 @@ char a c =
 -- UTF-8 encoded source file, for example, may be represented as a ISO-10646 string. 
 -- That is, I think, the case with GHC 6.10. This means, for the most part, you don't need to worry
 -- about the encoding format when outputting string literals. Just provide the string literal
--- directly to iso_10646_string or string.
+-- directly to iso10646String or string.
 -- 
-iso_10646_string :: Attr -> String -> Image
-iso_10646_string a str = 
-    let display_width = safe_wcswidth str
-    in HorizText a (TL.pack str) display_width (length str)
+iso10646String :: Attr -> String -> Image
+iso10646String a str = 
+    let displayWidth = safeWcswidth str
+    in HorizText a (TL.pack str) displayWidth (length str)
 
--- | Alias for iso_10646_string. Since the usual case is that a literal string like "foo" is
+-- | Alias for iso10646String. Since the usual case is that a literal string like "foo" is
 -- represented internally as a list of ISO 10646 31 bit characters.  
 --
 -- Note: Keep in mind that GHC will compile source encoded as UTF-8 but the literal strings, while
 -- UTF-8 encoded in the source, will be transcoded to a ISO 10646 31 bit characters runtime
 -- representation.
 string :: Attr -> String -> Image
-string = iso_10646_string
+string = iso10646String
 
 -- | A string of characters layed out on a single row. The input is assumed to be the bytes for
 -- UTF-8 encoded text.
-utf8_string :: Attr -> [Word8] -> Image
-utf8_string a bytes = utf8_bytestring a (BL.pack bytes)
+utf8String :: Attr -> [Word8] -> Image
+utf8String a bytes = utf8Bytestring a (BL.pack bytes)
 
 -- | Renders a UTF-8 encoded lazy bytestring. 
-utf8_bytestring :: Attr -> BL.ByteString -> Image
-utf8_bytestring a bs = text a (TL.decodeUtf8 bs)
+utf8Bytestring :: Attr -> BL.ByteString -> Image
+utf8Bytestring a bs = text a (TL.decodeUtf8 bs)
 
 -- | Renders a UTF-8 encoded strict bytestring. 
-utf8_bytestring' :: Attr -> B.ByteString -> Image
-utf8_bytestring' a bs = text' a (T.decodeUtf8 bs)
+utf8Bytestring' :: Attr -> B.ByteString -> Image
+utf8Bytestring' a bs = text' a (T.decodeUtf8 bs)
 
 -- | creates a fill of the specified character. The dimensions are in number of characters wide and
 -- number of rows high.
-char_fill :: Integral d => Attr -> Char -> d -> d -> Image
-char_fill _a _c 0  _h = EmptyImage
-char_fill _a _c _w 0  = EmptyImage
-char_fill a c w h =
-    vert_cat $ replicate (fromIntegral h) $ HorizText a txt display_width char_width
+charFill :: Integral d => Attr -> Char -> d -> d -> Image
+charFill _a _c 0  _h = EmptyImage
+charFill _a _c _w 0  = EmptyImage
+charFill a c w h =
+    vertCat $ replicate (fromIntegral h) $ HorizText a txt displayWidth char_width
     where 
         txt = TL.replicate (fromIntegral w) (TL.singleton c)
-        display_width = safe_wcwidth c * (fromIntegral w)
+        displayWidth = safeWcwidth c * (fromIntegral w)
         char_width = fromIntegral w
 
 -- | The empty image. Useful for fold combinators. These occupy no space nor define any display
 -- attributes.
-empty_image :: Image 
-empty_image = EmptyImage
+emptyImage :: Image 
+emptyImage = EmptyImage
 
 -- | pad the given image. This adds background character fills to the left, top, right, bottom.
 -- The pad values are how many display columns or rows to add.
@@ -171,38 +171,38 @@ pad in_l in_t in_r in_b in_image
             -- TODO: uh.
             go 0 0 0 0 i = i
             go 0 0 0 b i = VertJoin i (BGFill w b) w h
-                where w = image_width  i
-                      h = image_height i + b
+                where w = imageWidth  i
+                      h = imageHeight i + b
             go 0 0 r b i = go 0 0 0 b $ HorizJoin i (BGFill r h) w h
-                where w = image_width  i + r
-                      h = image_height i
+                where w = imageWidth  i + r
+                      h = imageHeight i
             go 0 t r b i = go 0 0 r b $ VertJoin (BGFill w t) i w h
-                where w = image_width  i
-                      h = image_height i + t
+                where w = imageWidth  i
+                      h = imageHeight i + t
             go l t r b i = go 0 t r b $ HorizJoin (BGFill l h) i w h
-                where w = image_width  i + l
-                      h = image_height i
+                where w = imageWidth  i + l
+                      h = imageHeight i
 
 -- | translates an image by padding or cropping the top and left.
 --
 -- This can have an unexpected effect: Translating an image to less than (0,0) then to greater than
 -- (0,0) will crop the image.
 translate :: Int -> Int -> Image -> Image
-translate x y i = translate_x x (translate_y y i)
+translate x y i = translateX x (translateY y i)
 
 -- | translates an image by padding or cropping the left
-translate_x :: Int -> Image -> Image
-translate_x x i
-    | x < 0     = let s = abs x in CropLeft i s (image_width i - s) (image_height i)
+translateX :: Int -> Image -> Image
+translateX x i
+    | x < 0     = let s = abs x in CropLeft i s (imageWidth i - s) (imageHeight i)
     | x == 0    = i
-    | otherwise = let h = image_height i in HorizJoin (BGFill x h) i (image_width i + x) h
+    | otherwise = let h = imageHeight i in HorizJoin (BGFill x h) i (imageWidth i + x) h
 
 -- | translates an image by padding or cropping the top
-translate_y :: Int -> Image -> Image
-translate_y y i
-    | y < 0     = let s = abs y in CropTop i s (image_width i) (image_height i - s)
+translateY :: Int -> Image -> Image
+translateY y i
+    | y < 0     = let s = abs y in CropTop i s (imageWidth i) (imageHeight i - s)
     | y == 0    = i
-    | otherwise = let w = image_width i in VertJoin (BGFill w y) i w (image_height i + y)
+    | otherwise = let w = imageWidth i in VertJoin (BGFill w y) i w (imageHeight i + y)
 
 -- | Ensure an image is no larger than the provided size. If the image is larger then crop the right
 -- or bottom.
@@ -212,94 +212,94 @@ translate_y y i
 crop :: Int -> Int -> Image -> Image
 crop 0 _ _ = EmptyImage
 crop _ 0 _ = EmptyImage
-crop w h i = crop_bottom h (crop_right w i)
+crop w h i = cropBottom h (cropRight w i)
 
 -- | crop the display height. If the image is less than or equal in height then this operation has
 -- no effect. Otherwise the image is cropped from the bottom.
-crop_bottom :: Int -> Image -> Image
-crop_bottom 0 _ = EmptyImage
-crop_bottom h in_i
+cropBottom :: Int -> Image -> Image
+cropBottom 0 _ = EmptyImage
+cropBottom h in_i
     | h < 0     = error "cannot crop height to less than zero"
     | otherwise = go in_i
         where
             go EmptyImage = EmptyImage
-            go i@(CropBottom {cropped_image, output_width, output_height})
-                | output_height <= h = i
-                | otherwise          = CropBottom cropped_image output_width h
+            go i@(CropBottom {croppedImage, outputWidth, outputHeight})
+                | outputHeight <= h = i
+                | otherwise          = CropBottom croppedImage outputWidth h
             go i
-                | h >= image_height i = i
-                | otherwise           = CropBottom i (image_width i) h
+                | h >= imageHeight i = i
+                | otherwise           = CropBottom i (imageWidth i) h
 
 -- | ensure the image is no wider than the given width. If the image is wider then crop the right
 -- side.
-crop_right :: Int -> Image -> Image
-crop_right 0 _ = EmptyImage
-crop_right w in_i
+cropRight :: Int -> Image -> Image
+cropRight 0 _ = EmptyImage
+cropRight w in_i
     | w < 0     = error "cannot crop width to less than zero"
     | otherwise = go in_i
         where
             go EmptyImage = EmptyImage
-            go i@(CropRight {cropped_image, output_width, output_height})
-                | output_width <= w = i
-                | otherwise         = CropRight cropped_image w output_height
+            go i@(CropRight {croppedImage, outputWidth, outputHeight})
+                | outputWidth <= w = i
+                | otherwise         = CropRight croppedImage w outputHeight
             go i
-                | w >= image_width i = i
-                | otherwise          = CropRight i w (image_height i)
+                | w >= imageWidth i = i
+                | otherwise          = CropRight i w (imageHeight i)
 
 -- | ensure the image is no wider than the given width. If the image is wider then crop the left
 -- side.
-crop_left :: Int -> Image -> Image
-crop_left 0 _ = EmptyImage
-crop_left w in_i
+cropLeft :: Int -> Image -> Image
+cropLeft 0 _ = EmptyImage
+cropLeft w in_i
     | w < 0     = error "cannot crop the width to less than zero"
     | otherwise = go in_i
         where
             go EmptyImage = EmptyImage
-            go i@(CropLeft {cropped_image, left_skip, output_width, output_height})
-                | output_width <= w = i
+            go i@(CropLeft {croppedImage, leftSkip, outputWidth, outputHeight})
+                | outputWidth <= w = i
                 | otherwise         =
-                    let left_skip' = left_skip + output_width - w
-                    in CropLeft cropped_image left_skip' w output_height
+                    let leftSkip' = leftSkip + outputWidth - w
+                    in CropLeft croppedImage leftSkip' w outputHeight
             go i
-                | image_width i <= w = i
-                | otherwise          = CropLeft i (image_width i - w) w (image_height i)
+                | imageWidth i <= w = i
+                | otherwise          = CropLeft i (imageWidth i - w) w (imageHeight i)
 
 -- | crop the display height. If the image is less than or equal in height then this operation has
 -- no effect. Otherwise the image is cropped from the top.
-crop_top :: Int -> Image -> Image
-crop_top 0 _ = EmptyImage
-crop_top h in_i
+cropTop :: Int -> Image -> Image
+cropTop 0 _ = EmptyImage
+cropTop h in_i
     | h < 0  = error "cannot crop the height to less than zero"
     | otherwise = go in_i
         where
             go EmptyImage = EmptyImage
-            go i@(CropTop {cropped_image, top_skip, output_width, output_height})
-                | output_height <= h = i
-                | otherwise          =
-                    let top_skip' = top_skip + output_height - h
-                    in CropTop cropped_image top_skip' output_width h
+            go i@(CropTop {croppedImage, topSkip, outputWidth, outputHeight})
+                | outputHeight <= h = i
+                | otherwise         =
+                    let topSkip' = topSkip + outputHeight - h
+                    in CropTop croppedImage topSkip' outputWidth h
             go i
-                | image_height i <= h = i
-                | otherwise           = CropTop i (image_height i - h) (image_width i) h
+                | imageHeight i <= h = i
+                | otherwise          = CropTop i (imageHeight i - h) (imageWidth i) h
 
 -- | Generic resize. Pads and crops as required to assure the given display width and height.
 -- This is biased to pad/crop the right and bottom.
 resize :: Int -> Int -> Image -> Image
-resize w h i = resize_height h (resize_width w i)
+resize w h i = resizeHeight h (resizeWidth w i)
 
 -- | Resize the width. Pads and crops as required to assure the given display width.
 -- This is biased to pad/crop the right.
-resize_width :: Int -> Image -> Image
-resize_width w i = case w `compare` image_width i of
-    LT -> crop_right w i
+resizeWidth :: Int -> Image -> Image
+resizeWidth w i = case w `compare` imageWidth i of
+    LT -> cropRight w i
     EQ -> i
-    GT -> i <|> BGFill (w - image_width i) (image_height i)
+    GT -> i <|> BGFill (w - imageWidth i) (imageHeight i)
 
 -- | Resize the height. Pads and crops as required to assure the given display height.
 -- This is biased to pad/crop the bottom.
-resize_height :: Int -> Image -> Image
-resize_height h i = case h `compare` image_height i of
-    LT -> crop_bottom h i
+resizeHeight :: Int -> Image -> Image
+resizeHeight h i = case h `compare` imageHeight i of
+    LT -> cropBottom h i
     EQ -> i
-    GT -> i <-> BGFill (image_width i) (h - image_height i)
+    GT -> i <-> BGFill (imageWidth i) (h - imageHeight i)
 

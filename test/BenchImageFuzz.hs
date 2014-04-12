@@ -15,15 +15,15 @@ import System.Random
 rand :: Arbitrary a => IO a
 rand = head <$> sample' arbitrary
 
-random_image :: IO Image
-random_image = rand
+randomImage :: IO Image
+randomImage = rand
 
-random_picture = pic_for_image <$> random_image
+randomPicture = picForImage <$> randomImage
 
-bench_0 = do
+bench0 = do
     vty <- mkVty def
-    (w,h) <- display_bounds $ output_iface vty
-    let pictures = replicateM 3000 random_picture
+    (w,h) <- displayBounds $ outputIface vty
+    let pictures = replicateM 3000 randomPicture
         bench ps = do
             forM ps (update vty)
             shutdown vty

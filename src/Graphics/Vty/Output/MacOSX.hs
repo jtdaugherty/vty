@@ -8,7 +8,7 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
-module Graphics.Vty.Output.MacOSX ( reserve_terminal )
+module Graphics.Vty.Output.MacOSX ( reserveTerminal )
     where
 
 import Graphics.Vty.Output.Interface
@@ -23,41 +23,41 @@ import System.IO
 -- "xterm-256color" is used.
 --
 -- This effects the terminfo lookup.
-reserve_terminal :: ( Applicative m, MonadIO m ) => String -> Handle -> m Output
-reserve_terminal v out_handle = do
-    let remap_term "iTerm.app" = "xterm-256color"
-        remap_term _ = "xterm"
-        flushed_put :: String -> IO ()
-        flushed_put str = do
-            hPutStr out_handle str
-            hFlush out_handle
-    t <- TerminfoBased.reserve_terminal (remap_term v) out_handle
-    return $ t { terminal_ID = terminal_ID t ++ " (Mac)"
-               , reserve_display = terminal_app_reserve_display flushed_put
-               , release_display = terminal_app_release_display flushed_put
+reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Handle -> m Output
+reserveTerminal v outHandle = do
+    let remapTerm "iTerm.app" = "xterm-256color"
+        remapTerm _ = "xterm"
+        flushedPut :: String -> IO ()
+        flushedPut str = do
+            hPutStr outHandle str
+            hFlush outHandle
+    t <- TerminfoBased.reserveTerminal (remapTerm v) outHandle
+    return $ t { terminalID = terminalID t ++ " (Mac)"
+               , reserveDisplay = terminalAppReserveDisplay flushedPut
+               , releaseDisplay = terminalAppReleaseDisplay flushedPut
                }
 
 -- | Terminal.app requires the xterm-color smcup and rmcup caps. Not the generic xterm ones.
 -- Otherwise, Terminal.app expects the xterm caps.
-smcup_str, rmcup_str :: String
-smcup_str = "\ESC7\ESC[?47h"
-rmcup_str = "\ESC[2J\ESC[?47l\ESC8"
+smcupStr, rmcupStr :: String
+smcupStr = "\ESC7\ESC[?47h"
+rmcupStr = "\ESC[2J\ESC[?47l\ESC8"
 
 -- | always smcup then clear the screen on terminal.app
 --
 -- \todo really?
-terminal_app_reserve_display :: MonadIO m => (String -> IO ()) -> m ()
-terminal_app_reserve_display flushed_put = liftIO $ do
-    flushed_put smcup_str
-    flushed_put clear_screen_str
+terminalAppReserveDisplay :: MonadIO m => (String -> IO ()) -> m ()
+terminalAppReserveDisplay flushedPut = liftIO $ do
+    flushedPut smcupStr
+    flushedPut clearScreenStr
 
-terminal_app_release_display :: MonadIO m => (String -> IO ()) -> m ()
-terminal_app_release_display flushed_put = liftIO $ do
-    flushed_put rmcup_str
+terminalAppReleaseDisplay :: MonadIO m => (String -> IO ()) -> m ()
+terminalAppReleaseDisplay flushedPut = liftIO $ do
+    flushedPut rmcupStr
 
 -- | iTerm needs a clear screen after smcup as well.
 --
 -- \todo but we apply to all mac terminals?
-clear_screen_str :: String
-clear_screen_str = "\ESC[H\ESC[2J"
+clearScreenStr :: String
+clearScreenStr = "\ESC[H\ESC[2J"
 

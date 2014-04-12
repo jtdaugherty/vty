@@ -45,14 +45,14 @@ instance Default Config where
 data Input = Input
     { -- | Channel of events direct from input processing. Unlike 'next_event' this will not refresh
       -- the display if the next event is an 'EvResize'.
-      _event_channel  :: Chan Event
+      _eventChannel  :: Chan Event
       -- | Shuts down the input processing. This should return the terminal input state to before
       -- the input initialized.
-    , shutdown_input :: IO ()
+    , shutdownInput :: IO ()
       -- | Changes to this value are reflected after the next event.
-    , _config_ref :: IORef Config
+    , _configRef :: IORef Config
       -- | File descriptor used for input.
-    , _input_fd :: Fd
+    , _inputFd :: Fd
     }
 
 makeLenses ''Input
@@ -71,10 +71,10 @@ data InputBuffer = InputBuffer
 makeLenses ''InputBuffer
 
 data InputState = InputState
-    { _unprocessed_bytes :: String
-    , _applied_config :: Config
-    , _input_buffer :: InputBuffer
-    , _stop_request_ref :: IORef Bool
+    { _unprocessedBytes :: String
+    , _appliedConfig :: Config
+    , _inputBuffer :: InputBuffer
+    , _stopRequestRef :: IORef Bool
     , _classifier :: String -> KClass
     }
 
@@ -84,63 +84,63 @@ type InputM a = StateT InputState (ReaderT Input IO) a
 
 -- this must be run on an OS thread dedicated to this input handling.
 -- otherwise the terminal timing read behavior will block the execution of the lightweight threads.
-loop_input_processor :: InputM ()
-loop_input_processor = do
-    read_from_device >>= add_bytes_to_process
-    valid_events <- many parse_event
-    forM_ valid_events emit
-    drop_invalid
-    stop_if_requested <|> loop_input_processor
+loopInputProcessor :: InputM ()
+loopInputProcessor = do
+    readFromDevice >>= addBytesToProcess
+    validEvents <- many parseEvent
+    forM_ validEvents emit
+    dropInvalid
+    stopIfRequested <|> loopInputProcessor
 
-add_bytes_to_process :: String -> InputM ()
-add_bytes_to_process block = unprocessed_bytes <>= block
+addBytesToProcess :: String -> InputM ()
+addBytesToProcess block = unprocessedBytes <>= block
 
 emit :: Event -> InputM ()
-emit event = view event_channel >>= liftIO . flip writeChan event
+emit event = view eventChannel >>= liftIO . flip writeChan event
 
 -- There should be two versions of this method:
 -- 1. using VMIN and VTIME when under the threaded runtime
 -- 2. emulating VMIN and VTIME in userspace when under the non-threaded runtime.
-read_from_device :: InputM String
-read_from_device = do
-    new_config <- view config_ref >>= liftIO . readIORef
-    old_config <- use applied_config
-    fd <- view input_fd
-    when (new_config /= old_config) $ do
-        liftIO $ apply_timing_config fd new_config
-        applied_config .= new_config
-    buffer_ptr <- use $ input_buffer.ptr
-    max_bytes  <- use $ input_buffer.size
+readFromDevice :: InputM String
+readFromDevice = do
+    newConfig <- view configRef >>= liftIO . readIORef
+    oldConfig <- use appliedConfig
+    fd <- view inputFd
+    when (newConfig /= oldConfig) $ do
+        liftIO $ applyTimingConfig fd newConfig
+        appliedConfig .= newConfig
+    bufferPtr <- use $ inputBuffer.ptr
+    maxBytes  <- use $ inputBuffer.size
     liftIO $ do
-        bytes_read <- fdReadBuf fd buffer_ptr (fromIntegral max_bytes)
+        bytes_read <- fdReadBuf fd bufferPtr (fromIntegral maxBytes)
         if bytes_read > 0
-        then fmap (map $ chr . fromIntegral) $ peekArray (fromIntegral bytes_read) buffer_ptr
+        then fmap (map $ chr . fromIntegral) $ peekArray (fromIntegral bytes_read) bufferPtr
         else return []
 
-apply_timing_config :: Fd -> Config -> IO ()
-apply_timing_config fd config =
+applyTimingConfig :: Fd -> Config -> IO ()
+applyTimingConfig fd config =
     let vtime = min 255 $ singleEscPeriod config `div` 100000
-    in set_term_timing fd 1 vtime
+    in setTermTiming fd 1 vtime
 
-parse_event :: InputM Event
-parse_event = do
+parseEvent :: InputM Event
+parseEvent = do
     c <- use classifier
-    b <- use unprocessed_bytes
+    b <- use unprocessedBytes
     case c b of
         Valid e remaining -> do
-            unprocessed_bytes .= remaining
+            unprocessedBytes .= remaining
             return e
         _                   -> mzero 
 
-drop_invalid :: InputM ()
-drop_invalid = do
+dropInvalid :: InputM ()
+dropInvalid = do
     c <- use classifier
-    b <- use unprocessed_bytes
-    when (c b == Invalid) $ unprocessed_bytes .= []
+    b <- use unprocessedBytes
+    when (c b == Invalid) $ unprocessedBytes .= []
 
-stop_if_requested :: InputM ()
-stop_if_requested = do
-    True <- (liftIO . readIORef) =<< use stop_request_ref
+stopIfRequested :: InputM ()
+stopIfRequested = do
+    True <- (liftIO . readIORef) =<< use stopRequestRef
     return ()
 
 -- This makes a kind of tri. Has space efficiency issues with large input blocks.
@@ -151,25 +151,25 @@ stop_if_requested = do
 compile :: ClassifyTable -> [Char] -> KClass
 compile table = cl' where
     -- take all prefixes and create a set of these
-    prefix_set = S.fromList $ concatMap (init . inits . fst) $ table
-    event_for_input = M.fromList table
+    prefixSet = S.fromList $ concatMap (init . inits . fst) $ table
+    eventForInput = M.fromList table
     cl' [] = Prefix
-    cl' input_block = case M.lookup input_block event_for_input of
+    cl' inputBlock = case M.lookup inputBlock eventForInput of
             Just e -> Valid e []
-            Nothing -> case S.member input_block prefix_set of
+            Nothing -> case S.member inputBlock prefixSet of
                 True -> Prefix
-                -- if the input_block is exactly what is expected for an event then consume the whole
+                -- if the inputBlock is exactly what is expected for an event then consume the whole
                 -- block and return the event
                 -- look up progressively smaller tails of the input block until an event is found
                 -- The assumption is that the event that consumes the most input bytes should be
                 -- produced.
                 -- The test verify_full_syn_input_to_event_2x verifies this.
-                -- H: There will always be one match. The prefix_set contains, by definition, all
+                -- H: There will always be one match. The prefixSet contains, by definition, all
                 -- prefixes of an event. 
                 False ->
-                    let input_tails = init $ tail $ tails input_block
-                    in case mapMaybe (\s -> (,) s `fmap` M.lookup s event_for_input) input_tails of
-                        (s,e) : _ -> Valid e (drop (length s) input_block)
+                    let inputTails = init $ tail $ tails inputBlock
+                    in case mapMaybe (\s -> (,) s `fmap` M.lookup s eventForInput) inputTails of
+                        (s,e) : _ -> Valid e (drop (length s) inputBlock)
                         -- neither a prefix or a full event. Might be interesting to log.
                         [] -> Invalid
 
@@ -198,15 +198,15 @@ utf8Length c
     | c < 0xF0 = 3
     | otherwise = 4
 
-run_input_processor_loop :: ClassifyTable -> Input -> IORef Bool -> IO ()
-run_input_processor_loop classify_table input stop_flag = do
-    let buffer_size = 1024
-    allocaArray buffer_size $ \(buffer_ptr :: Ptr Word8) -> do
-        s0 <- InputState [] <$> readIORef (_config_ref input)
-                            <*> pure (InputBuffer buffer_ptr buffer_size)
-                            <*> pure stop_flag
-                            <*> pure (classify classify_table)
-        runReaderT (evalStateT loop_input_processor s0) input
+runInputProcessorLoop :: ClassifyTable -> Input -> IORef Bool -> IO ()
+runInputProcessorLoop classifyTable input stopFlag = do
+    let bufferSize = 1024
+    allocaArray bufferSize $ \(bufferPtr :: Ptr Word8) -> do
+        s0 <- InputState [] <$> readIORef (_configRef input)
+                            <*> pure (InputBuffer bufferPtr bufferSize)
+                            <*> pure stopFlag
+                            <*> pure (classify classifyTable)
+        runReaderT (evalStateT loopInputProcessor s0) input
 
 attributeControl :: Fd -> IO (IO (), IO ())
 attributeControl fd = do
@@ -214,21 +214,21 @@ attributeControl fd = do
     let vtyMode = foldl withoutMode original [ StartStopOutput, KeyboardInterrupts
                                              , EnableEcho, ProcessInput, ExtendedFunctions
                                              ]
-    let set_attrs = setTerminalAttributes fd vtyMode Immediately
-        unset_attrs = setTerminalAttributes fd original Immediately
-    return (set_attrs,unset_attrs)
+    let setAttrs = setTerminalAttributes fd vtyMode Immediately
+        unsetAttrs = setTerminalAttributes fd original Immediately
+    return (setAttrs,unsetAttrs)
 
 -- This is an example of an algorithm where code coverage could be high, even 100%, but the
 -- algorithm still under tested. I should collect more of these examples...
 initInputForFd :: Config -> ClassifyTable -> Fd -> IO Input
-initInputForFd config classify_table in_fd = do
-    apply_timing_config in_fd config
-    stop_flag <- newIORef False
+initInputForFd config classifyTable inFd = do
+    applyTimingConfig inFd config
+    stopFlag <- newIORef False
     input <- Input <$> newChan
-                   <*> pure (writeIORef stop_flag True)
+                   <*> pure (writeIORef stopFlag True)
                    <*> newIORef config
-                   <*> pure in_fd
-    _ <- forkOS $ run_input_processor_loop classify_table input stop_flag
+                   <*> pure inFd
+    _ <- forkOS $ runInputProcessorLoop classifyTable input stopFlag
     return input
 
-foreign import ccall "vty_set_term_timing" set_term_timing :: Fd -> Int -> Int -> IO ()
+foreign import ccall "vty_set_term_timing" setTermTiming :: Fd -> Int -> Int -> IO ()

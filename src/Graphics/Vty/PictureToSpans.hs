@@ -33,29 +33,29 @@ type MSpanOps s = MVector s SpanOp
 
 -- transform plus clip. More or less.
 data BlitState = BlitState
-    -- we always snoc to the operation vectors. Thus the column_offset = length of row at row_offset
-    -- although, one possibility is to merge layers right in snoc_op (naming it something else, of
-    -- course). In which case columnn_offset would be applicable.
+    -- we always snoc to the operation vectors. Thus the columnOffset = length of row at rowOffset
+    -- although, one possibility is to merge layers right in snocOp (naming it something else, of
+    -- course). In which case columnnOffset would be applicable.
     -- Right now we need it to exist.
-    { _column_offset :: Int
-    , _row_offset :: Int
-    -- clip coordinate space is in image space. Which means it's >= 0 and < image_width.
-    , _skip_columns :: Int
-    -- >= 0 and < image_height
-    , _skip_rows :: Int
-    -- includes consideration of skip_columns. In display space.
+    { _columnOffset :: Int
+    , _rowOffset :: Int
+    -- clip coordinate space is in image space. Which means it's >= 0 and < imageWidth.
+    , _skipColumns :: Int
+    -- >= 0 and < imageHeight
+    , _skipRows :: Int
+    -- includes consideration of skipColumns. In display space.
     -- The number of columns from the next column to be defined to the end of the display for the
     -- row.
-    , _remaining_columns :: Int
-    -- includes consideration of skip_rows. In display space.
-    , _remaining_rows :: Int
+    , _remainingColumns :: Int
+    -- includes consideration of skipRows. In display space.
+    , _remainingRows :: Int
     }
 
 makeLenses ''BlitState
 
 data BlitEnv s = BlitEnv
     { _region :: DisplayRegion
-    , _mrow_ops :: MRowOps s
+    , _mrowOps :: MRowOps s
     }
 
 makeLenses ''BlitEnv
@@ -64,105 +64,105 @@ type BlitM s a = ReaderT (BlitEnv s) (StateT BlitState (ST s)) a
 
 -- | Produces the span ops that will render the given picture, possibly cropped or padded, into the
 -- specified region.
-display_ops_for_pic :: Picture -> DisplayRegion -> DisplayOps
-display_ops_for_pic pic r = Vector.create (combined_ops_for_layers pic r)
+displayOpsForPic :: Picture -> DisplayRegion -> DisplayOps
+displayOpsForPic pic r = Vector.create (combinedOpsForLayers pic r)
 
 -- | Returns the DisplayOps for an image rendered to a window the size of the image.
 --
 -- largerly used only for debugging.
-display_ops_for_image :: Image -> DisplayOps
-display_ops_for_image i = display_ops_for_pic (pic_for_image i) (image_width i, image_height i)
+displayOpsForImage :: Image -> DisplayOps
+displayOpsForImage i = displayOpsForPic (picForImage i) (imageWidth i, imageHeight i)
 
 -- | Produces the span ops for each layer then combines them.
 --
 -- TODO: a fold over a builder function. start with span ops that are a bg fill of the entire
 -- region.
-combined_ops_for_layers :: Picture -> DisplayRegion -> ST s (MRowOps s)
-combined_ops_for_layers pic r
-    | region_width r == 0 || region_height r == 0 = MVector.new 0
+combinedOpsForLayers :: Picture -> DisplayRegion -> ST s (MRowOps s)
+combinedOpsForLayers pic r
+    | regionWidth r == 0 || regionHeight r == 0 = MVector.new 0
     | otherwise = do
-        layer_ops <- mapM (\layer -> build_spans layer r) (pic_layers pic)
-        case layer_ops of
+        layerOps <- mapM (\layer -> buildSpans layer r) (picLayers pic)
+        case layerOps of
             []    -> fail "empty picture"
-            [ops] -> substitute_skips (pic_background pic) ops
+            [ops] -> substituteSkips (picBackground pic) ops
             -- instead of merging ops after generation the merging can be performed as part of
-            -- snoc_op.
-            top_ops : lower_ops -> do
-                ops <- foldM merge_under top_ops lower_ops
-                substitute_skips (pic_background pic) ops
+            -- snocOp.
+            topOps : lowerOps -> do
+                ops <- foldM mergeUnder topOps lowerOps
+                substituteSkips (picBackground pic) ops
 
-substitute_skips :: Background -> MRowOps s -> ST s (MRowOps s)
-substitute_skips ClearBackground ops = do
+substituteSkips :: Background -> MRowOps s -> ST s (MRowOps s)
+substituteSkips ClearBackground ops = do
     forM_ [0 .. MVector.length ops - 1] $ \row -> do
-        row_ops <- MVector.read ops row
+        rowOps <- MVector.read ops row
         -- the image operations assure that background fills are combined.
         -- clipping a background fill does not split the background fill.
         -- merging of image layers can split a skip, but only by the insertion of a non skip.
         -- all this combines to mean we can check the last operation and remove it if it's a skip
         -- todo: or does it?
-        let row_ops' = case Vector.last row_ops of
-                        Skip w -> Vector.init row_ops `Vector.snoc` RowEnd w
-                        _      -> row_ops
+        let rowOps' = case Vector.last rowOps of
+                        Skip w -> Vector.init rowOps `Vector.snoc` RowEnd w
+                        _      -> rowOps
         -- now all the skips can be replaced by replications of ' ' of the required width.
-        let row_ops'' = swap_skips_for_single_column_char_span ' ' current_attr row_ops'
-        MVector.write ops row row_ops''
+        let rowOps'' = swapSkipsForSingleColumnCharSpan ' ' currentAttr rowOps'
+        MVector.write ops row rowOps''
     return ops
-substitute_skips (Background {background_char, background_attr}) ops = do
+substituteSkips (Background {backgroundChar, backgroundAttr}) ops = do
     -- At this point we decide if the background character is single column or not.
     -- obviously, single column is easier.
-    case safe_wcwidth background_char of
-        w | w == 0 -> fail $ "invalid background character " ++ show background_char
+    case safeWcwidth backgroundChar of
+        w | w == 0 -> fail $ "invalid background character " ++ show backgroundChar
           | w == 1 -> do
                 forM_ [0 .. MVector.length ops - 1] $ \row -> do
-                    row_ops <- MVector.read ops row
-                    let row_ops' = swap_skips_for_single_column_char_span background_char background_attr row_ops
-                    MVector.write ops row row_ops'
+                    rowOps <- MVector.read ops row
+                    let rowOps' = swapSkipsForSingleColumnCharSpan backgroundChar backgroundAttr rowOps
+                    MVector.write ops row rowOps'
           | otherwise -> do
                 forM_ [0 .. MVector.length ops - 1] $ \row -> do
-                    row_ops <- MVector.read ops row
-                    let row_ops' = swap_skips_for_char_span w background_char background_attr row_ops
-                    MVector.write ops row row_ops'
+                    rowOps <- MVector.read ops row
+                    let rowOps' = swapSkipsForCharSpan w backgroundChar backgroundAttr rowOps
+                    MVector.write ops row rowOps'
     return ops
 
-merge_under :: MRowOps s -> MRowOps s -> ST s (MRowOps s)
-merge_under upper lower = do
+mergeUnder :: MRowOps s -> MRowOps s -> ST s (MRowOps s)
+mergeUnder upper lower = do
     forM_ [0 .. MVector.length upper - 1] $ \row -> do
-        upper_row_ops <- MVector.read upper row
-        lower_row_ops <- MVector.read lower row
-        let row_ops = merge_row_under upper_row_ops lower_row_ops
-        MVector.write upper row row_ops
+        upperRowOps <- MVector.read upper row
+        lowerRowOps <- MVector.read lower row
+        let rowOps = mergeRowUnder upperRowOps lowerRowOps
+        MVector.write upper row rowOps
     return upper
 
 -- fugly
-merge_row_under :: SpanOps -> SpanOps -> SpanOps
-merge_row_under upper_row_ops lower_row_ops =
-    on_upper_op Vector.empty (Vector.head upper_row_ops) (Vector.tail upper_row_ops) lower_row_ops
+mergeRowUnder :: SpanOps -> SpanOps -> SpanOps
+mergeRowUnder upperRowOps lowerRowOps =
+    onUpperOp Vector.empty (Vector.head upperRowOps) (Vector.tail upperRowOps) lowerRowOps
     where
         -- H: it will never be the case that we are out of upper ops before lower ops.
-        on_upper_op :: SpanOps -> SpanOp -> SpanOps -> SpanOps -> SpanOps
-        on_upper_op out_ops op@(TextSpan _ w _ _) upper_ops lower_ops =
-            let lower_ops' = drop_ops w lower_ops
-                out_ops' = Vector.snoc out_ops op
-            in if Vector.null lower_ops'
-                then out_ops'
-                else on_upper_op out_ops' (Vector.head upper_ops) (Vector.tail upper_ops) lower_ops'
-        on_upper_op out_ops (Skip w) upper_ops lower_ops =
-            let (ops', lower_ops') = split_ops_at w lower_ops
-                out_ops' = out_ops `mappend` ops'
-            in if Vector.null lower_ops'
-                then out_ops'
-                else on_upper_op out_ops' (Vector.head upper_ops) (Vector.tail upper_ops) lower_ops'
-        on_upper_op _ (RowEnd _) _ _ = error "cannot merge rows containing RowEnd ops"
+        onUpperOp :: SpanOps -> SpanOp -> SpanOps -> SpanOps -> SpanOps
+        onUpperOp outOps op@(TextSpan _ w _ _) upperOps lowerOps =
+            let lowerOps' = dropOps w lowerOps
+                outOps' = Vector.snoc outOps op
+            in if Vector.null lowerOps'
+                then outOps'
+                else onUpperOp outOps' (Vector.head upperOps) (Vector.tail upperOps) lowerOps'
+        onUpperOp outOps (Skip w) upperOps lowerOps =
+            let (ops', lowerOps') = splitOpsAt w lowerOps
+                outOps' = outOps `mappend` ops'
+            in if Vector.null lowerOps'
+                then outOps'
+                else onUpperOp outOps' (Vector.head upperOps) (Vector.tail upperOps) lowerOps'
+        onUpperOp _ (RowEnd _) _ _ = error "cannot merge rows containing RowEnd ops"
 
 
-swap_skips_for_single_column_char_span :: Char -> Attr -> SpanOps -> SpanOps
-swap_skips_for_single_column_char_span c a = Vector.map f
+swapSkipsForSingleColumnCharSpan :: Char -> Attr -> SpanOps -> SpanOps
+swapSkipsForSingleColumnCharSpan c a = Vector.map f
     where f (Skip ow) = let txt = TL.pack $ replicate ow c
                         in TextSpan a ow ow txt
           f v = v
 
-swap_skips_for_char_span :: Int -> Char -> Attr -> SpanOps -> SpanOps
-swap_skips_for_char_span w c a = Vector.map f
+swapSkipsForCharSpan :: Int -> Char -> Attr -> SpanOps -> SpanOps
+swapSkipsForCharSpan w c a = Vector.map f
     where
         f (Skip ow) = let txt_0_cw = ow `div` w
                           txt_0 = TL.pack $ replicate txt_0_cw c
@@ -178,10 +178,10 @@ swap_skips_for_char_span w c a = Vector.map f
 -- Crops to the given display region.
 --
 -- \todo I'm pretty sure there is an algorithm that does not require a mutable buffer.
-build_spans :: Image -> DisplayRegion -> ST s (MRowOps s)
-build_spans image out_region = do
+buildSpans :: Image -> DisplayRegion -> ST s (MRowOps s)
+buildSpans image outRegion = do
     -- First we create a mutable vector for each rows output operations.
-    out_ops <- MVector.replicate (region_height out_region) Vector.empty
+    outOps <- MVector.replicate (regionHeight outRegion) Vector.empty
     -- \todo I think building the span operations in display order would provide better performance.
     -- However, I got stuck trying to implement an algorithm that did this. This will be considered
     -- as a possible future optimization. 
@@ -193,33 +193,33 @@ build_spans image out_region = do
     --
     -- The images are made into span operations from left to right. It's possible that this could
     -- easily be made to assure top to bottom output as well. 
-    when (region_height out_region > 0 && region_width out_region > 0) $ do
+    when (regionHeight outRegion > 0 && regionWidth outRegion > 0) $ do
         -- The ops builder recursively descends the image and outputs span ops that would
         -- display that image. The number of columns remaining in this row before exceeding the
         -- bounds is also provided. This is used to clip the span ops produced to the display.
-        let full_build = do
-                start_image_build image
+        let fullBuild = do
+                startImageBuild image
                 -- Fill in any unspecified columns with a skip.
-                forM_ [0 .. (region_height out_region - 1)] (add_row_completion out_region)
-            init_env   = BlitEnv out_region out_ops
-            init_state = BlitState 0 0 0 0 (region_width out_region) (region_height out_region)
-        _ <- runStateT (runReaderT full_build init_env) init_state
+                forM_ [0 .. (regionHeight outRegion - 1)] (addRowCompletion outRegion)
+            initEnv   = BlitEnv outRegion outOps
+            initState = BlitState 0 0 0 0 (regionWidth outRegion) (regionHeight outRegion)
+        _ <- runStateT (runReaderT fullBuild initEnv) initState
         return ()
-    return out_ops
+    return outOps
 
 -- | Add the operations required to build a given image to the current set of row operations
 -- returns the number of columns and rows contributed to the output.
-start_image_build :: Image -> BlitM s ()
-start_image_build image = do
-    out_of_bounds <- is_out_of_bounds image <$> get
-    when (not out_of_bounds) $ add_maybe_clipped image
+startImageBuild :: Image -> BlitM s ()
+startImageBuild image = do
+    outOfBounds <- isOutOfBounds image <$> get
+    when (not outOfBounds) $ addMaybeClipped image
 
-is_out_of_bounds :: Image -> BlitState -> Bool
-is_out_of_bounds i s
-    | s ^. remaining_columns <= 0              = True
-    | s ^. remaining_rows    <= 0              = True
-    | s ^. skip_columns      >= image_width i  = True
-    | s ^. skip_rows         >= image_height i = True
+isOutOfBounds :: Image -> BlitState -> Bool
+isOutOfBounds i s
+    | s ^. remainingColumns <= 0              = True
+    | s ^. remainingRows    <= 0              = True
+    | s ^. skipColumns      >= imageWidth i  = True
+    | s ^. skipRows         >= imageHeight i = True
     | otherwise = False
 
 -- | This adds an image that might be partially clipped to the output ops.
@@ -229,58 +229,58 @@ is_out_of_bounds i s
 -- this.
 --
 -- \todo prove this cannot be called in an out of bounds case.
-add_maybe_clipped :: forall s . Image -> BlitM s ()
-add_maybe_clipped EmptyImage = return ()
-add_maybe_clipped (HorizText a text_str ow _cw) = do
+addMaybeClipped :: forall s . Image -> BlitM s ()
+addMaybeClipped EmptyImage = return ()
+addMaybeClipped (HorizText a textStr ow _cw) = do
     -- TODO: assumption that text spans are only 1 row high.
-    s <- use skip_rows
+    s <- use skipRows
     when (s < 1) $ do
-        left_clip <- use skip_columns
-        right_clip <- use remaining_columns
-        let left_clipped = left_clip > 0
-            right_clipped = (ow - left_clip) > right_clip
-        if left_clipped || right_clipped
-            then let text_str' = clip_text text_str left_clip right_clip
-                 in add_unclipped_text a text_str'
-            else add_unclipped_text a text_str
-add_maybe_clipped (VertJoin top_image bottom_image _ow oh) = do
-    add_maybe_clipped_join "vert_join" skip_rows remaining_rows row_offset
-                           (image_height top_image)
-                           top_image
-                           bottom_image
+        leftClip <- use skipColumns
+        rightClip <- use remainingColumns
+        let leftClipped = leftClip > 0
+            rightClipped = (ow - leftClip) > rightClip
+        if leftClipped || rightClipped
+            then let textStr' = clipText textStr leftClip rightClip
+                 in addUnclippedText a textStr'
+            else addUnclippedText a textStr
+addMaybeClipped (VertJoin topImage bottomImage _ow oh) = do
+    addMaybeClippedJoin "vert_join" skipRows remainingRows rowOffset
+                           (imageHeight topImage)
+                           topImage
+                           bottomImage
                            oh
-add_maybe_clipped (HorizJoin left_image right_image ow _oh) = do
-    add_maybe_clipped_join "horiz_join" skip_columns remaining_columns column_offset
-                           (image_width left_image)
-                           left_image
-                           right_image
+addMaybeClipped (HorizJoin leftImage rightImage ow _oh) = do
+    addMaybeClippedJoin "horiz_join" skipColumns remainingColumns columnOffset
+                           (imageWidth leftImage)
+                           leftImage
+                           rightImage
                            ow
-add_maybe_clipped BGFill {output_width, output_height} = do
+addMaybeClipped BGFill {outputWidth, outputHeight} = do
     s <- get
-    let output_width'  = min (output_width  - s^.skip_columns) (s^.remaining_columns)
-        output_height' = min (output_height - s^.skip_rows   ) (s^.remaining_rows)
-    y <- use row_offset
-    forM_ [y..y+output_height'-1] $ snoc_op (Skip output_width')
-add_maybe_clipped CropRight {cropped_image, output_width} = do
-    s <- use skip_columns
-    r <- use remaining_columns
-    let x = output_width - s
-    when (x < r) $ remaining_columns .= x
-    add_maybe_clipped cropped_image
-add_maybe_clipped CropLeft {cropped_image, left_skip} = do
-    skip_columns += left_skip
-    add_maybe_clipped cropped_image
-add_maybe_clipped CropBottom {cropped_image, output_height} = do
-    s <- use skip_rows
-    r <- use remaining_rows
-    let x = output_height - s
-    when (x < r) $ remaining_rows .= x
-    add_maybe_clipped cropped_image
-add_maybe_clipped CropTop {cropped_image, top_skip} = do
-    skip_rows += top_skip
-    add_maybe_clipped cropped_image
+    let outputWidth'  = min (outputWidth  - s^.skipColumns) (s^.remainingColumns)
+        outputHeight' = min (outputHeight - s^.skipRows   ) (s^.remainingRows)
+    y <- use rowOffset
+    forM_ [y..y+outputHeight'-1] $ snocOp (Skip outputWidth')
+addMaybeClipped CropRight {croppedImage, outputWidth} = do
+    s <- use skipColumns
+    r <- use remainingColumns
+    let x = outputWidth - s
+    when (x < r) $ remainingColumns .= x
+    addMaybeClipped croppedImage
+addMaybeClipped CropLeft {croppedImage, leftSkip} = do
+    skipColumns += leftSkip
+    addMaybeClipped croppedImage
+addMaybeClipped CropBottom {croppedImage, outputHeight} = do
+    s <- use skipRows
+    r <- use remainingRows
+    let x = outputHeight - s
+    when (x < r) $ remainingRows .= x
+    addMaybeClipped croppedImage
+addMaybeClipped CropTop {croppedImage, topSkip} = do
+    skipRows += topSkip
+    addMaybeClipped croppedImage
 
-add_maybe_clipped_join :: forall s . String 
+addMaybeClippedJoin :: forall s . String 
                        -> Lens BlitState BlitState Int Int
                        -> Lens BlitState BlitState Int Int
                        -> Lens BlitState BlitState Int Int
@@ -289,7 +289,7 @@ add_maybe_clipped_join :: forall s . String
                        -> Image
                        -> Int
                        -> BlitM s ()
-add_maybe_clipped_join name skip remaining offset i0_dim i0 i1 size = do
+addMaybeClippedJoin name skip remaining offset i0_dim i0 i1 size = do
     state <- get
     when (state^.remaining <= 0) $ fail $ name ++ " with remaining <= 0"
     case state^.skip of
@@ -297,48 +297,48 @@ add_maybe_clipped_join name skip remaining offset i0_dim i0 i1 size = do
           | s >= size -> fail $ name ++ " on fully clipped"
           | s == 0    -> if state^.remaining > i0_dim 
                             then do
-                                add_maybe_clipped i0
+                                addMaybeClipped i0
                                 put $ state & offset +~ i0_dim & remaining -~ i0_dim
-                                add_maybe_clipped i1
-                            else add_maybe_clipped i0
+                                addMaybeClipped i1
+                            else addMaybeClipped i0
           | s < i0_dim  ->
                 let i0_dim' = i0_dim - s
                 in if state^.remaining <= i0_dim'
-                    then add_maybe_clipped i0
+                    then addMaybeClipped i0
                     else do
-                        add_maybe_clipped i0
+                        addMaybeClipped i0
                         put $ state & offset +~ i0_dim' & remaining -~ i0_dim' & skip .~ 0
-                        add_maybe_clipped i1
+                        addMaybeClipped i1
           | s >= i0_dim -> do
                 put $ state & skip -~ i0_dim
-                add_maybe_clipped i1
+                addMaybeClipped i1
         _ -> fail $ name ++ " has unhandled skip class"
 
-add_unclipped_text :: Attr -> DisplayText -> BlitM s ()
-add_unclipped_text a txt = do
-    let op = TextSpan a used_display_columns
+addUnclippedText :: Attr -> DisplayText -> BlitM s ()
+addUnclippedText a txt = do
+    let op = TextSpan a usedDisplayColumns
                       (fromIntegral $ TL.length txt)
                       txt
-        used_display_columns = wcswidth $ TL.unpack txt
-    use row_offset >>= snoc_op op
+        usedDisplayColumns = wcswidth $ TL.unpack txt
+    use rowOffset >>= snocOp op
 
-add_row_completion :: DisplayRegion -> Int -> BlitM s ()
-add_row_completion display_region row = do
-    all_row_ops <- view mrow_ops
-    row_ops <- lift $ lift $ MVector.read all_row_ops row
-    let end_x = span_ops_effected_columns row_ops
-    when (end_x < region_width display_region) $ do
-        let ow = region_width display_region - end_x
-        snoc_op (Skip ow) row
+addRowCompletion :: DisplayRegion -> Int -> BlitM s ()
+addRowCompletion displayRegion row = do
+    allRowOps <- view mrowOps
+    rowOps <- lift $ lift $ MVector.read allRowOps row
+    let end_x = spanOpsEffectedColumns rowOps
+    when (end_x < regionWidth displayRegion) $ do
+        let ow = regionWidth displayRegion - end_x
+        snocOp (Skip ow) row
 
 -- | snocs the operation to the operations for the given row.
-snoc_op :: SpanOp -> Int -> BlitM s ()
-snoc_op !op !row = do
-    the_mrow_ops <- view mrow_ops
-    the_region <- view region
+snocOp :: SpanOp -> Int -> BlitM s ()
+snocOp !op !row = do
+    theMrowOps <- view mrowOps
+    theRegion <- view region
     lift $ lift $ do
-        ops <- MVector.read the_mrow_ops row
+        ops <- MVector.read theMrowOps row
         let ops' = Vector.snoc ops op
-        when (span_ops_effected_columns ops' > region_width the_region)
+        when (spanOpsEffectedColumns ops' > regionWidth theRegion)
              $ fail $ "row " ++ show row ++ " now exceeds region width"
-        MVector.write the_mrow_ops row ops'
+        MVector.write theMrowOps row ops'

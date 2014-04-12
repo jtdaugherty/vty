@@ -19,82 +19,82 @@ import qualified Data.String.UTF8 as UTF8
 
 import System.IO
 
-unit_image_unit_bounds :: UnitImage -> Property
-unit_image_unit_bounds (UnitImage _ i) = liftIOResult $ do
-    (_,t) <- mock_terminal (1,1)
-    dc <- display_bounds t >>= display_context t
-    let pic = pic_for_image i
-    output_picture dc pic
+unitImageUnitBounds :: UnitImage -> Property
+unitImageUnitBounds (UnitImage _ i) = liftIOResult $ do
+    (_,t) <- mockTerminal (1,1)
+    dc <- displayBounds t >>= displayContext t
+    let pic = picForImage i
+    outputPicture dc pic
     return succeeded
 
-unit_image_arb_bounds :: UnitImage -> MockWindow -> Property
-unit_image_arb_bounds (UnitImage _ i) (MockWindow w h) = liftIOResult $ do
-    (_,t) <- mock_terminal (w,h)
-    dc <- display_bounds t >>= display_context t
-    let pic = pic_for_image i
-    output_picture dc pic
+unitImageArbBounds :: UnitImage -> MockWindow -> Property
+unitImageArbBounds (UnitImage _ i) (MockWindow w h) = liftIOResult $ do
+    (_,t) <- mockTerminal (w,h)
+    dc <- displayBounds t >>= displayContext t
+    let pic = picForImage i
+    outputPicture dc pic
     return succeeded
 
-single_T_row :: MockWindow -> Property
-single_T_row (MockWindow w h) = liftIOResult $ do
-    (mock_data,t) <- mock_terminal (w,h)
-    dc <- display_bounds t >>= display_context t
+singleTRow :: MockWindow -> Property
+singleTRow (MockWindow w h) = liftIOResult $ do
+    (mockData,t) <- mockTerminal (w,h)
+    dc <- displayBounds t >>= displayContext t
     -- create an image that contains just the character T repeated for a single row
-    let i = horiz_cat $ replicate (fromEnum w) (char def_attr 'T')
-        pic = (pic_for_image i) { pic_background = Background 'B' def_attr }
-    output_picture dc pic
+    let i = horizCat $ replicate (fromEnum w) (char defAttr 'T')
+        pic = (picForImage i) { picBackground = Background 'B' defAttr }
+    outputPicture dc pic
     -- The mock output string that represents the output bytes a single line containing the T
     -- string: Followed by h - 1 lines of a change to the background attribute and then the
     -- background character
     let expected = "HD" ++ "MA" ++ replicate (fromEnum w) 'T'
-                   ++ concat (replicate (fromEnum h - 1) $ "MA" ++ replicate (fromEnum w) 'B')
-    compare_mock_output mock_data expected
+                 ++ concat (replicate (fromEnum h - 1) $ "MA" ++ replicate (fromEnum w) 'B')
+    compareMockOutput mockData expected
     
-many_T_rows :: MockWindow -> Property
-many_T_rows (MockWindow w h) = liftIOResult $ do
-    (mock_data, t) <- mock_terminal (w,h)
-    dc <- display_bounds t >>= display_context t
+manyTRows :: MockWindow -> Property
+manyTRows (MockWindow w h) = liftIOResult $ do
+    (mockData, t) <- mockTerminal (w,h)
+    dc <- displayBounds t >>= displayContext t
     -- create an image that contains the character 'T' repeated for all the rows
-    let i = vert_cat $ replicate (fromEnum h) $ horiz_cat $ replicate (fromEnum w) (char def_attr 'T')
-        pic = (pic_for_image i) { pic_background = Background 'B' def_attr }
-    output_picture dc pic
+    let i = vertCat $ replicate (fromEnum h) $ horizCat $ replicate (fromEnum w) (char defAttr 'T')
+        pic = (picForImage i) { picBackground = Background 'B' defAttr }
+    outputPicture dc pic
     -- The UTF8 string that represents the output bytes is h repeats of a move, 'M', followed by an
     -- attribute change. 'A', followed by w 'T's
     let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
-    compare_mock_output mock_data expected
+    compareMockOutput mockData expected
 
-many_T_rows_cropped_width :: MockWindow -> Property
-many_T_rows_cropped_width (MockWindow w h) = liftIOResult $ do
-    (mock_data,t) <- mock_terminal (w,h)
-    dc <- display_bounds t >>= display_context t
+manyTRowsCroppedWidth :: MockWindow -> Property
+manyTRowsCroppedWidth (MockWindow w h) = liftIOResult $ do
+    (mockData,t) <- mockTerminal (w,h)
+    dc <- displayBounds t >>= displayContext t
     -- create an image that contains the character 'T' repeated for all the rows
-    let i = vert_cat $ replicate (fromEnum h) $ horiz_cat $ replicate (fromEnum w * 2) (char def_attr 'T')
-        pic = (pic_for_image i) { pic_background = Background 'B' def_attr }
-    output_picture dc pic
+    let i = vertCat $ replicate (fromEnum h) $ horizCat $ replicate (fromEnum w * 2) (char defAttr 'T')
+        pic = (picForImage i) { picBackground = Background 'B' defAttr }
+    outputPicture dc pic
     -- The UTF8 string that represents the output bytes is h repeats of a move, 'M', followed by an
     -- attribute change. 'A', followed by w 'T's
     let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
-    compare_mock_output mock_data expected
+    compareMockOutput mockData expected
 
-many_T_rows_cropped_height :: MockWindow -> Property
-many_T_rows_cropped_height (MockWindow w h) = liftIOResult $ do
-    (mock_data,t) <- mock_terminal (w,h)
-    dc <- display_bounds t >>= display_context t
+manyTRowsCroppedHeight :: MockWindow -> Property
+manyTRowsCroppedHeight (MockWindow w h) = liftIOResult $ do
+    (mockData,t) <- mockTerminal (w,h)
+    dc <- displayBounds t >>= displayContext t
     -- create an image that contains the character 'T' repeated for all the rows
-    let i = vert_cat $ replicate (fromEnum h * 2) $ horiz_cat $ replicate (fromEnum w) (char def_attr 'T')
-        pic = (pic_for_image i) { pic_background = Background 'B' def_attr }
-    output_picture dc pic
+    let i = vertCat $ replicate (fromEnum h * 2) $ horizCat $ replicate (fromEnum w) (char defAttr 'T')
+        pic = (picForImage i) { picBackground = Background 'B' defAttr }
+    outputPicture dc pic
     -- The UTF8 string that represents the output bytes is h repeats of a move, 'M', followed by an
     -- attribute change. 'A', followed by w count 'T's
     let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
-    compare_mock_output mock_data expected
+    compareMockOutput mockData expected
 
 tests :: IO [Test]
-tests = return [ verify "unit_image_unit_bounds" unit_image_unit_bounds
-               , verify "unit_image_arb_bounds" unit_image_arb_bounds
-               , verify "single_T_row" single_T_row
-               , verify "many_T_rows" many_T_rows
-               , verify "many_T_rows_cropped_width" many_T_rows_cropped_width
-               , verify "many_T_rows_cropped_height" many_T_rows_cropped_height
+tests = return [ verify "unitImageUnitBounds" unitImageUnitBounds
+               , verify "unitImageArbBounds" unitImageArbBounds
+               , verify "singleTRow" singleTRow
+               , verify "manyTRows" manyTRows
+               , verify "manyTRowsCroppedWidth" manyTRowsCroppedWidth
+               , verify "manyTRowsCroppedHeight" manyTRowsCroppedHeight
                ]
 

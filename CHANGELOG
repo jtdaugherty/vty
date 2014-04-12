@@ -1,4 +1,6 @@
 5.0.0
+    * The naming convention now matches:
+        * http://www.haskell.org/haskellwiki/Programming_guidelines#Naming_Conventions
     * all projects using vty for input must be compiled with -threaded. This could be resolved but
       would like to avoid the complexity for now.
     * mkVtyEscDelay has been removed. Use "mkVty def". Which initialized vty with the default
@@ -27,14 +29,14 @@
           added to to pad images when images of different sizes are joined.
         * If the background is clear there is no background layer.
         * If there is a background character then the bottom layer is the background layer.
-        * empty_picture is a Picture with no layers and no cursor
-        * add_to_top and add_to_bottom add a layer to the top and bottom of the given Picture.
+        * emptyPicture is a Picture with no layers and no cursor
+        * addToTop and addToBottom add a layer to the top and bottom of the given Picture.
     * compatibility improvements:
         * terminfo based terminals with no cursor support are silently accepted. The cursor
           visibility changes in the Picture will have no effect.
         * alternate (setf/setb) color maps supported. Though colors beyond the first 8 are just a
           guess.
-        * added "rgb_color" for easy support of RGB specified colors.
+        * added "rgbColor" for easy support of RGB specified colors.
     * examples moved to vty-examples package. See test directory for cabal file.
         * vty-interactive-terminal-test
             * interactive test. Useful for building a bug report for vty's author.

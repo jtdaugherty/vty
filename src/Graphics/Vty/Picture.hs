@@ -13,12 +13,12 @@ import Control.DeepSeq
 
 -- | The type of images to be displayed using 'update'.  
 --
--- Can be constructed directly or using `pic_for_image`. Which provides an initial instance with
--- reasonable defaults for pic_cursor and pic_background.
+-- Can be constructed directly or using `picForImage`. Which provides an initial instance with
+-- reasonable defaults for picCursor and picBackground.
 data Picture = Picture
-    { pic_cursor :: Cursor
-    , pic_layers :: [Image]
-    , pic_background :: Background
+    { picCursor :: Cursor
+    , picLayers :: [Image]
+    , picBackground :: Background
     }
 
 instance Show Picture where
@@ -28,24 +28,24 @@ instance NFData Picture where
     rnf (Picture c l b) = c `deepseq` l `deepseq` b `deepseq` ()
 
 -- | a picture with no cursor, background or image layers
-empty_picture :: Picture
-empty_picture = Picture NoCursor [] ClearBackground
+emptyPicture :: Picture
+emptyPicture = Picture NoCursor [] ClearBackground
 
 -- | The given 'Image' is added as the top layer of the 'Picture'
-add_to_top :: Picture -> Image -> Picture
-add_to_top p i = p {pic_layers = i : pic_layers p}
+addToTop :: Picture -> Image -> Picture
+addToTop p i = p {picLayers = i : picLayers p}
 
 -- | The given 'Image' is added as the bottom layer of the 'Picture'
-add_to_bottom :: Picture -> Image -> Picture
-add_to_bottom p i = p {pic_layers = pic_layers p ++ [i]}
+addToBottom :: Picture -> Image -> Picture
+addToBottom p i = p {picLayers = picLayers p ++ [i]}
 
 -- | Create a picture for display for the given image. The picture will not have a displayed cursor
 -- and no background pattern (ClearBackground) will be used.
-pic_for_image :: Image -> Picture
-pic_for_image i = Picture 
-    { pic_cursor = NoCursor
-    , pic_layers = [i]
-    , pic_background = ClearBackground
+picForImage :: Image -> Picture
+picForImage i = Picture 
+    { picCursor = NoCursor
+    , picLayers = [i]
+    , picBackground = ClearBackground
     }
 
 -- | Create a picture for display with the given layers. Ordered top to bottom.
@@ -54,11 +54,11 @@ pic_for_image i = Picture
 -- used.
 -- 
 -- The first 'Image' is the top layer.
-pic_for_layers :: [Image] -> Picture
-pic_for_layers is = Picture 
-    { pic_cursor = NoCursor
-    , pic_layers = is
-    , pic_background = ClearBackground
+picForLayers :: [Image] -> Picture
+picForLayers is = Picture 
+    { picCursor = NoCursor
+    , picLayers = is
+    , picBackground = ClearBackground
     }
 
 -- | A picture can be configured either to not show the cursor or show the cursor at the specified
@@ -86,8 +86,8 @@ instance NFData Cursor where
 -- screen to a picture.
 data Background
     = Background 
-    { background_char :: Char
-    , background_attr :: Attr
+    { backgroundChar :: Char
+    , backgroundAttr :: Attr
     }
      -- | A ClearBackground is: 
      --
@@ -101,5 +101,5 @@ instance NFData Background where
     rnf ClearBackground = ()
 
 -- | Compatibility with applications that do not use more than a single layer.
-pic_image :: Picture -> Image
-pic_image = head . pic_layers
+picImage :: Picture -> Image
+picImage = head . picLayers

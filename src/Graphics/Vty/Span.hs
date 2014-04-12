@@ -8,7 +8,7 @@
  - nth row (from top to bottom) of the picture to render.
  -
  - A span op sequence will be defined for all rows and columns (and no more) of the region provided
- - with the picture to spans_for_pic.
+ - with the picture to `spansForPic`.
  -
  - todo: Partition attribute changes into multiple categories according to the serialized
  - representation of the various attributes.
@@ -19,7 +19,7 @@ module Graphics.Vty.Span
 import Graphics.Vty.Prelude
 
 import Graphics.Vty.Image
-import Graphics.Vty.Image.Internal ( clip_text )
+import Graphics.Vty.Image.Internal ( clipText )
 
 import qualified Data.Text.Lazy as TL
 import Data.Vector (Vector)
@@ -32,10 +32,10 @@ data SpanOp =
     -- character does not necessarially represent 1 colunm. See Codec.Binary.UTF8.Width
     -- TextSpan [Attr] [output width in columns] [number of characters] [data]
       TextSpan 
-      { text_span_attr :: !Attr
-      , text_span_output_width :: !Int
-      , text_span_char_width :: !Int
-      , text_span_text :: DisplayText
+      { textSpanAttr :: !Attr
+      , textSpanOutputWidth :: !Int
+      , textSpanCharWidth :: !Int
+      , textSpanText :: DisplayText
       }
     -- | Skips the given number of columns
     -- A skip is transparent.... maybe? I am not sure how attribute changes interact.
@@ -54,39 +54,39 @@ data SpanOp =
 -- color is changed.
 type SpanOps = Vector SpanOp
 
-drop_ops :: Int -> SpanOps -> SpanOps
-drop_ops w = snd . split_ops_at w
+dropOps :: Int -> SpanOps -> SpanOps
+dropOps w = snd . splitOpsAt w
 
-split_ops_at :: Int -> SpanOps -> (SpanOps, SpanOps)
-split_ops_at in_w in_ops = split_ops_at' in_w in_ops
+splitOpsAt :: Int -> SpanOps -> (SpanOps, SpanOps)
+splitOpsAt in_w in_ops = splitOpsAt' in_w in_ops
     where
-        split_ops_at' 0 ops = (Vector.empty, ops)
-        split_ops_at' remaining_columns ops = case Vector.head ops of
-            t@(TextSpan {}) -> if remaining_columns >= text_span_output_width t
-                then let (pre,post) = split_ops_at' (remaining_columns - text_span_output_width t)
-                                                    (Vector.tail ops)
+        splitOpsAt' 0 ops = (Vector.empty, ops)
+        splitOpsAt' remainingColumns ops = case Vector.head ops of
+            t@(TextSpan {}) -> if remainingColumns >= textSpanOutputWidth t
+                then let (pre,post) = splitOpsAt' (remainingColumns - textSpanOutputWidth t)
+                                                  (Vector.tail ops)
                      in (Vector.cons t pre, post)
-                else let pre_txt = clip_text (text_span_text t) 0 remaining_columns
-                         pre_op = TextSpan { text_span_attr = text_span_attr t
-                                           , text_span_output_width = remaining_columns
-                                           , text_span_char_width = fromIntegral $! TL.length pre_txt
-                                           , text_span_text = pre_txt
+                else let pre_txt = clipText (textSpanText t) 0 remainingColumns
+                         pre_op = TextSpan { textSpanAttr = textSpanAttr t
+                                           , textSpanOutputWidth = remainingColumns
+                                           , textSpanCharWidth = fromIntegral $! TL.length pre_txt
+                                           , textSpanText = pre_txt
                                            }
-                         post_width = text_span_output_width t - remaining_columns
-                         post_txt = clip_text (text_span_text t) remaining_columns post_width
-                         post_op = TextSpan { text_span_attr = text_span_attr t
-                                            , text_span_output_width = post_width
-                                            , text_span_char_width = fromIntegral $! TL.length post_txt
-                                            , text_span_text = post_txt
+                         post_width = textSpanOutputWidth t - remainingColumns
+                         post_txt = clipText (textSpanText t) remainingColumns post_width
+                         post_op = TextSpan { textSpanAttr = textSpanAttr t
+                                            , textSpanOutputWidth = post_width
+                                            , textSpanCharWidth = fromIntegral $! TL.length post_txt
+                                            , textSpanText = post_txt
                                             }
                      in ( Vector.singleton pre_op
                         , Vector.cons post_op (Vector.tail ops)
                         )
-            Skip w -> if remaining_columns >= w
-                then let (pre,post) = split_ops_at' (remaining_columns - w) (Vector.tail ops)
+            Skip w -> if remainingColumns >= w
+                then let (pre,post) = splitOpsAt' (remainingColumns - w) (Vector.tail ops)
                      in (Vector.cons (Skip w) pre, post)
-                else ( Vector.singleton $ Skip remaining_columns
-                     , Vector.cons (Skip (w - remaining_columns)) (Vector.tail ops)
+                else ( Vector.singleton $ Skip remainingColumns
+                     , Vector.cons (Skip (w - remainingColumns)) (Vector.tail ops)
                      )
             RowEnd _ -> error "cannot split ops containing a row end"
         
@@ -102,37 +102,37 @@ instance Show SpanOp where
 -- | Number of columns the DisplayOps are defined for
 --
 -- All spans are verified to define same number of columns. See: VerifySpanOps
-display_ops_columns :: DisplayOps -> Int
-display_ops_columns ops 
+displayOpsColumns :: DisplayOps -> Int
+displayOpsColumns ops 
     | Vector.length ops == 0 = 0
     | otherwise              = Vector.length $ Vector.head ops
 
 -- | Number of rows the DisplayOps are defined for
-display_ops_rows :: DisplayOps -> Int
-display_ops_rows ops = Vector.length ops
+displayOpsRows :: DisplayOps -> Int
+displayOpsRows ops = Vector.length ops
 
-effected_region :: DisplayOps -> DisplayRegion
-effected_region ops = (display_ops_columns ops, display_ops_rows ops)
+effectedRegion :: DisplayOps -> DisplayRegion
+effectedRegion ops = (displayOpsColumns ops, displayOpsRows ops)
 
 -- | The number of columns a SpanOps effects.
-span_ops_effected_columns :: SpanOps -> Int
-span_ops_effected_columns in_ops = Vector.foldl' span_ops_effected_columns' 0 in_ops
+spanOpsEffectedColumns :: SpanOps -> Int
+spanOpsEffectedColumns in_ops = Vector.foldl' spanOpsEffectedColumns' 0 in_ops
     where 
-        span_ops_effected_columns' t (TextSpan _ w _ _ ) = t + w
-        span_ops_effected_columns' t (Skip w) = t + w
-        span_ops_effected_columns' t (RowEnd w) = t + w
+        spanOpsEffectedColumns' t (TextSpan _ w _ _ ) = t + w
+        spanOpsEffectedColumns' t (Skip w) = t + w
+        spanOpsEffectedColumns' t (RowEnd w) = t + w
 
 -- | The width of a single SpanOp in columns
-span_op_has_width :: SpanOp -> Maybe (Int, Int)
-span_op_has_width (TextSpan _ ow cw _) = Just (cw, ow)
-span_op_has_width (Skip ow) = Just (ow,ow)
-span_op_has_width (RowEnd ow) = Just (ow,ow)
+spanOpHasWidth :: SpanOp -> Maybe (Int, Int)
+spanOpHasWidth (TextSpan _ ow cw _) = Just (cw, ow)
+spanOpHasWidth (Skip ow) = Just (ow,ow)
+spanOpHasWidth (RowEnd ow) = Just (ow,ow)
 
 -- | returns the number of columns to the character at the given position in the span op
-columns_to_char_offset :: Int -> SpanOp -> Int
-columns_to_char_offset cx (TextSpan _ _ _ utf8_str) =
-    let str = TL.unpack utf8_str
+columnsToCharOffset :: Int -> SpanOp -> Int
+columnsToCharOffset cx (TextSpan _ _ _ utf8Str) =
+    let str = TL.unpack utf8Str
     in wcswidth (take cx str)
-columns_to_char_offset cx (Skip _) = cx
-columns_to_char_offset cx (RowEnd _) = cx
+columnsToCharOffset cx (Skip _) = cx
+columnsToCharOffset cx (RowEnd _) = cx
 

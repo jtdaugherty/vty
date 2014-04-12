@@ -3,11 +3,11 @@ module VerifyEmptyImageProps where
 import Verify
 
 -- should be exported by Graphics.Vty.Picture
-import Graphics.Vty.Picture ( Image, empty_image )
+import Graphics.Vty.Picture ( Image, emptyImage )
 
 tests :: IO [Test]
 tests = do
     -- should provide an image type.
-    let _ :: Image = empty_image
+    let _ :: Image = emptyImage
     return []
 

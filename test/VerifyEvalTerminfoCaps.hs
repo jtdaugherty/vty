@@ -25,7 +25,7 @@ import Foreign.Ptr (Ptr, minusPtr)
 import Numeric
 
 -- If a terminal defines one of the caps then it's expected to be parsable.
-caps_of_interest = 
+capsOfInterest = 
     [ "cup"
     , "sc"
     , "rc"
@@ -45,45 +45,45 @@ caps_of_interest =
     , "sgr0"
     ]
 
-from_capname ti name = fromJust $ Terminfo.getCapability ti (Terminfo.tiGetStr name)
+fromCapname ti name = fromJust $ Terminfo.getCapability ti (Terminfo.tiGetStr name)
 
 tests :: IO [Test]
 tests = do
-    eval_buffer :: Ptr Word8 <- mallocBytes (1024 * 1024) -- Should be big enough for any termcaps ;-)
-    fmap concat $ forM terminals_of_interest $ \term_name -> do
-        putStrLn $ "adding tests for terminal: " ++ term_name
-        mti <- try $ Terminfo.setupTerm term_name
+    evalBuffer :: Ptr Word8 <- mallocBytes (1024 * 1024) -- Should be big enough for any termcaps ;-)
+    fmap concat $ forM terminalsOfInterest $ \termName -> do
+        putStrLn $ "adding tests for terminal: " ++ termName
+        mti <- try $ Terminfo.setupTerm termName
         case mti of
             Left (_e :: SomeException) 
                 -> return []
             Right ti -> do
-                fmap concat $ forM caps_of_interest $ \cap_name -> do
-                    case Terminfo.getCapability ti (Terminfo.tiGetStr cap_name) of
-                        Just cap_def -> do
-                            putStrLn $ "\tadding test for cap: " ++ cap_name
-                            let test_name = term_name ++ "(" ++ cap_name ++ ")"
-                            case parse_cap_expression cap_def of
-                                Left error -> return [verify test_name (failed {reason = "parse error " ++ show error})]
-                                Right !cap_expr -> return [verify test_name (verify_eval_cap eval_buffer cap_expr)]
+                fmap concat $ forM capsOfInterest $ \capName -> do
+                    case Terminfo.getCapability ti (Terminfo.tiGetStr capName) of
+                        Just capDef -> do
+                            putStrLn $ "\tadding test for cap: " ++ capName
+                            let testName = termName ++ "(" ++ capName ++ ")"
+                            case parseCapExpression capDef of
+                                Left error -> return [verify testName (failed {reason = "parse error " ++ show error})]
+                                Right !cap_expr -> return [verify testName (verifyEvalCap evalBuffer cap_expr)]
                         Nothing      -> do
                             return []
 
-{-# NOINLINE verify_eval_cap #-}
-verify_eval_cap :: Ptr Word8 -> CapExpression -> Int -> Property
-verify_eval_cap eval_buffer expr !junk_int = do
-    forAll (vector 9) $ \input_values -> 
-        let write = write_cap_expr expr input_values
-            !byte_count = getBound write
+{-# NOINLINE verifyEvalCap #-}
+verifyEvalCap :: Ptr Word8 -> CapExpression -> Int -> Property
+verifyEvalCap evalBuffer expr !junkInt = do
+    forAll (vector 9) $ \inputValues -> 
+        let write = writeCapExpr expr inputValues
+            !byteCount = getBound write
         in liftIOResult $ do
-            let start_ptr :: Ptr Word8 = eval_buffer
-            forM_ [0..100] $ \i -> runWrite write start_ptr
-            end_ptr <- runWrite write start_ptr
-            case end_ptr `minusPtr` start_ptr of
+            let startPtr :: Ptr Word8 = evalBuffer
+            forM_ [0..100] $ \i -> runWrite write startPtr
+            endPtr <- runWrite write startPtr
+            case endPtr `minusPtr` startPtr of
                 count | count < 0        -> 
                             return $ failed { reason = "End pointer before start pointer." }
-                      | toEnum count > byte_count -> 
+                      | toEnum count > byteCount -> 
                             return $ failed { reason = "End pointer past end of buffer by " 
-                                                       ++ show (toEnum count - byte_count) 
+                                                       ++ show (toEnum count - byteCount) 
                                             }
                       | otherwise        -> 
                             return succeeded

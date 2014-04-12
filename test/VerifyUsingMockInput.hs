@@ -37,11 +37,11 @@ import Test.SmallCheck.Series
 import Text.Printf
 
 -- processing a block of 16 chars is the largest I can do without taking too long to run the test.
-max_block_size :: Int
-max_block_size = 16
+maxBlockSize :: Int
+maxBlockSize = 16
 
-max_table_size :: Int
-max_table_size = 28
+maxTableSize :: Int
+maxTableSize = 28
 
 forEachOf :: (Show a, Testable m b) => [a] -> (a -> b) -> Property m
 forEachOf l = over (generate (\n -> take n l))
@@ -55,81 +55,81 @@ type InputSpec = [InputEvent]
 
 type ExpectedSpec = [Event]
 
-synthesize_input :: InputSpec -> Fd -> IO ()
-synthesize_input input out_handle = forM_ input f >> (void $ fdWrite out_handle "\xFFFD")
+synthesizeInput :: InputSpec -> Fd -> IO ()
+synthesizeInput input outHandle = forM_ input f >> (void $ fdWrite outHandle "\xFFFD")
     where
-        f (Bytes str) = void $ fdWrite out_handle str
+        f (Bytes str) = void $ fdWrite outHandle str
         f (Delay t) = threadDelay t
 
-min_detectable_delay :: Int
-min_detectable_delay = 4000
+minDetectableDelay :: Int
+minDetectableDelay = 4000
 
-min_timout :: Int
-min_timout = 4000000
+minTimout :: Int
+minTimout = 4000000
 
-test_key_delay :: Int
-test_key_delay = min_detectable_delay * 4
+testKeyDelay :: Int
+testKeyDelay = minDetectableDelay * 4
 
-test_esc_sample_delay :: Int
-test_esc_sample_delay = min_detectable_delay * 2
+testEscSampleDelay :: Int
+testEscSampleDelay = minDetectableDelay * 2
 
-gen_events_using_io_actions :: Int -> IO () -> IO () -> IO ()
-gen_events_using_io_actions max_duration input_action output_action = do
-    let max_duration' = max min_timout max_duration
-    read_complete <- newEmptyMVar
-    write_complete <- newEmptyMVar
-    _ <- forkOS $ input_action `finally` putMVar write_complete ()
-    _ <- forkOS $ output_action `finally` putMVar read_complete ()
-    Just () <- timeout max_duration' $ takeMVar write_complete
-    Just () <- timeout max_duration' $ takeMVar read_complete
+genEventsUsingIoActions :: Int -> IO () -> IO () -> IO ()
+genEventsUsingIoActions maxDuration inputAction outputAction = do
+    let maxDuration' = max minTimout maxDuration
+    readComplete <- newEmptyMVar
+    writeComplete <- newEmptyMVar
+    _ <- forkOS $ inputAction `finally` putMVar writeComplete ()
+    _ <- forkOS $ outputAction `finally` putMVar readComplete ()
+    Just () <- timeout maxDuration' $ takeMVar writeComplete
+    Just () <- timeout maxDuration' $ takeMVar readComplete
     return ()
 
-compare_events :: (Show a1, Show a, Eq a1) => a -> [a1] -> [a1] -> IO Bool
-compare_events input_spec expected_events out_events = compare_events' expected_events out_events
+compareEvents :: (Show a1, Show a, Eq a1) => a -> [a1] -> [a1] -> IO Bool
+compareEvents inputSpec expectedEvents outEvents = compareEvents' expectedEvents outEvents
     where
-        compare_events' [] []         = return True
-        compare_events' [] out_events' = do
-            printf "extra events %s\n" (show out_events') :: IO ()
+        compareEvents' [] []         = return True
+        compareEvents' [] outEvents' = do
+            printf "extra events %s\n" (show outEvents') :: IO ()
             return False
-        compare_events' expected_events' [] = do
-            printf "events %s were not produced for input %s\n" (show expected_events') (show input_spec) :: IO ()
-            printf "expected events %s\n" (show expected_events) :: IO ()
-            printf "received events %s\n" (show out_events) :: IO ()
+        compareEvents' expectedEvents' [] = do
+            printf "events %s were not produced for input %s\n" (show expectedEvents') (show inputSpec) :: IO ()
+            printf "expected events %s\n" (show expectedEvents) :: IO ()
+            printf "received events %s\n" (show outEvents) :: IO ()
             return False
-        compare_events' (e : expected_events') (o : out_events')
-            | e == o    = compare_events' expected_events' out_events'
+        compareEvents' (e : expectedEvents') (o : outEvents')
+            | e == o    = compareEvents' expectedEvents' outEvents'
             | otherwise = do
-                printf "%s expected not %s for input %s\n" (show e) (show o) (show input_spec) :: IO ()
-                printf "expected events %s\n" (show expected_events) :: IO ()
-                printf "received events %s\n" (show out_events) :: IO ()
+                printf "%s expected not %s for input %s\n" (show e) (show o) (show inputSpec) :: IO ()
+                printf "expected events %s\n" (show expectedEvents) :: IO ()
+                printf "received events %s\n" (show outEvents) :: IO ()
                 return False
 
-assert_events_from_syn_input :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Bool
-assert_events_from_syn_input table input_spec expected_events = do
-    let max_duration = sum [t | Delay t <- input_spec] + min_detectable_delay
-        event_count = length expected_events
-    (write_fd, read_fd) <- openPseudoTerminal
-    (set_term_attr,_) <- attributeControl read_fd
-    set_term_attr
-    input <- initInputForFd def table read_fd
-    events_ref <- newIORef []
-    let write_wait_close = do
-            synthesize_input input_spec write_fd
-            threadDelay min_detectable_delay
-            shutdown_input input
-            threadDelay min_detectable_delay
-            closeFd write_fd
-            closeFd read_fd
+assertEventsFromSynInput :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Bool
+assertEventsFromSynInput table inputSpec expectedEvents = do
+    let maxDuration = sum [t | Delay t <- inputSpec] + minDetectableDelay
+        event_count = length expectedEvents
+    (writeFd, readFd) <- openPseudoTerminal
+    (setTermAttr,_) <- attributeControl readFd
+    setTermAttr
+    input <- initInputForFd def table readFd
+    eventsRef <- newIORef []
+    let writeWaitClose = do
+            synthesizeInput inputSpec writeFd
+            threadDelay minDetectableDelay
+            shutdownInput input
+            threadDelay minDetectableDelay
+            closeFd writeFd
+            closeFd readFd
     -- drain output pipe
-    let read_events = read_loop event_count
-        read_loop 0 = return ()
-        read_loop n = do
-            e <- readChan $ input^.event_channel
-            modifyIORef events_ref ((:) e)
-            read_loop (n - 1)
-    gen_events_using_io_actions max_duration write_wait_close read_events
-    out_events <- reverse <$> readIORef events_ref
-    compare_events input_spec expected_events out_events
+    let readEvents = readLoop event_count
+        readLoop 0 = return ()
+        readLoop n = do
+            e <- readChan $ input^.eventChannel
+            modifyIORef eventsRef ((:) e)
+            readLoop (n - 1)
+    genEventsUsingIoActions maxDuration writeWaitClose readEvents
+    outEvents <- reverse <$> readIORef eventsRef
+    compareEvents inputSpec expectedEvents outEvents
 
 newtype InputBlocksUsingTable event
     = InputBlocksUsingTable ([(String,event)] -> [(String, event)])
@@ -139,74 +139,74 @@ instance Show (InputBlocksUsingTable event) where
 
 instance Monad m => Serial m (InputBlocksUsingTable event) where
     series = do
-        n :: Int <- localDepth (const max_table_size) series
+        n :: Int <- localDepth (const maxTableSize) series
         return $ InputBlocksUsingTable $ \table -> concat (take n (selections table))
         where
             selections []     = []
             selections (x:xs) = let z = selections xs in [x] : (z ++ map ((:) x) z)
 
-verify_visible_syn_input_to_event :: Property IO
-verify_visible_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) -> monadic $ do
-    let table         = visible_chars
-        input_seq     = gen table
-        events        = map snd input_seq
-        keydowns      = map (Bytes . fst) input_seq
-        input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
-    assert_events_from_syn_input universal_table input events
+verifyVisibleSynInputToEvent :: Property IO
+verifyVisibleSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) -> monadic $ do
+    let table    = visibleChars
+        inputSeq = gen table
+        events   = map snd inputSeq
+        keydowns = map (Bytes . fst) inputSeq
+        input    = intersperse (Delay testKeyDelay) keydowns ++ [Delay testKeyDelay]
+    assertEventsFromSynInput universalTable input events
 
-verify_caps_syn_input_to_event :: Property IO
-verify_caps_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) ->
-    forEachOf terminals_of_interest $ \term_name -> monadic $ do
-        term <- setupTerm term_name
-        let table         = caps_classify_table term keys_from_caps_table
-            input_seq     = gen table
-            events        = map snd input_seq
-            keydowns      = map (Bytes . fst) input_seq
-            input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
-        assert_events_from_syn_input table input events
+verifyCapsSynInputToEvent :: Property IO
+verifyCapsSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) ->
+    forEachOf terminalsOfInterest $ \termName -> monadic $ do
+        term <- setupTerm termName
+        let table         = capsClassifyTable term keysFromCapsTable
+            inputSeq     = gen table
+            events        = map snd inputSeq
+            keydowns      = map (Bytes . fst) inputSeq
+            input         = intersperse (Delay testKeyDelay) keydowns ++ [Delay testKeyDelay]
+        assertEventsFromSynInput table input events
 
-verify_special_syn_input_to_event :: Property IO
-verify_special_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) -> monadic $ do
-    let table         = special_support_keys
-        input_seq     = gen table
-        events        = map snd input_seq
-        keydowns      = map (Bytes . fst) input_seq
-        input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
-    assert_events_from_syn_input universal_table input events
+verifySpecialSynInputToEvent :: Property IO
+verifySpecialSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) -> monadic $ do
+    let table         = specialSupportKeys
+        inputSeq     = gen table
+        events        = map snd inputSeq
+        keydowns      = map (Bytes . fst) inputSeq
+        input         = intersperse (Delay testKeyDelay) keydowns ++ [Delay testKeyDelay]
+    assertEventsFromSynInput universalTable input events
 
-verify_full_syn_input_to_event :: Property IO
-verify_full_syn_input_to_event = forAll $ \(InputBlocksUsingTable gen) ->
-    forEachOf terminals_of_interest $ \term_name -> monadic $ do
-        term <- setupTerm term_name
-        let table         = classify_table_for_term term_name term
-            input_seq     = gen table
-            events        = map snd input_seq
-            keydowns      = map (Bytes . fst) input_seq
-            input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
-        assert_events_from_syn_input table input events
+verifyFullSynInputToEvent :: Property IO
+verifyFullSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) ->
+    forEachOf terminalsOfInterest $ \termName -> monadic $ do
+        term <- setupTerm termName
+        let table         = classifyTableForTerm termName term
+            inputSeq     = gen table
+            events        = map snd inputSeq
+            keydowns      = map (Bytes . fst) inputSeq
+            input         = intersperse (Delay testKeyDelay) keydowns ++ [Delay testKeyDelay]
+        assertEventsFromSynInput table input events
 
-verify_full_syn_input_to_event_2x :: Property IO
-verify_full_syn_input_to_event_2x = forAll $ \(InputBlocksUsingTable gen) ->
-    forEachOf terminals_of_interest $ \term_name -> monadic $ do
-        term <- setupTerm term_name
-        let table         = classify_table_for_term term_name term
-            input_seq     = gen table
-            events        = concatMap ((\s -> [s,s]) . snd) input_seq
-            keydowns      = map (Bytes . (\s -> s ++ s) . fst) input_seq
-            input         = intersperse (Delay test_key_delay) keydowns ++ [Delay test_key_delay]
-        assert_events_from_syn_input table input events
+verifyFullSynInputToEvent_2x :: Property IO
+verifyFullSynInputToEvent_2x = forAll $ \(InputBlocksUsingTable gen) ->
+    forEachOf terminalsOfInterest $ \termName -> monadic $ do
+        term <- setupTerm termName
+        let table         = classifyTableForTerm termName term
+            inputSeq     = gen table
+            events        = concatMap ((\s -> [s,s]) . snd) inputSeq
+            keydowns      = map (Bytes . (\s -> s ++ s) . fst) inputSeq
+            input         = intersperse (Delay testKeyDelay) keydowns ++ [Delay testKeyDelay]
+        assertEventsFromSynInput table input events
 
 main :: IO ()
 main = defaultMain
     [ testProperty "synthesized typing of single visible chars translates to expected events"
-        verify_visible_syn_input_to_event
+        verifyVisibleSynInputToEvent
     , testProperty "synthesized typing of keys from capabilities tables translates to expected events"
-        verify_caps_syn_input_to_event
+        verifyCapsSynInputToEvent
     , testProperty "synthesized typing of hard coded special keys translates to expected events"
-        verify_special_syn_input_to_event
+        verifySpecialSynInputToEvent
     , testProperty "synthesized typing of any key in the table translates to its paired event"
-        verify_full_syn_input_to_event
+        verifyFullSynInputToEvent
     , testProperty "synthesized typing of 2x any key in the table translates to 2x paired event"
-        verify_full_syn_input_to_event_2x
+        verifyFullSynInputToEvent_2x
     ]
 

@@ -27,7 +27,7 @@ executable vty-interactive-terminal-test
   default-extensions:  ScopedTypeVariables
   ghc-options:         -threaded
 
-  build-depends:       vty,
+  build-depends:       vty == 5.*,
                        base >= 4 && < 5,
                        bytestring,
                        containers,
@@ -38,7 +38,7 @@ executable vty-interactive-terminal-test
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        string-qq,
-                       terminfo >= 0.3 && < 0.4,
+                       terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,
@@ -51,7 +51,7 @@ executable vty-event-echo
   default-extensions:  ScopedTypeVariables
   ghc-options:         -threaded
 
-  build-depends:       vty,
+  build-depends:       vty == 5.*,
                        base >= 4 && < 5,
                        array >= 0.4 && < 2.0,
                        bytestring,
@@ -71,7 +71,7 @@ executable vty-rouge
   default-extensions:  ScopedTypeVariables
   ghc-options:         -threaded
 
-  build-depends:       vty,
+  build-depends:       vty == 5.*,
                        base >= 4 && < 5,
                        array >= 0.4 && < 2.0,
                        bytestring,
@@ -92,7 +92,7 @@ executable vty-benchmark
   default-extensions:  ScopedTypeVariables
   ghc-options:         -threaded
 
-  build-depends:       vty,
+  build-depends:       vty == 5.*,
                        base >= 4 && < 5,
                        bytestring,
                        Cabal == 1.18.*,
@@ -106,7 +106,7 @@ executable vty-benchmark
                        QuickCheck >= 2.4,
                        random == 1.0.*,
                        string-qq,
-                       terminfo >= 0.3 && < 0.4,
+                       terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
                        unix,
                        utf8-string >= 0.3 && < 0.4,

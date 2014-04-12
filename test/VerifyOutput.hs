@@ -17,47 +17,47 @@ import System.Posix.Env
 import System.IO
 
 tests :: IO [Test]
-tests = concat <$> forM terminals_of_interest (\term_name -> do
+tests = concat <$> forM terminalsOfInterest (\termName -> do
     -- check if that terminfo exists
-    putStrLn $ "testing end to end for terminal: " ++ term_name
-    mti <- try $ Terminfo.setupTerm term_name
+    putStrLn $ "testing end to end for terminal: " ++ termName
+    mti <- try $ Terminfo.setupTerm termName
     case mti of
         Left (_ :: SomeException) -> return []
-        Right _ -> return [ verify ("verify " ++ term_name ++ " could output a picture")
-                                   (smoke_test_term_non_mac term_name)
+        Right _ -> return [ verify ("verify " ++ termName ++ " could output a picture")
+                                   (smokeTestTermNonMac termName)
                           -- this is excessive.
-                          , verify ("verify " ++ term_name ++ " could output a picture on a Mac.")
-                                   (smoke_test_term_mac term_name)
+                          , verify ("verify " ++ termName ++ " could output a picture on a Mac.")
+                                   (smokeTestTermMac termName)
                           ]
     )
 
-smoke_test_term_non_mac :: String -> Image -> Property
-smoke_test_term_non_mac term_name i = liftIOResult $ do
+smokeTestTermNonMac :: String -> Image -> Property
+smokeTestTermNonMac termName i = liftIOResult $ do
     -- unset the TERM_PROGRAM environment variable if set.
     -- Required to execute regression test for #42 on a mac
     unsetEnv "TERM_PROGRAM"
-    smoke_test_term term_name i
+    smokeTestTerm termName i
 
-smoke_test_term_mac :: String -> Image -> Property
-smoke_test_term_mac term_name i = liftIOResult $ do
+smokeTestTermMac :: String -> Image -> Property
+smokeTestTermMac termName i = liftIOResult $ do
     setEnv "TERM_PROGRAM" "Apple_Terminal" True
-    smoke_test_term term_name i
+    smokeTestTerm termName i
 
-smoke_test_term :: String -> Image -> IO Result
-smoke_test_term term_name i = do
-    null_out <- openFile "/dev/null" WriteMode
-    t <- output_for_name_and_io term_name null_out
-    putStrLn $ "context color count: " ++ show (context_color_count t)
-    reserve_display t
-    dc <- display_context t (100,100)
+smokeTestTerm :: String -> Image -> IO Result
+smokeTestTerm termName i = do
+    nullOut <- openFile "/dev/null" WriteMode
+    t <- outputForNameAndIO termName nullOut
+    putStrLn $ "context color count: " ++ show (contextColorCount t)
+    reserveDisplay t
+    dc <- displayContext t (100,100)
     -- always show the cursor to produce tests for terminals with no cursor support.
-    let pic = (pic_for_image i) { pic_cursor = Cursor 0 0 }
-    output_picture dc pic
-    set_cursor_pos t 0 0
-    when (supports_cursor_visibility t) $ do
-        hide_cursor t
-        show_cursor t
-    release_display t
-    release_terminal t
+    let pic = (picForImage i) { picCursor = Cursor 0 0 }
+    outputPicture dc pic
+    setCursorPos t 0 0
+    when (supportsCursorVisibility t) $ do
+        hideCursor t
+        showCursor t
+    releaseDisplay t
+    releaseTerminal t
     return succeeded
 

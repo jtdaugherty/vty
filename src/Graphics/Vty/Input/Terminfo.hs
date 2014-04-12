@@ -34,25 +34,25 @@ import System.Console.Terminfo
 --
 -- \todo terminfo meta is not supported.
 -- \todo no 8bit
-classify_table_for_term :: String -> Terminal -> ClassifyTable
-classify_table_for_term term_name term =
-    concat $ caps_classify_table term keys_from_caps_table
-           : universal_table
-           : term_specific_tables term_name
+classifyTableForTerm :: String -> Terminal -> ClassifyTable
+classifyTableForTerm termName term =
+    concat $ capsClassifyTable term keysFromCapsTable
+           : universalTable
+           : termSpecificTables termName
 
 -- | key table assumed to be applicable to all terminals.
-universal_table :: ClassifyTable
-universal_table = concat [visible_chars, ctrl_chars, ctrl_meta_chars, special_support_keys]
+universalTable :: ClassifyTable
+universalTable = concat [visibleChars, ctrlChars, ctrlMetaChars, specialSupportKeys]
 
-caps_classify_table :: Terminal -> [(String,Event)] -> ClassifyTable
-caps_classify_table terminal table = [(x,y) | (Just x,y) <- map extract_cap table]
-    where extract_cap = first (getCapability terminal . tiGetStr)
+capsClassifyTable :: Terminal -> [(String,Event)] -> ClassifyTable
+capsClassifyTable terminal table = [(x,y) | (Just x,y) <- map extractCap table]
+    where extractCap = first (getCapability terminal . tiGetStr)
 
 -- | tables specific to a given terminal that are not derivable from terminfo.
-term_specific_tables :: String -> [ClassifyTable]
-term_specific_tables term_name
-    | ANSI.supports term_name = ANSI.tables
-    | XTerm7Bit.supports term_name = XTerm7Bit.tables
+termSpecificTables :: String -> [ClassifyTable]
+termSpecificTables termName
+    | ANSI.supports termName = ANSI.tables
+    | XTerm7Bit.supports termName = XTerm7Bit.tables
     | otherwise = []
 
 -- | Visible characters in the ISO-8859-1 and UTF-8 common set.
@@ -62,16 +62,16 @@ term_specific_tables term_name
 --
 -- TODO: resolve
 -- 1. start at ' '. The earlier characters are all ctrl_char_keys
-visible_chars :: ClassifyTable
-visible_chars = [ ([x], EvKey (KChar x) [])
-                 | x <- [' ' .. toEnum 0xC1]
-                 ]
+visibleChars :: ClassifyTable
+visibleChars = [ ([x], EvKey (KChar x) [])
+               | x <- [' ' .. toEnum 0xC1]
+               ]
 
 -- | Non visible characters in the ISO-8859-1 and UTF-8 common set translated to ctrl + char.
 --
 -- \todo resolve CTRL-i is the same as tab
-ctrl_chars :: ClassifyTable
-ctrl_chars =
+ctrlChars :: ClassifyTable
+ctrlChars =
     [ ([toEnum x],EvKey (KChar y) [MCtrl])
     | (x,y) <- zip ([0..31]) ('@':['a'..'z']++['['..'_']),
       y /= 'i', -- Resolve issue #3 where CTRL-i hides TAB.
@@ -79,12 +79,12 @@ ctrl_chars =
     ]
 
 -- | Ctrl+Meta+Char
-ctrl_meta_chars :: ClassifyTable
-ctrl_meta_chars = map (\(s,EvKey c m) -> ('\ESC':s, EvKey c (MMeta:m))) ctrl_chars
+ctrlMetaChars :: ClassifyTable
+ctrlMetaChars = map (\(s,EvKey c m) -> ('\ESC':s, EvKey c (MMeta:m))) ctrlChars
 
 -- | esc, meta esc, delete, meta delete, enter, meta enter
-special_support_keys :: ClassifyTable
-special_support_keys =
+specialSupportKeys :: ClassifyTable
+specialSupportKeys =
     [ -- special support for ESC
       ("\ESC",EvKey KEsc []), ("\ESC\ESC",EvKey KEsc [MMeta])
     -- Special support for backspace
@@ -150,8 +150,8 @@ special_support_keys =
 -- * kRIT - shift right
 --
 -- * kcuu1 - up
-keys_from_caps_table :: ClassifyTable
-keys_from_caps_table =
+keysFromCapsTable :: ClassifyTable
+keysFromCapsTable =
     [ ("ka1",   EvKey KUpLeft    [])
     , ("ka3",   EvKey KUpRight   [])
     , ("kb2",   EvKey KCenter    [])
@@ -177,8 +177,8 @@ keys_from_caps_table =
     , ("kLFT",  EvKey KLeft      [MShift])
     , ("kRIT",  EvKey KRight     [MShift])
     , ("kcuu1", EvKey KUp        [])
-    ] ++ function_key_caps_table
+    ] ++ functionKeyCapsTable
 
 -- | cap names for function keys
-function_key_caps_table :: ClassifyTable
-function_key_caps_table = flip map [0..63] $ \n -> ("kf" ++ show n, EvKey (KFun n) [])
+functionKeyCapsTable :: ClassifyTable
+functionKeyCapsTable = flip map [0..63] $ \n -> ("kf" ++ show n, EvKey (KFun n) [])

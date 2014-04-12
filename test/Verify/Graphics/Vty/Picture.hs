@@ -15,8 +15,8 @@ import Verify.Graphics.Vty.Image
 import Verify
 
 data DefaultPic = DefaultPic 
-    { default_pic :: Picture
-    , default_win :: MockWindow 
+    { defaultPic :: Picture
+    , defaultWin :: MockWindow 
     }
 
 instance Show DefaultPic where
@@ -26,27 +26,27 @@ instance Show DefaultPic where
 instance Arbitrary DefaultPic where
     arbitrary = do
         DefaultImage image <- arbitrary
-        let win = MockWindow (image_width image) (image_height image)
-        return $ DefaultPic (pic_for_image image) 
+        let win = MockWindow (imageWidth image) (imageHeight image)
+        return $ DefaultPic (picForImage image) 
                             win 
 
 data PicWithBGAttr = PicWithBGAttr 
-    { with_attr_pic :: Picture
-    , with_attr_win :: MockWindow
-    , with_attr_specified_attr :: Attr
+    { withAttrPic :: Picture
+    , withAttrWin :: MockWindow
+    , withAttrSpecifiedAttr :: Attr
     } deriving ( Show )
 
 instance Arbitrary PicWithBGAttr where
     arbitrary = do
         DefaultImage image <- arbitrary
-        let win = MockWindow (image_width image) (image_height image)
+        let win = MockWindow (imageWidth image) (imageHeight image)
         attr <- arbitrary
-        return $ PicWithBGAttr (pic_for_image image) 
+        return $ PicWithBGAttr (picForImage image) 
                                win 
                                attr
         
 instance Arbitrary Picture where
     arbitrary = do
         layers <- Verify.resize 20 (listOf1 arbitrary)
-        return $ pic_for_layers layers
+        return $ picForLayers layers
 

@@ -3,7 +3,7 @@ import Graphics.Vty.Inline
 
 main = do
     putStr "Not styled. "
-    put_attr_change_ t $ back_color red >> apply_style underline
+    putAttrChange_ t $ backColor red >> applyStyle underline
     putStr " Styled! "
-    put_attr_change_ t $ default_all
+    putAttrChange_ t $ defaultAll
     putStrLn "Not styled."

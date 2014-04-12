@@ -20,11 +20,11 @@ import Verify
 
 main = do
     args <- getArgs
-    let benches = [ ("no-diff-opt-0", BenchNoDiffOpt.bench_0)
-                  , ("render-char-0", BenchRenderChar.bench_0)
-                  , ("render-char-1", BenchRenderChar.bench_1)
-                  , ("vertical-scroll-0", BenchVerticalScroll.bench_0)
-                  , ("image-fuzz-0", BenchImageFuzz.bench_0) ]
+    let benches = [ ("no-diff-opt-0", BenchNoDiffOpt.bench0)
+                  , ("render-char-0", BenchRenderChar.bench0)
+                  , ("render-char-1", BenchRenderChar.bench1)
+                  , ("vertical-scroll-0", BenchVerticalScroll.bench0)
+                  , ("image-fuzz-0", BenchImageFuzz.bench0) ]
         help = forM_ benches $ \(b,_) -> putStrLn $ "--" ++ b
     case args of
         ["--help"] -> help
@@ -34,23 +34,23 @@ main = do
                         then map (drop 2) args
                         else map fst benches
             -- drop the dash-dash "--"
-            results <- forM args' $ \b_name -> do
-                case lookup b_name benches of
-                    Just b  -> bench b_name b
-                    Nothing -> fail $ "No benchmark named " ++ b_name
+            results <- forM args' $ \bName -> do
+                case lookup bName benches of
+                    Just b  -> bench bName b
+                    Nothing -> fail $ "No benchmark named " ++ bName
             print results
             return ()
 
-bench b_name b = do
-    putStrLn $ "starting " ++ b_name
-    Bench b_data_gen b_proc <- b
-    b_data <- b_data_gen
-    start_times <- b_data `deepseq` getProcessTimes
-    b_proc b_data
-    end_times <- getProcessTimes
-    let user_time = userTime end_times - userTime start_times
-        system_time = systemTime end_times - systemTime start_times
-    putStrLn $ "user time: " ++ show user_time
-    putStrLn $ "system time: " ++ show system_time
-    return (b_name, user_time, system_time)
+bench bName b = do
+    putStrLn $ "starting " ++ bName
+    Bench bDataGen bProc <- b
+    bData <- bDataGen
+    startTimes <- bData `deepseq` getProcessTimes
+    bProc bData
+    endTimes <- getProcessTimes
+    let ut = userTime endTimes - userTime startTimes
+        st = systemTime endTimes - systemTime startTimes
+    putStrLn $ "user time: " ++ show ut
+    putStrLn $ "system time: " ++ show st
+    return (bName, ut, st)
 

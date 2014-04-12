@@ -20,8 +20,8 @@ module Graphics.Vty.Output ( module Graphics.Vty.Output
                            , Output(..) -- \todo hide constructors
                            , AssumedState(..)
                            , DisplayContext(..) -- \todo hide constructors
-                           , output_picture
-                           , display_context
+                           , outputPicture
+                           , displayContext
                            )
     where
 
@@ -74,35 +74,35 @@ import System.IO
 --
 -- \todo add an implementation for windows that does not depend on terminfo. Should be installable
 -- with only what is provided in the haskell platform. Use ansi-terminal
-output_for_current_terminal :: ( Applicative m, MonadIO m ) => m Output
-output_for_current_terminal = do
-    term_type <- liftIO $ getEnv "TERM"
-    out_handle <- liftIO $ hDuplicate stdout
-    output_for_name_and_io term_type out_handle
+outputForCurrentTerminal :: ( Applicative m, MonadIO m ) => m Output
+outputForCurrentTerminal = do
+    termType <- liftIO $ getEnv "TERM"
+    outHandle <- liftIO $ hDuplicate stdout
+    outputForNameAndIO termType outHandle
 
 -- | gives an output method structure for a terminal with the given name and the given 'Handle'.
-output_for_name_and_io :: (Applicative m, MonadIO m) => String -> Handle -> m Output
-output_for_name_and_io term_type out_handle = do
-    t <- if "xterm" `isPrefixOf` term_type
+outputForNameAndIO :: (Applicative m, MonadIO m) => String -> Handle -> m Output
+outputForNameAndIO termType outHandle = do
+    t <- if "xterm" `isPrefixOf` termType
         then do
-            maybe_terminal_app <- get_env "TERM_PROGRAM"
-            case maybe_terminal_app of
+            maybeTerminalApp <- mGetEnv "TERM_PROGRAM"
+            case maybeTerminalApp of
                 Nothing
-                    -> XTermColor.reserve_terminal term_type out_handle
+                    -> XTermColor.reserveTerminal termType outHandle
                 Just v | v == "Apple_Terminal" || v == "iTerm.app" 
                     -> do
-                        maybe_xterm <- get_env "XTERM_VERSION"
-                        case maybe_xterm of
-                            Nothing -> MacOSX.reserve_terminal v out_handle
-                            Just _  -> XTermColor.reserve_terminal term_type out_handle
+                        maybeXterm <- mGetEnv "XTERM_VERSION"
+                        case maybeXterm of
+                            Nothing -> MacOSX.reserveTerminal v outHandle
+                            Just _  -> XTermColor.reserveTerminal termType outHandle
                 -- Assume any other terminal that sets TERM_PROGRAM to not be an OS X terminal.app
                 -- like terminal?
-                _   -> XTermColor.reserve_terminal term_type out_handle
+                _   -> XTermColor.reserveTerminal termType outHandle
         -- Not an xterm-like terminal. try for generic terminfo.
-        else TerminfoBased.reserve_terminal term_type out_handle
+        else TerminfoBased.reserveTerminal termType outHandle
     return t
     where
-        get_env var = do
+        mGetEnv var = do
             mv <- liftIO $ try $ getEnv var
             case mv of
                 Left (_e :: SomeException)  -> return $ Nothing
@@ -114,25 +114,25 @@ output_for_name_and_io term_type out_handle = do
 -- Characters can be a variable number of columns in width.
 --
 -- Currently, the only way to set the cursor position to a given character coordinate is to specify
--- the coordinate in the Picture instance provided to output_picture or refresh.
-set_cursor_pos :: MonadIO m => Output -> Int -> Int -> m ()
-set_cursor_pos t x y = do
-    bounds <- display_bounds t
-    when (x >= 0 && x < region_width bounds && y >= 0 && y < region_height bounds) $ do
-        dc <- display_context t bounds
-        liftIO $ output_byte_buffer t $ writeToByteString $ write_move_cursor dc x y
+-- the coordinate in the Picture instance provided to outputPicture or refresh.
+setCursorPos :: MonadIO m => Output -> Int -> Int -> m ()
+setCursorPos t x y = do
+    bounds <- displayBounds t
+    when (x >= 0 && x < regionWidth bounds && y >= 0 && y < regionHeight bounds) $ do
+        dc <- displayContext t bounds
+        liftIO $ outputByteBuffer t $ writeToByteString $ writeMoveCursor dc x y
 
 -- | Hides the cursor
-hide_cursor :: MonadIO m => Output -> m ()
-hide_cursor t = do
-    bounds <- display_bounds t
-    dc <- display_context t bounds
-    liftIO $ output_byte_buffer t $ writeToByteString $ write_hide_cursor dc
+hideCursor :: MonadIO m => Output -> m ()
+hideCursor t = do
+    bounds <- displayBounds t
+    dc <- displayContext t bounds
+    liftIO $ outputByteBuffer t $ writeToByteString $ writeHideCursor dc
     
 -- | Shows the cursor
-show_cursor :: MonadIO m => Output -> m ()
-show_cursor t = do
-    bounds <- display_bounds t
-    dc <- display_context t bounds
-    liftIO $ output_byte_buffer t $ writeToByteString $ write_show_cursor dc
+showCursor :: MonadIO m => Output -> m ()
+showCursor t = do
+    bounds <- displayBounds t
+    dc <- displayContext t bounds
+    liftIO $ outputByteBuffer t $ writeToByteString $ writeShowCursor dc
 

@@ -3,10 +3,10 @@
 {-# LANGUAGE RankNTypes #-}
 -- | Display attributes
 --
--- Typically the values 'def_attr' or 'current_attr' are modified to form attributes:
+-- Typically the values 'defAttr' or 'currentAttr' are modified to form attributes:
 --
 -- @
---     def_attr `with_fore_color` red
+--     defAttr `withForeColor` red
 -- @
 --
 -- Is the attribute that will set the foreground color to red and the background color to the
@@ -15,14 +15,14 @@
 -- This can then be used to build an image wiht a red foreground like so:
 --
 -- @
---      string (def_attr `with_fore_color` red) "this text will be red"
+--      string (defAttr `withForeColor` red) "this text will be red"
 -- @
 --
--- The default attributes set by 'def_attr' have a presentation determined by the terminal.  This is
+-- The default attributes set by 'defAttr' have a presentation determined by the terminal.  This is
 -- not something VTY can control. The user is free to define the color scheme of the terminal as
 -- they see fit. Up to the limits of the terminal anyways.
 --
--- The value 'current_attr' will keep the attributes of whatever was output previously.
+-- The value 'currentAttr' will keep the attributes of whatever was output previously.
 --
 -- \todo This API is very verbose IMO. I'd like something more succinct.
 module Graphics.Vty.Attributes ( module Graphics.Vty.Attributes
@@ -32,6 +32,7 @@ module Graphics.Vty.Attributes ( module Graphics.Vty.Attributes
     where
 
 import Data.Bits
+import Data.Default
 import Data.Monoid
 import Data.Word
 
@@ -45,9 +46,9 @@ import Graphics.Vty.Attributes.Color240
 --  foreground. The 240 colors and 16 colors are points in different palettes. See Color for more
 --  information.
 data Attr = Attr
-    { attr_style :: !(MaybeDefault Style)
-    , attr_fore_color :: !(MaybeDefault Color)
-    , attr_back_color :: !(MaybeDefault Color)
+    { attrStyle :: !(MaybeDefault Style)
+    , attrForeColor :: !(MaybeDefault Color)
+    , attrBackColor :: !(MaybeDefault Color)
     } deriving ( Eq, Show )
 
 -- This could be encoded into a single 32 bit word. The 32 bit word is first divided
@@ -84,17 +85,17 @@ data Attr = Attr
 instance Monoid Attr where
     mempty = Attr mempty mempty mempty
     mappend attr_0 attr_1 = 
-        Attr ( attr_style attr_0 `mappend` attr_style attr_1 )
-             ( attr_fore_color attr_0 `mappend` attr_fore_color attr_1 )
-             ( attr_back_color attr_0 `mappend` attr_back_color attr_1 )
+        Attr ( attrStyle attr_0     `mappend` attrStyle attr_1 )
+             ( attrForeColor attr_0 `mappend` attrForeColor attr_1 )
+             ( attrBackColor attr_0 `mappend` attrBackColor attr_1 )
 
 -- | Specifies the display attributes such that the final style and color values do not depend on
 -- the previously applied display attribute. The display attributes can still depend on the
 -- terminal's default colors (unfortunately).
 data FixedAttr = FixedAttr
-    { fixed_style :: !Style
-    , fixed_fore_color :: !(Maybe Color)
-    , fixed_back_color :: !(Maybe Color)
+    { fixedStyle :: !Style
+    , fixedForeColor :: !(Maybe Color)
+    , fixedBackColor :: !(Maybe Color)
     } deriving ( Eq, Show )
 
 -- | The style and color attributes can either be the terminal defaults. Or be equivalent to the
@@ -131,16 +132,16 @@ cyan   = ISOColor 6
 white  = ISOColor 7
 
 -- | Bright/Vivid variants of the standard 8-color ANSI 
-bright_black, bright_red, bright_green, bright_yellow :: Color
-bright_blue, bright_magenta, bright_cyan, bright_white :: Color
-bright_black  = ISOColor 8
-bright_red    = ISOColor 9
-bright_green  = ISOColor 10
-bright_yellow = ISOColor 11
-bright_blue   = ISOColor 12
-bright_magenta= ISOColor 13
-bright_cyan   = ISOColor 14
-bright_white  = ISOColor 15
+brightBlack, brightRed, brightGreen, brightYellow :: Color
+brightBlue, brightMagenta, brightCyan, brightWhite :: Color
+brightBlack  = ISOColor 8
+brightRed    = ISOColor 9
+brightGreen  = ISOColor 10
+brightYellow = ISOColor 11
+brightBlue   = ISOColor 12
+brightMagenta= ISOColor 13
+brightCyan   = ISOColor 14
+brightWhite  = ISOColor 15
 
 -- | Styles are represented as an 8 bit word. Each bit in the word is 1 if the style attribute
 -- assigned to that bit should be applied and 0 if the style attribute should not be applied.
@@ -152,7 +153,7 @@ type Style = Word8
 --
 --      * underline
 --
---      * reverse_video
+--      * reverseVideo
 --
 --      * blink
 --
@@ -162,52 +163,55 @@ type Style = Word8
 --
 --  ( The invisible, protect, and altcharset display attributes some terminals support are not
 --  supported via VTY.)
-standout, underline, reverse_video, blink, dim, bold :: Style
+standout, underline, reverseVideo, blink, dim, bold :: Style
 standout        = 0x01
 underline       = 0x02
-reverse_video   = 0x04
+reverseVideo   = 0x04
 blink           = 0x08
 dim             = 0x10
 bold            = 0x20
 
-default_style_mask :: Style
-default_style_mask = 0x00
+defaultStyleMask :: Style
+defaultStyleMask = 0x00
 
-style_mask :: Attr -> Word8
-style_mask attr 
-    = case attr_style attr of
+styleMask :: Attr -> Word8
+styleMask attr 
+    = case attrStyle attr of
         Default  -> 0
         KeepCurrent -> 0
         SetTo v  -> v
 
 -- | true if the given Style value has the specified Style set.
-has_style :: Style -> Style -> Bool
-has_style s bit_mask = ( s .&. bit_mask ) /= 0
+hasStyle :: Style -> Style -> Bool
+hasStyle s bit_mask = ( s .&. bit_mask ) /= 0
 
 -- | Set the foreground color of an `Attr'.
-with_fore_color :: Attr -> Color -> Attr
-with_fore_color attr c = attr { attr_fore_color = SetTo c }
+withForeColor :: Attr -> Color -> Attr
+withForeColor attr c = attr { attrForeColor = SetTo c }
 
 -- | Set the background color of an `Attr'.
-with_back_color :: Attr -> Color -> Attr
-with_back_color attr c = attr { attr_back_color = SetTo c }
+withBackColor :: Attr -> Color -> Attr
+withBackColor attr c = attr { attrBackColor = SetTo c }
 
 -- | Add the given style attribute
-with_style :: Attr -> Style -> Attr
-with_style attr style_flag = attr { attr_style = SetTo $ style_mask attr .|. style_flag }
+withStyle :: Attr -> Style -> Attr
+withStyle attr style_flag = attr { attrStyle = SetTo $ styleMask attr .|. style_flag }
 
 -- | Sets the style, background color and foreground color to the default values for the terminal.
 -- There is no easy way to determine what the default background and foreground colors are.
-def_attr :: Attr
-def_attr = Attr Default Default Default
+defAttr :: Attr
+defAttr = Attr Default Default Default
+
+instance Default Attr where
+    def = defAttr
 
 -- | Keeps the style, background color and foreground color that was previously set. Used to
 -- override some part of the previous style.
 --
--- EG: current_style `with_fore_color` bright_magenta
+-- EG: current_style `withForeColor` brightMagenta
 --
 -- Would be the currently applied style (be it underline, bold, etc) but with the foreground color
--- set to bright_magenta.
-current_attr :: Attr
-current_attr = Attr KeepCurrent KeepCurrent KeepCurrent
+-- set to brightMagenta.
+currentAttr :: Attr
+currentAttr = Attr KeepCurrent KeepCurrent KeepCurrent
 

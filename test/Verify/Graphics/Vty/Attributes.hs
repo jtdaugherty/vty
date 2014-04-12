@@ -8,8 +8,8 @@ import Verify
 
 import Data.List ( delete )
 
-all_colors :: [Color]
-all_colors =
+allColors :: [Color]
+allColors =
     [ black
     , red
     , green
@@ -18,56 +18,56 @@ all_colors =
     , magenta
     , cyan
     , white
-    , bright_black
-    , bright_red
-    , bright_green
-    , bright_yellow
-    , bright_blue
-    , bright_magenta
-    , bright_cyan
-    , bright_white
+    , brightBlack
+    , brightRed
+    , brightGreen
+    , brightYellow
+    , brightBlue
+    , brightMagenta
+    , brightCyan
+    , brightWhite
     ] ++ map Color240 [0..239]
 
-all_styles :: [Style]
-all_styles =
+allStyles :: [Style]
+allStyles =
     [ standout
     , underline
-    , reverse_video
+    , reverseVideo
     , blink
     , dim
     , bold
     ]
 
 -- Limit the possible attributes to just a few for now.
-possible_attr_mods :: [ AttrOp ]
-possible_attr_mods = 
-    [ id_op 
-    ] ++ map set_fore_color_op all_colors
-      ++ map set_back_color_op all_colors
-      ++ map set_style_op all_styles
+possibleAttrMods :: [ AttrOp ]
+possibleAttrMods = 
+    [ idOp 
+    ] ++ map setForeColorOp allColors
+      ++ map setBackColorOp allColors
+      ++ map setStyleOp allStyles
 
 instance Arbitrary Attr where
-    arbitrary = elements possible_attr_mods >>= return . flip apply_op def_attr
+    arbitrary = elements possibleAttrMods >>= return . flip applyOp defAttr
 
 data DiffAttr = DiffAttr Attr Attr
 
 instance Arbitrary DiffAttr where
     arbitrary = do
-        op0 <- elements possible_attr_mods
-        let possible_attr_mods' = delete op0 possible_attr_mods
-        op1 <- elements possible_attr_mods'
-        return $ DiffAttr (apply_op op0 def_attr) (apply_op op1 def_attr)
+        op0 <- elements possibleAttrMods
+        let possibleAttrMods' = delete op0 possibleAttrMods
+        op1 <- elements possibleAttrMods'
+        return $ DiffAttr (applyOp op0 defAttr) (applyOp op1 defAttr)
 
 data AttrOp = AttrOp String (Attr -> Attr)
 
 instance Eq AttrOp where
     AttrOp n0 _ == AttrOp n1 _ = n0 == n1
 
-set_style_op s = AttrOp "set_style" (flip with_style s)
-set_fore_color_op c = AttrOp "set_fore_color" (flip with_fore_color c)
-set_back_color_op c = AttrOp "set_back_color" (flip with_back_color c)
-id_op = AttrOp "id" id
+setStyleOp s     = AttrOp "set_style"      (flip withStyle s)
+setForeColorOp c = AttrOp "set_fore_color" (flip withForeColor c)
+setBackColorOp c = AttrOp "set_back_color" (flip withBackColor c)
+idOp = AttrOp "id" id
 
-apply_op :: AttrOp -> Attr -> Attr
-apply_op (AttrOp _ f) a = f a
+applyOp :: AttrOp -> Attr -> Attr
+applyOp (AttrOp _ f) a = f a
 

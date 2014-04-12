@@ -14,12 +14,12 @@ import System.Environment( getArgs )
 import System.IO
 import System.Random
 
-bench_0 = do 
-    let fixed_gen = mkStdGen 0
-    setStdGen fixed_gen
+bench0 = do 
+    let fixedGen = mkStdGen 0
+    setStdGen fixedGen
     return $ Bench (return ()) (\() -> mkVty def >>= liftM2 (>>) run shutdown)
 
-run vt  = mapM_ (\p -> update vt p) . benchgen =<< display_bounds (output_iface vt)
+run vt  = mapM_ (\p -> update vt p) . benchgen =<< displayBounds (outputIface vt)
 
 -- Currently, we just do scrolling.
 takem :: (a -> Int) -> Int -> [a] -> ([a],[a])
@@ -41,21 +41,21 @@ lengths ml g =
 nums :: StdGen -> [(Attr, String)]
 nums g = let (x,g2) = (random g :: (Int, StdGen))
              (c,g3) = random g2
-         in ( if c then def_attr `with_fore_color` red else def_attr
+         in ( if c then defAttr `withForeColor` red else defAttr
             , shows x " "
             ) : nums g3
 
 pad :: Int -> Image -> Image
-pad ml img = img <|> char_fill def_attr ' ' (ml - image_width img) 1
+pad ml img = img <|> charFill defAttr ' ' (ml - imageWidth img) 1
 
 clines :: StdGen -> Int -> [Image]
-clines g maxll = map (pad maxll . horiz_cat . map (uncurry string)) 
+clines g maxll = map (pad maxll . horizCat . map (uncurry string)) 
                  $ fold (length . snd) (lengths maxll g1) (nums g2)
   where (g1,g2)  = split g
 
 benchgen :: DisplayRegion -> [Picture]
 benchgen (w,h) 
-    = take 2000 $ map ((\i -> pic_for_image i) . vert_cat . take (fromEnum h))
+    = take 2000 $ map ((\i -> picForImage i) . vertCat . take (fromEnum h))
         $ tails
         $ clines (mkStdGen 80) w
 

@@ -11,31 +11,31 @@ import Data.Sequence (Seq, (<|) )
 import qualified Data.Sequence as Seq
 import Data.Foldable
 
-event_buffer_size = 1000
+eventBufferSize = 1000
 
 type App = RWST Vty () (Seq String) IO
 
 main = do
     vty <- mkVty def
-    _ <- execRWST (vty_interact False) vty Seq.empty
+    _ <- execRWST (vtyInteract False) vty Seq.empty
     shutdown vty
 
-vty_interact :: Bool -> App ()
-vty_interact should_exit = do
-    update_display
-    unless should_exit $ handle_next_event >>= vty_interact
+vtyInteract :: Bool -> App ()
+vtyInteract shouldExit = do
+    updateDisplay
+    unless shouldExit $ handleNextEvent >>= vtyInteract
 
-update_display :: App ()
-update_display = do
-    let info = string def_attr "Press ESC to exit."
-    event_log <- foldMap (string def_attr) <$> get
-    let pic = pic_for_image $ info <-> event_log
+updateDisplay :: App ()
+updateDisplay = do
+    let info = string defAttr "Press ESC to exit."
+    eventLog <- foldMap (string defAttr) <$> get
+    let pic = picForImage $ info <-> eventLog
     vty <- ask
     liftIO $ update vty pic
 
-handle_next_event = ask >>= liftIO . next_event >>= handle_event
+handleNextEvent = ask >>= liftIO . nextEvent >>= handleEvent
     where
-        handle_event e               = do
-            modify $ (<|) (show e) >>> Seq.take event_buffer_size
+        handleEvent e               = do
+            modify $ (<|) (show e) >>> Seq.take eventBufferSize
             return $ e == EvKey KEsc []
 

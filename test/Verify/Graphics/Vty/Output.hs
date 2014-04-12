@@ -12,8 +12,8 @@ import Test.QuickCheck.Property
 -- This started with a list of terminals ubuntu supported. Then those terminals that really could
 -- not be supported were removed. Then a few more were pruned until a reasonable looking set was
 -- made.
-terminals_of_interest :: [String]
-terminals_of_interest = 
+terminalsOfInterest :: [String]
+terminalsOfInterest = 
     [ "vt100"
     , "vt220"
     , "vt102"
@@ -47,14 +47,14 @@ terminals_of_interest =
     , "cygwin"
     ]
 
-compare_mock_output :: MockData -> String -> IO Result
-compare_mock_output mock_data expected_str = do
-    out_bytes <- readIORef mock_data >>= return . UTF8.toRep
-    let expected_bytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expected_str
-    if out_bytes /=  expected_bytes
-        then return $ failed { reason = "bytes\n" ++ show out_bytes
-                                        ++ "\nare not the expected bytes\n"
-                                        ++ show expected_bytes
+compareMockOutput :: MockData -> String -> IO Result
+compareMockOutput mockData expectedStr = do
+    outBytes <- readIORef mockData >>= return . UTF8.toRep
+    let expectedBytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expectedStr
+    if outBytes /=  expectedBytes
+        then return $ failed { reason = "bytes\n" ++ show outBytes
+                                      ++ "\nare not the expected bytes\n"
+                                      ++ show expectedBytes
                              }
         else return succeeded
 
