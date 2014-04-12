@@ -57,19 +57,19 @@ vertContatSingleRow (NonEmpty stack) =
 disjointHeightHorizJoin :: NonEmptyList SingleRowSingleAttrImage 
                               -> NonEmptyList SingleRowSingleAttrImage
                               -> Bool
-disjointHeightHorizJoin (NonEmpty stack_0) (NonEmpty stack_1) =
-    let expectedHeight :: Int = max (length stack_0) (length stack_1)
-        stackImage0 = vertCat [ i | SingleRowSingleAttrImage { rowImage = i } <- stack_0 ]
-        stackImage1 = vertCat [ i | SingleRowSingleAttrImage { rowImage = i } <- stack_1 ]
+disjointHeightHorizJoin (NonEmpty stack0) (NonEmpty stack1) =
+    let expectedHeight :: Int = max (length stack0) (length stack1)
+        stackImage0 = vertCat [ i | SingleRowSingleAttrImage { rowImage = i } <- stack0 ]
+        stackImage1 = vertCat [ i | SingleRowSingleAttrImage { rowImage = i } <- stack1 ]
     in imageHeight (stackImage0 <|> stackImage1) == expectedHeight
 
 
 disjointHeightHorizJoinBgFill :: NonEmptyList SingleRowSingleAttrImage 
                                       -> NonEmptyList SingleRowSingleAttrImage
                                       -> Bool
-disjointHeightHorizJoinBgFill (NonEmpty stack_0) (NonEmpty stack_1) =
-    let stackImage0 = vertCat [ i | SingleRowSingleAttrImage { rowImage = i } <- stack_0 ]
-        stackImage1 = vertCat [ i | SingleRowSingleAttrImage { rowImage = i } <- stack_1 ]
+disjointHeightHorizJoinBgFill (NonEmpty stack0) (NonEmpty stack1) =
+    let stackImage0 = vertCat [ i | SingleRowSingleAttrImage { rowImage = i } <- stack0 ]
+        stackImage1 = vertCat [ i | SingleRowSingleAttrImage { rowImage = i } <- stack1 ]
         image = stackImage0 <|> stackImage1
         expectedHeight = imageHeight image
     in case image of
@@ -81,10 +81,10 @@ disjointHeightHorizJoinBgFill (NonEmpty stack_0) (NonEmpty stack_1) =
 disjointWidthVertJoin :: NonEmptyList SingleRowSingleAttrImage 
                       -> NonEmptyList SingleRowSingleAttrImage
                       -> Bool
-disjointWidthVertJoin (NonEmpty stack_0) (NonEmpty stack_1) =
+disjointWidthVertJoin (NonEmpty stack0) (NonEmpty stack1) =
     let expectedWidth = maximum $ map imageWidth (stack0Images ++ stack1Images)
-        stack0Images = [ i | SingleRowSingleAttrImage { rowImage = i } <- stack_0 ]
-        stack1Images = [ i | SingleRowSingleAttrImage { rowImage = i } <- stack_1 ]
+        stack0Images = [ i | SingleRowSingleAttrImage { rowImage = i } <- stack0 ]
+        stack1Images = [ i | SingleRowSingleAttrImage { rowImage = i } <- stack1 ]
         stack0Image = vertCat stack0Images 
         stack1Image = vertCat stack1Images 
         image = stack0Image <-> stack1Image
@@ -93,10 +93,10 @@ disjointWidthVertJoin (NonEmpty stack_0) (NonEmpty stack_1) =
 disjointWidthVertJoinBgFill :: NonEmptyList SingleRowSingleAttrImage 
                             -> NonEmptyList SingleRowSingleAttrImage
                             -> Bool
-disjointWidthVertJoinBgFill (NonEmpty stack_0) (NonEmpty stack_1) =
+disjointWidthVertJoinBgFill (NonEmpty stack0) (NonEmpty stack1) =
     let expectedWidth = maximum $ map imageWidth (stack0Images ++ stack1Images)
-        stack0Images = [ i | SingleRowSingleAttrImage { rowImage = i } <- stack_0 ]
-        stack1Images = [ i | SingleRowSingleAttrImage { rowImage = i } <- stack_1 ]
+        stack0Images = [ i | SingleRowSingleAttrImage { rowImage = i } <- stack0 ]
+        stack1Images = [ i | SingleRowSingleAttrImage { rowImage = i } <- stack1 ]
         stack0Image = vertCat stack0Images 
         stack1Image = vertCat stack1Images 
         image = stack0Image <-> stack1Image
@@ -144,7 +144,7 @@ canRnfImage :: Image -> Bool
 canRnfImage i = rnf i == ()
 
 canPpImage :: Image -> Bool
-canPpImage i = length (pp_image_structure i) > 0
+canPpImage i = length (ppImageStructure i) > 0
 
 tests :: IO [Test]
 tests = return

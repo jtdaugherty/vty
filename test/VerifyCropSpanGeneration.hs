@@ -56,23 +56,23 @@ cropRightAndLeftRejoinedEquivalence :: SingleAttrSingleSpanStack -> Property
 cropRightAndLeftRejoinedEquivalence stack = imageWidth (stackImage stack) `mod` 2 == 0 ==>
     let i = stackImage stack
         -- the right part is made by cropping the image from the left.
-        i_r = cropLeft (imageWidth i `div` 2) i
+        iR = cropLeft (imageWidth i `div` 2) i
         -- the left part is made by cropping the image from the right
-        i_l = cropRight (imageWidth i `div` 2) i
-        i_alt = i_l <|> i_r
-        i_ops = displayOpsForImage i
-        i_alt_ops = displayOpsForImage i_alt
-    in verifyOpsEquality i_ops i_alt_ops
+        iL = cropRight (imageWidth i `div` 2) i
+        iAlt = iL <|> iR
+        iOps = displayOpsForImage i
+        iAltOps = displayOpsForImage iAlt
+    in verifyOpsEquality iOps iAltOps
 
 cropTopAndBottomRejoinedEquivalence :: SingleAttrSingleSpanStack -> Property
 cropTopAndBottomRejoinedEquivalence stack = imageHeight (stackImage stack) `mod` 2 == 0 ==>
     let i = stackImage stack
         -- the top part is made by cropping the image from the bottom.
-        i_t = cropBottom (imageHeight i `div` 2) i
+        iT = cropBottom (imageHeight i `div` 2) i
         -- the bottom part is made by cropping the image from the top.
-        i_b = cropTop (imageHeight i `div` 2) i
-        i_alt = i_t <-> i_b
-    in displayOpsForImage i == displayOpsForImage i_alt
+        iB = cropTop (imageHeight i `div` 2) i
+        iAlt = iT <-> iB
+    in displayOpsForImage i == displayOpsForImage iAlt
 
 tests :: IO [Test]
 tests = return 

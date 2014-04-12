@@ -58,7 +58,7 @@ dropOps :: Int -> SpanOps -> SpanOps
 dropOps w = snd . splitOpsAt w
 
 splitOpsAt :: Int -> SpanOps -> (SpanOps, SpanOps)
-splitOpsAt in_w in_ops = splitOpsAt' in_w in_ops
+splitOpsAt inW inOps = splitOpsAt' inW inOps
     where
         splitOpsAt' 0 ops = (Vector.empty, ops)
         splitOpsAt' remainingColumns ops = case Vector.head ops of
@@ -66,21 +66,21 @@ splitOpsAt in_w in_ops = splitOpsAt' in_w in_ops
                 then let (pre,post) = splitOpsAt' (remainingColumns - textSpanOutputWidth t)
                                                   (Vector.tail ops)
                      in (Vector.cons t pre, post)
-                else let pre_txt = clipText (textSpanText t) 0 remainingColumns
-                         pre_op = TextSpan { textSpanAttr = textSpanAttr t
+                else let preTxt = clipText (textSpanText t) 0 remainingColumns
+                         preOp = TextSpan { textSpanAttr = textSpanAttr t
                                            , textSpanOutputWidth = remainingColumns
-                                           , textSpanCharWidth = fromIntegral $! TL.length pre_txt
-                                           , textSpanText = pre_txt
+                                           , textSpanCharWidth = fromIntegral $! TL.length preTxt
+                                           , textSpanText = preTxt
                                            }
-                         post_width = textSpanOutputWidth t - remainingColumns
-                         post_txt = clipText (textSpanText t) remainingColumns post_width
-                         post_op = TextSpan { textSpanAttr = textSpanAttr t
-                                            , textSpanOutputWidth = post_width
-                                            , textSpanCharWidth = fromIntegral $! TL.length post_txt
-                                            , textSpanText = post_txt
+                         postWidth = textSpanOutputWidth t - remainingColumns
+                         postTxt = clipText (textSpanText t) remainingColumns postWidth
+                         postOp = TextSpan { textSpanAttr = textSpanAttr t
+                                            , textSpanOutputWidth = postWidth
+                                            , textSpanCharWidth = fromIntegral $! TL.length postTxt
+                                            , textSpanText = postTxt
                                             }
-                     in ( Vector.singleton pre_op
-                        , Vector.cons post_op (Vector.tail ops)
+                     in ( Vector.singleton preOp
+                        , Vector.cons postOp (Vector.tail ops)
                         )
             Skip w -> if remainingColumns >= w
                 then let (pre,post) = splitOpsAt' (remainingColumns - w) (Vector.tail ops)
@@ -116,7 +116,7 @@ effectedRegion ops = (displayOpsColumns ops, displayOpsRows ops)
 
 -- | The number of columns a SpanOps effects.
 spanOpsEffectedColumns :: SpanOps -> Int
-spanOpsEffectedColumns in_ops = Vector.foldl' spanOpsEffectedColumns' 0 in_ops
+spanOpsEffectedColumns inOps = Vector.foldl' spanOpsEffectedColumns' 0 inOps
     where 
         spanOpsEffectedColumns' t (TextSpan _ w _ _ ) = t + w
         spanOpsEffectedColumns' t (Skip w) = t + w

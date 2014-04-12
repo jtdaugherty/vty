@@ -80,7 +80,7 @@ instance NFData Cursor where
 -- | A 'Picture' has a background pattern. The background is either ClearBackground. Which shows the
 -- layer below or is blank if the bottom layer. Or the background pattern is a character and a
 -- display attribute. If the display attribute used previously should be used for a background fill
--- then use `current_attr` for the background attribute.
+-- then use `currentAttr` for the background attribute.
 --
 -- \todo The current attribute is always set to the default attributes at the start of updating the
 -- screen to a picture.

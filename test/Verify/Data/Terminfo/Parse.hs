@@ -75,13 +75,13 @@ insertEscapeOp opStr replBytes s = do
     insertPoints <- listOf1 $ elements [0 .. length s - 1]
     let s' = f s ('%' : opStr)
         remainingBytes = f (map (toEnum . fromEnum) s) replBytes
-        f in_vs out_v = concat [ vs
-                               | vi <- zip in_vs [0 .. length s - 1]
-                               , let vs = fst vi : ( if snd vi `elem` insertPoints
-                                                        then out_v
-                                                        else []
-                                                   )
-                               ]
+        f inVs out_v = concat [ vs
+                              | vi <- zip inVs [0 .. length s - 1]
+                              , let vs = fst vi : ( if snd vi `elem` insertPoints
+                                                       then out_v
+                                                       else []
+                                                  )
+                              ]
     return (s', remainingBytes)
 
 isBytesOp :: CapOp -> Bool

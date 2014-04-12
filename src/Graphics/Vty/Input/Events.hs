@@ -32,8 +32,8 @@ data Event
     = EvKey Key [Modifier]
     -- | \todo mouse events are not supported
     | EvMouse Int Int Button [Modifier]
-    -- | if read from 'event_channel' this is the size at the time of the signal. If read from
-    -- 'next_event' this is the size at the time the event was processed by Vty. Typically these are
+    -- | if read from 'eventChannel' this is the size at the time of the signal. If read from
+    -- 'nextEvent' this is the size at the time the event was processed by Vty. Typically these are
     -- the same, but if somebody is resizing the terminal quickly they can be different.
     | EvResize Int Int
     deriving (Eq,Show,Ord)

@@ -84,10 +84,10 @@ data Attr = Attr
 
 instance Monoid Attr where
     mempty = Attr mempty mempty mempty
-    mappend attr_0 attr_1 = 
-        Attr ( attrStyle attr_0     `mappend` attrStyle attr_1 )
-             ( attrForeColor attr_0 `mappend` attrForeColor attr_1 )
-             ( attrBackColor attr_0 `mappend` attrBackColor attr_1 )
+    mappend attr0 attr1 = 
+        Attr ( attrStyle attr0     `mappend` attrStyle attr1 )
+             ( attrForeColor attr0 `mappend` attrForeColor attr1 )
+             ( attrBackColor attr0 `mappend` attrBackColor attr1 )
 
 -- | Specifies the display attributes such that the final style and color values do not depend on
 -- the previously applied display attribute. The display attributes can still depend on the
@@ -183,7 +183,7 @@ styleMask attr
 
 -- | true if the given Style value has the specified Style set.
 hasStyle :: Style -> Style -> Bool
-hasStyle s bit_mask = ( s .&. bit_mask ) /= 0
+hasStyle s bitMask = ( s .&. bitMask ) /= 0
 
 -- | Set the foreground color of an `Attr'.
 withForeColor :: Attr -> Color -> Attr
@@ -195,7 +195,7 @@ withBackColor attr c = attr { attrBackColor = SetTo c }
 
 -- | Add the given style attribute
 withStyle :: Attr -> Style -> Attr
-withStyle attr style_flag = attr { attrStyle = SetTo $ styleMask attr .|. style_flag }
+withStyle attr styleFlag = attr { attrStyle = SetTo $ styleMask attr .|. styleFlag }
 
 -- | Sets the style, background color and foreground color to the default values for the terminal.
 -- There is no easy way to determine what the default background and foreground colors are.

@@ -158,9 +158,9 @@ instance Show Image where
                    ++ " (" ++ show croppedImage ++ ")"
     show ( EmptyImage ) = "EmptyImage"
 
--- | Attempts to pretty print just the structure of an image.
-pp_image_structure :: Image -> String
-pp_image_structure inImg = go 0 inImg
+-- | pretty print just the structure of an image.
+ppImageStructure :: Image -> String
+ppImageStructure inImg = go 0 inImg
     where
         go indent img = tab indent ++ pp indent img
         tab indent = concat $ replicate indent "  "
@@ -240,26 +240,26 @@ instance Monoid Image where
 horizJoin :: Image -> Image -> Image
 horizJoin EmptyImage i          = i
 horizJoin i          EmptyImage = i
-horizJoin i_0@(HorizText a_0 t_0 w_0 cw_0) i_1@(HorizText a_1 t_1 w_1 cw_1)
-    | a_0 == a_1 = HorizText a_0 (TL.append t_0 t_1) (w_0 + w_1) (cw_0 + cw_1)
+horizJoin i0@(HorizText a0 t0 w0 cw0) i1@(HorizText a1 t1 w1 cw1)
+    | a0 == a1 = HorizText a0 (TL.append t0 t1) (w0 + w1) (cw0 + cw1)
     -- TODO: assumes horiz text height is always 1
-    | otherwise  = HorizJoin i_0 i_1 (w_0 + w_1) 1
-horizJoin i_0 i_1
+    | otherwise  = HorizJoin i0 i1 (w0 + w1) 1
+horizJoin i0 i1
     -- If the images are of the same height then no padding is required
-    | h_0 == h_1 = HorizJoin i_0 i_1 w h_0
+    | h0 == h1 = HorizJoin i0 i1 w h0
     -- otherwise one of the images needs to be padded to the right size.
-    | h_0 < h_1  -- Pad i_0
-        = let padAmount = h_1 - h_0
-          in HorizJoin (VertJoin i_0 (BGFill w_0 padAmount) w_0 h_1) i_1 w h_1
-    | h_0 > h_1  -- Pad i_1
-        = let padAmount = h_0 - h_1
-          in HorizJoin i_0 (VertJoin i_1 (BGFill w_1 padAmount) w_1 h_0) w h_0
+    | h0 < h1  -- Pad i0
+        = let padAmount = h1 - h0
+          in HorizJoin (VertJoin i0 (BGFill w0 padAmount) w0 h1) i1 w h1
+    | h0 > h1  -- Pad i1
+        = let padAmount = h0 - h1
+          in HorizJoin i0 (VertJoin i1 (BGFill w1 padAmount) w1 h0) w h0
     where
-        w_0 = imageWidth i_0
-        w_1 = imageWidth i_1
-        w   = w_0 + w_1
-        h_0 = imageHeight i_0
-        h_1 = imageHeight i_1
+        w0 = imageWidth i0
+        w1 = imageWidth i1
+        w   = w0 + w1
+        h0 = imageHeight i0
+        h1 = imageHeight i1
 horizJoin _ _ = error "horizJoin applied to undefined values."
 
 -- | combines two images vertically
@@ -273,21 +273,21 @@ horizJoin _ _ = error "horizJoin applied to undefined values."
 vertJoin :: Image -> Image -> Image
 vertJoin EmptyImage i          = i
 vertJoin i          EmptyImage = i
-vertJoin i_0 i_1
+vertJoin i0 i1
     -- If the images are of the same width then no background padding is required
-    | w_0 == w_1 = VertJoin i_0 i_1 w_0 h
+    | w0 == w1 = VertJoin i0 i1 w0 h
     -- Otherwise one of the images needs to be padded to the size of the other image.
-    | w_0 < w_1
-        = let padAmount = w_1 - w_0
-          in VertJoin (HorizJoin i_0 (BGFill padAmount h_0) w_1 h_0) i_1 w_1 h
-    | w_0 > w_1
-        = let padAmount = w_0 - w_1
-          in VertJoin i_0 (HorizJoin i_1 (BGFill padAmount h_1) w_0 h_1) w_0 h
+    | w0 < w1
+        = let padAmount = w1 - w0
+          in VertJoin (HorizJoin i0 (BGFill padAmount h0) w1 h0) i1 w1 h
+    | w0 > w1
+        = let padAmount = w0 - w1
+          in VertJoin i0 (HorizJoin i1 (BGFill padAmount h1) w0 h1) w0 h
     where
-        w_0 = imageWidth i_0
-        w_1 = imageWidth i_1
-        h_0 = imageHeight i_0
-        h_1 = imageHeight i_1
-        h   = h_0 + h_1
+        w0 = imageWidth i0
+        w1 = imageWidth i1
+        h0 = imageHeight i0
+        h1 = imageHeight i1
+        h   = h0 + h1
 vertJoin _ _ = error "vertJoin applied to undefined values."
 

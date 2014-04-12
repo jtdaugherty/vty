@@ -18,10 +18,10 @@ tests = concat <$> forM terminalsOfInterest (\termName -> return $
         { name = "verify vty inline"
         , run = do
             {- disabled because I cannot get useful output out of cabal why this fails.
-            null_out <- openFile "/dev/null" WriteMode
-            t <- TerminfoBased.reserve_terminal termName null_out
-            put_attr_change t $ default_all
-            release_terminal t
+            nullOut <- openFile "/dev/null" WriteMode
+            t <- TerminfoBased.reserveTerminal termName nullOut
+            putAttrChange t $ default_all
+            releaseTerminal t
             -}
             return $ Finished Pass
         , tags = []

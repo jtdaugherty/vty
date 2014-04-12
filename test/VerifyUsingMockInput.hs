@@ -107,7 +107,7 @@ compareEvents inputSpec expectedEvents outEvents = compareEvents' expectedEvents
 assertEventsFromSynInput :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Bool
 assertEventsFromSynInput table inputSpec expectedEvents = do
     let maxDuration = sum [t | Delay t <- inputSpec] + minDetectableDelay
-        event_count = length expectedEvents
+        eventCount = length expectedEvents
     (writeFd, readFd) <- openPseudoTerminal
     (setTermAttr,_) <- attributeControl readFd
     setTermAttr
@@ -121,7 +121,7 @@ assertEventsFromSynInput table inputSpec expectedEvents = do
             closeFd writeFd
             closeFd readFd
     -- drain output pipe
-    let readEvents = readLoop event_count
+    let readEvents = readLoop eventCount
         readLoop 0 = return ()
         readLoop n = do
             e <- readChan $ input^.eventChannel

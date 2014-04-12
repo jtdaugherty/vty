@@ -119,8 +119,8 @@ intMkVty input out = do
                     dc <- displayContext out b
                     outputPicture dc inPic'
                     return (b, dc)
-                Just (last_bounds, lastContext) -> do
-                    if b /= last_bounds
+                Just (lastBounds, lastContext) -> do
+                    if b /= lastBounds
                         then do
                             dc <- displayContext out b
                             outputPicture dc inPic'

@@ -43,7 +43,7 @@ instance Default Config where
         }
 
 data Input = Input
-    { -- | Channel of events direct from input processing. Unlike 'next_event' this will not refresh
+    { -- | Channel of events direct from input processing. Unlike 'nextEvent' this will not refresh
       -- the display if the next event is an 'EvResize'.
       _eventChannel  :: Chan Event
       -- | Shuts down the input processing. This should return the terminal input state to before
@@ -112,9 +112,9 @@ readFromDevice = do
     bufferPtr <- use $ inputBuffer.ptr
     maxBytes  <- use $ inputBuffer.size
     liftIO $ do
-        bytes_read <- fdReadBuf fd bufferPtr (fromIntegral maxBytes)
-        if bytes_read > 0
-        then fmap (map $ chr . fromIntegral) $ peekArray (fromIntegral bytes_read) bufferPtr
+        bytesRead <- fdReadBuf fd bufferPtr (fromIntegral maxBytes)
+        if bytesRead > 0
+        then fmap (map $ chr . fromIntegral) $ peekArray (fromIntegral bytesRead) bufferPtr
         else return []
 
 applyTimingConfig :: Fd -> Config -> IO ()
@@ -163,7 +163,7 @@ compile table = cl' where
                 -- look up progressively smaller tails of the input block until an event is found
                 -- The assumption is that the event that consumes the most input bytes should be
                 -- produced.
-                -- The test verify_full_syn_input_to_event_2x verifies this.
+                -- The test verifyFullSynInputToEvent2x verifies this.
                 -- H: There will always be one match. The prefixSet contains, by definition, all
                 -- prefixes of an event. 
                 False ->

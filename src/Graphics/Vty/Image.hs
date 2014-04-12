@@ -149,11 +149,11 @@ charFill :: Integral d => Attr -> Char -> d -> d -> Image
 charFill _a _c 0  _h = EmptyImage
 charFill _a _c _w 0  = EmptyImage
 charFill a c w h =
-    vertCat $ replicate (fromIntegral h) $ HorizText a txt displayWidth char_width
+    vertCat $ replicate (fromIntegral h) $ HorizText a txt displayWidth charWidth
     where 
         txt = TL.replicate (fromIntegral w) (TL.singleton c)
         displayWidth = safeWcwidth c * (fromIntegral w)
-        char_width = fromIntegral w
+        charWidth = fromIntegral w
 
 -- | The empty image. Useful for fold combinators. These occupy no space nor define any display
 -- attributes.
@@ -164,9 +164,9 @@ emptyImage = EmptyImage
 -- The pad values are how many display columns or rows to add.
 pad :: Int -> Int -> Int -> Int -> Image -> Image
 pad 0 0 0 0 i = i
-pad in_l in_t in_r in_b in_image
-    | in_l < 0 || in_t < 0 || in_r < 0 || in_b < 0 = error "cannot pad by negative amount"
-    | otherwise = go in_l in_t in_r in_b in_image
+pad inL inT inR inB inImage
+    | inL < 0 || inT < 0 || inR < 0 || inB < 0 = error "cannot pad by negative amount"
+    | otherwise = go inL inT inR inB inImage
         where 
             -- TODO: uh.
             go 0 0 0 0 i = i
@@ -218,9 +218,9 @@ crop w h i = cropBottom h (cropRight w i)
 -- no effect. Otherwise the image is cropped from the bottom.
 cropBottom :: Int -> Image -> Image
 cropBottom 0 _ = EmptyImage
-cropBottom h in_i
+cropBottom h inI
     | h < 0     = error "cannot crop height to less than zero"
-    | otherwise = go in_i
+    | otherwise = go inI
         where
             go EmptyImage = EmptyImage
             go i@(CropBottom {croppedImage, outputWidth, outputHeight})
@@ -234,9 +234,9 @@ cropBottom h in_i
 -- side.
 cropRight :: Int -> Image -> Image
 cropRight 0 _ = EmptyImage
-cropRight w in_i
+cropRight w inI
     | w < 0     = error "cannot crop width to less than zero"
-    | otherwise = go in_i
+    | otherwise = go inI
         where
             go EmptyImage = EmptyImage
             go i@(CropRight {croppedImage, outputWidth, outputHeight})
@@ -250,9 +250,9 @@ cropRight w in_i
 -- side.
 cropLeft :: Int -> Image -> Image
 cropLeft 0 _ = EmptyImage
-cropLeft w in_i
+cropLeft w inI
     | w < 0     = error "cannot crop the width to less than zero"
-    | otherwise = go in_i
+    | otherwise = go inI
         where
             go EmptyImage = EmptyImage
             go i@(CropLeft {croppedImage, leftSkip, outputWidth, outputHeight})
@@ -268,9 +268,9 @@ cropLeft w in_i
 -- no effect. Otherwise the image is cropped from the top.
 cropTop :: Int -> Image -> Image
 cropTop 0 _ = EmptyImage
-cropTop h in_i
+cropTop h inI
     | h < 0  = error "cannot crop the height to less than zero"
-    | otherwise = go in_i
+    | otherwise = go inI
         where
             go EmptyImage = EmptyImage
             go i@(CropTop {croppedImage, topSkip, outputWidth, outputHeight})

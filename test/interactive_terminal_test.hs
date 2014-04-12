@@ -74,8 +74,8 @@ failure".
 |]
     waitForReturn
     results <- doTestMenu 1
-    envAttributes <- mapM ( \env_name -> Control.Exception.catch ( Env.getEnv env_name >>= return . (,) env_name ) 
-                                                ( \ (_ :: SomeException) -> return (env_name, "") ) 
+    envAttributes <- mapM ( \envName -> Control.Exception.catch ( Env.getEnv envName >>= return . (,) envName ) 
+                                                ( \ (_ :: SomeException) -> return (envName, "") ) 
                           ) 
                           [ "TERM", "COLORTERM", "LANG", "TERM_PROGRAM", "XTERM_VERSION" ]
     t <- outputForCurrentTerminal
@@ -374,7 +374,7 @@ Did the test output match the description?
 -- It's assumed the compiler will at least not barf on UTF-8 encoded text in
 -- comments ;-)
 --
--- txt_0 = ↑↑↓↓←→←→BA
+-- txt0 = ↑↑↓↓←→←→BA
 
 utf8Txt0 :: [[Word8]]
 utf8Txt0 = [ [ 0xe2 , 0x86 , 0x91 ]
@@ -975,7 +975,7 @@ outputPicAndWait pic = do
 vertCropTest0 :: Test
 vertCropTest0 = Test
     { testName = "Verify bottom cropping works as expected with single column chars"
-    , testID = "crop_test_0"
+    , testID = "cropTest0"
     , testAction = do
         let block0 = cropBottom 2 $ vertCat $ map (string defAttr) lorumIpsum
             block1 = vertCat $ map (string defAttr) $ take 2 lorumIpsum
@@ -992,7 +992,7 @@ vertCropTest0 = Test
 vertCropTest1 :: Test
 vertCropTest1 = Test
     { testName = "Verify bottom cropping works as expected with double column chars"
-    , testID = "crop_test_0"
+    , testID = "cropTest0"
     , testAction = do
         let block0 = cropBottom 2 $ vertCat $ map (string defAttr) lorumIpsumChinese
             block1 = vertCat $ map (string defAttr) $ take 2 lorumIpsumChinese
@@ -1009,7 +1009,7 @@ vertCropTest1 = Test
 vertCropTest2 :: Test
 vertCropTest2 = Test
     { testName = "Verify top cropping works as expected with single column chars"
-    , testID = "crop_test_2"
+    , testID = "cropTest2"
     , testAction = do
         let block0 = cropTop 2 $ vertCat $ map (string defAttr) lorumIpsum
             block1 = vertCat $ map (string defAttr) $ drop (length lorumIpsum - 2) lorumIpsum
@@ -1026,7 +1026,7 @@ vertCropTest2 = Test
 vertCropTest3 :: Test
 vertCropTest3 = Test
     { testName = "Verify top cropping works as expected with double column chars"
-    , testID = "crop_test_0"
+    , testID = "cropTest0"
     , testAction = do
         let block0 = cropTop 2 $ vertCat $ map (string defAttr) lorumIpsumChinese
             block1 = vertCat $ map (string defAttr) $ drop (length lorumIpsumChinese - 2 ) lorumIpsumChinese
@@ -1043,7 +1043,7 @@ vertCropTest3 = Test
 horizCropTest0 :: Test
 horizCropTest0 = Test
     { testName = "Verify right cropping works as expected with single column chars"
-    , testID = "crop_test_0"
+    , testID = "cropTest0"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsum
             croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage 
@@ -1060,7 +1060,7 @@ horizCropTest0 = Test
 horizCropTest1 :: Test
 horizCropTest1 = Test
     { testName = "Verify right cropping works as expected with double column chars"
-    , testID = "crop_test_0"
+    , testID = "cropTest0"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsumChinese
             croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage 
@@ -1077,7 +1077,7 @@ horizCropTest1 = Test
 horizCropTest2 :: Test
 horizCropTest2 = Test
     { testName = "Verify left cropping works as expected with single column chars"
-    , testID = "crop_test_0"
+    , testID = "cropTest0"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsum
             croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage 
@@ -1094,7 +1094,7 @@ horizCropTest2 = Test
 horizCropTest3 :: Test
 horizCropTest3 = Test
     { testName = "Verify right cropping works as expected with double column chars"
-    , testID = "crop_test_0"
+    , testID = "cropTest0"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsumChinese
             croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage 

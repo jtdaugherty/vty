@@ -85,16 +85,16 @@ instance Arbitrary ImageResize where
             ImageResize f <- arbitrary
             WidthResize g <- arbitrary
             return $! ImageResize $! \i -> 
-                let (i_0, (_, outHeight)) = f i
-                    g_i = g i_0
-                in (fst g_i, (snd g_i, outHeight))
+                let (i0, (_, outHeight)) = f i
+                    gI = g i0
+                in (fst gI, (snd gI, outHeight))
         , do
             ImageResize f <- arbitrary
             HeightResize g <- arbitrary
             return $! ImageResize $! \i -> 
-                let (i_0, (outWidth, _)) = f i
-                    g_i = g i_0
-                in (fst g_i, (outWidth, snd g_i))
+                let (i0, (outWidth, _)) = f i
+                    gI = g i0
+                in (fst gI, (outWidth, snd gI))
         ]
 
 
@@ -157,42 +157,42 @@ instance Arbitrary Image  where
             ImageResize f <- Verify.resize 2 arbitrary
             return $! fst $! f stackImage
         , do
-            i_0 <- arbitrary
-            i_1 <- arbitrary
-            let i = i_0 <|> i_1
+            i0 <- arbitrary
+            i1 <- arbitrary
+            let i = i0 <|> i1
             ImageResize f <- Verify.resize 2 arbitrary
             return $! fst $! f i
         , do
-            i_0 <- arbitrary
-            i_1 <- arbitrary
-            let i = i_0 <-> i_1
+            i0 <- arbitrary
+            i1 <- arbitrary
+            let i = i0 <-> i1
             ImageResize f <- Verify.resize 2 arbitrary
             return $! fst $! f i
         ]
     {-
-    shrink i@(HorizJoin {part_left, part_right}) = do
-        let !i_alt = background_fill (imageWidth i) (imageHeight i)
-        !part_left' <- shrink part_left
-        !part_right' <- shrink part_right
-        [i_alt, part_left' <|> part_right']
-    shrink i@(VertJoin {part_top, part_bottom}) = do
-        let !i_alt = background_fill (imageWidth i) (imageHeight i)
-        !part_top' <- shrink part_top
-        !part_bottom' <- shrink part_bottom
-        [i_alt, part_top' <-> part_bottom']
-    shrink i@(CropRight {cropped_image, output_width}) = do
-        let !i_alt = background_fill (imageWidth i) (imageHeight i)
-        [i_alt, cropped_image]
-    shrink i@(CropLeft {cropped_image, left_skip, output_width}) = do
-        let !i_alt = background_fill (imageWidth i) (imageHeight i)
-        [i_alt, cropped_image]
-    shrink i@(CropBottom {cropped_image, output_height}) = do
-        let !i_alt = background_fill (imageWidth i) (imageHeight i)
-        [i_alt, cropped_image]
-    shrink i@(CropTop {cropped_image, top_skip, output_height}) = do
-        let !i_alt = background_fill (imageWidth i) (imageHeight i)
-        [i_alt, cropped_image]
-    shrink i = [empty_image, background_fill (imageWidth i) (imageHeight i)]
+    shrink i@(HorizJoin {partLeft, partRight}) = do
+        let !i_alt = backgroundFill (imageWidth i) (imageHeight i)
+        !partLeft' <- shrink partLeft
+        !partRight' <- shrink partRight
+        [i_alt, partLeft' <|> partRight']
+    shrink i@(VertJoin {partTop, partBottom}) = do
+        let !i_alt = backgroundFill (imageWidth i) (imageHeight i)
+        !partTop' <- shrink partTop
+        !partBottom' <- shrink partBottom
+        [i_alt, partTop' <-> partBottom']
+    shrink i@(CropRight {croppedImage, outputWidth}) = do
+        let !i_alt = backgroundFill (imageWidth i) (imageHeight i)
+        [i_alt, croppedImage]
+    shrink i@(CropLeft {croppedImage, leftSkip, outputWidth}) = do
+        let !i_alt = backgroundFill (imageWidth i) (imageHeight i)
+        [i_alt, croppedImage]
+    shrink i@(CropBottom {croppedImage, outputHeight}) = do
+        let !i_alt = backgroundFill (imageWidth i) (imageHeight i)
+        [i_alt, croppedImage]
+    shrink i@(CropTop {croppedImage, topSkip, outputHeight}) = do
+        let !i_alt = backgroundFill (imageWidth i) (imageHeight i)
+        [i_alt, croppedImage]
+    shrink i = [emptyImage, backgroundFill (imageWidth i) (imageHeight i)]
     -}
 
 data CropOperation

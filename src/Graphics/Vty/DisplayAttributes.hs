@@ -40,17 +40,17 @@ data DisplayAttrDiff = DisplayAttrDiff
 
 instance Monoid DisplayAttrDiff where
     mempty = DisplayAttrDiff [] NoColorChange NoColorChange
-    mappend d_0 d_1 =
-        let ds  = simplifyStyleDiffs (styleDiffs d_0)    (styleDiffs d_1)
-            fcd = simplifyColorDiffs (foreColorDiff d_0) (foreColorDiff d_1)
-            bcd = simplifyColorDiffs (backColorDiff d_0) (backColorDiff d_1)
+    mappend d0 d1 =
+        let ds  = simplifyStyleDiffs (styleDiffs d0)    (styleDiffs d1)
+            fcd = simplifyColorDiffs (foreColorDiff d0) (foreColorDiff d1)
+            bcd = simplifyColorDiffs (backColorDiff d0) (backColorDiff d1)
         in DisplayAttrDiff ds fcd bcd
 
 -- | Used in the computation of a final style attribute change.
 --
 -- TODO(corey): not really a simplify but a monoid instance.
 simplifyStyleDiffs :: [StyleStateChange] -> [StyleStateChange] -> [StyleStateChange]
-simplifyStyleDiffs cs_0 cs_1 = cs_0 `mappend` cs_1
+simplifyStyleDiffs cs0 cs1 = cs0 `mappend` cs1
 
 -- | Consider two display color attributes diffs. What display color attribute diff are these
 -- equivalent to?

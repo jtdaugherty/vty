@@ -78,15 +78,15 @@ singleAttrSingleSpanStackCropped1 stack =
     in expectedRowCount == actualRowCount
 
 singleAttrSingleSpanStackCropped2 :: SingleAttrSingleSpanStack -> SingleAttrSingleSpanStack -> Result
-singleAttrSingleSpanStackCropped2 stack0 stack_1 =
-    let p = picForImage (stackImage stack0 <|> stackImage stack_1)
+singleAttrSingleSpanStackCropped2 stack0 stack1 =
+    let p = picForImage (stackImage stack0 <|> stackImage stack1)
         w = MockWindow (stackWidth stack0) (imageHeight (picImage p))
         ops = displayOpsForPic p (regionForWindow w)
     in verifyAllSpansHaveWidth (picImage p) ops (stackWidth stack0)
 
 singleAttrSingleSpanStackCropped3 :: SingleAttrSingleSpanStack -> SingleAttrSingleSpanStack -> Bool
-singleAttrSingleSpanStackCropped3 stack0 stack_1 =
-    let p = picForImage (stackImage stack0 <|> stackImage stack_1)
+singleAttrSingleSpanStackCropped3 stack0 stack1 =
+    let p = picForImage (stackImage stack0 <|> stackImage stack1)
         w = MockWindow (imageWidth (picImage p))  expectedRowCount
         ops = displayOpsForPic p (regionForWindow w)
         expectedRowCount = imageHeight (picImage p) `div` 2
@@ -94,16 +94,16 @@ singleAttrSingleSpanStackCropped3 stack0 stack_1 =
     in expectedRowCount == actualRowCount
 
 singleAttrSingleSpanStackCropped4 :: SingleAttrSingleSpanStack -> SingleAttrSingleSpanStack -> Result
-singleAttrSingleSpanStackCropped4 stack0 stack_1 =
-    let p = picForImage (stackImage stack0 <-> stackImage stack_1)
+singleAttrSingleSpanStackCropped4 stack0 stack1 =
+    let p = picForImage (stackImage stack0 <-> stackImage stack1)
         w = MockWindow expectedWidth (imageHeight (picImage p))
         ops = displayOpsForPic p (regionForWindow w)
         expectedWidth = imageWidth (picImage p) `div` 2
     in verifyAllSpansHaveWidth (picImage p) ops expectedWidth
 
 singleAttrSingleSpanStackCropped5 :: SingleAttrSingleSpanStack -> SingleAttrSingleSpanStack -> Bool
-singleAttrSingleSpanStackCropped5 stack0 stack_1 =
-    let p = picForImage (stackImage stack0 <-> stackImage stack_1)
+singleAttrSingleSpanStackCropped5 stack0 stack1 =
+    let p = picForImage (stackImage stack0 <-> stackImage stack1)
         w = MockWindow (imageWidth (picImage p)) (stackHeight stack0)
         ops = displayOpsForPic p (regionForWindow w)
         expectedRowCount = stackHeight stack0

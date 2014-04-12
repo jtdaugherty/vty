@@ -164,12 +164,12 @@ swapSkipsForSingleColumnCharSpan c a = Vector.map f
 swapSkipsForCharSpan :: Int -> Char -> Attr -> SpanOps -> SpanOps
 swapSkipsForCharSpan w c a = Vector.map f
     where
-        f (Skip ow) = let txt_0_cw = ow `div` w
-                          txt_0 = TL.pack $ replicate txt_0_cw c
-                          txt_1_cw = ow `mod` w
-                          txt_1 = TL.pack $ replicate txt_1_cw '…'
-                          cw = txt_0_cw + txt_1_cw
-                          txt = txt_0 `TL.append` txt_1
+        f (Skip ow) = let txt0Cw = ow `div` w
+                          txt0 = TL.pack $ replicate txt0Cw c
+                          txt1Cw = ow `mod` w
+                          txt1 = TL.pack $ replicate txt1Cw '…'
+                          cw = txt0Cw + txt1Cw
+                          txt = txt0 `TL.append` txt1
                       in TextSpan a ow cw txt
         f v = v
 
@@ -289,28 +289,28 @@ addMaybeClippedJoin :: forall s . String
                        -> Image
                        -> Int
                        -> BlitM s ()
-addMaybeClippedJoin name skip remaining offset i0_dim i0 i1 size = do
+addMaybeClippedJoin name skip remaining offset i0Dim i0 i1 size = do
     state <- get
     when (state^.remaining <= 0) $ fail $ name ++ " with remaining <= 0"
     case state^.skip of
-        s -- TODO: check if clipped in other dim. if not use add_unclipped
+        s -- TODO: check if clipped in other dim. if not use addUnclipped
           | s >= size -> fail $ name ++ " on fully clipped"
-          | s == 0    -> if state^.remaining > i0_dim 
+          | s == 0    -> if state^.remaining > i0Dim 
                             then do
                                 addMaybeClipped i0
-                                put $ state & offset +~ i0_dim & remaining -~ i0_dim
+                                put $ state & offset +~ i0Dim & remaining -~ i0Dim
                                 addMaybeClipped i1
                             else addMaybeClipped i0
-          | s < i0_dim  ->
-                let i0_dim' = i0_dim - s
-                in if state^.remaining <= i0_dim'
+          | s < i0Dim  ->
+                let i0Dim' = i0Dim - s
+                in if state^.remaining <= i0Dim'
                     then addMaybeClipped i0
                     else do
                         addMaybeClipped i0
-                        put $ state & offset +~ i0_dim' & remaining -~ i0_dim' & skip .~ 0
+                        put $ state & offset +~ i0Dim' & remaining -~ i0Dim' & skip .~ 0
                         addMaybeClipped i1
-          | s >= i0_dim -> do
-                put $ state & skip -~ i0_dim
+          | s >= i0Dim -> do
+                put $ state & skip -~ i0Dim
                 addMaybeClipped i1
         _ -> fail $ name ++ " has unhandled skip class"
 
@@ -326,9 +326,9 @@ addRowCompletion :: DisplayRegion -> Int -> BlitM s ()
 addRowCompletion displayRegion row = do
     allRowOps <- view mrowOps
     rowOps <- lift $ lift $ MVector.read allRowOps row
-    let end_x = spanOpsEffectedColumns rowOps
-    when (end_x < regionWidth displayRegion) $ do
-        let ow = regionWidth displayRegion - end_x
+    let endX = spanOpsEffectedColumns rowOps
+    when (endX < regionWidth displayRegion) $ do
+        let ow = regionWidth displayRegion - endX
         snocOp (Skip ow) row
 
 -- | snocs the operation to the operations for the given row.

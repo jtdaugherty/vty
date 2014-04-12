@@ -138,9 +138,9 @@ getSpriteID = gets thisSpriteID
 newSpriteID :: MonadIO m => StateT SpriteDB m Int
 newSpriteID = do
     ctx <- get
-    let the_ID = nextSpriteID ctx
-    put $ ctx {nextSpriteID = the_ID + 1, thisSpriteID = the_ID}
-    return the_ID
+    let theID = nextSpriteID ctx
+    put $ ctx {nextSpriteID = theID + 1, thisSpriteID = theID}
+    return theID
 
 emptySpriteDb = SpriteDB 0 1 Map.empty
 
@@ -178,7 +178,7 @@ main = do
     spriteDb <- execStateT (buildSprites story0) emptySpriteDb
     print spriteDb
     let imgs = renderSprites spriteDb
-        p = pic_for_layers imgs
+        p = picForLayers imgs
     withVty $ flip update p
     threadDelay 5000000
     withVty $ shutdown

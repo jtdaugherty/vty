@@ -7,7 +7,7 @@ import Data.List (isInfixOf, isPrefixOf)
 -- | The built in input augmentation for XTerm supports any TERM starting with xterm except those
 -- containing 8bit.
 supports :: String -> Bool
-supports term_name = "xterm" `isPrefixOf` term_name && not ("8bit" `isInfixOf` term_name)
+supports termName = "xterm" `isPrefixOf` termName && not ("8bit" `isInfixOf` termName)
 
 -- | Encoding for navigation keys.
 --

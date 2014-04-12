@@ -29,11 +29,11 @@ data CapExpression = CapExpression
 instance Show CapExpression where
     show c
         = "CapExpression { " ++ show (capOps c) ++ " }"
-        ++ " <- [" ++ hex_dump ( map ( toEnum . fromEnum ) $! sourceString c ) ++ "]"
+        ++ " <- [" ++ hexDump ( map ( toEnum . fromEnum ) $! sourceString c ) ++ "]"
         ++ " <= " ++ show (sourceString c)
         where
-            hex_dump :: [Word8] -> String
-            hex_dump = foldr (\b s -> showHex b s) ""
+            hexDump :: [Word8] -> String
+            hexDump = foldr (\b s -> showHex b s) ""
 
 instance NFData CapExpression where
     rnf (CapExpression ops !_bytes !str !c !pOps) 
@@ -51,8 +51,8 @@ data CapOp =
     -- The conditional parts are the sequence of (%t expression, %e expression) pairs.
     -- The %e expression may be NOP
     | Conditional 
-      { conditional_expr :: !CapOps
-      , conditional_parts :: ![(CapOps, CapOps)]
+      { conditionalExpr :: !CapOps
+      , conditionalParts :: ![(CapOps, CapOps)]
       }
     | BitwiseOr | BitwiseXOr | BitwiseAnd
     | ArithPlus | ArithMinus
@@ -168,7 +168,7 @@ conditionalOpParser :: CapParser BuildResults
 conditionalOpParser = do
     _ <- char '?'
     incOffset 1
-    cond_part <- manyExpr conditionalTrueParser
+    condPart <- manyExpr conditionalTrueParser
     parts <- manyP 
              ( do
                 truePart <- manyExpr $ choice [ try $ lookAhead conditionalEndParser
@@ -183,7 +183,7 @@ conditionalOpParser = do
 
     let trueParts = map fst parts
         falseParts = map snd parts
-        BuildResults n cond condParamOps = cond_part
+        BuildResults n cond condParamOps = condPart
 
     let n' = maximum $ n : map outParamCount trueParts
         n'' = maximum $ n' : map outParamCount falseParts

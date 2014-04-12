@@ -58,8 +58,8 @@ applyParamOp params IncFirstTwo = map (+ 1) params
 writeCapExpr :: CapExpression -> [CapParam] -> Write
 writeCapExpr cap params =
     let params' = applyParamOps cap params
-        s_0 = EvalState [] cap params'
-    in snd $ runWriter (runStateT (writeCapOps (capOps cap)) s_0)
+        s0 = EvalState [] cap params'
+    in snd $ runWriter (runStateT (writeCapOps (capOps cap)) s0)
 
 writeCapOps :: CapOps -> Eval ()
 writeCapOps ops = mapM_ writeCapOp ops
@@ -83,7 +83,7 @@ writeCapOp (Conditional expr parts) = do
     writeContitionalParts parts
     where 
         writeContitionalParts [] = return ()
-        writeContitionalParts ((trueOps, false_ops) : falseParts) = do
+        writeContitionalParts ((trueOps, falseOps) : falseParts) = do
             -- (man 5 terminfo)
             -- Usually the %? expr part pushes a value onto the stack, and %t pops  it  from  the
             -- stack, testing if it is nonzero (true).  If it is zero (false), control
@@ -92,39 +92,39 @@ writeCapOp (Conditional expr parts) = do
             if v /= 0
                 then writeCapOps trueOps
                 else do
-                    writeCapOps false_ops
+                    writeCapOps falseOps
                     writeContitionalParts falseParts
 
 writeCapOp BitwiseOr = do
-    v_0 <- pop
-    v_1 <- pop
-    push $ v_0 .|. v_1
+    v0 <- pop
+    v1 <- pop
+    push $ v0 .|. v1
 writeCapOp BitwiseAnd = do
-    v_0 <- pop
-    v_1 <- pop
-    push $ v_0 .&. v_1
+    v0 <- pop
+    v1 <- pop
+    push $ v0 .&. v1
 writeCapOp BitwiseXOr = do
-    v_1 <- pop
-    v_0 <- pop
-    push $ v_0 `xor` v_1
+    v1 <- pop
+    v0 <- pop
+    push $ v0 `xor` v1
 writeCapOp ArithPlus = do
-    v_1 <- pop
-    v_0 <- pop
-    push $ v_0 + v_1
+    v1 <- pop
+    v0 <- pop
+    push $ v0 + v1
 writeCapOp ArithMinus = do
-    v_1 <- pop
-    v_0 <- pop
-    push $ v_0 - v_1
+    v1 <- pop
+    v0 <- pop
+    push $ v0 - v1
 writeCapOp CompareEq = do
-    v_1 <- pop
-    v_0 <- pop
-    push $ if v_0 == v_1 then 1 else 0
+    v1 <- pop
+    v0 <- pop
+    push $ if v0 == v1 then 1 else 0
 writeCapOp CompareLt = do
-    v_1 <- pop
-    v_0 <- pop
-    push $ if v_0 < v_1 then 1 else 0
+    v1 <- pop
+    v0 <- pop
+    push $ if v0 < v1 then 1 else 0
 writeCapOp CompareGt = do
-    v_1 <- pop
-    v_0 <- pop
-    push $ if v_0 > v_1 then 1 else 0
+    v1 <- pop
+    v0 <- pop
+    push $ if v0 > v1 then 1 else 0
 

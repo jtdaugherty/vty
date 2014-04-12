@@ -20,12 +20,12 @@ type ImageEndo = Image -> Image
 debugImageOps :: [ImageOp]
 debugImageOps = 
     [ idImageOp
-    -- , render_single_column_char_op
-    -- , render_double_column_char_op
+    -- , renderSingleColumnCharOp
+    -- , renderDoubleColumnCharOp
     ]
 
 idImageOp :: ImageOp
 idImageOp = ImageOp id id
 
--- render_char_op :: ImageOp
--- render_char_op = ImageOp id id
+-- renderCharOp :: ImageOp
+-- renderCharOp = ImageOp id id

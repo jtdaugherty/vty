@@ -61,7 +61,7 @@ data Output = Output
     , assumedStateRef :: IORef AssumedState
     -- | Acquire display access to the given region of the display.
     -- Currently all regions have the upper left corner of (0,0) and the lower right corner at 
-    -- (max display_width provided_width, max display_height provided_height)
+    -- (max displayWidth providedWidth, max displayHeight providedHeight)
     , mkDisplayContext :: MonadIO m => Output -> DisplayRegion -> m DisplayContext
     }
 
@@ -178,7 +178,7 @@ writeSpanOps dc y inFattr spanOps =
     let start = writeMoveCursor dc 0 y
     -- then the span ops are serialized in the order specified
     in Vector.foldl' (\(out, fattr) op -> case writeSpanOp dc op fattr of
-                                            (op_out, fattr') -> (out `mappend` op_out, fattr')
+                                            (opOut, fattr') -> (out `mappend` opOut, fattr')
                      )
                      (start, inFattr)
                      spanOps
@@ -191,7 +191,7 @@ writeSpanOp dc (TextSpan attr _ _ str) fattr =
         out =  writeSetAttr dc fattr attr' diffs
                `mappend` writeUtf8Text (T.encodeUtf8 $ TL.toStrict str)
     in (out, fattr')
-writeSpanOp _dc (Skip _) _fattr = error "serialize_span_op for Skip"
+writeSpanOp _dc (Skip _) _fattr = error "writeSpanOp for Skip"
 writeSpanOp dc (RowEnd _) fattr = (writeRowEnd dc, fattr)
 
 -- | The cursor position is given in X,Y character offsets. Due to multi-column characters this

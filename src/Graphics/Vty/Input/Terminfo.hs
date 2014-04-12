@@ -61,7 +61,7 @@ termSpecificTables termName
 -- classify table is reached.
 --
 -- TODO: resolve
--- 1. start at ' '. The earlier characters are all ctrl_char_keys
+-- 1. start at ' '. The earlier characters are all 'ctrlChar'
 visibleChars :: ClassifyTable
 visibleChars = [ ([x], EvKey (KChar x) [])
                | x <- [' ' .. toEnum 0xC1]

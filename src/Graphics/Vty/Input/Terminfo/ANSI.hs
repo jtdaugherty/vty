@@ -65,11 +65,8 @@ functionKeys1 =
 --
 -- TODO: resolve -
 --
--- 1. removed 'ESC' from second list due to duplication with "special_support_keys".
 -- 2. removed '[' from second list due to conflict with 7-bit encoding for ESC. Whether meta+[ is
 -- the same as ESC should examine km and current encoding.
--- 3. stopped enumeration at '~' instead of '\DEL'. The latter is mapped to KBS by
--- special_support_keys.
 functionKeys2 :: ClassifyTable
 functionKeys2 = [ ('\ESC':[x],EvKey (KChar x) [MMeta])
                   | x <- '\t':[' ' .. '~']
