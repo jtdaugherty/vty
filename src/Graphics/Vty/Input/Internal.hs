@@ -35,11 +35,13 @@ import System.Posix.Types (Fd(..))
 
 data Config = Config
     { singleEscPeriod :: Int -- ^ AKA VTIME. The default is 100000 microseconds or 0.1 seconds.
+    , debugInputLog :: Maybe FilePath -- ^ Debug information about the input process is appended to the file.
     } deriving (Show, Eq)
 
 instance Default Config where
     def = Config
         { singleEscPeriod = 100000
+        , debugInputLog = Nothing
         }
 
 data Input = Input
@@ -148,6 +150,8 @@ stopIfRequested = do
 -- I did not write this so I might just rewrite it for better understanding. Not the best of
 -- reasons...
 -- TODO: measure and rewrite if required.
+-- TODO: The ClassifyTable interface requires this code to always assure later entries override
+-- earlier.
 compile :: ClassifyTable -> [Char] -> KClass
 compile table = cl' where
     -- take all prefixes and create a set of these

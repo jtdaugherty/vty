@@ -13,13 +13,13 @@ data Key = KEsc  | KChar Char | KBS | KEnter
          | KUpLeft | KUpRight | KDownLeft | KDownRight | KCenter
          | KFun Int | KBackTab | KPrtScr | KPause | KIns
          | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin | KMenu
-    deriving (Eq,Show,Ord)
+    deriving (Eq,Show,Read,Ord)
 
 -- | Modifier keys.  Key codes are interpreted such that users are more likely to
 -- have Meta than Alt; for instance on the PC Linux console, 'MMeta' will
 -- generally correspond to the physical Alt key.
 data Modifier = MShift | MCtrl | MMeta | MAlt
-    deriving (Eq,Show,Ord)
+    deriving (Eq,Show,Read,Ord)
 
 -- | Mouse buttons.
 --
@@ -38,5 +38,6 @@ data Event
     | EvResize Int Int
     deriving (Eq,Show,Ord)
 
--- | representation of mapping from input bytes to event
+-- | representation of mapping from input bytes to event. Later entries take precedence over earlier
+-- in the case multiple entries have the same byte string.
 type ClassifyTable = [(String, Event)]

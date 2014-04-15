@@ -44,8 +44,11 @@ import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Internal
 import Graphics.Vty.Input.Terminfo
 
+import Control.Applicative
 import Control.Concurrent
 import Control.Lens
+
+import Data.Monoid
 
 import qualified System.Console.Terminfo as Terminfo
 import System.Environment
@@ -63,9 +66,9 @@ inputForCurrentTerminal config = do
 -- | Set up the terminal attached to the given Fd for input.  Returns a 'Input'.
 --
 -- The table used to determine the 'Events' to produce for the input bytes comes from
--- 'classifyTableForTerm'.
+-- 'classifyTableForTerm'. Which is then overridden by the table from 'classifyTableUserOverrides'.
 --
--- The terminal is modified as follows:
+-- The terminal device is configured with the attributes:
 --
 -- * IXON disabled
 --      - disables software flow control on outgoing data. This stops the process from being
@@ -91,7 +94,8 @@ inputForCurrentTerminal config = do
 inputForNameAndIO :: Config -> String -> Fd -> IO Input
 inputForNameAndIO config termName termFd = do
     terminal <- Terminfo.setupTerm termName
-    let classifyTable = classifyTableForTerm termName terminal
+    classifyTable <- mappend <$> pure (classifyTableForTerm termName terminal)
+                             <*> classifyTableUserOverrides
     (setAttrs,unsetAttrs) <- attributeControl termFd
     setAttrs
     input <- initInputForFd config classifyTable termFd 

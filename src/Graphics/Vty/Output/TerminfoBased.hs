@@ -92,10 +92,11 @@ sendCapToTerminal t cap capParams = do
 
 {- | Uses terminfo for all control codes. While this should provide the most compatible terminal
  - terminfo does not support some features that would increase efficiency and improve compatibility:
+ -
  -  * determine the character encoding supported by the terminal. Should this be taken from the LANG
  - environment variable?  
- -  * Provide independent string capabilities for all display attributes.
  -
+ -  * Provide independent string capabilities for all display attributes.
  - 
  - todo: Some display attributes like underline and bold have independent string capabilities that
  - should be used instead of the generic "sgr" string capability.
@@ -238,15 +239,21 @@ terminfoDisplayContext tActual terminfoCaps r = return dc
 -- directly ; and, for no good reason, resets the colors to the default) this procedure is used: 
 --
 --  0. set the style attributes. This resets the fore and back color.
+--
 --  1, If a foreground color is to be set then set the foreground color
+--
 --  2. likewise with the background color
 -- 
 -- If the terminal does not support the sgr cap then:
 --  if there is a change from an applied color to the default (in either the fore or back color)
 --  then:
+--
 --      0. reset all display attributes (sgr0)
+--
 --      1. enter required style modes
+--
 --      2. set the fore color if required
+--
 --      3. set the back color if required
 --
 -- Entering the required style modes could require a reset of the display attributes. If this is

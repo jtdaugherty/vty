@@ -40,6 +40,39 @@ classifyTableForTerm termName term =
            : universalTable
            : termSpecificTables termName
 
+-- | The user can specify a list of classify table entries in $HOME/.config/vty/input.conf and
+-- $VTY_INPUT_CONFIG. The file at $VTY_INPUT_CONFIG takes precedence over the input.conf file. Both
+-- take precedence over the classify tables determined by 'classifyTableForTerm'
+-- 
+-- Each line of the input config is processed individually. Lines that fail to parse are ignored.
+-- Later entries take precedence over earlier.
+--
+-- Entry format:
+--
+-- @
+--  entry := "map" string key modifier_list
+--  key := KEsc | KChar Char | KBS ... (same as 'Key')
+--  modifier_list := "[" modifier+ "]"
+--  modifier := MShift | MCtrl | MMeta | MAlt
+--  string := "\"" chars+ "\""
+-- @
+--
+-- EG: If the contents of input.conf are
+--
+-- @
+--  map "\ESC[B" KUp []
+--  map "\ESC[1;3B" KDown [MAlt]
+-- @
+--
+-- Then the bytes "\ESC[B" will result in the KUp event. The bytes "\ESC[1;3B" will result in the
+-- event KDown with the MAlt modifier.
+--
+classifyTableUserOverrides :: IO ClassifyTable
+classifyTableUserOverrides = return []
+
+parseOverrideFile :: FilePath -> IO ClassifyTable
+parseOverrideFile _ = return []
+
 -- | key table assumed to be applicable to all terminals.
 universalTable :: ClassifyTable
 universalTable = concat [visibleChars, ctrlChars, ctrlMetaChars, specialSupportKeys]
