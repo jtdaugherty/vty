@@ -3,6 +3,8 @@ set -ex
 
 source /etc/profile
 
+GHCVER=`ghc --version | cut -d' ' -f8`
+
 function init-sandbox() {
   cabal sandbox init
 }
