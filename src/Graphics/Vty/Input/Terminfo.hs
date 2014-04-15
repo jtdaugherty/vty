@@ -40,7 +40,7 @@ classifyTableForTerm termName term =
            : universalTable
            : termSpecificTables termName
 
--- | The user can specify a list of classify table entries in $HOME/.config/vty/input.conf and
+-- | The user can specify a list of classify table entries in $HOME/.config/vty.conf and
 -- $VTY_INPUT_CONFIG. The file at $VTY_INPUT_CONFIG takes precedence over the input.conf file. Both
 -- take precedence over the classify tables determined by 'classifyTableForTerm'
 -- 

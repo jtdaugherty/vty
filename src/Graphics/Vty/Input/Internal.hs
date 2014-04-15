@@ -4,6 +4,9 @@
 -- | The input layer used to be a single function that correctly accounted for the non-threaded
 -- runtime by emulating the terminal VMIN adn VTIME handling. This has been removed and replace with
 -- a more straightforward parser. The non-threaded runtime is no longer supported.
+--
+-- This is an example of an algorithm where code coverage could be high, even 100%, but the
+-- behavior is still under tested. I should collect more of these examples...
 module Graphics.Vty.Input.Internal where
 
 import Graphics.Vty.Input.Events
@@ -222,8 +225,6 @@ attributeControl fd = do
         unsetAttrs = setTerminalAttributes fd original Immediately
     return (setAttrs,unsetAttrs)
 
--- This is an example of an algorithm where code coverage could be high, even 100%, but the
--- algorithm still under tested. I should collect more of these examples...
 initInputForFd :: Config -> ClassifyTable -> Fd -> IO Input
 initInputForFd config classifyTable inFd = do
     applyTimingConfig inFd config
