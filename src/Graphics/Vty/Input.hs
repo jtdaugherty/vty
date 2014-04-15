@@ -15,7 +15,7 @@
 -- determines whether the ESC is: Individual, part of a control key sequence, part of a meta key
 -- combination.
 --
--- * 8 bit mode: UTF-8 cannot be input unamboguiously AFAIK. Does not require an escape delay.
+-- * 8 bit mode: UTF-8 cannot be input unambiguously AFAIK. Does not require an escape delay.
 --
 -- vty assumes 7 bit mode. Which is the default AFAIK.
 --
@@ -77,17 +77,17 @@ inputForCurrentTerminal config = do
 -- "raw" mode is used for input.
 --
 -- * ISIG disabled
---      - enables keyboard combinations that result in signals. This should probably be a dynamic
+--      - enables keyboard combinations that result in signals. TODO: should probably be a dynamic
 --      option.
 --
 -- * ECHO disabled
---      - input is not echod to the output. Pobably should be a dynamic option.
+--      - input is not echod to the output. TODO: should be a dynamic option.
 --
 -- * ICANON disabled
---      - canonical mode (line mode) input is not used. Probably should be a dynamic option.
+--      - canonical mode (line mode) input is not used. TODO: should be a dynamic option.
 --
 -- * IEXTEN disabled
---      - extended functions are disabled. Uh. Whatever these are.
+--      - extended functions are disabled. TODO: Uh. Whatever these are.
 --
 inputForNameAndIO :: Config -> String -> Fd -> IO Input
 inputForNameAndIO config termName termFd = do
@@ -97,7 +97,7 @@ inputForNameAndIO config termName termFd = do
     setAttrs
     input <- initInputForFd config classifyTable termFd 
     let pokeIO = Catch $ do
-            let e = error "(getsize in input layer)"
+            let e = error "vty internal failure: this value should not propagate to users"
             setAttrs
             writeChan (input^.eventChannel) (EvResize e e)
     _ <- installHandler windowChange pokeIO Nothing
