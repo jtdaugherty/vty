@@ -536,7 +536,7 @@ test-suite verify-using-mock-input
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
-                       lens >= 3.9.0.2 && < 4.0,
+                       lens >= 3.9.0.2 && < 5.0,
                        mtl >= 1.1.1.0 && < 2.2,
                        terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
