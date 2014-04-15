@@ -66,11 +66,10 @@ All the tests assume the following about the terminal display:
 Thanks for the help! :-D
 To exit the test early enter "q" anytime at the following menu screen.
 
-If any test failed then please post an issue to
+If any test fails then please post an issue to
     https://github.com/coreyoconnor/vty/issues
-with the test_results.list file pasted into the issue. The issue summary can
-mention the specific tests that failed or just say "interactive terminal test
-failure".
+with the test_results.list file pasted into the issue. A suitable summary is:
+"interactive terminal test failure".
 |]
     waitForReturn
     results <- doTestMenu 1

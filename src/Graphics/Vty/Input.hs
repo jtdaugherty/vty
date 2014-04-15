@@ -19,14 +19,10 @@
 --
 -- vty assumes 7 bit mode. Which is the default AFAIK.
 --
--- 1. ESC individually: ESC byte, no bytes for control-seq-period,
--- no bytes for meta-combo-period.
+-- 1. ESC individually: ESC byte, no bytes for 'singleEscPeriod'.
 --
--- 2. control keys that contain ESC in their byte sequence: ESC byte, bytes read within
--- control-seq-period are part of the sequence. Up until the next valid input block.
---
--- 3. ESC used as meta in a key combination: ESC byte, no other bytes read within
--- control-seq-period. Bytes up until next valid input block are the input events plus meta.
+-- 2. control keys that contain ESC in their byte sequence: ESC byte. Bytes read within
+-- 'singleEscPeriod' are part of the sequence up until the next valid input block.
 --
 -- If the current runtime is the threaded runtime then the terminal's VMIN and VTIME parameters can
 -- be applied to implement the above rules.
@@ -65,6 +61,9 @@ inputForCurrentTerminal config = do
     inputForNameAndIO config termName stdInput
 
 -- | Set up the terminal attached to the given Fd for input.  Returns a 'Input'.
+--
+-- The table used to determine the 'Events' to produce for the input bytes comes from
+-- 'classifyTableForTerm'.
 --
 -- The terminal is modified as follows:
 --
