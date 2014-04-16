@@ -7,11 +7,12 @@
 --
 -- This is an example of an algorithm where code coverage could be high, even 100%, but the
 -- behavior is still under tested. I should collect more of these examples...
-module Graphics.Vty.Input.Internal where
+module Graphics.Vty.Input.Loop where
 
+import Graphics.Vty.Config
+import Graphics.Vty.Input.Classify
 import Graphics.Vty.Input.Events
 
-import Codec.Binary.UTF8.Generic (decode)
 import Control.Applicative
 import Control.Concurrent
 import Control.Lens
@@ -21,13 +22,8 @@ import Control.Monad.Trans.State (StateT(..), evalStateT)
 import Control.Monad.Trans.Reader (ReaderT(..))
 
 import Data.Char
-import Data.Default
 import Data.IORef
-import Data.List(tails,inits)
-import qualified Data.Map as M( fromList, lookup )
-import Data.Maybe ( mapMaybe )
-import qualified Data.Set as S( fromList, member )
-import Data.Word
+import Data.Word (Word8)
 
 import Foreign ( allocaArray, peekArray, Ptr )
 import Foreign.C.Types (CInt(..))
@@ -35,17 +31,6 @@ import Foreign.C.Types (CInt(..))
 import System.Posix.IO (fdReadBuf)
 import System.Posix.Terminal
 import System.Posix.Types (Fd(..))
-
-data Config = Config
-    { singleEscPeriod :: Int -- ^ AKA VTIME. The default is 100000 microseconds or 0.1 seconds.
-    , debugInputLog :: Maybe FilePath -- ^ Debug information about the input process is appended to the file.
-    } deriving (Show, Eq)
-
-instance Default Config where
-    def = Config
-        { singleEscPeriod = 100000
-        , debugInputLog = Nothing
-        }
 
 data Input = Input
     { -- | Channel of events direct from input processing. Unlike 'nextEvent' this will not refresh
@@ -61,12 +46,6 @@ data Input = Input
     }
 
 makeLenses ''Input
-
-data KClass
-    = Valid Event [Char]
-    | Invalid
-    | Prefix
-    deriving(Show, Eq)
 
 data InputBuffer = InputBuffer
     { _ptr :: Ptr Word8
@@ -147,63 +126,6 @@ stopIfRequested :: InputM ()
 stopIfRequested = do
     True <- (liftIO . readIORef) =<< use stopRequestRef
     return ()
-
--- This makes a kind of tri. Has space efficiency issues with large input blocks.
--- Likely building a parser and just applying that would be better.
--- I did not write this so I might just rewrite it for better understanding. Not the best of
--- reasons...
--- TODO: measure and rewrite if required.
--- TODO: The ClassifyTable interface requires this code to always assure later entries override
--- earlier.
-compile :: ClassifyTable -> [Char] -> KClass
-compile table = cl' where
-    -- take all prefixes and create a set of these
-    prefixSet = S.fromList $ concatMap (init . inits . fst) $ table
-    eventForInput = M.fromList table
-    cl' [] = Prefix
-    cl' inputBlock = case M.lookup inputBlock eventForInput of
-            Just e -> Valid e []
-            Nothing -> case S.member inputBlock prefixSet of
-                True -> Prefix
-                -- if the inputBlock is exactly what is expected for an event then consume the whole
-                -- block and return the event
-                -- look up progressively smaller tails of the input block until an event is found
-                -- The assumption is that the event that consumes the most input bytes should be
-                -- produced.
-                -- The test verifyFullSynInputToEvent2x verifies this.
-                -- H: There will always be one match. The prefixSet contains, by definition, all
-                -- prefixes of an event. 
-                False ->
-                    let inputTails = init $ tail $ tails inputBlock
-                    in case mapMaybe (\s -> (,) s `fmap` M.lookup s eventForInput) inputTails of
-                        (s,e) : _ -> Valid e (drop (length s) inputBlock)
-                        -- neither a prefix or a full event. Might be interesting to log.
-                        [] -> Invalid
-
-classify, classifyTab :: ClassifyTable -> [Char] -> KClass
-
--- As soon as
-classify _table s@(c:_) | ord c >= 0xC2
-    = if utf8Length (ord c) > length s then Prefix else classifyUtf8 s -- beginning of an utf8 sequence
-classify table other
-    = classifyTab table other
-
-classifyUtf8 :: [Char] -> KClass
-classifyUtf8 s = case decode ((map (fromIntegral . ord) s) :: [Word8]) of
-    Just (unicodeChar, _) -> Valid (EvKey (KChar unicodeChar) []) []
-    _ -> Invalid -- something bad happened; just ignore and continue.
-
-classifyTab table = compile table
-
-first :: (a -> b) -> (a,c) -> (b,c)
-first f (x,y) = (f x, y)
-
-utf8Length :: (Num t, Ord a, Num a) => a -> t
-utf8Length c
-    | c < 0x80 = 1
-    | c < 0xE0 = 2
-    | c < 0xF0 = 3
-    | otherwise = 4
 
 runInputProcessorLoop :: ClassifyTable -> Input -> IORef Bool -> IO ()
 runInputProcessorLoop classifyTable input stopFlag = do

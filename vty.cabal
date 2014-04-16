@@ -14,6 +14,10 @@ description:
   Included in the source distribution is a program test/interactive_terminal_test.hs that
   demonstrates the various features. 
   .
+  Developers: See the "Graphics.Vty" module.
+  .
+  Users: See the "Graphics.Vty.Config" module.
+  .
   If your terminal is not behaving as expected the results of the vty-interactive-terminal-test
   executable should be sent to the Vty maintainter to aid in debugging the issue.
   .
@@ -44,6 +48,7 @@ library
                        containers,
                        data-default >= 0.5.3,
                        deepseq >= 1.1 && < 1.4,
+                       filepath >= 1.0 && < 2.0,
                        lens >= 3.9.0.2 && < 5.0,
                        -- required for nice installation with yi
                        hashable >= 1.2,
@@ -59,6 +64,7 @@ library
 
   exposed-modules:     Graphics.Vty
                        Graphics.Vty.Attributes
+                       Graphics.Vty.Config
                        Graphics.Vty.Error
                        Graphics.Vty.Image
                        Graphics.Vty.Inline
@@ -76,7 +82,8 @@ library
                        Graphics.Vty.Debug
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.Image.Internal
-                       Graphics.Vty.Input.Internal
+                       Graphics.Vty.Input.Classify
+                       Graphics.Vty.Input.Loop
                        Graphics.Vty.Input.Terminfo
                        Graphics.Vty.PictureToSpans
                        Graphics.Vty.Span
@@ -544,5 +551,41 @@ test-suite verify-using-mock-input
                        utf8-string >= 0.3 && < 0.4,
                        vector >= 0.7
   
+  ghc-options:         -threaded -Wall
+
+test-suite verify-config
+  default-language:    Haskell2010
+  default-extensions:  ScopedTypeVariables
+
+  type:                exitcode-stdio-1.0
+
+  hs-source-dirs:      test
+
+  main-is:             VerifyConfig.hs
+
+  build-depends:       vty,
+                       Cabal == 1.18.*,
+                       data-default >= 0.5.3,
+                       HUnit,
+                       QuickCheck >= 2.4,
+                       smallcheck == 1.*,
+                       quickcheck-assertions >= 0.1.1,
+                       test-framework == 0.8.*,
+                       test-framework-smallcheck == 0.2.*,
+                       test-framework-hunit,
+                       random == 1.0.*,
+                       base >= 4 && < 5,
+                       bytestring,
+                       containers,
+                       deepseq >= 1.1 && < 1.4,
+                       lens >= 3.9.0.2 && < 5.0,
+                       mtl >= 1.1.1.0 && < 2.2,
+                       string-qq,
+                       terminfo >= 0.3 && < 0.5,
+                       text >= 0.11.3,
+                       unix,
+                       utf8-string >= 0.3 && < 0.4,
+                       vector >= 0.7
+
   ghc-options:         -threaded -Wall
 

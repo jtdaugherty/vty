@@ -40,8 +40,10 @@ module Graphics.Vty.Input ( Key(..)
                           )
     where
 
+import Graphics.Vty.Config
+import Graphics.Vty.Input.Classify
 import Graphics.Vty.Input.Events
-import Graphics.Vty.Input.Internal
+import Graphics.Vty.Input.Loop
 import Graphics.Vty.Input.Terminfo
 
 import Control.Applicative

@@ -11,7 +11,7 @@ import Data.List (intersperse)
 
 import Graphics.Vty hiding (resize)
 import Graphics.Vty.Input.Events
-import Graphics.Vty.Input.Internal
+import Graphics.Vty.Input.Loop
 import Graphics.Vty.Input.Terminfo
 
 import Control.Applicative
