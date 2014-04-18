@@ -70,9 +70,6 @@ classifyTableForTerm termName term =
 classifyTableUserOverrides :: IO ClassifyTable
 classifyTableUserOverrides = return []
 
-parseOverrideFile :: FilePath -> IO ClassifyTable
-parseOverrideFile _ = return []
-
 -- | key table assumed to be applicable to all terminals.
 universalTable :: ClassifyTable
 universalTable = concat [visibleChars, ctrlChars, ctrlMetaChars, specialSupportKeys]
