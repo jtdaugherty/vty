@@ -16,7 +16,7 @@ import qualified Data.Vector.Unboxed as Vector
 
 import Numeric (showHex)
 
-import Text.ParserCombinators.Parsec
+import Text.Parsec
 
 data CapExpression = CapExpression
     { capOps :: !CapOps

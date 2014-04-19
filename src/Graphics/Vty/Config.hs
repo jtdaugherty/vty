@@ -7,10 +7,16 @@
 module Graphics.Vty.Config where
 
 import Data.Default
+import Data.Either (either)
+import Data.Monoid
 
 import Graphics.Vty.Input.Events
 
 import System.FilePath
+
+import Text.Parsec
+import qualified Text.Parsec.Token as P
+import Text.Parsec.Language (haskellDef)
 
 data Config = Config
     { singleEscPeriod   :: Int            -- ^ AKA VTIME. The default is 100000 microseconds or 0.1 seconds.
@@ -26,5 +32,22 @@ instance Default Config where
         , inputOverrides = []
         }
 
+-- not a proper monoid but useful as one.
+instance Monoid Config where
+    mempty = def
+    mappend c0 c1 = c1 { inputOverrides = inputOverrides c0 <> inputOverrides c1 }
+
 parseConfigFile :: FilePath -> IO Config
-parseConfigFile path = return def
+parseConfigFile path = either (const def) id <$> parseFromFile parseConfig path
+
+parseConfig = do
+    let lexer = P.makeTokenParser haskellDef
+        parseOverride = do
+            P.whiteSpace lexer
+            string "map"
+            P.whiteSpace lexer
+            bytes <- P.stringLiteral
+            key <- parseKey
+            modifier <- parseModifier
+            _ <- manyTill space newline
+    overrides <- many $ try parseOverride <|> ignoreOverride
