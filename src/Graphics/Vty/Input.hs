@@ -34,19 +34,16 @@ module Graphics.Vty.Input ( Key(..)
                           , Button(..)
                           , Event(..)
                           , Input(..)
-                          , Config(..)
                           , inputForCurrentTerminal
                           , inputForNameAndIO
                           )
     where
 
 import Graphics.Vty.Config
-import Graphics.Vty.Input.Classify
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Loop
 import Graphics.Vty.Input.Terminfo
 
-import Control.Applicative
 import Control.Concurrent
 import Control.Lens
 
@@ -96,8 +93,7 @@ inputForCurrentTerminal config = do
 inputForNameAndIO :: Config -> String -> Fd -> IO Input
 inputForNameAndIO config termName termFd = do
     terminal <- Terminfo.setupTerm termName
-    classifyTable <- mappend <$> pure (classifyTableForTerm termName terminal)
-                             <*> classifyTableUserOverrides
+    let classifyTable = classifyTableForTerm termName terminal `mappend` inputOverrides config
     (setAttrs,unsetAttrs) <- attributeControl termFd
     setAttrs
     input <- initInputForFd config classifyTable termFd 

@@ -3,7 +3,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# OPTIONS_GHC -funbox-strict-fields -O #-}
 module Data.Terminfo.Parse ( module Data.Terminfo.Parse
-                           , Text.ParserCombinators.Parsec.ParseError
+                           , Text.Parsec.ParseError
                            )
     where
 
@@ -106,7 +106,7 @@ constructCapExpression capString buildResults =
                 } 
     in rnf expr `seq` expr
 
-type CapParser a = GenParser Char BuildState a 
+type CapParser a = Parsec String BuildState a 
 
 capExpressionParser :: CapParser BuildResults
 capExpressionParser = do

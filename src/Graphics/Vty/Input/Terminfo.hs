@@ -40,36 +40,6 @@ classifyTableForTerm termName term =
            : universalTable
            : termSpecificTables termName
 
--- | The user can specify a list of classify table entries in $HOME/.config/vty.conf and
--- $VTY_CONFIG_FILE. The file at $VTY_CONFIG_FILE takes precedence over the input.conf file. Both
--- take precedence over the classify tables determined by 'classifyTableForTerm'
--- 
--- Each line of the input config is processed individually. Lines that fail to parse are ignored.
--- Later entries take precedence over earlier.
---
--- Entry format:
---
--- @
---  entry := "map" string key modifier_list
---  key := KEsc | KChar Char | KBS ... (same as 'Key')
---  modifier_list := "[" modifier+ "]"
---  modifier := MShift | MCtrl | MMeta | MAlt
---  string := "\"" chars+ "\""
--- @
---
--- EG: If the contents of input.conf are
---
--- @
---  map "\ESC[B" KUp []
---  map "\ESC[1;3B" KDown [MAlt]
--- @
---
--- Then the bytes "\ESC[B" will result in the KUp event. The bytes "\ESC[1;3B" will result in the
--- event KDown with the MAlt modifier.
---
-classifyTableUserOverrides :: IO ClassifyTable
-classifyTableUserOverrides = return []
-
 -- | key table assumed to be applicable to all terminals.
 universalTable :: ClassifyTable
 universalTable = concat [visibleChars, ctrlChars, ctrlMetaChars, specialSupportKeys]
@@ -103,9 +73,9 @@ visibleChars = [ ([x], EvKey (KChar x) [])
 ctrlChars :: ClassifyTable
 ctrlChars =
     [ ([toEnum x],EvKey (KChar y) [MCtrl])
-    | (x,y) <- zip ([0..31]) ('@':['a'..'z']++['['..'_']),
-      y /= 'i', -- Resolve issue #3 where CTRL-i hides TAB.
-      y /= 'h'  -- CTRL-h should not hide BS
+    | (x,y) <- zip ([0..31]) ('@':['a'..'z']++['['..'_'])
+    , y /= 'i'  -- Resolve issue #3 where CTRL-i hides TAB.
+    , y /= 'h'  -- CTRL-h should not hide BS
     ]
 
 -- | Ctrl+Meta+Char

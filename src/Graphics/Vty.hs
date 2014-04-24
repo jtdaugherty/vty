@@ -33,6 +33,7 @@ module Graphics.Vty ( Vty(..)
 
 import Graphics.Vty.Prelude
 
+import Graphics.Vty.Config
 import Graphics.Vty.Input
 import Graphics.Vty.Output
 import Graphics.Vty.Picture
@@ -40,6 +41,7 @@ import Graphics.Vty.Picture
 import Control.Concurrent
 
 import Data.IORef
+import Data.Monoid
 
 -- | The main object.  At most one should be created.
 --
@@ -81,8 +83,14 @@ data Vty = Vty
 
 -- | Set up the state object for using vty.  At most one state object should be
 -- created at a time.
+--
+-- The specified config is added to the 'userConfig'. With the 'userConfig' taking precedence.
+-- See "Graphics.Vty.Config"
+--
+-- For most applications `mkVty def` is sufficient.
 mkVty :: Config -> IO Vty
-mkVty config = do
+mkVty appConfig = do
+    config <- mappend <$> pure appConfig <*> userConfig
     input <- inputForCurrentTerminal config
     out <- outputForCurrentTerminal
     intMkVty input out
