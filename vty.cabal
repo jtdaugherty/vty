@@ -48,6 +48,7 @@ library
                        containers,
                        data-default >= 0.5.3,
                        deepseq >= 1.1 && < 1.4,
+                       directory,
                        filepath >= 1.0 && < 2.0,
                        lens >= 3.9.0.2 && < 5.0,
                        -- required for nice installation with yi

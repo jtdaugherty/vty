@@ -2,8 +2,8 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 -- | A 'Config' can be provided to mkVty to customize the applications use of vty.
 --
--- The 'Config' provided is mappend'd to 'Config's loaded from $HOME/.config/vty.config and
--- $VTY_CONFIG_FILE. The $VTY_CONFIG_FILE takes precedence over the input.conf file or the
+-- The 'Config' provided is mappend'd to 'Config's loaded from 'getAppUserDataDirectory'`/config`
+-- and $VTY_CONFIG_FILE. The $VTY_CONFIG_FILE takes precedence over the `config` file or the
 -- application provided 'Config'.
 -- 
 -- Each line of the input config is processed individually. Lines that fail to parse are ignored.
@@ -35,6 +35,7 @@ module Graphics.Vty.Config where
 
 import Control.Applicative hiding (many)
 
+import Control.Exception (catch, IOException)
 import Control.Monad (void)
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Writer
@@ -45,6 +46,8 @@ import Data.Monoid
 
 import Graphics.Vty.Input.Events
 
+import System.Directory (getAppUserDataDirectory)
+import System.Environment (lookupEnv)
 import Text.Parsec hiding ((<|>))
 import Text.Parsec.Token ( GenLanguageDef(..) )
 import qualified Text.Parsec.Token as P
@@ -81,12 +84,14 @@ type ConfigParser s a = ParsecT s () (Writer Config) a
 
 userConfig :: IO Config
 userConfig = do
-    userGlobalConfig <- parseConfigFile "$HOME/.config/vty.config"
-    overrideConfig <- parseConfigFile "$VTY_CONFIG_FILE"
-    return $ userGlobalConfig `mappend` overrideConfig
+    vtyConfig <- (mappend <$> getAppUserDataDirectory "vty" <*> pure "/config") >>= parseConfigFile
+    overrideConfig <- lookupEnv "VTY_CONFIG_FILE" >>= maybe (return def) parseConfigFile
+    return $ vtyConfig `mappend` overrideConfig
 
 parseConfigFile :: FilePath -> IO Config
-parseConfigFile path = runParseConfig path <$> BS.readFile path
+parseConfigFile path = do
+    catch (runParseConfig path <$> BS.readFile path)
+          (\(e :: IOException) -> return def)
 
 runParseConfig :: Stream s (Writer Config) Char => String -> s -> Config
 runParseConfig name = execWriter . runParserT parseConfig () name
