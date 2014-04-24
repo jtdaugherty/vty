@@ -29,7 +29,7 @@ map "\ESC[1;3B" KDown [MAlt]
 exampleConfigConfig :: Config
 exampleConfigConfig = Config
     { specifiedEscPeriod = def
-    , debugInputLog = def
+    , debugLog = def
     , inputOverrides = [("\ESC[B", EvKey KUp []), ("\ESC[1;3B", EvKey KDown [MAlt])]
     }
 
