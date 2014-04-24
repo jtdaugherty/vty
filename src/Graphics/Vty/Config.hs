@@ -54,8 +54,8 @@ import qualified Text.Parsec.Token as P
 
 data Config = Config
     { specifiedEscPeriod :: Maybe Int            
-    -- | Debug information about the input process is appended to the file.
-    , debugInputLog      :: Maybe FilePath
+    -- | Debug information is appended to the file.
+    , debugLog           :: Maybe FilePath
     , inputOverrides     :: ClassifyTable
     } deriving (Show, Eq)
 
@@ -66,7 +66,7 @@ singleEscPeriod = maybe 100000 id . specifiedEscPeriod
 instance Default Config where
     def = Config
         { specifiedEscPeriod = Nothing
-        , debugInputLog      = Nothing
+        , debugLog           = Nothing
         , inputOverrides     = []
         }
 
@@ -76,7 +76,7 @@ instance Monoid Config where
         -- latter config takes priority in specifiedEscPeriod
         { specifiedEscPeriod = specifiedEscPeriod c1 <|> specifiedEscPeriod c0
         -- latter config takes priority in debugInputLog
-        , debugInputLog = debugInputLog c1 <|> debugInputLog c0
+        , debugLog = debugLog c1 <|> debugLog c0
         , inputOverrides = inputOverrides c0 <> inputOverrides c1
         }
 
