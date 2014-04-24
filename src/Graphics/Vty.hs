@@ -1,13 +1,30 @@
 -- | Vty supports input and output to terminal devices.
 --
---  - The input is provides as a sequence of 'Event's.
+--  - Input to the terminal is provided to the app as a sequence of 'Event's.
 --
 --  - The output is defined by a 'Picture'. Which is one or more layers of 'Image's.
---      The constructors in "Graphics.Vty.Image.Internal" should not be used directly. The module
---      "Graphics.Vty.Image" provides a number of constructor equations that will build correct
---      'Image' values. See 'string', '<|>', and '<->' for starters.
+--
+--      - The module "Graphics.Vty.Image" provides a number of constructor equations that will build
+--      correct 'Image' values. See 'string', '<|>', and '<->' for starters.
+--
+--      - The constructors in "Graphics.Vty.Image.Internal" should not be used.
 --
 --  - 'Image's can be styled using 'Attr'. See "Graphics.Vty.Attributes".
+-- 
+-- See the vty-examples package for a number of examples.
+--
+-- @
+--  main = do
+--      vty <- 'mkVty' def
+--      let line0 = 'string' (def `withForeColor` 'green') \"first line\"
+--          line1 = 'string' (def `withBackColor` 'blue') \"second line\"
+--          img = line0 '<->' line1
+--          pic = 'picForImage' img
+--      'update' vty pic
+--      e :: 'Event' <- 'nextEvent' vty
+--      'shutdown' vty
+--      print $ \"Last event was: \" ++ show e
+-- @
 -- 
 -- Good sources of documentation for terminal programming are:
 --
@@ -24,6 +41,7 @@
 --  - <http://vt100.net/docs/vt100-ug/chapter3.html vt100 control sequences>
 module Graphics.Vty ( Vty(..)
                     , mkVty
+                    , module Graphics.Vty.Config
                     , module Graphics.Vty.Input
                     , module Graphics.Vty.Output
                     , module Graphics.Vty.Picture
@@ -72,9 +90,9 @@ data Vty = Vty
     , inputIface :: Input
       -- | The output interface. See 'Output'
     , outputIface :: Output
-      -- | Refresh the display. Normally the library takes care of refreshing.  Nonetheless, some
-      -- other program might output to the terminal and mess up the display.  In that case the
-      -- application might want to force a refresh.
+      -- | Refresh the display. 'nextEvent' will refresh the display if a resize occurs.
+      -- If other programs output to the terminal and mess up the display then the application might
+      -- want to force a refresh.
     , refresh :: IO ()
       -- | Clean up after vty.
       -- The above methods will throw an exception if executed after this is executed.
@@ -82,12 +100,12 @@ data Vty = Vty
     }
 
 -- | Set up the state object for using vty.  At most one state object should be
--- created at a time.
+-- created at a time for a given terminal device.
 --
 -- The specified config is added to the 'userConfig'. With the 'userConfig' taking precedence.
 -- See "Graphics.Vty.Config"
 --
--- For most applications `mkVty def` is sufficient.
+-- For most applications @mkVty def@ is sufficient.
 mkVty :: Config -> IO Vty
 mkVty appConfig = do
     config <- mappend <$> pure appConfig <*> userConfig
