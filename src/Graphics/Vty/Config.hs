@@ -36,19 +36,22 @@ module Graphics.Vty.Config where
 
 import Control.Applicative hiding (many)
 
-import Control.Exception (catch, IOException)
-import Control.Monad (void)
+import Control.Exception (tryJust, catch, IOException)
+import Control.Monad (void, guard)
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Writer
 
 import qualified Data.ByteString as BS
 import Data.Default
+import Data.Either (either)
 import Data.Monoid
 
 import Graphics.Vty.Input.Events
 
 import System.Directory (getAppUserDataDirectory)
-import System.Environment (lookupEnv)
+import System.Environment (getEnv)
+import System.IO.Error (isDoesNotExistError)
+
 import Text.Parsec hiding ((<|>))
 import Text.Parsec.Token ( GenLanguageDef(..) )
 import qualified Text.Parsec.Token as P
@@ -87,7 +90,8 @@ type ConfigParser s a = ParsecT s () (Writer Config) a
 userConfig :: IO Config
 userConfig = do
     vtyConfig <- (mappend <$> getAppUserDataDirectory "vty" <*> pure "/config") >>= parseConfigFile
-    overrideConfig <- lookupEnv "VTY_CONFIG_FILE" >>= maybe (return def) parseConfigFile
+    overridePath <- tryJust (guard . isDoesNotExistError) $ getEnv "VTY_CONFIG_FILE"
+    overrideConfig <- either (const $ return def) parseConfigFile overridePath
     return $ vtyConfig `mappend` overrideConfig
 
 parseConfigFile :: FilePath -> IO Config
