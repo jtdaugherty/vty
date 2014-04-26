@@ -34,6 +34,9 @@
 --
 module Graphics.Vty.Config where
 
+-- ignore warning on GHC 7.6+. Required for GHC 7.4
+import Prelude hiding (catch)
+
 import Control.Applicative hiding (many)
 
 import Control.Exception (tryJust, catch, IOException)
@@ -43,7 +46,6 @@ import Control.Monad.Trans.Writer
 
 import qualified Data.ByteString as BS
 import Data.Default
-import Data.Either (either)
 import Data.Monoid
 
 import Graphics.Vty.Input.Events
@@ -97,7 +99,7 @@ userConfig = do
 parseConfigFile :: FilePath -> IO Config
 parseConfigFile path = do
     catch (runParseConfig path <$> BS.readFile path)
-          (\(e :: IOException) -> return def)
+          (\(_ :: IOException) -> return def)
 
 runParseConfig :: Stream s (Writer Config) Char => String -> s -> Config
 runParseConfig name = execWriter . runParserT parseConfig () name
