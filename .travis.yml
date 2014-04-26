@@ -12,8 +12,14 @@ env:
  - GHCVER=7.2.2
  - GHCVER=7.4.2
  - GHCVER=7.6.3
- - GHCVER=7.8.3
+ - GHCVER=7.8.2
  - GHCVER=head
+
+install:
+  - ./ci/travis_ci_install
+
+script:
+  - ./ci/travis_ci_script
 
 before_install:
  - sudo add-apt-repository -y ppa:hvr/ghc

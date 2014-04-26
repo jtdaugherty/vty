@@ -1,9 +1,0 @@
-#!/bin/bash
-set -ex
-if [[ "${GHCVER}" > "7.4.2" ]] ; then
-  cabal configure --enable-tests && cabal build
-  cabal test
-else
-  cabal configure && cabal build
-  echo "Skipping tests on ${GHCVER}"
-fi
