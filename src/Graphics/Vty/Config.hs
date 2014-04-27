@@ -10,7 +10,9 @@
 -- Each line of the input config is processed individually. Lines that fail to parse are ignored.
 -- Later entries take precedence over earlier.
 --
--- * Classify Table Overrides - @map@
+-- = Classify Table Overrides
+--
+-- == @map@
 --
 -- Directive format:
 --
@@ -62,10 +64,14 @@ data Config = Config
     { specifiedEscPeriod :: Maybe Int            
     -- | Debug information is appended to the file.
     , debugLog           :: Maybe FilePath
+    -- | The (input byte, output event) pairs override VTY\'s built-in tables as well as terminfo.
+    --
+    -- See "Graphics.Vty.Config" module documentation for documentation of the @map@ directive.
     , inputOverrides     :: ClassifyTable
     } deriving (Show, Eq)
 
--- | AKA VTIME. The default is 100000 microseconds or 0.1 seconds. 
+-- | AKA VTIME. The default is 100000 microseconds or 0.1 seconds. Set using the
+-- 'specifiedEscPeriod' field of 'Config'
 singleEscPeriod :: Config -> Int
 singleEscPeriod = maybe 100000 id . specifiedEscPeriod
 
