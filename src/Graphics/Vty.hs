@@ -109,8 +109,8 @@ data Vty = Vty
 mkVty :: Config -> IO Vty
 mkVty appConfig = do
     config <- mappend <$> pure appConfig <*> userConfig
-    input <- inputForCurrentTerminal config
-    out <- outputForCurrentTerminal
+    input  <- inputForCurrentTerminal config
+    out    <- outputForCurrentTerminal config
     intMkVty input out
 
 intMkVty :: Input -> Output -> IO Vty

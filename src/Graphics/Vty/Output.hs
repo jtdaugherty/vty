@@ -74,8 +74,8 @@ import System.IO
 --
 -- \todo add an implementation for windows that does not depend on terminfo. Should be installable
 -- with only what is provided in the haskell platform. Use ansi-terminal
-outputForCurrentTerminal :: ( Applicative m, MonadIO m ) => m Output
-outputForCurrentTerminal = do
+outputForCurrentTerminal :: ( Applicative m, MonadIO m ) => Config -> m Output
+outputForCurrentTerminal _config = do
     termType <- liftIO $ getEnv "TERM"
     outHandle <- liftIO $ hDuplicate stdout
     outputForNameAndIO termType outHandle

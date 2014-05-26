@@ -24,12 +24,13 @@ exampleConfig = [s|
 map "\ESC[B" KUp []
 askfjla dfasjdflk jasdlkfj asdfj -- lines failing parse should be ignored
 map "\ESC[1;3B" KDown [MAlt]
+debugLog "/tmp/vty-debug.txt"
 |]
 
 exampleConfigConfig :: Config
 exampleConfigConfig = Config
     { specifiedEscPeriod = def
-    , debugLog = def
+    , debugLog = Just "/tmp/vty-debug.txt"
     , inputOverrides = [("\ESC[B", EvKey KUp []), ("\ESC[1;3B", EvKey KDown [MAlt])]
     }
 

@@ -28,9 +28,12 @@ import Data.Word (Word8)
 import Foreign ( allocaArray, peekArray, Ptr )
 import Foreign.C.Types (CInt(..))
 
+import System.IO
 import System.Posix.IO (fdReadBuf)
 import System.Posix.Terminal
 import System.Posix.Types (Fd(..))
+
+import Text.Printf (hPrintf)
 
 data Input = Input
     { -- | Channel of events direct from input processing. Unlike 'nextEvent' this will not refresh
@@ -43,6 +46,8 @@ data Input = Input
     , _configRef :: IORef Config
       -- | File descriptor used for input.
     , _inputFd :: Fd
+      -- | input debug log
+    , _inputDebug :: Maybe Handle
     }
 
 makeLenses ''Input
@@ -147,6 +152,16 @@ attributeControl fd = do
         unsetAttrs = setTerminalAttributes fd original Immediately
     return (setAttrs,unsetAttrs)
 
+logClassifyTable :: Input -> ClassifyTable -> IO()
+logClassifyTable input classifyTable = case _inputDebug input of
+    Nothing -> return ()
+    Just h  -> do
+        forM_ classifyTable $ \i -> case i of
+            (inBytes, EvKey k mods) -> hPrintf h "map %s %s %s\n" (show inBytes)
+                                                                  (show k)
+                                                                  (show mods)
+            _ -> return ()
+
 initInputForFd :: Config -> ClassifyTable -> Fd -> IO Input
 initInputForFd config classifyTable inFd = do
     applyTimingConfig inFd config
@@ -155,6 +170,9 @@ initInputForFd config classifyTable inFd = do
                    <*> pure (writeIORef stopFlag True)
                    <*> newIORef config
                    <*> pure inFd
+                   <*> maybe Nothing (\f -> Just <$> openFile f AppendMode)
+                                     (debugLog config)
+    logClassifyTable classifyTable
     _ <- forkOS $ runInputProcessorLoop classifyTable input stopFlag
     return input
 

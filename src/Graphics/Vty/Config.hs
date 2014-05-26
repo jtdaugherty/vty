@@ -10,18 +10,37 @@
 -- Each line of the input config is processed individually. Lines that fail to parse are ignored.
 -- Later entries take precedence over earlier.
 --
--- = Classify Table Overrides
+-- For all directives:
+-- 
+-- @
+--  string := \"\\\"\" chars+ \"\\\"\"
+-- @
+--
+-- = Debug Directives
+--
+-- == @debugLog@
+--
+-- Format:
+--
+-- @
+--  \"debugLog\" string
+-- @
+--
+-- The value of the environment variable @VTY_DEBUG_LOG@ is equivalent to a debugLog entry at the
+-- end of the last config file.
+--
+-- = Input Table Directives
 --
 -- == @map@
 --
 -- Directive format:
 --
 -- @
---  entry := \"map\" string key modifier_list
---  key := KEsc | KChar Char | KBS ... (same as 'Key')
---  modifier_list := \"[\" modifier+ \"]\"
---  modifier := MShift | MCtrl | MMeta | MAlt
---  string := \"\\\"\" chars+ \"\\\"\"
+--  \"map\" string key modifier_list
+--  where 
+--      key := KEsc | KChar Char | KBS ... (same as 'Key')
+--      modifier_list := \"[\" modifier+ \"]\"
+--      modifier := MShift | MCtrl | MMeta | MAlt
 -- @
 --
 -- EG: If the contents are
@@ -33,6 +52,12 @@
 --
 -- Then the bytes @\"\\ESC[B\"@ will result in the KUp event. The bytes @\"\\ESC[1;3B\"@ will result
 -- in the event KDown with the MAlt modifier.
+--
+-- If a debug log is requested then vty will output the current input table to the log in the above
+-- format.
+--
+-- EG: Set VTY_DEBUG_LOG. Run vty. Check debug log for incorrect mappings. Add corrected mappings to
+-- .vty/config
 --
 module Graphics.Vty.Config where
 
@@ -62,9 +87,10 @@ import qualified Text.Parsec.Token as P
 
 data Config = Config
     { specifiedEscPeriod :: Maybe Int            
-    -- | Debug information is appended to the file.
+    -- | Debug information is appended to this file if not Nothing.
     , debugLog           :: Maybe FilePath
-    -- | The (input byte, output event) pairs override VTY\'s built-in tables as well as terminfo.
+    -- | The (input byte, output event) pairs extend the internal input table of VTY and the table
+    -- from terminfo.
     --
     -- See "Graphics.Vty.Config" module documentation for documentation of the @map@ directive.
     , inputOverrides     :: ClassifyTable
@@ -97,10 +123,12 @@ type ConfigParser s a = ParsecT s () (Writer Config) a
 -- | Config from @'getAppUserDataDirectory'/config@ and @$VTY_CONFIG_FILE@
 userConfig :: IO Config
 userConfig = do
-    vtyConfig <- (mappend <$> getAppUserDataDirectory "vty" <*> pure "/config") >>= parseConfigFile
+    userConfig <- (mappend <$> getAppUserDataDirectory "vty" <*> pure "/config") >>= parseConfigFile
     overridePath <- tryJust (guard . isDoesNotExistError) $ getEnv "VTY_CONFIG_FILE"
     overrideConfig <- either (const $ return def) parseConfigFile overridePath
-    return $ vtyConfig `mappend` overrideConfig
+    debugLogPath <- tryJust (guard . isDoesNotExistError) $ getEnv "VTY_DEBUG_LOG"
+    let debugLogConfig = either (const $ return def) (def { debugLog = Just debugLogPath })
+    return $ mconcat [userConfig, overrideConfig, debugLogConfig]
 
 parseConfigFile :: FilePath -> IO Config
 parseConfigFile path = do
@@ -130,7 +158,7 @@ configLanguage = LanguageDef
 configLexer :: Stream s m Char => P.GenTokenParser s u m
 configLexer = P.makeTokenParser configLanguage
 
-parseOverride = do
+mapDecl = do
     void $ string "map"
     P.whiteSpace configLexer
     bytes <- P.stringLiteral configLexer
@@ -181,9 +209,15 @@ parseModifier = do
         "MAlt" -> return MAlt
         _ -> fail $ m ++ " is not a valid modifier identifier"
 
+debugLogDecl = do
+    void $ string "debugLog"
+    P.whiteSpace configLexer
+    path <- P.stringLiteral configLexer
+    lift $ tell $ def { debugLog = Just path }
+
 ignoreLine = void $ manyTill anyChar newline
 
 parseConfig = void $ many $ do
     P.whiteSpace configLexer
-    let directives = [parseOverride]
+    let directives = [mapDecl, debugLogDecl]
     try (choice directives) <|> ignoreLine

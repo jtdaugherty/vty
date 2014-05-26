@@ -1,17 +1,21 @@
 5.0.0
     * The naming convention now matches:
         * http://www.haskell.org/haskellwiki/Programming_guidelines#Naming_Conventions
-    * all projects using vty for input must be compiled with -threaded. This could be resolved but
-      would like to avoid the complexity for now.
+    * all projects using vty for input must be compiled with -threaded. Please notify vty author if
+      this is not acceptable.
     * mkVtyEscDelay has been removed. Use "mkVty def". Which initialized vty with the default
       configuration.
     * input handling changes
         * KASCII is now KChar
         * KPN5 is now KCenter
         * tests exist.
+        * Applications add to the input tables by setting inputOverrides of the Config.
+          See Graphics.Vty.Config
+        * Users can define input table extensions that will apply to all vty applications.
+          See Graphics.Vty.Config
         * terminal timing is now handled by selecting an appropriate VTIME. Previously this was
-          implemented within Vty itself. This reduced complexity in vty but potentially provides
-          a different meta key behavior.
+          implemented within Vty itself. This reduced complexity in vty but provides a different
+          meta key behavior. There were no know users of the previous behavior.
         * The time vty will wait to verify an ESC byte means a single ESC key is the
           singleEscPeriod of the Input Config structure.
     * removed the typeclass based terminal and display context interface in favor of a data
@@ -25,7 +29,7 @@
         * Each layer is an image.
         * The layers for a picture are a list of images.
         * The first image is the top-most layer. The images are ordered from top to bottom.
-        * The transparent areas for a layer are the background_fill areas. These will be implicitly
+        * The transparent areas for a layer are the backgroundFill areas. These will be implicitly
           added to to pad images when images of different sizes are joined.
         * If the background is clear there is no background layer.
         * If there is a background character then the bottom layer is the background layer.
@@ -37,6 +41,12 @@
         * alternate (setf/setb) color maps supported. Though colors beyond the first 8 are just a
           guess.
         * added "rgbColor" for easy support of RGB specified colors.
+        * Both applications and users can add to the mapping used to translate from input bytes to
+          events.
+    * Additional information about input and output process can be appended to a debug log
+        * Set environment variable VTY_DEBUG_LOG to path of debug log
+        * Use "debugLog <path>" config directive
+        * Set 'debugLog' property of Config
     * examples moved to vty-examples package. See test directory for cabal file.
         * vty-interactive-terminal-test
             * interactive test. Useful for building a bug report for vty's author.
