@@ -1,8 +1,7 @@
 module Graphics.Vty.Input.Terminfo where
 
 import Graphics.Vty.Input.Events
-import qualified Graphics.Vty.Input.Terminfo.ANSI as ANSI
-import qualified Graphics.Vty.Input.Terminfo.XTerm7Bit as XTerm7Bit
+import qualified Graphics.Vty.Input.Terminfo.ANSIVT as ANSIVT
 
 import Control.Arrow
 import System.Console.Terminfo
@@ -26,11 +25,11 @@ import System.Console.Terminfo
 --
 -- 1. build terminfo table for all caps. Missing caps are not added.
 --
--- 2. add tables for visible chars, esc, del plus ctrl and meta.
+-- 2. add tables for visible chars, esc, del plus ctrl and meta
 --
 -- 3. add internally defined table for given terminal type.
 --
--- The override is currently done in 'compile'. Which is a bit odd.
+-- Precedence is currently implicit in the 'compile' algorithm. Which is a bit odd.
 --
 -- \todo terminfo meta is not supported.
 -- \todo no 8bit
@@ -38,9 +37,11 @@ classifyTableForTerm :: String -> Terminal -> ClassifyTable
 classifyTableForTerm termName term =
     concat $ capsClassifyTable term keysFromCapsTable
            : universalTable
-           : termSpecificTables termName
+           : termSpecificTable termName
 
--- | key table assumed to be applicable to all terminals.
+-- | key table applicable to all terminals.
+--
+-- TODO: some probably only applicable to ANSI/VT100 terminals.
 universalTable :: ClassifyTable
 universalTable = concat [visibleChars, ctrlChars, ctrlMetaChars, specialSupportKeys]
 
@@ -49,11 +50,10 @@ capsClassifyTable terminal table = [(x,y) | (Just x,y) <- map extractCap table]
     where extractCap = first (getCapability terminal . tiGetStr)
 
 -- | tables specific to a given terminal that are not derivable from terminfo.
+--
+-- TODO: Adds the ANSI/VT100/VT50 tables regardless of term identifier.
 termSpecificTables :: String -> [ClassifyTable]
-termSpecificTables termName
-    | ANSI.supports termName = ANSI.tables
-    | XTerm7Bit.supports termName = XTerm7Bit.tables
-    | otherwise = []
+termSpecificTables _termName = ANSIVT.classifyTable
 
 -- | Visible characters in the ISO-8859-1 and UTF-8 common set.
 --

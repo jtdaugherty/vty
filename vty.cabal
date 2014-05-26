@@ -96,8 +96,7 @@ library
 
   other-modules:       Graphics.Vty.Attributes.Color
                        Graphics.Vty.Attributes.Color240
-                       Graphics.Vty.Input.Terminfo.ANSI
-                       Graphics.Vty.Input.Terminfo.XTerm7Bit
+                       Graphics.Vty.Input.Terminfo.ANSIVT
 
   c-sources:           cbits/gwinsz.c
                        cbits/set_term_timing.c
