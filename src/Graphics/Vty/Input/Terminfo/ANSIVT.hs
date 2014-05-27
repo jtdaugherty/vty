@@ -7,8 +7,6 @@ module Graphics.Vty.Input.Terminfo.ANSIVT where
 
 import Graphics.Vty.Input.Events
 
-import Data.List (isInfixOf, isPrefixOf)
-
 -- | Encoding for navigation keys.
 --
 -- TODO: This is not the same as the input bytes pulled from teh caps table.

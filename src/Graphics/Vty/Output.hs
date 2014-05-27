@@ -28,6 +28,8 @@ module Graphics.Vty.Output ( module Graphics.Vty.Output
 
 import Graphics.Vty.Prelude
 
+import Graphics.Vty.Config
+
 import Graphics.Vty.Output.Interface
 import Graphics.Vty.Output.MacOSX as MacOSX
 import Graphics.Vty.Output.XTermColor as XTermColor

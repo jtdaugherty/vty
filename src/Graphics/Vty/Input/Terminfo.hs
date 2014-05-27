@@ -37,7 +37,7 @@ classifyTableForTerm :: String -> Terminal -> ClassifyTable
 classifyTableForTerm termName term =
     concat $ capsClassifyTable term keysFromCapsTable
            : universalTable
-           : termSpecificTable termName
+           : termSpecificTables termName
 
 -- | key table applicable to all terminals.
 --

@@ -71,6 +71,13 @@ makeLenses ''InputState
 
 type InputM a = StateT InputState (ReaderT Input IO) a
 
+logMsg :: String -> InputM ()
+logMsg msg = do
+    d <- view inputDebug
+    case d of
+        Nothing -> return ()
+        Just h -> liftIO $ hPutStrLn h msg >> hFlush h
+
 -- this must be run on an OS thread dedicated to this input handling.
 -- otherwise the terminal timing read behavior will block the execution of the lightweight threads.
 loopInputProcessor :: InputM ()
@@ -85,11 +92,15 @@ addBytesToProcess :: String -> InputM ()
 addBytesToProcess block = unprocessedBytes <>= block
 
 emit :: Event -> InputM ()
-emit event = view eventChannel >>= liftIO . flip writeChan event
+emit event = do
+    logMsg $ "parsed event: " ++ show event
+    view eventChannel >>= liftIO . flip writeChan event
 
--- There should be two versions of this method:
--- 1. using VMIN and VTIME when under the threaded runtime
--- 2. emulating VMIN and VTIME in userspace when under the non-threaded runtime.
+-- The timing requirements are assured by the VMIN and VTIME set for the device.
+--
+-- Precondition: Under the threaded runtime. Only current use is from a forkOS thread. That case
+-- satisfies precondition.
+-- TODO: When under the non-threaded runtime emulate VMIN and VTIME
 readFromDevice :: InputM String
 readFromDevice = do
     newConfig <- view configRef >>= liftIO . readIORef
@@ -100,11 +111,13 @@ readFromDevice = do
         appliedConfig .= newConfig
     bufferPtr <- use $ inputBuffer.ptr
     maxBytes  <- use $ inputBuffer.size
-    liftIO $ do
+    stringRep <- liftIO $ do
         bytesRead <- fdReadBuf fd bufferPtr (fromIntegral maxBytes)
         if bytesRead > 0
         then fmap (map $ chr . fromIntegral) $ peekArray (fromIntegral bytesRead) bufferPtr
         else return []
+    logMsg $ "input bytes: " ++ show stringRep
+    return stringRep
 
 applyTimingConfig :: Fd -> Config -> IO ()
 applyTimingConfig fd config =
@@ -170,9 +183,10 @@ initInputForFd config classifyTable inFd = do
                    <*> pure (writeIORef stopFlag True)
                    <*> newIORef config
                    <*> pure inFd
-                   <*> maybe Nothing (\f -> Just <$> openFile f AppendMode)
-                                     (debugLog config)
-    logClassifyTable classifyTable
+                   <*> maybe (return Nothing)
+                             (\f -> Just <$> openFile f AppendMode)
+                             (debugLog config)
+    logClassifyTable input classifyTable
     _ <- forkOS $ runInputProcessorLoop classifyTable input stopFlag
     return input
 

@@ -1,6 +1,7 @@
 module Graphics.Vty.Inline.Unsafe where
 
 import Graphics.Vty
+import Graphics.Vty.Config (userConfig)
 
 import Data.Default
 import Data.IORef
@@ -33,7 +34,8 @@ withOutput f = do
     mout <- readIORef globalOutput
     out <- case mout of
         Nothing -> do
-            out <- outputForCurrentTerminal
+            config <- userConfig
+            out <- outputForCurrentTerminal config
             writeIORef globalOutput (Just out)
             return out
         Just out -> return out

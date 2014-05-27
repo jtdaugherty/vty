@@ -127,7 +127,7 @@ userConfig = do
     overridePath <- tryJust (guard . isDoesNotExistError) $ getEnv "VTY_CONFIG_FILE"
     overrideConfig <- either (const $ return def) parseConfigFile overridePath
     debugLogPath <- tryJust (guard . isDoesNotExistError) $ getEnv "VTY_DEBUG_LOG"
-    let debugLogConfig = either (const $ return def) (def { debugLog = Just debugLogPath })
+    let debugLogConfig = either (const def) (\p -> def { debugLog = Just p }) debugLogPath
     return $ mconcat [userConfig, overrideConfig, debugLogConfig]
 
 parseConfigFile :: FilePath -> IO Config
