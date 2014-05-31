@@ -53,7 +53,7 @@ verify :: Testable t => String -> t -> Test
 verify testName p = Test $ TestInstance
   { name = testName
   , run = do
-    qcResult <- quickCheckResult p
+    qcResult <- quickCheckWithResult (stdArgs {chatty = False}) p
     case qcResult of
         QC.Success {..} -> return $ Finished TS.Pass
         QC.Failure {numShrinks,reason} -> return $ Finished

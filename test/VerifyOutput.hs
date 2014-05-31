@@ -19,7 +19,7 @@ import System.IO
 tests :: IO [Test]
 tests = concat <$> forM terminalsOfInterest (\termName -> do
     -- check if that terminfo exists
-    putStrLn $ "testing end to end for terminal: " ++ termName
+    -- putStrLn $ "testing end to end for terminal: " ++ termName
     mti <- try $ Terminfo.setupTerm termName
     case mti of
         Left (_ :: SomeException) -> return []
@@ -47,7 +47,7 @@ smokeTestTerm :: String -> Image -> IO Result
 smokeTestTerm termName i = do
     nullOut <- openFile "/dev/null" WriteMode
     t <- outputForNameAndIO termName nullOut
-    putStrLn $ "context color count: " ++ show (contextColorCount t)
+    -- putStrLn $ "context color count: " ++ show (contextColorCount t)
     reserveDisplay t
     dc <- displayContext t (100,100)
     -- always show the cursor to produce tests for terminals with no cursor support.
