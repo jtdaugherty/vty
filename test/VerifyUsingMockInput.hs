@@ -7,8 +7,6 @@ module Main where
 
 import Verify.Graphics.Vty.Output
 
-import Data.List (intersperse)
-
 import Graphics.Vty hiding (resize)
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Loop
@@ -22,6 +20,7 @@ import Control.Monad
 
 import Data.Default
 import Data.IORef
+import Data.List (intersperse, reverse, nubBy)
 
 import System.Console.Terminfo
 import System.Posix.IO
@@ -140,7 +139,9 @@ instance Show (InputBlocksUsingTable event) where
 instance Monad m => Serial m (InputBlocksUsingTable event) where
     series = do
         n :: Int <- localDepth (const maxTableSize) series
-        return $ InputBlocksUsingTable $ \table -> concat (take n (selections table))
+        return $ InputBlocksUsingTable $ \raw_table ->
+                 let table = reverse $ nubBy (\(s0,_) (s1,_) -> s0 == s1) $ reverse raw_table
+                 in concat (take n (selections table))
         where
             selections []     = []
             selections (x:xs) = let z = selections xs in [x] : (z ++ map ((:) x) z)
@@ -159,7 +160,7 @@ verifyCapsSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) ->
     forEachOf terminalsOfInterest $ \termName -> monadic $ do
         term <- setupTerm termName
         let table         = capsClassifyTable term keysFromCapsTable
-            inputSeq     = gen table
+            inputSeq      = gen table
             events        = map snd inputSeq
             keydowns      = map (Bytes . fst) inputSeq
             input         = intersperse (Delay testKeyDelay) keydowns ++ [Delay testKeyDelay]
@@ -168,7 +169,7 @@ verifyCapsSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) ->
 verifySpecialSynInputToEvent :: Property IO
 verifySpecialSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) -> monadic $ do
     let table         = specialSupportKeys
-        inputSeq     = gen table
+        inputSeq      = gen table
         events        = map snd inputSeq
         keydowns      = map (Bytes . fst) inputSeq
         input         = intersperse (Delay testKeyDelay) keydowns ++ [Delay testKeyDelay]
@@ -179,7 +180,7 @@ verifyFullSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) ->
     forEachOf terminalsOfInterest $ \termName -> monadic $ do
         term <- setupTerm termName
         let table         = classifyTableForTerm termName term
-            inputSeq     = gen table
+            inputSeq      = gen table
             events        = map snd inputSeq
             keydowns      = map (Bytes . fst) inputSeq
             input         = intersperse (Delay testKeyDelay) keydowns ++ [Delay testKeyDelay]
@@ -190,7 +191,7 @@ verifyFullSynInputToEvent_2x = forAll $ \(InputBlocksUsingTable gen) ->
     forEachOf terminalsOfInterest $ \termName -> monadic $ do
         term <- setupTerm termName
         let table         = classifyTableForTerm termName term
-            inputSeq     = gen table
+            inputSeq      = gen table
             events        = concatMap ((\s -> [s,s]) . snd) inputSeq
             keydowns      = map (Bytes . (\s -> s ++ s) . fst) inputSeq
             input         = intersperse (Delay testKeyDelay) keydowns ++ [Delay testKeyDelay]
