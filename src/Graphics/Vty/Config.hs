@@ -36,22 +36,25 @@
 -- Directive format:
 --
 -- @
---  \"map\" string key modifier_list
+--  \"map\" term string key modifier_list
 --  where 
 --      key := KEsc | KChar Char | KBS ... (same as 'Key')
 --      modifier_list := \"[\" modifier+ \"]\"
 --      modifier := MShift | MCtrl | MMeta | MAlt
+--      term := "_" | string
 -- @
 --
 -- EG: If the contents are
 --
 -- @
---  map \"\\ESC[B\" KUp []
---  map \"\\ESC[1;3B\" KDown [MAlt]
+--  map _       \"\\ESC[B\"    KUp   []
+--  map _       \"\\ESC[1;3B\" KDown [MAlt]
+--  map "xterm" \"\\ESC[D\"    KLeft []
 -- @
 --
--- Then the bytes @\"\\ESC[B\"@ will result in the KUp event. The bytes @\"\\ESC[1;3B\"@ will result
--- in the event KDown with the MAlt modifier.
+-- Then the bytes @\"\\ESC[B\"@ will result in the KUp event on all terminals. The bytes
+-- @\"\\ESC[1;3B\"@ will result in the event KDown with the MAlt modifier on all terminals.
+-- The bytes @\"\\ESC[D\"@ will result in the KLeft event when @TERM@ is @xterm@.
 --
 -- If a debug log is requested then vty will output the current input table to the log in the above
 -- format.
@@ -85,6 +88,10 @@ import Text.Parsec hiding ((<|>))
 import Text.Parsec.Token ( GenLanguageDef(..) )
 import qualified Text.Parsec.Token as P
 
+-- | Mappings from input bytes to event in the order specified. Later entries take precedence over
+-- earlier in the case multiple entries have the same byte string.
+type InputMap = [(Maybe String, String, Event)]
+
 data Config = Config
     { specifiedEscPeriod :: Maybe Int            
     -- | Debug information is appended to this file if not Nothing.
@@ -93,7 +100,7 @@ data Config = Config
     -- from terminfo.
     --
     -- See "Graphics.Vty.Config" module documentation for documentation of the @map@ directive.
-    , inputOverrides     :: ClassifyTable
+    , inputMap           :: InputMap
     } deriving (Show, Eq)
 
 -- | AKA VTIME. The default is 100000 microseconds or 0.1 seconds. Set using the
@@ -161,6 +168,7 @@ configLexer = P.makeTokenParser configLanguage
 mapDecl = do
     void $ string "map"
     P.whiteSpace configLexer
+    termIdent <- (char "_" >> return Nothing) <|> 
     bytes <- P.stringLiteral configLexer
     key <- parseKey
     modifiers <- parseModifiers

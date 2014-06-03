@@ -21,9 +21,11 @@ import Text.Printf
 exampleConfig :: String
 exampleConfig = [s|
 -- comments should be ignored.
-map "\ESC[B" KUp []
+map _ "\ESC[B" KUp []
 askfjla dfasjdflk jasdlkfj asdfj -- lines failing parse should be ignored
-map "\ESC[1;3B" KDown [MAlt]
+map _ "\ESC[1;3B" KDown [MAlt]
+map "xterm" "\ESC[1;3B" KDown [MAlt]
+map "xterm-256-color" "\ESC[1;3B" KDown [MAlt]
 debugLog "/tmp/vty-debug.txt"
 |]
 

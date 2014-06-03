@@ -1,5 +1,7 @@
 module Graphics.Vty.Input.Events where
 
+import Data.Map (Map)
+
 -- | Representations of non-modifier keys.
 --
 -- * KFun is indexed from 0 to 63. Range of supported FKeys varies by terminal and keyboard.
@@ -38,6 +40,3 @@ data Event
     | EvResize Int Int
     deriving (Eq,Show,Ord)
 
--- | representation of mapping from input bytes to event. Later entries take precedence over earlier
--- in the case multiple entries have the same byte string.
-type ClassifyTable = [(String, Event)]
