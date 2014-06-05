@@ -9,13 +9,13 @@
         * KASCII is now KChar
         * KPN5 is now KCenter
         * tests exist.
-        * Applications add to the input tables by setting inputOverrides of the Config.
+        * Applications can add to the input tables by setting inputMap of the Config.
           See Graphics.Vty.Config
         * Users can define input table extensions that will apply to all vty applications.
           See Graphics.Vty.Config
         * terminal timing is now handled by selecting an appropriate VTIME. Previously this was
           implemented within Vty itself. This reduced complexity in vty but provides a different
-          meta key behavior. There were no know users of the previous behavior.
+          meta key behavior and implies a requirement on -threaded.
         * The time vty will wait to verify an ESC byte means a single ESC key is the
           singleEscPeriod of the Input Config structure.
     * removed the typeclass based terminal and display context interface in favor of a data
@@ -29,8 +29,8 @@
         * Each layer is an image.
         * The layers for a picture are a list of images.
         * The first image is the top-most layer. The images are ordered from top to bottom.
-        * The transparent areas for a layer are the backgroundFill areas. These will be implicitly
-          added to to pad images when images of different sizes are joined.
+        * The transparent areas for a layer are the backgroundFill areas. backgroundFill is
+          added to pad images when images of different sizes are joined.
         * If the background is clear there is no background layer.
         * If there is a background character then the bottom layer is the background layer.
         * emptyPicture is a Picture with no layers and no cursor
@@ -45,8 +45,8 @@
           events.
     * Additional information about input and output process can be appended to a debug log
         * Set environment variable VTY_DEBUG_LOG to path of debug log
-        * Use "debugLog <path>" config directive
-        * Set 'debugLog' property of Config
+        * Or use "debugLog <path>" config directive
+        * Or set 'debugLog' property of the Config provided to mkVty.
     * examples moved to vty-examples package. See test directory for cabal file.
         * vty-interactive-terminal-test
             * interactive test. Useful for building a bug report for vty's author.
@@ -55,7 +55,7 @@
             * view a input event log for vty. Example of interacting with user.
             * test/EventEcho.hs
         * vty-rouge
-            * A bad rouge-like game. Example of layers and image build operations.
+            * The start of a rouge-like game. Example of layers and image build operations.
             * test/Rouge.hs
         * vty-benchmark
             * benchmarks vty. A series of tests that push random pictures to the terminal. The

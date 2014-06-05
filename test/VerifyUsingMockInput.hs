@@ -103,14 +103,14 @@ compareEvents inputSpec expectedEvents outEvents = compareEvents' expectedEvents
                 printf "received events %s\n" (show outEvents) :: IO ()
                 return False
 
-assertEventsFromSynInput :: ClassifyTable -> InputSpec -> ExpectedSpec -> IO Bool
+assertEventsFromSynInput :: ClassifyMap -> InputSpec -> ExpectedSpec -> IO Bool
 assertEventsFromSynInput table inputSpec expectedEvents = do
     let maxDuration = sum [t | Delay t <- inputSpec] + minDetectableDelay
         eventCount = length expectedEvents
     (writeFd, readFd) <- openPseudoTerminal
     (setTermAttr,_) <- attributeControl readFd
     setTermAttr
-    input <- initInputForFd def table readFd
+    input <- initInputForFd def "dummy" table readFd
     eventsRef <- newIORef []
     let writeWaitClose = do
             synthesizeInput inputSpec writeFd
@@ -159,7 +159,7 @@ verifyCapsSynInputToEvent :: Property IO
 verifyCapsSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) ->
     forEachOf terminalsOfInterest $ \termName -> monadic $ do
         term <- setupTerm termName
-        let table         = capsClassifyTable term keysFromCapsTable
+        let table         = capsClassifyMap term keysFromCapsTable
             inputSeq      = gen table
             events        = map snd inputSeq
             keydowns      = map (Bytes . fst) inputSeq
@@ -179,7 +179,7 @@ verifyFullSynInputToEvent :: Property IO
 verifyFullSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) ->
     forEachOf terminalsOfInterest $ \termName -> monadic $ do
         term <- setupTerm termName
-        let table         = classifyTableForTerm termName term
+        let table         = classifyMapForTerm termName term
             inputSeq      = gen table
             events        = map snd inputSeq
             keydowns      = map (Bytes . fst) inputSeq
@@ -190,7 +190,7 @@ verifyFullSynInputToEvent_2x :: Property IO
 verifyFullSynInputToEvent_2x = forAll $ \(InputBlocksUsingTable gen) ->
     forEachOf terminalsOfInterest $ \termName -> monadic $ do
         term <- setupTerm termName
-        let table         = classifyTableForTerm termName term
+        let table         = classifyMapForTerm termName term
             inputSeq      = gen table
             events        = concatMap ((\s -> [s,s]) . snd) inputSeq
             keydowns      = map (Bytes . (\s -> s ++ s) . fst) inputSeq

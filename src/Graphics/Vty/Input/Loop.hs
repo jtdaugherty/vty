@@ -145,7 +145,7 @@ stopIfRequested = do
     True <- (liftIO . readIORef) =<< use stopRequestRef
     return ()
 
-runInputProcessorLoop :: ClassifyTable -> Input -> IORef Bool -> IO ()
+runInputProcessorLoop :: ClassifyMap -> Input -> IORef Bool -> IO ()
 runInputProcessorLoop classifyTable input stopFlag = do
     let bufferSize = 1024
     allocaArray bufferSize $ \(bufferPtr :: Ptr Word8) -> do
@@ -165,18 +165,19 @@ attributeControl fd = do
         unsetAttrs = setTerminalAttributes fd original Immediately
     return (setAttrs,unsetAttrs)
 
-logClassifyTable :: Input -> ClassifyTable -> IO()
-logClassifyTable input classifyTable = case _inputDebug input of
+logClassifyMap :: Input -> String -> ClassifyMap -> IO()
+logClassifyMap input termName classifyTable = case _inputDebug input of
     Nothing -> return ()
     Just h  -> do
         forM_ classifyTable $ \i -> case i of
-            (inBytes, EvKey k mods) -> hPrintf h "map %s %s %s\n" (show inBytes)
-                                                                  (show k)
-                                                                  (show mods)
+            (inBytes, EvKey k mods) -> hPrintf h "map %s %s %s %s\n" (show termName)
+                                                                     (show inBytes)
+                                                                     (show k)
+                                                                     (show mods)
             _ -> return ()
 
-initInputForFd :: Config -> ClassifyTable -> Fd -> IO Input
-initInputForFd config classifyTable inFd = do
+initInputForFd :: Config -> String -> ClassifyMap -> Fd -> IO Input
+initInputForFd config termName classifyTable inFd = do
     applyTimingConfig inFd config
     stopFlag <- newIORef False
     input <- Input <$> newChan
@@ -186,7 +187,7 @@ initInputForFd config classifyTable inFd = do
                    <*> maybe (return Nothing)
                              (\f -> Just <$> openFile f AppendMode)
                              (debugLog config)
-    logClassifyTable input classifyTable
+    logClassifyMap input termName classifyTable
     _ <- forkOS $ runInputProcessorLoop classifyTable input stopFlag
     return input
 

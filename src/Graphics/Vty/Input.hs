@@ -151,7 +151,8 @@ inputForCurrentTerminal config = do
 -- | Set up the terminal attached to the given Fd for input.  Returns a 'Input'.
 --
 -- The table used to determine the 'Events' to produce for the input bytes comes from
--- 'classifyTableForTerm'. Which is then overridden by the table from 'classifyTableUserOverrides'.
+-- 'classifyMapForTerm'. Which is then overridden by the the applicable entries from
+-- 'inputMap'.
 --
 -- The terminal device is configured with the attributes:
 --
@@ -179,10 +180,11 @@ inputForCurrentTerminal config = do
 inputForNameAndIO :: Config -> String -> Fd -> IO Input
 inputForNameAndIO config termName termFd = do
     terminal <- Terminfo.setupTerm termName
-    let classifyTable = classifyTableForTerm termName terminal `mappend` inputOverrides config
+    let inputOverrides = [(s,e) | (t,s,e) <- inputMap config, t == Nothing || t == Just termName]
+        activeInputMap = classifyMapForTerm termName terminal `mappend` inputOverrides
     (setAttrs,unsetAttrs) <- attributeControl termFd
     setAttrs
-    input <- initInputForFd config classifyTable termFd 
+    input <- initInputForFd config termName activeInputMap termFd 
     let pokeIO = Catch $ do
             let e = error "vty internal failure: this value should not propagate to users"
             setAttrs

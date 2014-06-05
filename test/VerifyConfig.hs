@@ -33,7 +33,11 @@ exampleConfigConfig :: Config
 exampleConfigConfig = Config
     { specifiedEscPeriod = def
     , debugLog = Just "/tmp/vty-debug.txt"
-    , inputOverrides = [("\ESC[B", EvKey KUp []), ("\ESC[1;3B", EvKey KDown [MAlt])]
+    , inputMap = [ (Nothing, "\ESC[B", EvKey KUp [])
+                 , (Nothing, "\ESC[1;3B", EvKey KDown [MAlt])
+                 , (Just "xterm", "\ESC[1;3B", EvKey KDown [MAlt])
+                 , (Just "xterm-256-color", "\ESC[1;3B", EvKey KDown [MAlt])
+                 ]
     }
 
 exampleConfigParses :: IO ()

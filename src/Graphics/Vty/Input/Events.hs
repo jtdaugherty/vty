@@ -40,3 +40,4 @@ data Event
     | EvResize Int Int
     deriving (Eq,Show,Ord)
 
+type ClassifyMap = [(String,Event)]

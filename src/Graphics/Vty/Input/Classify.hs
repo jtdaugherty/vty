@@ -3,7 +3,7 @@
 -- I did not write this so I might just rewrite it for better understanding. Which is not the best
 -- of reasons.
 -- TODO: measure and rewrite if required.
--- TODO: The ClassifyTable interface requires this code to always assure later entries override
+-- TODO: The ClassifyMap interface requires this code to always assure later entries override
 -- earlier.
 module Graphics.Vty.Input.Classify where
 
@@ -25,7 +25,7 @@ data KClass
     | Prefix
     deriving(Show, Eq)
 
-compile :: ClassifyTable -> [Char] -> KClass
+compile :: ClassifyMap -> [Char] -> KClass
 compile table = cl' where
     -- take all prefixes and create a set of these
     prefixSet = S.fromList $ concatMap (init . inits . fst) $ table
@@ -47,10 +47,11 @@ compile table = cl' where
                     let inputTails = init $ tail $ tails inputBlock
                     in case mapMaybe (\s -> (,) s `fmap` M.lookup s eventForInput) inputTails of
                         (s,e) : _ -> Valid e (drop (length s) inputBlock)
-                        -- neither a prefix or a full event. Might be interesting to log.
+                        -- neither a prefix or a full event.
+                        -- TODO: debug log
                         [] -> Invalid
 
-classify, classifyTab :: ClassifyTable -> [Char] -> KClass
+classify, classifyTab :: ClassifyMap -> [Char] -> KClass
 
 -- As soon as
 classify _table s@(c:_) | ord c >= 0xC2

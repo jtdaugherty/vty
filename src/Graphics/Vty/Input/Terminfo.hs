@@ -33,26 +33,26 @@ import System.Console.Terminfo
 --
 -- \todo terminfo meta is not supported.
 -- \todo no 8bit
-classifyTableForTerm :: String -> Terminal -> ClassifyTable
-classifyTableForTerm termName term =
-    concat $ capsClassifyTable term keysFromCapsTable
+classifyMapForTerm :: String -> Terminal -> ClassifyMap
+classifyMapForTerm termName term =
+    concat $ capsClassifyMap term keysFromCapsTable
            : universalTable
            : termSpecificTables termName
 
 -- | key table applicable to all terminals.
 --
 -- TODO: some probably only applicable to ANSI/VT100 terminals.
-universalTable :: ClassifyTable
+universalTable :: ClassifyMap
 universalTable = concat [visibleChars, ctrlChars, ctrlMetaChars, specialSupportKeys]
 
-capsClassifyTable :: Terminal -> [(String,Event)] -> ClassifyTable
-capsClassifyTable terminal table = [(x,y) | (Just x,y) <- map extractCap table]
+capsClassifyMap :: Terminal -> [(String,Event)] -> ClassifyMap
+capsClassifyMap terminal table = [(x,y) | (Just x,y) <- map extractCap table]
     where extractCap = first (getCapability terminal . tiGetStr)
 
 -- | tables specific to a given terminal that are not derivable from terminfo.
 --
 -- TODO: Adds the ANSI/VT100/VT50 tables regardless of term identifier.
-termSpecificTables :: String -> [ClassifyTable]
+termSpecificTables :: String -> [ClassifyMap]
 termSpecificTables _termName = ANSIVT.classifyTable
 
 -- | Visible characters in the ISO-8859-1 and UTF-8 common set.
@@ -62,7 +62,7 @@ termSpecificTables _termName = ANSIVT.classifyTable
 --
 -- TODO: resolve
 -- 1. start at ' '. The earlier characters are all 'ctrlChar'
-visibleChars :: ClassifyTable
+visibleChars :: ClassifyMap
 visibleChars = [ ([x], EvKey (KChar x) [])
                | x <- [' ' .. toEnum 0xC1]
                ]
@@ -70,7 +70,7 @@ visibleChars = [ ([x], EvKey (KChar x) [])
 -- | Non visible characters in the ISO-8859-1 and UTF-8 common set translated to ctrl + char.
 --
 -- \todo resolve CTRL-i is the same as tab
-ctrlChars :: ClassifyTable
+ctrlChars :: ClassifyMap
 ctrlChars =
     [ ([toEnum x],EvKey (KChar y) [MCtrl])
     | (x,y) <- zip ([0..31]) ('@':['a'..'z']++['['..'_'])
@@ -79,11 +79,11 @@ ctrlChars =
     ]
 
 -- | Ctrl+Meta+Char
-ctrlMetaChars :: ClassifyTable
+ctrlMetaChars :: ClassifyMap
 ctrlMetaChars = map (\(s,EvKey c m) -> ('\ESC':s, EvKey c (MMeta:m))) ctrlChars
 
 -- | esc, meta esc, delete, meta delete, enter, meta enter
-specialSupportKeys :: ClassifyTable
+specialSupportKeys :: ClassifyMap
 specialSupportKeys =
     [ -- special support for ESC
       ("\ESC",EvKey KEsc []), ("\ESC\ESC",EvKey KEsc [MMeta])
@@ -150,7 +150,7 @@ specialSupportKeys =
 -- * kRIT - shift right
 --
 -- * kcuu1 - up
-keysFromCapsTable :: ClassifyTable
+keysFromCapsTable :: ClassifyMap
 keysFromCapsTable =
     [ ("ka1",   EvKey KUpLeft    [])
     , ("ka3",   EvKey KUpRight   [])
@@ -180,5 +180,5 @@ keysFromCapsTable =
     ] ++ functionKeyCapsTable
 
 -- | cap names for function keys
-functionKeyCapsTable :: ClassifyTable
+functionKeyCapsTable :: ClassifyMap
 functionKeyCapsTable = flip map [0..63] $ \n -> ("kf" ++ show n, EvKey (KFun n) [])
