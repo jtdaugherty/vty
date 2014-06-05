@@ -96,6 +96,7 @@ library
 
   other-modules:       Graphics.Vty.Attributes.Color
                        Graphics.Vty.Attributes.Color240
+                       Graphics.Vty.Debug.Image
                        Graphics.Vty.Input.Terminfo.ANSIVT
 
   c-sources:           cbits/gwinsz.c
