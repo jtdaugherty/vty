@@ -8,6 +8,8 @@
 --
 -- This is an example of an algorithm where code coverage could be high, even 100%, but the
 -- behavior is still under tested. I should collect more of these examples...
+--
+-- reference: http://www.unixwiz.net/techtips/termios-vmin-vtime.html
 module Graphics.Vty.Input.Loop where
 
 import Graphics.Vty.Config
@@ -30,7 +32,7 @@ import Foreign ( allocaArray, peekArray, Ptr )
 import Foreign.C.Types (CInt(..))
 
 import System.IO
-import System.Posix.IO (fdReadBuf)
+import System.Posix.IO (fdReadBuf, setFdOption, FdOption(..))
 import System.Posix.Terminal
 import System.Posix.Types (Fd(..))
 
@@ -108,6 +110,7 @@ readFromDevice = do
     oldConfig <- use appliedConfig
     fd <- view inputFd
     when (newConfig /= oldConfig) $ do
+        logMsg $ "new config: " ++ show newConfig
         liftIO $ applyTimingConfig fd newConfig
         appliedConfig .= newConfig
     bufferPtr <- use $ inputBuffer.ptr
@@ -117,13 +120,12 @@ readFromDevice = do
         if bytesRead > 0
         then fmap (map $ chr . fromIntegral) $ peekArray (fromIntegral bytesRead) bufferPtr
         else return []
-    logMsg $ "input bytes: " ++ show stringRep
+    when (not $ null stringRep) $ logMsg $ "input bytes: " ++ show stringRep
     return stringRep
 
 applyTimingConfig :: Fd -> Config -> IO ()
-applyTimingConfig fd config =
-    let vtime = min 255 $ singleEscPeriod config `div` 100000
-    in setTermTiming fd 1 vtime
+applyTimingConfig fd config = setTermTiming fd (derivedVmin config)
+                                               (derivedVtime config `div` 100)
 
 parseEvent :: InputM Event
 parseEvent = do
@@ -131,6 +133,8 @@ parseEvent = do
     b <- use unprocessedBytes
     case c b of
         Valid e remaining -> do
+            logMsg $ "valid parse: " ++ show e
+            logMsg $ "remaining: " ++ show remaining
             unprocessedBytes .= remaining
             return e
         _                   -> mzero 
@@ -139,7 +143,9 @@ dropInvalid :: InputM ()
 dropInvalid = do
     c <- use classifier
     b <- use unprocessedBytes
-    when (c b == Invalid) $ unprocessedBytes .= []
+    when (c b == Invalid) $ do
+        logMsg "dropping input bytes"
+        unprocessedBytes .= []
 
 stopIfRequested :: InputM ()
 stopIfRequested = do
@@ -166,10 +172,12 @@ attributeControl fd = do
         unsetAttrs = setTerminalAttributes fd original Immediately
     return (setAttrs,unsetAttrs)
 
-logClassifyMap :: Input -> String -> ClassifyMap -> IO()
-logClassifyMap input termName classifyTable = case _inputDebug input of
+logInitialInputState :: Input -> String -> ClassifyMap -> IO()
+logInitialInputState input termName classifyTable = case _inputDebug input of
     Nothing -> return ()
     Just h  -> do
+        config <- readIORef $ _configRef input
+        hPrintf h "initial (vmin,vtime): %s\n" (show (vmin config, vtime config))
         forM_ classifyTable $ \i -> case i of
             (inBytes, EvKey k mods) -> hPrintf h "map %s %s %s %s\n" (show termName)
                                                                      (show inBytes)
@@ -179,6 +187,7 @@ logClassifyMap input termName classifyTable = case _inputDebug input of
 
 initInputForFd :: Config -> String -> ClassifyMap -> Fd -> IO Input
 initInputForFd config termName classifyTable inFd = do
+    setFdOption inFd NonBlockingRead False
     applyTimingConfig inFd config
     stopFlag <- newIORef False
     input <- Input <$> newChan
@@ -188,7 +197,7 @@ initInputForFd config termName classifyTable inFd = do
                    <*> maybe (return Nothing)
                              (\f -> Just <$> openFile f AppendMode)
                              (debugLog config)
-    logClassifyMap input termName classifyTable
+    logInitialInputState input termName classifyTable
     _ <- forkOS $ runInputProcessorLoop classifyTable input stopFlag
     return input
 

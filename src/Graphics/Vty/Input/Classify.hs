@@ -33,11 +33,11 @@ compile table = cl' where
     eventForInput = M.fromList table
     cl' [] = Prefix
     cl' inputBlock = case M.lookup inputBlock eventForInput of
+            -- if the inputBlock is exactly what is expected for an event then consume the whole
+            -- block and return the event
             Just e -> Valid e []
             Nothing -> case S.member inputBlock prefixSet of
                 True -> Prefix
-                -- if the inputBlock is exactly what is expected for an event then consume the whole
-                -- block and return the event
                 -- look up progressively smaller tails of the input block until an event is found
                 -- The assumption is that the event that consumes the most input bytes should be
                 -- produced.
@@ -45,8 +45,8 @@ compile table = cl' where
                 -- H: There will always be one match. The prefixSet contains, by definition, all
                 -- prefixes of an event. 
                 False ->
-                    let inputTails = init $ tail $ tails inputBlock
-                    in case mapMaybe (\s -> (,) s `fmap` M.lookup s eventForInput) inputTails of
+                    let inputPrefixes = reverse $ tail $ inits inputBlock
+                    in case mapMaybe (\s -> (,) s `fmap` M.lookup s eventForInput) inputPrefixes of
                         (s,e) : _ -> Valid e (drop (length s) inputBlock)
                         -- neither a prefix or a full event.
                         -- TODO: debug log

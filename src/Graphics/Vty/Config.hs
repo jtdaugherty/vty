@@ -93,7 +93,8 @@ import qualified Text.Parsec.Token as P
 type InputMap = [(Maybe String, String, Event)]
 
 data Config = Config
-    { specifiedEscPeriod :: Maybe Int -- < See 'singleEscPeriod'
+    { vmin  :: Maybe Int -- < See 'derivedVmin'
+    , vtime :: Maybe Int -- < See 'derivedVtime'
     -- | Debug information is appended to this file if not Nothing.
     , debugLog           :: Maybe FilePath
     -- | The (input byte, output event) pairs extend the internal input table of VTY and the table
@@ -103,26 +104,32 @@ data Config = Config
     , inputMap           :: InputMap
     } deriving (Show, Eq)
 
--- | AKA VTIME. The default is 100000 microseconds or 0.1 seconds. Set using the
--- 'specifiedEscPeriod' field of 'Config'
-singleEscPeriod :: Config -> Int
-singleEscPeriod = maybe 100000 id . specifiedEscPeriod
+-- | The default is 100 milliseconds, 0.1 seconds.
+-- Set using the 'vtime' field of 'Config'
+derivedVtime :: Config -> Int
+derivedVtime = maybe 100 id . vtime
+
+-- | The default is 1 character.
+-- Set using the 'vmin' field of 'Config'
+derivedVmin :: Config -> Int
+derivedVmin = maybe 1 id . vmin
 
 instance Default Config where
     def = mempty
 
 instance Monoid Config where
     mempty = Config
-        { specifiedEscPeriod = Nothing
-        , debugLog           = mempty
-        , inputMap           = mempty
+        { vmin      = Nothing
+        , vtime     = Nothing
+        , debugLog  = mempty
+        , inputMap  = mempty
         }
     mappend c0 c1 = Config
-        -- latter config takes priority in specifiedEscPeriod
-        { specifiedEscPeriod = specifiedEscPeriod c1 <|> specifiedEscPeriod c0
-        -- latter config takes priority in debugInputLog
-        , debugLog           = debugLog c1           <|> debugLog c0
-        , inputMap           = inputMap c0           <>  inputMap c1
+        -- latter config takes priority in vmin, vtime, debugInputLog
+        { vmin      = vmin c1     <|> vmin c0
+        , vtime     = vtime c1    <|> vtime c0
+        , debugLog  = debugLog c1 <|> debugLog c0
+        , inputMap  = inputMap c0 <>  inputMap c1
         }
 
 type ConfigParser s a = ParsecT s () (Writer Config) a

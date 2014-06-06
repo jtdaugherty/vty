@@ -30,9 +30,8 @@ debugLog "/tmp/vty-debug.txt"
 |]
 
 exampleConfigConfig :: Config
-exampleConfigConfig = Config
-    { specifiedEscPeriod = def
-    , debugLog = Just "/tmp/vty-debug.txt"
+exampleConfigConfig = def
+    { debugLog = Just "/tmp/vty-debug.txt"
     , inputMap = [ (Nothing, "\ESC[B", EvKey KUp [])
                  , (Nothing, "\ESC[1;3B", EvKey KDown [MAlt])
                  , (Just "xterm", "\ESC[1;3B", EvKey KDown [MAlt])

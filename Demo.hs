@@ -16,7 +16,9 @@ eventBufferSize = 1000
 type App = RWST Vty () (Seq String) IO
 
 main = do
-    vty <- mkVty def
+    vty <- if True -- change to false for emacs-like input processing
+            then mkVty def
+            else mkVty (def { vmin = Just 2, vtime = Just 100 } )
     _ <- execRWST (vtyInteract False) vty Seq.empty
     shutdown vty
 
