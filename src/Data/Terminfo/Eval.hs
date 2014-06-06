@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# OPTIONS_GHC -funbox-strict-fields #-}
+{-# OPTIONS_HADDOCK hide #-}
 {- Evaluates the paramaterized terminfo string capability with the given parameters.
  -
  -}

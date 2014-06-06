@@ -93,7 +93,7 @@ import qualified Text.Parsec.Token as P
 type InputMap = [(Maybe String, String, Event)]
 
 data Config = Config
-    { specifiedEscPeriod :: Maybe Int            
+    { specifiedEscPeriod :: Maybe Int -- < See 'singleEscPeriod'
     -- | Debug information is appended to this file if not Nothing.
     , debugLog           :: Maybe FilePath
     -- | The (input byte, output event) pairs extend the internal input table of VTY and the table

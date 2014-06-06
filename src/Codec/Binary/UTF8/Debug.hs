@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 -- Copyright 2009 Corey O'Connor
 module Codec.Binary.UTF8.Debug 
     where

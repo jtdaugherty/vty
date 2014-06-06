@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 module Graphics.Vty.Inline.Unsafe where
 
 import Graphics.Vty

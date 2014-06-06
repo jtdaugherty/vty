@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 -- This makes a kind of tri. Has space efficiency issues with large input blocks.
 -- Likely building a parser and just applying that would be better.
 -- I did not write this so I might just rewrite it for better understanding. Which is not the best
