@@ -7,8 +7,8 @@
 -- and @$VTY_CONFIG_FILE@. The @$VTY_CONFIG_FILE@ takes precedence over the @config@ file or the
 -- application provided 'Config'.
 --
--- Each line of the input config is processed individually. Lines that fail to parse are ignored.
--- Later entries take precedence over earlier.
+-- Lines in config files that fail to parse are ignored.  Later entries take precedence over
+-- earlier.
 --
 -- For all directives:
 -- 
@@ -16,7 +16,7 @@
 --  string := \"\\\"\" chars+ \"\\\"\"
 -- @
 --
--- = Debug Directives
+-- = Debug
 --
 -- == @debugLog@
 --
@@ -29,11 +29,11 @@
 -- The value of the environment variable @VTY_DEBUG_LOG@ is equivalent to a debugLog entry at the
 -- end of the last config file.
 --
--- = Input Table Directives
+-- = Input Processing
 --
 -- == @map@
 --
--- Directive format:
+-- Format:
 --
 -- @
 --  \"map\" term string key modifier_list
@@ -59,7 +59,7 @@
 -- If a debug log is requested then vty will output the current input table to the log in the above
 -- format.
 --
--- EG: Set VTY_DEBUG_LOG. Run vty. Check debug log for incorrect mappings. Add corrected mappings to
+-- Set VTY_DEBUG_LOG. Run vty. Check debug log for incorrect mappings. Add corrected mappings to
 -- .vty/config
 --
 module Graphics.Vty.Config where
