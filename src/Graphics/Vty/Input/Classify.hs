@@ -12,7 +12,7 @@ import Graphics.Vty.Input.Events
 
 import Codec.Binary.UTF8.Generic (decode)
 
-import Data.List(tails,inits)
+import Data.List(inits)
 import qualified Data.Map as M( fromList, lookup )
 import Data.Maybe ( mapMaybe )
 import qualified Data.Set as S( fromList, member )

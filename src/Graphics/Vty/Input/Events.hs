@@ -1,7 +1,5 @@
 module Graphics.Vty.Input.Events where
 
-import Data.Map (Map)
-
 -- | Representations of non-modifier keys.
 --
 -- * KFun is indexed from 0 to 63. Range of supported FKeys varies by terminal and keyboard.

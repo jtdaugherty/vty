@@ -2,7 +2,6 @@
 module Graphics.Vty.Inline.Unsafe where
 
 import Graphics.Vty
-import Graphics.Vty.Config (userConfig)
 
 import Data.Default
 import Data.IORef
