@@ -177,7 +177,7 @@ logInitialInputState input termName classifyTable = case _inputDebug input of
     Nothing -> return ()
     Just h  -> do
         config <- readIORef $ _configRef input
-        hPrintf h "initial (vmin,vtime): %s\n" (show (vmin config, vtime config))
+        _ <- hPrintf h "initial (vmin,vtime): %s\n" (show (vmin config, vtime config))
         forM_ classifyTable $ \i -> case i of
             (inBytes, EvKey k mods) -> hPrintf h "map %s %s %s %s\n" (show termName)
                                                                      (show inBytes)
