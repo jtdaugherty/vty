@@ -66,7 +66,7 @@
 module Graphics.Vty.Config where
 
 -- ignore warning on GHC 7.6+. Required for GHC 7.4
-import Prelude hiding (catch)
+import Prelude
 
 import Control.Applicative hiding (many)
 
