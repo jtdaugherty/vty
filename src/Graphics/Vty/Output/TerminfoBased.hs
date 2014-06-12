@@ -178,13 +178,13 @@ reserveTerminal inID outHandle = liftIO $ do
 
 requireCap :: (Applicative m, MonadIO m) => Terminfo.Terminal -> String -> m CapExpression
 requireCap ti capName 
-    = case Terminfo.getCapability ti (Terminfo.tiGetStr capName) of
+    = case Terminfo.getCapability ti (Terminfo.tiGetOutput1 capName) of
         Nothing     -> fail $ "Terminal does not define required capability \"" ++ capName ++ "\""
         Just capStr -> parseCap capStr
 
 probeCap :: (Applicative m, MonadIO m) => Terminfo.Terminal -> String -> m (Maybe CapExpression)
 probeCap ti capName 
-    = case Terminfo.getCapability ti (Terminfo.tiGetStr capName) of
+    = case Terminfo.getCapability ti (Terminfo.tiGetOutput1 capName) of
         Nothing     -> return Nothing
         Just capStr -> Just <$> parseCap capStr
 
