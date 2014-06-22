@@ -1,3 +1,7 @@
+5.1.1
+  - merged https://github.com/coreyoconnor/vty/pull/48 thanks sjmielke!
+  - jtdaugherty resolved a number of compiler warnings. Thanks!
+
 5.1.0
   - vmin and vtime can be specified however the application requires. See Graphics.Vty.Config.
   - fixed the processing of input when vmin is set > 1.
