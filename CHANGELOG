@@ -1,3 +1,6 @@
+5.1.4
+  - merged https://github.com/coreyoconnor/vty/pull/51 thanks trofi!
+
 5.1.1
   - merged https://github.com/coreyoconnor/vty/pull/48 thanks sjmielke!
   - jtdaugherty resolved a number of compiler warnings. Thanks!
