@@ -228,6 +228,7 @@ test-suite verify-display-attributes
 
   other-modules:       Verify
                        Verify.Graphics.Vty.Attributes
+                       Verify.Graphics.Vty.DisplayAttributes
                        Verify.Graphics.Vty.Prelude
                        Verify.Graphics.Vty.Picture
                        Verify.Graphics.Vty.Image
