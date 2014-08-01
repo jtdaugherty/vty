@@ -12,13 +12,13 @@ import Control.Monad.RWS
 
 import System.Random
 
-data Dude = Dude
-    { dudeX :: Int
-    , dudeY :: Int
+data Player = Player
+    { playerX :: Int
+    , playerY :: Int
     } deriving (Show,Eq)
 
 data World = World
-    { dude :: Dude
+    { player :: Player
     , level :: Level
     }
     deriving (Show,Eq)
@@ -45,7 +45,7 @@ main :: IO ()
 main = do
     vty <- mkVty def
     level0 <- mkLevel 1
-    let world0 = World (Dude (fst $ levelStart level0) (snd $ levelStart level0)) level0
+    let world0 = World (Player (fst $ levelStart level0) (snd $ levelStart level0)) level0
     (_finalWorld, ()) <- execRWST (play >> updateDisplay) vty world0
     shutdown vty
 
@@ -98,33 +98,33 @@ processEvent = do
         else do
             case k of
                 EvKey (KChar 'r') [MCtrl]  -> ask >>= liftIO . refresh
-                EvKey KLeft  []            -> moveDude (-1) 0
-                EvKey KRight []            -> moveDude 1 0
-                EvKey KUp    []            -> moveDude 0 (-1)
-                EvKey KDown  []            -> moveDude 0 1
+                EvKey KLeft  []            -> movePlayer (-1) 0
+                EvKey KRight []            -> movePlayer 1 0
+                EvKey KUp    []            -> movePlayer 0 (-1)
+                EvKey KDown  []            -> movePlayer 0 1
                 _                          -> return ()
             return False
 
-moveDude :: Int -> Int -> Game ()
-moveDude dx dy = do
+movePlayer :: Int -> Int -> Game ()
+movePlayer dx dy = do
     world <- get
-    let Dude x y = dude world
+    let Player x y = player world
     let x' = x + dx
         y' = y + dy
     -- this is only valid because the level generation assures the border is always Rock
     case levelGeo (level world) ! (x',y') of
-        EmptySpace -> put $ world { dude = Dude x' y' }
+        EmptySpace -> put $ world { player = Player x' y' }
         _          -> return ()
 
 updateDisplay :: Game ()
 updateDisplay = do
     let info = string defAttr "Move with the arrows keys. Press ESC to exit."
-    -- determine offsets to place the dude in the center of the level.
+    -- determine offsets to place the player in the center of the level.
     (w,h) <- asks outputIface >>= liftIO . displayBounds
-    theDude <- gets dude
-    let ox = (w `div` 2) - dudeX theDude
-        oy = (h `div` 2) - dudeY theDude
-    -- translate the world images to place the dude in the center of the level.
+    thePlayer <- gets player
+    let ox = (w `div` 2) - playerX thePlayer
+        oy = (h `div` 2) - playerY thePlayer
+    -- translate the world images to place the player in the center of the level.
     world' <- map (translate ox oy) <$> worldImages
     let pic = picForLayers $ info : world'
     vty <- ask
@@ -132,10 +132,10 @@ updateDisplay = do
 
 worldImages :: Game [Image]
 worldImages = do
-    theDude <- gets dude
+    thePlayer <- gets player
     theLevel <- gets level
-    let dudeImage = translate (dudeX theDude) (dudeY theDude) (char pieceA '@')
-    return [dudeImage, levelGeoImage theLevel]
+    let playerImage = translate (playerX thePlayer) (playerY thePlayer) (char pieceA '@')
+    return [playerImage, levelGeoImage theLevel]
 
 buildGeoImage :: Geo -> Image
 buildGeoImage geo =
