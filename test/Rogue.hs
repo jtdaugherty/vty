@@ -76,10 +76,6 @@ addRoom levelWidth levelHeight geo (centerX, centerY) = do
     let room = [((x,y), EmptySpace) | x <- [xMin..xMax - 1], y <- [yMin..yMax - 1]]
     return (geo // room)
 
-imageForGeo :: LevelPiece -> Image
-imageForGeo EmptySpace = char (defAttr `withBackColor` green) ' '
-imageForGeo Rock = char defAttr 'X'
-
 pieceA, dumpA :: Attr
 pieceA = defAttr `withForeColor` blue `withBackColor` green
 dumpA = defAttr `withStyle` reverseVideo
@@ -132,12 +128,20 @@ updateDisplay = do
     vty <- ask
     liftIO $ update vty pic
 
+--
+-- Image-generation functions
+--
+
 worldImages :: Game [Image]
 worldImages = do
     thePlayer <- gets player
     theLevel <- gets level
     let playerImage = translate (playerX thePlayer) (playerY thePlayer) (char pieceA '@')
     return [playerImage, levelGeoImage theLevel]
+
+imageForGeo :: LevelPiece -> Image
+imageForGeo EmptySpace = char (defAttr `withBackColor` green) ' '
+imageForGeo Rock = char defAttr 'X'
 
 buildGeoImage :: Geo -> Image
 buildGeoImage geo =
