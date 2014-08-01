@@ -59,7 +59,7 @@ mkLevel difficulty = do
     start <- randomP
     end <- randomP
     -- first the base geography: all rocks
-    let baseGeo = array ((0,0), (levelWidth, levelHeight))
+    let baseGeo = array ((0,0), (levelWidth-1, levelHeight-1))
                         [((x,y),Rock) | x <- [0..levelWidth-1], y <- [0..levelHeight-1]]
     -- next the empty spaces that make the rooms
     -- for this we generate a number of center points
