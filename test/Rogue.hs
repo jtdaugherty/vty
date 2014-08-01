@@ -46,7 +46,7 @@ data LevelPiece
 type Game = RWST Vty () World IO
 
 main :: IO ()
-main = do 
+main = do
     vty <- mkVty def
     level0 <- mkLevel 1
     let world0 = World (Dude (fst $ levelStart level0) (snd $ levelStart level0)) level0
