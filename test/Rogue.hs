@@ -49,6 +49,8 @@ main = do
     (_finalWorld, ()) <- execRWST play vty world0
     shutdown vty
 
+-- |Generate a level randomly using the specified difficulty.  Higher
+-- difficulty means the level will have more rooms and cover a larger area.
 mkLevel :: Int -> IO Level
 mkLevel difficulty = do
     let size = 80 * difficulty
@@ -66,7 +68,16 @@ mkLevel difficulty = do
     geo <- foldM (addRoom levelWidth levelHeight) baseGeo (start : end : centers)
     return $ Level start end geo (buildGeoImage geo)
 
-addRoom :: Int -> Int -> Geo -> (Int, Int) -> IO Geo
+-- |Add a room to a geography and return a new geography.  Adds a
+-- randomly-sized room centered at the specified coordinates.
+addRoom :: Int
+        -> Int
+        -- ^The width and height of the geographical area
+        -> Geo
+        -- ^The geographical area to which a new room should be added
+        -> Coord
+        -- ^The desired center of the new room.
+        -> IO Geo
 addRoom levelWidth levelHeight geo (centerX, centerY) = do
     size <- randomRIO (5,15)
     let xMin = max 1 (centerX - size)
