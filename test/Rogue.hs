@@ -29,12 +29,12 @@ data World = World
     deriving (Show,Eq)
 
 data Level = Level
-    { start :: (Int, Int)
-    , end :: (Int, Int)
-    , geo :: Array (Int, Int) LevelPiece
+    { levelStart :: (Int, Int)
+    , levelEnd :: (Int, Int)
+    , levelGeo :: Array (Int, Int) LevelPiece
     -- building the geo image is expensive. Cache it. Though VTY should go through greater lengths
     -- to avoid the need to cache images.
-    , geoImage :: Image
+    , levelGeoImage :: Image
     }
     deriving (Show,Eq)
 
@@ -45,13 +45,15 @@ data LevelPiece
 
 type Game = RWST Vty () World IO
 
+main :: IO ()
 main = do 
     vty <- mkVty def
     level0 <- mkLevel 1
-    let world0 = World (Dude (fst $ start level0) (snd $ start level0)) level0
+    let world0 = World (Dude (fst $ levelStart level0) (snd $ levelStart level0)) level0
     (_finalWorld, ()) <- execRWST (play >> updateDisplay) vty world0
     shutdown vty
 
+mkLevel :: Int -> IO Level
 mkLevel difficulty = do
     let size = 80 * difficulty
     [levelWidth, levelHeight] <- replicateM 2 $ randomRIO (size,size)
@@ -68,6 +70,8 @@ mkLevel difficulty = do
     geo <- foldM (addRoom levelWidth levelHeight) baseGeo (start : end : centers)
     return $ Level start end geo (buildGeoImage geo)
 
+addRoom :: Int -> Int -> Array (Int, Int) LevelPiece -> (Int, Int)
+        -> IO (Array (Int, Int) LevelPiece)
 addRoom levelWidth levelHeight geo (centerX, centerY) = do
     size <- randomRIO (5,15)
     let xMin = max 1 (centerX - size)
@@ -77,17 +81,21 @@ addRoom levelWidth levelHeight geo (centerX, centerY) = do
     let room = [((x,y), EmptySpace) | x <- [xMin..xMax - 1], y <- [yMin..yMax - 1]]
     return (geo // room)
 
+imageForGeo :: LevelPiece -> Image
 imageForGeo EmptySpace = char (defAttr `withBackColor` green) ' '
 imageForGeo Rock = char defAttr 'X'
 
+pieceA, dumpA :: Attr
 pieceA = defAttr `withForeColor` blue `withBackColor` green
 dumpA = defAttr `withStyle` reverseVideo
 
+play :: Game ()
 play = do
     updateDisplay
     done <- processEvent
     unless done play
 
+processEvent :: Game Bool
 processEvent = do
     k <- ask >>= liftIO . nextEvent
     if k == EvKey KEsc []
@@ -102,14 +110,14 @@ processEvent = do
                 _                          -> return ()
             return False
 
+moveDude :: Int -> Int -> Game ()
 moveDude dx dy = do
-    vty <- ask
     world <- get
     let Dude x y = dude world
     let x' = x + dx
         y' = y + dy
     -- this is only valid because the level generation assures the border is always Rock
-    case geo (level world) ! (x',y') of
+    case levelGeo (level world) ! (x',y') of
         EmptySpace -> put $ world { dude = Dude x' y' }
         _          -> return ()
 
@@ -122,18 +130,19 @@ updateDisplay = do
     let ox = (w `div` 2) - dudeX theDude
         oy = (h `div` 2) - dudeY theDude
     -- translate the world images to place the dude in the center of the level.
-    world' <- map (translate ox oy) <$> world
+    world' <- map (translate ox oy) <$> worldImages
     let pic = picForLayers $ info : world'
     vty <- ask
     liftIO $ update vty pic
 
-world :: Game [Image]
-world = do
+worldImages :: Game [Image]
+worldImages = do
     theDude <- gets dude
     theLevel <- gets level
     let dudeImage = translate (dudeX theDude) (dudeY theDude) (char pieceA '@')
-    return [dudeImage, geoImage theLevel]
+    return [dudeImage, levelGeoImage theLevel]
 
+buildGeoImage :: Array (Int, Int) LevelPiece -> Image
 buildGeoImage geo =
     let (geoWidth, geoHeight) = snd $ bounds geo
     -- seems like a the repeated index operation should be removable. This is not performing random
