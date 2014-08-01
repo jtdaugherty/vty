@@ -46,7 +46,7 @@ main = do
     vty <- mkVty def
     level0 <- mkLevel 1
     let world0 = World (Player (fst $ levelStart level0) (snd $ levelStart level0)) level0
-    (_finalWorld, ()) <- execRWST (play >> updateDisplay) vty world0
+    (_finalWorld, ()) <- execRWST play vty world0
     shutdown vty
 
 mkLevel :: Int -> IO Level
