@@ -13,8 +13,7 @@ import Control.Monad.RWS
 import System.Random
 
 data Player = Player
-    { playerX :: Int
-    , playerY :: Int
+    { playerCoord :: Coord
     } deriving (Show,Eq)
 
 data World = World
@@ -24,8 +23,8 @@ data World = World
     deriving (Show,Eq)
 
 data Level = Level
-    { levelStart :: (Int, Int)
-    , levelEnd :: (Int, Int)
+    { levelStart :: Coord
+    , levelEnd :: Coord
     , levelGeo :: Geo
     -- building the geo image is expensive. Cache it. Though VTY should go
     -- through greater lengths to avoid the need to cache images.
@@ -39,13 +38,14 @@ data LevelPiece
     deriving (Show, Eq)
 
 type Game = RWST Vty () World IO
-type Geo = Array (Int, Int) LevelPiece
+type Geo = Array Coord LevelPiece
+type Coord = (Int, Int)
 
 main :: IO ()
 main = do
     vty <- mkVty def
     level0 <- mkLevel 1
-    let world0 = World (Player (fst $ levelStart level0) (snd $ levelStart level0)) level0
+    let world0 = World (Player (levelStart level0)) level0
     (_finalWorld, ()) <- execRWST play vty world0
     shutdown vty
 
@@ -104,13 +104,13 @@ processEvent = do
 movePlayer :: Int -> Int -> Game ()
 movePlayer dx dy = do
     world <- get
-    let Player x y = player world
+    let Player (x, y) = player world
     let x' = x + dx
         y' = y + dy
     -- this is only valid because the level generation assures the border is
     -- always Rock
     case levelGeo (level world) ! (x',y') of
-        EmptySpace -> put $ world { player = Player x' y' }
+        EmptySpace -> put $ world { player = Player (x',y') }
         _          -> return ()
 
 updateDisplay :: Game ()
@@ -155,3 +155,12 @@ buildGeoImage geo =
                                        , let i = imageForGeo (geo ! (x,y))
                                        ]
                ]
+
+--
+-- Miscellaneous
+--
+playerX :: Player -> Int
+playerX = fst . playerCoord
+
+playerY :: Player -> Int
+playerY = snd . playerCoord
