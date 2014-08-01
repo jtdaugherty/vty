@@ -27,8 +27,8 @@ data Level = Level
     { levelStart :: (Int, Int)
     , levelEnd :: (Int, Int)
     , levelGeo :: Geo
-    -- building the geo image is expensive. Cache it. Though VTY should go through greater lengths
-    -- to avoid the need to cache images.
+    -- building the geo image is expensive. Cache it. Though VTY should go
+    -- through greater lengths to avoid the need to cache images.
     , levelGeoImage :: Image
     }
     deriving (Show,Eq)
@@ -111,7 +111,8 @@ movePlayer dx dy = do
     let Player x y = player world
     let x' = x + dx
         y' = y + dy
-    -- this is only valid because the level generation assures the border is always Rock
+    -- this is only valid because the level generation assures the border is
+    -- always Rock
     case levelGeo (level world) ! (x',y') of
         EmptySpace -> put $ world { player = Player x' y' }
         _          -> return ()
@@ -124,7 +125,8 @@ updateDisplay = do
     thePlayer <- gets player
     let ox = (w `div` 2) - playerX thePlayer
         oy = (h `div` 2) - playerY thePlayer
-    -- translate the world images to place the player in the center of the level.
+    -- translate the world images to place the player in the center of the
+    -- level.
     world' <- map (translate ox oy) <$> worldImages
     let pic = picForLayers $ info : world'
     vty <- ask
@@ -140,8 +142,8 @@ worldImages = do
 buildGeoImage :: Geo -> Image
 buildGeoImage geo =
     let (geoWidth, geoHeight) = snd $ bounds geo
-    -- seems like a the repeated index operation should be removable. This is not performing random
-    -- access but (presumably) access in order of index.
+    -- seems like a the repeated index operation should be removable. This is
+    -- not performing random access but (presumably) access in order of index.
     in vertCat [ geoRow
                | y <- [0..geoHeight-1]
                , let geoRow = horizCat [ i
