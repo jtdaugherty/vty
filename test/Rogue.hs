@@ -4,17 +4,12 @@ module Main where
 import Graphics.Vty
 
 import Data.Array
-import qualified Data.ByteString as B
 import Data.Default (def)
-import Data.Word
 
 import Control.Applicative
-import Control.Lens hiding (Level)
 import Control.Monad
 import Control.Monad.RWS
-import Control.Monad.Writer
 
-import System.IO
 import System.Random
 
 data Dude = Dude
