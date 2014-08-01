@@ -26,7 +26,7 @@ data World = World
 data Level = Level
     { levelStart :: (Int, Int)
     , levelEnd :: (Int, Int)
-    , levelGeo :: Array (Int, Int) LevelPiece
+    , levelGeo :: Geo
     -- building the geo image is expensive. Cache it. Though VTY should go through greater lengths
     -- to avoid the need to cache images.
     , levelGeoImage :: Image
@@ -39,6 +39,7 @@ data LevelPiece
     deriving (Show, Eq)
 
 type Game = RWST Vty () World IO
+type Geo = Array (Int, Int) LevelPiece
 
 main :: IO ()
 main = do
@@ -65,8 +66,7 @@ mkLevel difficulty = do
     geo <- foldM (addRoom levelWidth levelHeight) baseGeo (start : end : centers)
     return $ Level start end geo (buildGeoImage geo)
 
-addRoom :: Int -> Int -> Array (Int, Int) LevelPiece -> (Int, Int)
-        -> IO (Array (Int, Int) LevelPiece)
+addRoom :: Int -> Int -> Geo -> (Int, Int) -> IO Geo
 addRoom levelWidth levelHeight geo (centerX, centerY) = do
     size <- randomRIO (5,15)
     let xMin = max 1 (centerX - size)
@@ -137,7 +137,7 @@ worldImages = do
     let dudeImage = translate (dudeX theDude) (dudeY theDude) (char pieceA '@')
     return [dudeImage, levelGeoImage theLevel]
 
-buildGeoImage :: Array (Int, Int) LevelPiece -> Image
+buildGeoImage :: Geo -> Image
 buildGeoImage geo =
     let (geoWidth, geoHeight) = snd $ bounds geo
     -- seems like a the repeated index operation should be removable. This is not performing random
