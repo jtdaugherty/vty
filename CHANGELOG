@@ -65,9 +65,9 @@
     - vty-event-echo
       - view a input event log for vty. Example of interacting with user.
       - test/EventEcho.hs
-    - vty-rouge
-      - The start of a rouge-like game. Example of layers and image build operations.
-      - test/Rouge.hs
+    - vty-rogue
+      - The start of a rogue-like game. Example of layers and image build operations.
+      - test/Rogue.hs
     - vty-benchmark
       - benchmarks vty. A series of tests that push random pictures to the terminal. The
         random pictures are generated using QuickCheck. The same generators used in the

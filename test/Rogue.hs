@@ -4,37 +4,31 @@ module Main where
 import Graphics.Vty
 
 import Data.Array
-import qualified Data.ByteString as B
 import Data.Default (def)
-import Data.Word
 
 import Control.Applicative
-import Control.Lens hiding (Level)
 import Control.Monad
 import Control.Monad.RWS
-import Control.Monad.Writer
 
-import System.IO
 import System.Random
 
-data Dude = Dude
-    { dudeX :: Int
-    , dudeY :: Int
+data Player = Player
+    { playerCoord :: Coord
     } deriving (Show,Eq)
 
 data World = World
-    { dude :: Dude
+    { player :: Player
     , level :: Level
     }
     deriving (Show,Eq)
 
 data Level = Level
-    { start :: (Int, Int)
-    , end :: (Int, Int)
-    , geo :: Array (Int, Int) LevelPiece
-    -- building the geo image is expensive. Cache it. Though VTY should go through greater lengths
-    -- to avoid the need to cache images.
-    , geoImage :: Image
+    { levelStart :: Coord
+    , levelEnd :: Coord
+    , levelGeo :: Geo
+    -- building the geo image is expensive. Cache it. Though VTY should go
+    -- through greater lengths to avoid the need to cache images.
+    , levelGeoImage :: Image
     }
     deriving (Show,Eq)
 
@@ -44,14 +38,20 @@ data LevelPiece
     deriving (Show, Eq)
 
 type Game = RWST Vty () World IO
+type Geo = Array Coord LevelPiece
+type Coord = (Int, Int)
 
-main = do 
+main :: IO ()
+main = do
     vty <- mkVty def
     level0 <- mkLevel 1
-    let world0 = World (Dude (fst $ start level0) (snd $ start level0)) level0
-    (_finalWorld, ()) <- execRWST (play >> updateDisplay) vty world0
+    let world0 = World (Player (levelStart level0)) level0
+    (_finalWorld, ()) <- execRWST play vty world0
     shutdown vty
 
+-- |Generate a level randomly using the specified difficulty.  Higher
+-- difficulty means the level will have more rooms and cover a larger area.
+mkLevel :: Int -> IO Level
 mkLevel difficulty = do
     let size = 80 * difficulty
     [levelWidth, levelHeight] <- replicateM 2 $ randomRIO (size,size)
@@ -59,7 +59,7 @@ mkLevel difficulty = do
     start <- randomP
     end <- randomP
     -- first the base geography: all rocks
-    let baseGeo = array ((0,0), (levelWidth, levelHeight))
+    let baseGeo = array ((0,0), (levelWidth-1, levelHeight-1))
                         [((x,y),Rock) | x <- [0..levelWidth-1], y <- [0..levelHeight-1]]
     -- next the empty spaces that make the rooms
     -- for this we generate a number of center points
@@ -68,6 +68,16 @@ mkLevel difficulty = do
     geo <- foldM (addRoom levelWidth levelHeight) baseGeo (start : end : centers)
     return $ Level start end geo (buildGeoImage geo)
 
+-- |Add a room to a geography and return a new geography.  Adds a
+-- randomly-sized room centered at the specified coordinates.
+addRoom :: Int
+        -> Int
+        -- ^The width and height of the geographical area
+        -> Geo
+        -- ^The geographical area to which a new room should be added
+        -> Coord
+        -- ^The desired center of the new room.
+        -> IO Geo
 addRoom levelWidth levelHeight geo (centerX, centerY) = do
     size <- randomRIO (5,15)
     let xMin = max 1 (centerX - size)
@@ -77,17 +87,17 @@ addRoom levelWidth levelHeight geo (centerX, centerY) = do
     let room = [((x,y), EmptySpace) | x <- [xMin..xMax - 1], y <- [yMin..yMax - 1]]
     return (geo // room)
 
-imageForGeo EmptySpace = char (defAttr `withBackColor` green) ' '
-imageForGeo Rock = char defAttr 'X'
-
+pieceA, dumpA :: Attr
 pieceA = defAttr `withForeColor` blue `withBackColor` green
 dumpA = defAttr `withStyle` reverseVideo
 
+play :: Game ()
 play = do
     updateDisplay
     done <- processEvent
     unless done play
 
+processEvent :: Game Bool
 processEvent = do
     k <- ask >>= liftIO . nextEvent
     if k == EvKey KEsc []
@@ -95,49 +105,60 @@ processEvent = do
         else do
             case k of
                 EvKey (KChar 'r') [MCtrl]  -> ask >>= liftIO . refresh
-                EvKey KLeft  []            -> moveDude (-1) 0
-                EvKey KRight []            -> moveDude 1 0
-                EvKey KUp    []            -> moveDude 0 (-1)
-                EvKey KDown  []            -> moveDude 0 1
+                EvKey KLeft  []            -> movePlayer (-1) 0
+                EvKey KRight []            -> movePlayer 1 0
+                EvKey KUp    []            -> movePlayer 0 (-1)
+                EvKey KDown  []            -> movePlayer 0 1
                 _                          -> return ()
             return False
 
-moveDude dx dy = do
-    vty <- ask
+movePlayer :: Int -> Int -> Game ()
+movePlayer dx dy = do
     world <- get
-    let Dude x y = dude world
+    let Player (x, y) = player world
     let x' = x + dx
         y' = y + dy
-    -- this is only valid because the level generation assures the border is always Rock
-    case geo (level world) ! (x',y') of
-        EmptySpace -> put $ world { dude = Dude x' y' }
+    -- this is only valid because the level generation assures the border is
+    -- always Rock
+    case levelGeo (level world) ! (x',y') of
+        EmptySpace -> put $ world { player = Player (x',y') }
         _          -> return ()
 
 updateDisplay :: Game ()
 updateDisplay = do
     let info = string defAttr "Move with the arrows keys. Press ESC to exit."
-    -- determine offsets to place the dude in the center of the level.
+    -- determine offsets to place the player in the center of the level.
     (w,h) <- asks outputIface >>= liftIO . displayBounds
-    theDude <- gets dude
-    let ox = (w `div` 2) - dudeX theDude
-        oy = (h `div` 2) - dudeY theDude
-    -- translate the world images to place the dude in the center of the level.
-    world' <- map (translate ox oy) <$> world
+    thePlayer <- gets player
+    let ox = (w `div` 2) - playerX thePlayer
+        oy = (h `div` 2) - playerY thePlayer
+    -- translate the world images to place the player in the center of the
+    -- level.
+    world' <- map (translate ox oy) <$> worldImages
     let pic = picForLayers $ info : world'
     vty <- ask
     liftIO $ update vty pic
 
-world :: Game [Image]
-world = do
-    theDude <- gets dude
-    theLevel <- gets level
-    let dudeImage = translate (dudeX theDude) (dudeY theDude) (char pieceA '@')
-    return [dudeImage, geoImage theLevel]
+--
+-- Image-generation functions
+--
 
+worldImages :: Game [Image]
+worldImages = do
+    thePlayer <- gets player
+    theLevel <- gets level
+    let playerImage = translate (playerX thePlayer) (playerY thePlayer) (char pieceA '@')
+    return [playerImage, levelGeoImage theLevel]
+
+imageForGeo :: LevelPiece -> Image
+imageForGeo EmptySpace = char (defAttr `withBackColor` green) ' '
+imageForGeo Rock = char defAttr 'X'
+
+buildGeoImage :: Geo -> Image
 buildGeoImage geo =
     let (geoWidth, geoHeight) = snd $ bounds geo
-    -- seems like a the repeated index operation should be removable. This is not performing random
-    -- access but (presumably) access in order of index.
+    -- seems like a the repeated index operation should be removable. This is
+    -- not performing random access but (presumably) access in order of index.
     in vertCat [ geoRow
                | y <- [0..geoHeight-1]
                , let geoRow = horizCat [ i
@@ -145,3 +166,12 @@ buildGeoImage geo =
                                        , let i = imageForGeo (geo ! (x,y))
                                        ]
                ]
+
+--
+-- Miscellaneous
+--
+playerX :: Player -> Int
+playerX = fst . playerCoord
+
+playerY :: Player -> Int
+playerY = snd . playerCoord
