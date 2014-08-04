@@ -15,7 +15,7 @@ module Graphics.Vty.Output.TerminfoBased ( reserveTerminal )
 
 import Graphics.Vty.Prelude
 
-import qualified Data.ByteString as BS
+import Data.ByteString.Internal (toForeignPtr)
 import Data.Terminfo.Parse
 import Data.Terminfo.Eval
 
@@ -34,29 +34,10 @@ import Data.Maybe (isJust, isNothing, fromJust)
 import Data.Monoid
 
 import Foreign.C.Types ( CInt(..), CLong(..) )
-
-import GHC.IO.Handle
-#ifdef __GLASGOW_HASKELL__
-#if __GLASGOW_HASKELL__ >= 611
-import GHC.IO.Handle.Internals (withHandle_)
-import GHC.IO.Handle.Types (Handle__(..))
-import qualified GHC.IO.FD as FD
--- import qualified GHC.IO.Handle.FD as FD
-import GHC.IO.Exception
-import Data.Typeable (cast)
-#else
-import GHC.IOBase
-import GHC.Handle hiding (fdToHandle)
-import qualified GHC.Handle
-#endif
-#endif
+import Foreign.ForeignPtr (withForeignPtr)
 
 import qualified System.Console.Terminfo as Terminfo
-#ifdef __GLASGOW_HASKELL__
-#if __GLASGOW_HASKELL__ >= 611
-import System.IO.Error
-#endif
-#endif 
+import System.Posix.IO (fdWriteBuf)
 import System.Posix.Types (Fd(..))
 
 data TerminfoCaps = TerminfoCaps 
@@ -101,9 +82,9 @@ sendCapToTerminal t cap capParams = do
  - todo: Some display attributes like underline and bold have independent string capabilities that
  - should be used instead of the generic "sgr" string capability.
  -}
-reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Handle -> m Output
-reserveTerminal inID outHandle = liftIO $ do
-    ti <- Terminfo.setupTerm inID
+reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output
+reserveTerminal termName outFd = liftIO $ do
+    ti <- Terminfo.setupTerm termName
     -- assumes set foreground always implies set background exists.
     -- if set foreground is not set then all color changing style attributes are filtered.
     msetaf <- probeCap ti "setaf"
@@ -113,14 +94,14 @@ reserveTerminal inID outHandle = liftIO $ do
                 Just setaf -> (False, False, setaf)
                 Nothing -> case msetf of
                     Just setf -> (False, True, setf)
-                    Nothing -> (True, True, error $ "no fore color support for terminal " ++ inID)
+                    Nothing -> (True, True, error $ "no fore color support for terminal " ++ termName)
     msetab <- probeCap ti "setab"
     msetb <- probeCap ti "setb"
     let set_back_cap 
             = case msetab of
                 Nothing -> case msetb of
                     Just setb -> setb
-                    Nothing -> error $ "no back color support for terminal " ++ inID
+                    Nothing -> error $ "no back color support for terminal " ++ termName
                 Just setab -> setab
     terminfoCaps <- pure TerminfoCaps
         <*> probeCap ti "smcup"
@@ -138,28 +119,28 @@ reserveTerminal inID outHandle = liftIO $ do
         <*> currentDisplayAttrCaps ti
     newAssumedStateRef <- newIORef initialAssumedState
     let t = Output
-            { terminalID = inID
+            { terminalID = termName
             , releaseTerminal = liftIO $ do
                 sendCap setDefaultAttr []
                 maybeSendCap cnorm []
-                hClose outHandle
             , reserveDisplay = liftIO $ do
                 -- If there is no support for smcup: Clear the screen and then move the mouse to the
                 -- home position to approximate the behavior.
                 maybeSendCap smcup []
-                hFlush outHandle
                 sendCap clearScreen []
             , releaseDisplay = liftIO $ do
                 maybeSendCap rmcup []
                 maybeSendCap cnorm []
             , displayBounds = do
-                rawSize <- liftIO $ withFd outHandle getWindowSize
+                rawSize <- liftIO $ getWindowSize outFd
                 case rawSize of
                     (w, h)  | w < 0 || h < 0 -> fail $ "getwinsize returned < 0 : " ++ show rawSize
                             | otherwise      -> return (w,h)
             , outputByteBuffer = \outBytes -> do
-                BS.hPut outHandle outBytes
-                hFlush outHandle
+                let (fptr, _offset, len) = toForeignPtr outBytes
+                actualLen <- withForeignPtr fptr $ \ptr -> fdWriteBuf outFd ptr (toEnum len)
+                when (toEnum len /= actualLen) $ fail $ "Graphics.Vty.Output: outputByteBuffer length "
+                                               ++ "mismatch. Please report a bug to vty project."
             , contextColorCount
                 = case supportsNoColors terminfoCaps of
                     False -> case Terminfo.getCapability ti (Terminfo.tiGetNum "colors" ) of
@@ -462,22 +443,3 @@ styleToApplySeq s = concat
                 then []
                 else [op]
 
--- from https://patch-tag.com/r/mae/sendfile/snapshot/current/content/pretty/src/Network/Socket/SendFile/Internal.hs
--- The Fd should not be used after the action returns because the
--- Handler may be garbage collected and than will cause the finalizer
--- to close the fd.
-withFd :: Handle -> (Fd -> IO a) -> IO a
-#ifdef __GLASGOW_HASKELL__
-#if __GLASGOW_HASKELL__ >= 611
-withFd h f = withHandle_ "withFd" h $ \ Handle__{..} -> do
-  case cast haDevice of
-    Nothing -> ioError (ioeSetErrorString (mkIOError IllegalOperation
-                                           "withFd" (Just h) Nothing)
-                        "handle is not a file descriptor")
-    Just fd -> f (Fd (fromIntegral (FD.fdFD fd)))
-#else
-withFd h f =
-    withHandle_ "withFd" h $ \ h_ ->
-      f (Fd (fromIntegral (haFD h_)))
-#endif
-#endif

@@ -15,23 +15,23 @@ import Graphics.Vty.Output.Interface
 import qualified Graphics.Vty.Output.TerminfoBased as TerminfoBased
 
 import Control.Applicative
+import Control.Monad (void)
 import Control.Monad.Trans
 
-import System.IO
+import System.Posix.IO (fdWrite)
+import System.Posix.Types (Fd)
 
 -- | for Terminal.app the terminal identifier "xterm" is used. For iTerm.app the terminal identifier
 -- "xterm-256color" is used.
 --
 -- This effects the terminfo lookup.
-reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Handle -> m Output
-reserveTerminal v outHandle = do
+reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output
+reserveTerminal v outFd = do
     let remapTerm "iTerm.app" = "xterm-256color"
         remapTerm _ = "xterm"
         flushedPut :: String -> IO ()
-        flushedPut str = do
-            hPutStr outHandle str
-            hFlush outHandle
-    t <- TerminfoBased.reserveTerminal (remapTerm v) outHandle
+        flushedPut = void . fdWrite outFd
+    t <- TerminfoBased.reserveTerminal (remapTerm v) outFd
     return $ t { terminalID = terminalID t ++ " (Mac)"
                , reserveDisplay = terminalAppReserveDisplay flushedPut
                , releaseDisplay = terminalAppReleaseDisplay flushedPut

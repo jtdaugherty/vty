@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 -- | The input layer for VTY. This provides methods for initializing an 'Input' structure which can
 -- then be used to read 'Event's from the terminal.
 --
@@ -120,8 +121,7 @@ module Graphics.Vty.Input ( Key(..)
                           , Button(..)
                           , Event(..)
                           , Input(..)
-                          , inputForCurrentTerminal
-                          , inputForNameAndIO
+                          , inputForConfig
                           )
     where
 
@@ -133,22 +133,13 @@ import Graphics.Vty.Input.Terminfo
 import Control.Concurrent
 import Control.Lens
 
+import Data.Functor ((<$>))
 import Data.Monoid
 
 import qualified System.Console.Terminfo as Terminfo
-import System.Environment
 import System.Posix.Signals.Exts
-import System.Posix.IO (stdInput)
-import System.Posix.Types (Fd)
 
--- | Set up the current terminal for input.
--- This determines the current terminal then invokes 'inputForNameAndIO'
-inputForCurrentTerminal :: Config -> IO Input
-inputForCurrentTerminal config = do
-    termName <- getEnv "TERM"
-    inputForNameAndIO config termName stdInput
-
--- | Set up the terminal attached to the given Fd for input.  Returns a 'Input'.
+-- | Set up the terminal with file descriptor `inputFd` for input.  Returns a 'Input'.
 --
 -- The table used to determine the 'Events' to produce for the input bytes comes from
 -- 'classifyMapForTerm'. Which is then overridden by the the applicable entries from
@@ -175,16 +166,20 @@ inputForCurrentTerminal config = do
 --      - canonical mode (line mode) input is not used. TODO: should be a dynamic option.
 --
 -- * IEXTEN disabled
---      - extended functions are disabled. TODO: Uh. Whatever these are.
+--      - extended functions are disabled. TODO: I don't know what those are.
 --
-inputForNameAndIO :: Config -> String -> Fd -> IO Input
-inputForNameAndIO config termName termFd = do
+inputForConfig :: Config -> IO Input
+inputForConfig config@Config{ termName = Just termName
+                            , inputFd = Just termFd
+                            , vmin = Just _
+                            , vtime = Just _
+                            , .. } = do
     terminal <- Terminfo.setupTerm termName
-    let inputOverrides = [(s,e) | (t,s,e) <- inputMap config, t == Nothing || t == Just termName]
+    let inputOverrides = [(s,e) | (t,s,e) <- inputMap, t == Nothing || t == Just termName]
         activeInputMap = classifyMapForTerm termName terminal `mappend` inputOverrides
     (setAttrs,unsetAttrs) <- attributeControl termFd
     setAttrs
-    input <- initInputForFd config termName activeInputMap termFd 
+    input <- initInput config activeInputMap
     let pokeIO = Catch $ do
             let e = error "vty internal failure: this value should not propagate to users"
             setAttrs
@@ -198,3 +193,4 @@ inputForNameAndIO config termName termFd = do
             _ <- installHandler continueProcess Ignore Nothing
             unsetAttrs
         }
+inputForConfig config = mappend config <$> standardIOConfig >>= inputForConfig

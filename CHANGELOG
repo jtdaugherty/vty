@@ -1,3 +1,13 @@
+5.2.0
+  - Config structure now specifies file descriptor to use. The default is stdInput and stdOutput
+    file descriptors. Previously Vty used stdInput for input and the follow code for output:
+      - hDuplicate stdout >>= handleToFd >>= (`hSetBuffering` NoBuffering)
+      - the difference was required by Vty.Inline. Now, Vty.Inline uses the Config structure options
+        to acheive the same effect.
+  - removed: derivedVtime, derivedVmin, inputForCurrentTerminal, inputForNameAndIO,
+    outputForCurrentTerminal, outputForNameAndIO
+  - added: inputForConfig, outputForConfig
+  - updates to vty-rogue from jtdaugherty. Thanks! 
 5.1.4
   - merged https://github.com/coreyoconnor/vty/pull/51 thanks trofi!
 

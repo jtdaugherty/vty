@@ -9,23 +9,23 @@ import Blaze.ByteString.Builder (writeToByteString)
 import Blaze.ByteString.Builder.Word (writeWord8)
 
 import Control.Applicative
+import Control.Monad (void)
 import Control.Monad.Trans
 
 import Data.Foldable (foldMap)
 
-import System.IO
+import System.Posix.IO (fdWrite)
+import System.Posix.Types (Fd)
 
 -- | Initialize the display to UTF-8. 
-reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Handle -> m Output
-reserveTerminal variant outHandle = liftIO $ do
-    let flushedPut str = do
-            hPutStr outHandle str
-            hFlush outHandle
+reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output
+reserveTerminal variant outFd = liftIO $ do
+    let flushedPut = void . fdWrite outFd
     -- If the terminal variant is xterm-color use xterm instead since, more often than not,
     -- xterm-color is broken.
     let variant' = if variant == "xterm-color" then "xterm" else variant
     flushedPut setUtf8CharSet
-    t <- TerminfoBased.reserveTerminal variant' outHandle
+    t <- TerminfoBased.reserveTerminal variant' outFd
     let t' = t
              { terminalID = terminalID t ++ " (xterm-color)"
              , releaseTerminal = do

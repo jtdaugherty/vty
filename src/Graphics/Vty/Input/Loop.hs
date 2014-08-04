@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -47,8 +48,6 @@ data Input = Input
     , shutdownInput :: IO ()
       -- | Changes to this value are reflected after the next event.
     , _configRef :: IORef Config
-      -- | File descriptor used for input.
-    , _inputFd :: Fd
       -- | input debug log
     , _inputDebug :: Maybe Handle
     }
@@ -108,10 +107,10 @@ readFromDevice :: InputM String
 readFromDevice = do
     newConfig <- view configRef >>= liftIO . readIORef
     oldConfig <- use appliedConfig
-    fd <- view inputFd
+    let Just fd = inputFd newConfig
     when (newConfig /= oldConfig) $ do
         logMsg $ "new config: " ++ show newConfig
-        liftIO $ applyTimingConfig fd newConfig
+        liftIO $ applyConfig fd newConfig
         appliedConfig .= newConfig
     bufferPtr <- use $ inputBuffer.ptr
     maxBytes  <- use $ inputBuffer.size
@@ -123,9 +122,10 @@ readFromDevice = do
     when (not $ null stringRep) $ logMsg $ "input bytes: " ++ show stringRep
     return stringRep
 
-applyTimingConfig :: Fd -> Config -> IO ()
-applyTimingConfig fd config = setTermTiming fd (derivedVmin config)
-                                               (derivedVtime config `div` 100)
+applyConfig :: Fd -> Config -> IO ()
+applyConfig fd (Config{ vmin = Just theVmin, vtime = Just theVtime })
+    = setTermTiming fd theVmin (theVtime `div` 100)
+applyConfig _ _ = fail "(vty) applyConfig was not provided a complete configuration"
 
 parseEvent :: InputM Event
 parseEvent = do
@@ -172,32 +172,34 @@ attributeControl fd = do
         unsetAttrs = setTerminalAttributes fd original Immediately
     return (setAttrs,unsetAttrs)
 
-logInitialInputState :: Input -> String -> ClassifyMap -> IO()
-logInitialInputState input termName classifyTable = case _inputDebug input of
+logInitialInputState :: Input -> ClassifyMap -> IO()
+logInitialInputState input classifyTable = case _inputDebug input of
     Nothing -> return ()
     Just h  -> do
-        config <- readIORef $ _configRef input
-        _ <- hPrintf h "initial (vmin,vtime): %s\n" (show (vmin config, vtime config))
+        Config{ vmin = Just theVmin
+              , vtime = Just theVtime
+              , termName = Just theTerm, .. } <- readIORef $ _configRef input
+        _ <- hPrintf h "initial (vmin,vtime): %s\n" (show (theVmin, theVtime))
         forM_ classifyTable $ \i -> case i of
-            (inBytes, EvKey k mods) -> hPrintf h "map %s %s %s %s\n" (show termName)
+            (inBytes, EvKey k mods) -> hPrintf h "map %s %s %s %s\n" (show theTerm)
                                                                      (show inBytes)
                                                                      (show k)
                                                                      (show mods)
             _ -> return ()
 
-initInputForFd :: Config -> String -> ClassifyMap -> Fd -> IO Input
-initInputForFd config termName classifyTable inFd = do
-    setFdOption inFd NonBlockingRead False
-    applyTimingConfig inFd config
+initInput :: Config -> ClassifyMap -> IO Input
+initInput config classifyTable = do
+    let Just fd = inputFd config
+    setFdOption fd NonBlockingRead False
+    applyConfig fd config
     stopFlag <- newIORef False
     input <- Input <$> newChan
                    <*> pure (writeIORef stopFlag True)
                    <*> newIORef config
-                   <*> pure inFd
                    <*> maybe (return Nothing)
                              (\f -> Just <$> openFile f AppendMode)
                              (debugLog config)
-    logInitialInputState input termName classifyTable
+    logInitialInputState input classifyTable
     _ <- forkOS $ runInputProcessorLoop classifyTable input stopFlag
     return input
 

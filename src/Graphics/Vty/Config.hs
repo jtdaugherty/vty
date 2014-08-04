@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE KindSignatures #-}
@@ -66,7 +67,11 @@
 module Graphics.Vty.Config where
 
 -- ignore warning on GHC 7.6+. Required for GHC 7.4
+#if __GLASGOW_HASKELL__ >= 704
+import Prelude
+#else
 import Prelude hiding (catch)
+#endif
 
 import Control.Applicative hiding (many)
 
@@ -82,8 +87,10 @@ import Data.Monoid
 import Graphics.Vty.Input.Events
 
 import System.Directory (getAppUserDataDirectory)
-import System.Environment (getEnv)
 import System.IO.Error (isDoesNotExistError)
+import System.Posix.Env (getEnv)
+import System.Posix.IO (stdInput, stdOutput)
+import System.Posix.Types (Fd(..))
 
 import Text.Parsec hiding ((<|>))
 import Text.Parsec.Token ( GenLanguageDef(..) )
@@ -94,8 +101,11 @@ import qualified Text.Parsec.Token as P
 type InputMap = [(Maybe String, String, Event)]
 
 data Config = Config
-    { vmin  :: Maybe Int -- < See 'derivedVmin'
-    , vtime :: Maybe Int -- < See 'derivedVtime'
+    {
+    -- | The default is 1 character.
+      vmin  :: Maybe Int
+    -- | The default is 100 milliseconds, 0.1 seconds.
+    , vtime :: Maybe Int
     -- | Debug information is appended to this file if not Nothing.
     , debugLog           :: Maybe FilePath
     -- | The (input byte, output event) pairs extend the internal input table of VTY and the table
@@ -103,34 +113,37 @@ data Config = Config
     --
     -- See "Graphics.Vty.Config" module documentation for documentation of the @map@ directive.
     , inputMap           :: InputMap
+    -- | The input file descriptor to use. The default is 'System.Posix.IO.stdInput'
+    , inputFd           :: Maybe Fd
+    -- | The output file descriptor to use. The default is 'System.Posix.IO.stdOutput'
+    , outputFd          :: Maybe Fd
+    -- | The terminal name used to look up terminfo capabilities.
+    -- The default is the value of the TERM environment variable.
+    , termName           :: Maybe String
     } deriving (Show, Eq)
-
--- | The default is 100 milliseconds, 0.1 seconds.
--- Set using the 'vtime' field of 'Config'
-derivedVtime :: Config -> Int
-derivedVtime = maybe 100 id . vtime
-
--- | The default is 1 character.
--- Set using the 'vmin' field of 'Config'
-derivedVmin :: Config -> Int
-derivedVmin = maybe 1 id . vmin
 
 instance Default Config where
     def = mempty
 
 instance Monoid Config where
     mempty = Config
-        { vmin      = Nothing
-        , vtime     = Nothing
-        , debugLog  = mempty
-        , inputMap  = mempty
+        { vmin         = Nothing
+        , vtime        = Nothing
+        , debugLog     = mempty
+        , inputMap     = mempty
+        , inputFd     = Nothing
+        , outputFd    = Nothing
+        , termName     = Nothing
         }
     mappend c0 c1 = Config
-        -- latter config takes priority in vmin, vtime, debugInputLog
-        { vmin      = vmin c1     <|> vmin c0
-        , vtime     = vtime c1    <|> vtime c0
-        , debugLog  = debugLog c1 <|> debugLog c0
-        , inputMap  = inputMap c0 <>  inputMap c1
+        -- latter config takes priority for everything but inputMap
+        { vmin          = vmin c1     <|> vmin c0
+        , vtime         = vtime c1    <|> vtime c0
+        , debugLog      = debugLog c1 <|> debugLog c0
+        , inputMap      = inputMap c0 <>  inputMap c1
+        , inputFd      = inputFd c1 <|> inputFd c1
+        , outputFd     = outputFd c1 <|> outputFd c1
+        , termName      = termName c1 <|> termName c0
         }
 
 type ConfigParser s a = ParsecT s () (Writer Config) a
@@ -139,12 +152,24 @@ type ConfigParser s a = ParsecT s () (Writer Config) a
 userConfig :: IO Config
 userConfig = do
     configFile <- (mappend <$> getAppUserDataDirectory "vty" <*> pure "/config") >>= parseConfigFile
-    let maybeEnv = tryJust (guard . isDoesNotExistError) . getEnv
-    overridePath <- maybeEnv "VTY_CONFIG_FILE"
-    overrideConfig <- either (const $ return def) parseConfigFile overridePath
-    debugLogPath <- maybeEnv "VTY_DEBUG_LOG"
-    let debugLogConfig = either (const def) (\p -> def { debugLog = Just p }) debugLogPath
-    return $ mconcat [configFile, overrideConfig, debugLogConfig]
+    overrideConfig <- maybe (return def) parseConfigFile =<< getEnv "VTY_CONFIG_FILE"
+    base <- (<> configFile <> overrideConfig) <$> standardIOConfig
+    (mappend base) <$> overrideEnvConfig
+
+overrideEnvConfig :: IO Config
+overrideEnvConfig = do
+    d <- getEnv "VTY_DEBUG_LOG"
+    return $ def { debugLog = d }
+
+standardIOConfig :: IO Config
+standardIOConfig = do
+    Just t <- getEnv "TERM"
+    return $ def { vmin = Just 1
+                 , vtime = Just 100
+                 , inputFd = Just stdInput
+                 , outputFd = Just stdOutput
+                 , termName = Just t
+                 }
 
 parseConfigFile :: FilePath -> IO Config
 parseConfigFile path = do

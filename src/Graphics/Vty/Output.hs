@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 --  | Output interface.
 --
 --  Access to the current terminal or a specific terminal device.
@@ -37,24 +39,22 @@ import Graphics.Vty.Output.TerminfoBased as TerminfoBased
 
 import Blaze.ByteString.Builder (writeToByteString)
 
-import Control.Exception ( SomeException, try )
 import Control.Monad.Trans
 
-import Data.List ( isPrefixOf )
+import Data.Monoid (mappend)
+import Data.List (isPrefixOf)
 
-import GHC.IO.Handle
+import System.Posix.Env (getEnv)
 
-import System.Environment
-import System.IO
-
--- | Returns a `Output` for the current terminal as determined by TERM.
+-- | Returns a `Output` for the terminal specified in `Config`
 --
 -- The specific Output implementation used is hidden from the API user. All terminal implementations
--- are assumed to perform more, or less, the same. Currently all implementations use terminfo for at
--- least some terminal specific information. This is why platforms without terminfo are not
--- supported. However, as mentioned before, any specifics about it being based on terminfo are
--- hidden from the API user.  If a terminal implementation is developed for a terminal for a
--- platform without terminfo support then Vty should work as expected on that terminal.
+-- are assumed to perform more, or less, the same. Currently, all implementations use terminfo for at
+-- least some terminal specific information.
+--
+-- Specifics about it being based on terminfo are hidden from the API user. If a terminal
+-- implementation is developed for a terminal without terminfo support then Vty should work as
+-- expected on that terminal.
 --
 -- Selection of a terminal is done as follows:
 --
@@ -72,43 +72,30 @@ import System.IO
 -- environment variables (I think?) this assumes that XTERM_VERSION will never be set for a true
 -- Terminal.app or iTerm.app session.
 --
--- The file descriptor used for output will a be a duplicate of the current stdout file descriptor.
---
 -- \todo add an implementation for windows that does not depend on terminfo. Should be installable
 -- with only what is provided in the haskell platform. Use ansi-terminal
-outputForCurrentTerminal :: ( Applicative m, MonadIO m ) => Config -> m Output
-outputForCurrentTerminal _config = do
-    termType <- liftIO $ getEnv "TERM"
-    outHandle <- liftIO $ hDuplicate stdout
-    outputForNameAndIO termType outHandle
-
--- | gives an output method structure for a terminal with the given name and the given 'Handle'.
-outputForNameAndIO :: (Applicative m, MonadIO m) => String -> Handle -> m Output
-outputForNameAndIO termType outHandle = do
-    t <- if "xterm" `isPrefixOf` termType
+outputForConfig :: Config -> IO Output
+outputForConfig Config{ outputFd = Just fd, termName = Just termName, .. } = do
+    t <- if "xterm" `isPrefixOf` termName
         then do
-            maybeTerminalApp <- mGetEnv "TERM_PROGRAM"
+            -- the explicit nature of the code below was nice for development, not needed anymore.
+            maybeTerminalApp <- getEnv "TERM_PROGRAM"
             case maybeTerminalApp of
                 Nothing
-                    -> XTermColor.reserveTerminal termType outHandle
+                    -> XTermColor.reserveTerminal termName fd
                 Just v | v == "Apple_Terminal" || v == "iTerm.app" 
                     -> do
-                        maybeXterm <- mGetEnv "XTERM_VERSION"
+                        maybeXterm <- getEnv "XTERM_VERSION"
                         case maybeXterm of
-                            Nothing -> MacOSX.reserveTerminal v outHandle
-                            Just _  -> XTermColor.reserveTerminal termType outHandle
+                            Nothing -> MacOSX.reserveTerminal v fd
+                            Just _  -> XTermColor.reserveTerminal termName fd
                 -- Assume any other terminal that sets TERM_PROGRAM to not be an OS X terminal.app
                 -- like terminal?
-                _   -> XTermColor.reserveTerminal termType outHandle
+                _   -> XTermColor.reserveTerminal termName fd
         -- Not an xterm-like terminal. try for generic terminfo.
-        else TerminfoBased.reserveTerminal termType outHandle
+        else TerminfoBased.reserveTerminal termName fd
     return t
-    where
-        mGetEnv var = do
-            mv <- liftIO $ try $ getEnv var
-            case mv of
-                Left (_e :: SomeException)  -> return $ Nothing
-                Right v -> return $ Just v
+outputForConfig config = mappend config <$> standardIOConfig >>= outputForConfig
 
 -- | Sets the cursor position to the given output column and row. 
 --
