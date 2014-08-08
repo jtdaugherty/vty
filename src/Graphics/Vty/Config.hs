@@ -74,13 +74,8 @@ import Prelude hiding (catch)
 
 import Control.Applicative hiding (many)
 
-#if __GLASGOW_HASKELL__ < 708
-import Control.Exception (tryJust, catch, IOException)
-import Control.Monad (void, guard)
-#else
 import Control.Exception (catch, IOException)
 import Control.Monad (void)
-#endif
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Writer
 
@@ -91,9 +86,6 @@ import Data.Monoid
 import Graphics.Vty.Input.Events
 
 import System.Directory (getAppUserDataDirectory)
-#if __GLASGOW_HASKELL__ < 708
-import System.IO.Error (isDoesNotExistError)
-#endif
 import System.Posix.Env (getEnv)
 import System.Posix.IO (stdInput, stdOutput)
 import System.Posix.Types (Fd(..))
