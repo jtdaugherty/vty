@@ -23,7 +23,7 @@ import Control.Monad.State.Strict hiding ( state )
 #if __GLASGOW_HASKELL__ < 708
 import Control.Monad.ST.Strict hiding ( unsafeIOToST )
 #else
-import Control.Monad.ST.Strict hiding ( unsafeIOToST )
+import Control.Monad.ST.Strict
 #endif
 
 import qualified Data.Vector as Vector hiding ( take, replicate )
