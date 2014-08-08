@@ -12,11 +12,7 @@ import Data.IORef
 
 import GHC.IO.Handle (hDuplicate)
 
-#if __GLASGOW_HASKELL__ < 708
-import System.IO (Handle, stdin, stdout, hSetBuffering, BufferMode(NoBuffering))
-#else
 import System.IO (stdin, stdout, hSetBuffering, BufferMode(NoBuffering))
-#endif
 
 import System.IO.Unsafe
 
