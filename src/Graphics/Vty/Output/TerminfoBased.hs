@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# OPTIONS_GHC -D_XOPEN_SOURCE=500 #-}
+{-# OPTIONS_GHC -D_XOPEN_SOURCE=500 -fno-warn-warnings-deprecations #-}
 {-# CFILES gwinsz.c #-}
 -- |  Terminfo based terminal handling.
 --
