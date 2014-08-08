@@ -8,6 +8,8 @@
     outputForCurrentTerminal, outputForNameAndIO
   - added: inputForConfig, outputForConfig
   - updates to vty-rogue from jtdaugherty. Thanks! 
+  - the oldest version of GHC tested to support vty is 7.6.2.
+  - the oldest version of GHC that vty compiles under is 7.4.2
 5.1.4
   - merged https://github.com/coreyoconnor/vty/pull/51 thanks trofi!
 
