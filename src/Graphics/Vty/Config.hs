@@ -66,7 +66,7 @@
 --
 module Graphics.Vty.Config where
 
-#if __GLASGOW_HASKELL__ < 706
+#if __GLASGOW_HASKELL__ < 704
 import Prelude
 #else
 import Prelude hiding (catch)
