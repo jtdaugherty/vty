@@ -66,8 +66,7 @@
 --
 module Graphics.Vty.Config where
 
--- ignore warning on GHC 7.6+. Required for GHC 7.4
-#if __GLASGOW_HASKELL__ >= 704
+#if __GLASGOW_HASKELL__ < 706
 import Prelude
 #else
 import Prelude hiding (catch)

@@ -1,9 +1,10 @@
 -- Copyright Corey O'Connor<coreyoconnor@gmail.com>
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TemplateHaskell #-}
 {- | Transforms an image into rows of operations.
  -}
 module Graphics.Vty.PictureToSpans where
@@ -18,7 +19,10 @@ import Graphics.Vty.Span
 import Control.Lens hiding ( op )
 import Control.Monad.Reader
 import Control.Monad.State.Strict hiding ( state )
+
+#if __GLASGOW_HASKELL__ < 708
 import Control.Monad.ST.Strict hiding ( unsafeIOToST )
+#endif
 
 import qualified Data.Vector as Vector hiding ( take, replicate )
 import Data.Monoid (mappend)
