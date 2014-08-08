@@ -84,7 +84,7 @@ instance Arbitrary DoubleColumnChar where
         ++ [ toEnum 0x309B .. toEnum 0xA4CF ]
 
 liftIOResult :: Testable prop => IO prop -> Property
-liftIOResult = morallyDubiousIOProperty
+liftIOResult = ioProperty
 
 #if __GLASGOW_HASKELL__ <= 701
 instance Random Word where
