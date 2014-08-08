@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC fno-warn-warnings-deprecations #-}
+{-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
 module Graphics.Vty.Input.Terminfo where
 
 import Graphics.Vty.Input.Events
