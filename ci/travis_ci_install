@@ -1,5 +1,6 @@
 #!/bin/bash
 set -ex
+cabal --version
 if [[ "${GHCVER}" > "7.2.2" ]] ; then
   cabal install --only-dependencies --enable-tests
 else
