@@ -4,19 +4,12 @@ module Main where
 import Graphics.Vty.Config
 import Graphics.Vty.Input.Events
 
-import Control.Applicative
-import Control.Exception
-import Control.Lens ((^.))
-import Control.Monad
-
 import Data.Default
 import Data.String.QQ
 
 import Test.Framework
 import Test.Framework.Providers.HUnit
 import Test.HUnit hiding (Test)
-
-import Text.Printf
 
 exampleConfig :: String
 exampleConfig = [s|

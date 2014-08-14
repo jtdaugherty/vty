@@ -12,9 +12,11 @@ import Verify.Graphics.Vty.Output
 
 import Control.Monad
 
+import Data.Default
+
 import qualified System.Console.Terminfo as Terminfo
 import System.Posix.Env
-import System.IO
+import System.Posix.IO
 
 tests :: IO [Test]
 tests = concat <$> forM terminalsOfInterest (\termName -> do
@@ -45,8 +47,8 @@ smokeTestTermMac termName i = liftIOResult $ do
 
 smokeTestTerm :: String -> Image -> IO Result
 smokeTestTerm termName i = do
-    nullOut <- openFile "/dev/null" WriteMode
-    t <- outputForNameAndIO termName nullOut
+    nullOut <- openFd "/dev/null" WriteOnly Nothing defaultFileFlags
+    t <- outputForConfig $ def { outputFd = Just nullOut, termName = Just termName }
     -- putStrLn $ "context color count: " ++ show (contextColorCount t)
     reserveDisplay t
     dc <- displayContext t (100,100)
@@ -59,5 +61,6 @@ smokeTestTerm termName i = do
         showCursor t
     releaseDisplay t
     releaseTerminal t
+    closeFd nullOut
     return succeeded
 

@@ -110,7 +110,12 @@ assertEventsFromSynInput table inputSpec expectedEvents = do
     (writeFd, readFd) <- openPseudoTerminal
     (setTermAttr,_) <- attributeControl readFd
     setTermAttr
-    input <- initInputForFd def "dummy" table readFd
+    let testConfig = def { inputFd = Just readFd
+                         , termName = Just "dummy"
+                         , vmin = Just 1
+                         , vtime = Just 100
+                         }
+    input <- initInput testConfig table
     eventsRef <- newIORef []
     let writeWaitClose = do
             synthesizeInput inputSpec writeFd
