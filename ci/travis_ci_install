@@ -2,8 +2,8 @@
 set -ex
 cabal --version
 if [[ "${GHCVER}" > "7.2.2" ]] ; then
-  cabal install --only-dependencies --enable-tests
+  /opt/cabal/1.20/bin/cabal install --only-dependencies --enable-tests
 else
-  cabal install --only-dependencies
+  /opt/cabal/1.20/bin/cabal install --only-dependencies
   echo "Skipping test dependency install on ${GHCVER}"
 fi
