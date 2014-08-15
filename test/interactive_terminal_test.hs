@@ -78,7 +78,7 @@ with the test_results.list file pasted into the issue. A suitable summary is:
                                                 ( \ (_ :: SomeException) -> return (envName, "") ) 
                           ) 
                           [ "TERM", "COLORTERM", "LANG", "TERM_PROGRAM", "XTERM_VERSION" ]
-    t <- outputForCurrentTerminal def
+    t <- standardIOConfig >>= outputForConfig
     let resultsTxt = show envAttributes ++ "\n" 
                      ++ terminalID t ++ "\n"
                      ++ show results ++ "\n"
@@ -189,7 +189,7 @@ reserveOutputTest = Test
     { testName = "Initialize and reserve terminal output then restore previous state."
     , testID = "reserveOutputTest"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         putStrLn "Line 1"
         putStrLn "Line 2"
@@ -222,7 +222,7 @@ displayBoundsTest0 = Test
     { testName = "Verify display bounds are correct test 0: Using spaces."
     , testID = "displayBoundsTest0"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         (w,h) <- displayBounds t
         let row0 = replicate (fromEnum w) 'X' ++ "\n"
@@ -243,7 +243,7 @@ displayBoundsTest1 = Test
     { testName = "Verify display bounds are correct test 0: Using cursor movement."
     , testID = "displayBoundsTest1"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         (w,h) <- displayBounds t
         setCursorPos t 0 0
@@ -272,7 +272,7 @@ displayBoundsTest2 = Test
     { testName = "Verify display bounds are correct test 0: Using Image ops."
     , testID = "displayBoundsTest2"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         bounds@(w,h) <- displayBounds t
         let firstRow = horizCat $ replicate (fromEnum w) (char defAttr 'X')
@@ -295,7 +295,7 @@ displayBoundsTest3 = Test
     { testName = "Verify display bounds are correct test 0: Hide cursor; Set cursor pos."
     , testID = "displayBoundsTest3"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         (w,h) <- displayBounds t
         hideCursor t
@@ -407,7 +407,7 @@ unicodeSingleWidth0 = Test
     { testName = "Verify terminal can display unicode single-width characters. (Direct UTF-8)"
     , testID = "unicodeSingleWidth0"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         hideCursor t
         withArrayLen (concat utf8Txt0) (flip $ hPutBuf stdout)
@@ -426,7 +426,7 @@ unicodeSingleWidth1 = Test
     { testName = "Verify terminal can display unicode single-width characters. (Image ops)"
     , testID = "unicodeSingleWidth1"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         let pic = picForImage image
             image = line0 <-> line1
@@ -489,7 +489,7 @@ unicodeDoubleWidth0 = Test
     { testName = "Verify terminal can display unicode double-width characters. (Direct UTF-8)"
     , testID = "unicodeDoubleWidth0"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         hideCursor t
         withArrayLen (concat utf8Txt1) (flip $ hPutBuf stdout)
@@ -508,7 +508,7 @@ unicodeDoubleWidth1 = Test
     { testName = "Verify terminal can display unicode double-width characters. (Image ops)"
     , testID = "unicodeDoubleWidth1"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         let pic = picForImage image
             image = line0 <-> line1
@@ -562,7 +562,7 @@ attributesTest0 = Test
     { testName = "Character attributes: foreground colors."
     , testID = "attributesTest0"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         let pic = picForImage image
             image = border <|> column0 <|> border <|> column1 <|> border
@@ -608,7 +608,7 @@ attributesTest1 = Test
     { testName = "Character attributes: background colors."
     , testID = "attributesTest1"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         let pic = picForImage image
             image = border <|> column0 <|> border <|> column1 <|> border
@@ -663,7 +663,7 @@ attributesTest2 = Test
     { testName = "Character attributes: Vivid foreground colors."
     , testID = "attributesTest2"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         let pic = picForImage image
             image = horizCat [border, column0, border, column1, border, column2, border]
@@ -722,7 +722,7 @@ attributesTest3 = Test
     { testName = "Character attributes: Vivid background colors."
     , testID = "attributesTest3"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         let pic = picForImage image
             image = horizCat [border, column0, border, column1, border, column2, border]
@@ -800,7 +800,7 @@ attributesTest4 = Test
     { testName = "Character attributes: Bold; Blink; Underline."
     , testID = "attributesTest4"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         let pic = picForImage image
             image = horizCat [border, column0, border, column1, border]
@@ -852,7 +852,7 @@ attributesTest5 = Test
     { testName = "Character attributes: 240 color palette"
     , testID = "attributesTest5"
     , testAction = do
-        t <- outputForCurrentTerminal def
+        t <- standardIOConfig >>= outputForConfig
         reserveDisplay t
         let pic = picForImage image
             image = vertCat $ map horizCat $ splitColorImages colorImages
@@ -963,7 +963,7 @@ outputImageAndWait image = do
 
 outputPicAndWait :: Picture -> IO ()
 outputPicAndWait pic = do
-    t <- outputForCurrentTerminal def
+    t <- standardIOConfig >>= outputForConfig
     reserveDisplay t
     d <- displayBounds t >>= displayContext t
     outputPicture d pic
@@ -1146,7 +1146,7 @@ layer1 = Test
 
 cheesyAnim0 :: Image -> [Image] -> IO ()
 cheesyAnim0 i background = do
-    t <- outputForCurrentTerminal def
+    t <- standardIOConfig >>= outputForConfig
     reserveDisplay t
     bounds <- displayBounds t
     d <- displayContext t bounds
