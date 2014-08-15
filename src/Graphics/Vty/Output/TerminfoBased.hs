@@ -32,9 +32,11 @@ import Data.Foldable (foldMap)
 import Data.IORef
 import Data.Maybe (isJust, isNothing, fromJust)
 import Data.Monoid
+import Data.Word
 
 import Foreign.C.Types ( CInt(..), CLong(..) )
 import Foreign.ForeignPtr (withForeignPtr)
+import Foreign.Ptr (Ptr, plusPtr)
 
 import qualified System.Console.Terminfo as Terminfo
 import System.Posix.IO (fdWriteBuf)
@@ -67,6 +69,19 @@ data DisplayAttrCaps = DisplayAttrCaps
     , enterBoldMode :: Maybe CapExpression
     }
     
+-- kinda like: https://code.google.com/p/vim/source/browse/src/fileio.c#10422
+-- fdWriteBuf will throw on error. Unless the error is EINTR. On EINTR the write will be retried.
+fdWriteAll :: Fd -> Ptr Word8 -> Int -> Int -> IO Int
+fdWriteAll outFd ptr len count
+    | len <  0  = fail "fdWriteAll: len is less than 0"
+    | len == 0  = return count
+    | otherwise = do
+        writeCount <- fromEnum <$> fdWriteBuf outFd ptr (toEnum len)
+        let len' = len - writeCount
+            ptr' = ptr `plusPtr` writeCount
+            count' = count + writeCount
+        fdWriteAll outFd ptr' len' count'
+
 sendCapToTerminal :: Output -> CapExpression -> [CapParam] -> IO ()
 sendCapToTerminal t cap capParams = do
     outputByteBuffer t $ writeToByteString $ writeCapExpr cap capParams
@@ -137,11 +152,12 @@ reserveTerminal termName outFd = liftIO $ do
                     (w, h)  | w < 0 || h < 0 -> fail $ "getwinsize returned < 0 : " ++ show rawSize
                             | otherwise      -> return (w,h)
             , outputByteBuffer = \outBytes -> do
-                let (fptr, _offset, len) = toForeignPtr outBytes
-                actualLen <- withForeignPtr fptr $ \ptr -> fdWriteBuf outFd ptr (toEnum len)
-                when (toEnum len /= actualLen) $ fail $ "Graphics.Vty.Output: outputByteBuffer length "
-                  ++ "mismatch. " ++ show len ++ " /= " ++ show actualLen
-                  ++ " Please report a bug to vty project."
+                let (fptr, offset, len) = toForeignPtr outBytes
+                actualLen <- withForeignPtr fptr
+                             $ \ptr -> fdWriteAll outFd (ptr `plusPtr` offset) len 0
+                when (toEnum len /= actualLen) $ fail $ "Graphics.Vty.Output: outputByteBuffer "
+                  ++ "length mismatch. " ++ show len ++ " /= " ++ show actualLen
+                  ++ " Please report this bug to vty project."
             , contextColorCount
                 = case supportsNoColors terminfoCaps of
                     False -> case Terminfo.getCapability ti (Terminfo.tiGetNum "colors" ) of
