@@ -247,9 +247,9 @@ limitAttrForDisplay t attr
             | otherwise                          = SetTo $ ISOColor v
         clampColor' (Color240 v)
             -- TODO: Choose closes ISO color?
-            | contextColorCount t < 8            = Default
-            | contextColorCount t < 16           = Default
-            | contextColorCount t == 240         = SetTo $ Color240 v
+            | contextColorCount t <  8           = Default
+            | contextColorCount t <  16          = Default
+            | contextColorCount t <= 256         = SetTo $ Color240 v
             | otherwise 
                 = let p :: Double = fromIntegral v / 240.0 
                       v' = floor $ p * (fromIntegral $ contextColorCount t)

@@ -260,7 +260,7 @@ terminfoDisplayContext tActual terminfoCaps r = return dc
 -- This equation implements the above logic.
 --
 -- \todo This assumes the removal of color changes in the display attributes is done as expected
--- with noColors == True. See `limit_attr_for_display`
+-- with noColors == True. See `limitAttrForDisplay`
 --
 -- \todo This assumes that fewer state changes, followed by fewer bytes, is what to optimize. I
 -- haven't measured this or even examined terminal implementations. *shrug*
