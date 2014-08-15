@@ -140,7 +140,8 @@ reserveTerminal termName outFd = liftIO $ do
                 let (fptr, _offset, len) = toForeignPtr outBytes
                 actualLen <- withForeignPtr fptr $ \ptr -> fdWriteBuf outFd ptr (toEnum len)
                 when (toEnum len /= actualLen) $ fail $ "Graphics.Vty.Output: outputByteBuffer length "
-                                               ++ "mismatch. Please report a bug to vty project."
+                  ++ "mismatch. " ++ show len ++ " /= " ++ show actualLen
+                  ++ " Please report a bug to vty project."
             , contextColorCount
                 = case supportsNoColors terminfoCaps of
                     False -> case Terminfo.getCapability ti (Terminfo.tiGetNum "colors" ) of
