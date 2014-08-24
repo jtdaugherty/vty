@@ -51,7 +51,7 @@
 -- @
 --  map _       \"\\ESC[B\"    KUp   []
 --  map _       \"\\ESC[1;3B\" KDown [MAlt]
---  map "xterm" \"\\ESC[D\"    KLeft []
+--  map \"xterm\" \"\\ESC[D\"    KLeft []
 -- @
 --
 -- Then the bytes @\"\\ESC[B\"@ will result in the KUp event on all terminals. The bytes
