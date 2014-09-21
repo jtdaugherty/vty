@@ -30,6 +30,7 @@ compile :: ClassifyMap -> [Char] -> KClass
 compile table = cl' where
     -- take all prefixes and create a set of these
     prefixSet = S.fromList $ concatMap (init . inits . fst) $ table
+    maxValidInputLength = maximum (map (length . fst) table)
     eventForInput = M.fromList table
     cl' [] = Prefix
     cl' inputBlock = case M.lookup inputBlock eventForInput of
@@ -45,7 +46,7 @@ compile table = cl' where
                 -- H: There will always be one match. The prefixSet contains, by definition, all
                 -- prefixes of an event. 
                 False ->
-                    let inputPrefixes = reverse $ tail $ inits inputBlock
+                    let inputPrefixes = reverse $ take maxValidInputLength $ tail $ inits inputBlock
                     in case mapMaybe (\s -> (,) s `fmap` M.lookup s eventForInput) inputPrefixes of
                         (s,e) : _ -> Valid e (drop (length s) inputBlock)
                         -- neither a prefix or a full event.
