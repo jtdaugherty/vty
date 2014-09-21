@@ -43,7 +43,7 @@ git clone git://github.com/coreyoconnor/vty.git
   ansi. This means that some terminals will not have correct special key support (shifted F10 etc)
 
 * Uses the TIOCGWINSZ ioctl to find the current window size, which
-  appears to be limited to Linux and *BSD.
+  appears to be limited to Linux and BSD.
 
 # Platform Support
 
@@ -57,6 +57,16 @@ special rules might be invalid on newer Mac OS.
 None!
 
 # Development Notes
+
+## Under NixOS
+
+After installing ncurses to user env.
+
+~~~
+LIBRARY_PATH=$HOME/.nix-profile/lib/ cabal configure --enable-tests --extra-lib-dirs=$HOME/.nix-profile/lib
+LIBRARY_PATH=$HOME/.nix-profile/lib/ cabal build
+LIBRARY_PATH=$HOME/.nix-profile/lib/ cabal test
+~~~
 
 ## Coverage
 
