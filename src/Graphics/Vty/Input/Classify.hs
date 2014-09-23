@@ -6,7 +6,10 @@
 -- TODO: measure and rewrite if required.
 -- TODO: The ClassifyMap interface requires this code to always assure later entries override
 -- earlier.
-module Graphics.Vty.Input.Classify where
+module Graphics.Vty.Input.Classify
+    ( classify
+    , KClass(..)
+    ) where
 
 import Graphics.Vty.Input.Events
 
@@ -53,23 +56,18 @@ compile table = cl' where
                         -- TODO: debug log
                         [] -> Invalid
 
-classify, classifyTab :: ClassifyMap -> [Char] -> KClass
-
--- As soon as
-classify _table s@(c:_) | ord c >= 0xC2
-    = if utf8Length (ord c) > length s then Prefix else classifyUtf8 s -- beginning of an utf8 sequence
-classify table other
-    = classifyTab table other
+classify :: ClassifyMap -> [Char] -> KClass
+classify table =
+    let fallbackClassifier = compile table
+    in \s -> case s of
+        (c:_) | ord c >= 0xC2 && utf8Length (ord c) > length s -> Prefix -- beginning of an utf8 sequence
+        (c:_) | ord c >= 0xC2 -> classifyUtf8 s -- As soon as
+        _ -> fallbackClassifier s
 
 classifyUtf8 :: [Char] -> KClass
 classifyUtf8 s = case decode ((map (fromIntegral . ord) s) :: [Word8]) of
     Just (unicodeChar, _) -> Valid (EvKey (KChar unicodeChar) []) []
     _ -> Invalid -- something bad happened; just ignore and continue.
-
-classifyTab table = compile table
-
-first :: (a -> b) -> (a,c) -> (b,c)
-first f (x,y) = (f x, y)
 
 utf8Length :: (Num t, Ord a, Num a) => a -> t
 utf8Length c
@@ -77,4 +75,3 @@ utf8Length c
     | c < 0xE0 = 2
     | c < 0xF0 = 3
     | otherwise = 4
-
