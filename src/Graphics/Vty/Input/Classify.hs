@@ -58,11 +58,11 @@ compile table = cl' where
 
 classify :: ClassifyMap -> [Char] -> KClass
 classify table =
-    let fallbackClassifier = compile table
+    let standardClassifier = compile table
     in \s -> case s of
         (c:_) | ord c >= 0xC2 && utf8Length (ord c) > length s -> Prefix -- beginning of an utf8 sequence
         (c:_) | ord c >= 0xC2 -> classifyUtf8 s -- As soon as
-        _ -> fallbackClassifier s
+        _ -> standardClassifier s
 
 classifyUtf8 :: [Char] -> KClass
 classifyUtf8 s = case decode ((map (fromIntegral . ord) s) :: [Word8]) of
