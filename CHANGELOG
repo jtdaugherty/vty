@@ -1,3 +1,8 @@
+5.2.3
+  - evaluate/compile the input parsing table once instead of each keystroke.
+      - https://github.com/coreyoconnor/vty/pull/59
+      - Thanks ethercrow!
+
 5.2.2
   - When looking at input for an event, don't look too deep.
       - https://github.com/coreyoconnor/vty/pull/57
