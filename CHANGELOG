@@ -1,3 +1,9 @@
+5.2.4
+  - removed -fpic from cc-options. No longer required.
+      - https://github.com/coreyoconnor/vty/issues/61
+      - https://ghc.haskell.org/trac/ghc/ticket/9657
+      - Thanks Fuuzetsu!
+
 5.2.3
   - evaluate/compile the input parsing table once instead of each keystroke.
       - https://github.com/coreyoconnor/vty/pull/59
