@@ -1,3 +1,8 @@
+5.2.5
+  - lens and random version constraint bump.
+      - Thanks RyanGlScott!
+      - https://github.com/coreyoconnor/vty/pull/62
+
 5.2.4
   - removed -fpic from cc-options. No longer required.
       - https://github.com/coreyoconnor/vty/issues/61

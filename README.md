@@ -6,55 +6,66 @@ git clone git://github.com/coreyoconnor/vty.git
 
 # Features
 
+* Support for a large number of terminals. vt100, ansi, hurd, linux, screen etc
+  etc. Anything with a sufficient terminfo entry.
+
 * Automatic handling of window resizes.
 
-* Supports Unicode characters on output, automatically setting and
-  resetting UTF-8 mode for xterm. Other terminals are assumed to support 
+* If the terminal support UTF-8 then vty supports Unicode output.
 
-* Efficient output. 
+* Handles multi-column glyphs. (Requires user to properly configure terminal.)
 
-* Minimizes repaint area, thus virtually eliminating the flicker
-  problem that plagues ncurses programs.
+* Efficient output. Output buffering and terminal state changes are minimized.
 
-* A pure, compositional interface for efficiently constructing display
-  images.
+* Minimizes repaint area. Virtually eliminating the flicker problems that
+  plagues ncurses programs.
+
+* A pure, compositional interface for efficiently constructing display images.
 
 * Automatically decodes keyboard keys into (key,[modifier]) tuples.
 
 * Automatically supports refresh on Ctrl-L.
 
-* Automatically supports timeout after 50ms for lone ESC (a barely
-  noticable delay)
+* Automatically supports timeout after for lone ESC. The timeout is
+  customizable.
 
-* Interface is designed for relatively easy compatible extension.
+* Interface is designed for easy compatible extension.
 
-* Supports all ANSI SGR-modes (defined in console_codes(4)) with
-  a type-safe interface. 
+* Supports ANSI graphics modes (SGR as defined in console_codes(4)) with a
+  type-safe interface. Gracefull fallback for terminals that do not support, or
+  partially support the standard ANSI graphics modes.
 
 * Properly handles cleanup, but not due to signals.
 
+* Comprehensive test suite.
+
 # Known Issues
+
+* Terminals have numerous quirks and bugs. vty picks what works best for the
+  author in ambigious, or buggy situations.
 
 * Signal handling of STOP, TERM and INT are non existent.
 
-* The character encoding of the terminal is assumed to be UTF-8.
+* The character encoding of the terminal is assumed to be UTF-8 if
+  unicode is used.
 
-* Terminfo is assumed to be correct unless the terminal (as declared by TERM) starts with xterm or
-  ansi. This means that some terminals will not have correct special key support (shifted F10 etc)
+* Terminfo is assumed to be correct unless there is an override configured.
+  Some terminals will not have correct special key support (shifted F10 etc).
+  See Config for customizing vty's behavior for a particular terminal.
 
-* Uses the TIOCGWINSZ ioctl to find the current window size, which
-  appears to be limited to Linux and BSD.
+* Uses the TIOCGWINSZ ioctl to find the current window size, which appears to be
+  limited to Linux and BSD.
 
 # Platform Support
 
 ## Posix Terminals
 
-Uses terminfo to determine terminal protocol. Some special rules for Mac terminal applications. The
-special rules might be invalid on newer Mac OS.
+Uses terminfo to determine terminal protocol. With some special rules to handle
+some omissions from terminfo.
 
 ## Windows
 
-None!
+cygwin only.
 
 # Development Notes
 
@@ -70,8 +81,8 @@ LIBRARY_PATH=$HOME/.nix-profile/lib/ cabal test
 
 ## Coverage
 
-Profiling appears to cause issues with coverage when enabled. To evaluate coverage configure as
-follows:
+As of last testing, profiling causes issues with coverage when enabled. To
+evaluate coverage configure as follows:
 
 ~~~
 rm -rf dist ; cabal configure --enable-tests --enable-library-coverage \
