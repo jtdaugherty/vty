@@ -1,5 +1,5 @@
 name:                vty
-version:             5.2.5
+version:             5.2.6
 license:             BSD3
 license-file:        LICENSE
 author:              AUTHORS
@@ -50,7 +50,7 @@ library
                        deepseq >= 1.1 && < 1.4,
                        directory,
                        filepath >= 1.0 && < 2.0,
-                       lens >= 3.9.0.2 && < 4.6,
+                       lens >= 3.9.0.2 && < 4.7,
                        -- required for nice installation with yi
                        hashable >= 1.2,
                        mtl >= 1.1.1.0 && < 2.3,
