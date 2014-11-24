@@ -1,5 +1,7 @@
 5.2.6
   - lens constraint bump
+      - Thanks alexander-b!
+      - https://github.com/coreyoconnor/vty/pull/64
 
 5.2.5
   - lens and random version constraint bump.
