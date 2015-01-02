@@ -47,10 +47,10 @@ library
                        bytestring,
                        containers,
                        data-default >= 0.5.3,
-                       deepseq >= 1.1 && < 1.4,
+                       deepseq >= 1.1 && < 1.5,
                        directory,
                        filepath >= 1.0 && < 2.0,
-                       lens >= 3.9.0.2 && < 4.7,
+                       lens >= 3.9.0.2 && < 4.8,
                        -- required for nice installation with yi
                        hashable >= 1.2,
                        mtl >= 1.1.1.0 && < 2.3,

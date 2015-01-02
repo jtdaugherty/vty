@@ -1,8 +1,8 @@
 #!/bin/bash
 set -ex
 if [[ "${GHCVER}" > "7.2.2" ]] ; then
-  /opt/cabal/1.20/bin/cabal configure --enable-tests && /opt/cabal/1.20/bin/cabal build && /opt/cabal/1.20/bin/cabal test
+  /opt/cabal/${CABALVER}/bin/cabal configure --enable-tests && /opt/cabal/${CABALVER}/bin/cabal build && /opt/cabal/${CABALVER}/bin/cabal test
 else
   echo "Skipping tests on ${GHCVER}"
-  /opt/cabal/1.20/bin/cabal configure && /opt/cabal/1.20/bin/cabal build
+  /opt/cabal/${CABALVER}/bin/cabal configure && /opt/cabal/${CABALVER}/bin/cabal build
 fi
