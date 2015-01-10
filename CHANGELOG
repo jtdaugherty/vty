@@ -1,3 +1,8 @@
+5.2.7
+  - lens and deepseq constraint bump + misc
+      - Thanks ethercrow
+      - https://github.com/coreyoconnor/vty/pull/66
+
 5.2.6
   - lens constraint bump
       - Thanks alexander-b!
