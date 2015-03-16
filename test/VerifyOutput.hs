@@ -27,22 +27,11 @@ tests = concat <$> forM terminalsOfInterest (\termName -> do
         Left (_ :: SomeException) -> return []
         Right _ -> return [ verify ("verify " ++ termName ++ " could output a picture")
                                    (smokeTestTermNonMac termName)
-                          -- this is excessive.
-                          , verify ("verify " ++ termName ++ " could output a picture on a Mac.")
-                                   (smokeTestTermMac termName)
                           ]
     )
 
 smokeTestTermNonMac :: String -> Image -> Property
 smokeTestTermNonMac termName i = liftIOResult $ do
-    -- unset the TERM_PROGRAM environment variable if set.
-    -- Required to execute regression test for #42 on a mac
-    unsetEnv "TERM_PROGRAM"
-    smokeTestTerm termName i
-
-smokeTestTermMac :: String -> Image -> Property
-smokeTestTermMac termName i = liftIOResult $ do
-    setEnv "TERM_PROGRAM" "Apple_Terminal" True
     smokeTestTerm termName i
 
 smokeTestTerm :: String -> Image -> IO Result

@@ -1,5 +1,5 @@
 name:                vty
-version:             5.2.7
+version:             5.2.8
 license:             BSD3
 license-file:        LICENSE
 author:              AUTHORS
@@ -90,7 +90,6 @@ library
                        Graphics.Vty.Span
                        Graphics.Vty.Output.Mock
                        Graphics.Vty.Output.Interface
-                       Graphics.Vty.Output.MacOSX
                        Graphics.Vty.Output.XTermColor
                        Graphics.Vty.Output.TerminfoBased
 

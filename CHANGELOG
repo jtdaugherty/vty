@@ -1,3 +1,10 @@
+5.2.8
+  - blaze-builder, lens, utf8-string version constraint bump
+      - Thanks glguy
+      - https://github.com/coreyoconnor/vty/pull/67
+  - Do not differentiate based on TERM_PROGRAM
+      - https://github.com/coreyoconnor/vty/issues/68
+
 5.2.7
   - lens and deepseq constraint bump + misc
       - Thanks ethercrow

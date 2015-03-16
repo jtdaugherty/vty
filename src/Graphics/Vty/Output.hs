@@ -33,7 +33,6 @@ import Graphics.Vty.Prelude
 import Graphics.Vty.Config
 
 import Graphics.Vty.Output.Interface
-import Graphics.Vty.Output.MacOSX as MacOSX
 import Graphics.Vty.Output.XTermColor as XTermColor
 import Graphics.Vty.Output.TerminfoBased as TerminfoBased
 
@@ -58,40 +57,15 @@ import System.Posix.Env (getEnv)
 --
 -- Selection of a terminal is done as follows:
 --
---      * If TERM == xterm
---          then the terminal might be one of the Mac OS X .app terminals. Check if that might be
---          the case and use MacOSX if so.
---          otherwise use XTermColor.
---
+--      * If TERM == xterm use XTermColor.
 --      * for any other TERM value TerminfoBased is used.
---
--- To differentiate between Mac OS X terminals this uses the TERM_PROGRAM environment variable.
--- However, an xterm started by Terminal or iTerm *also* has TERM_PROGRAM defined since the
--- environment variable is not reset/cleared by xterm. However a Terminal.app or iTerm.app started
--- from an xterm under X11 on mac os x will likely be done via open. Since this does not propogate
--- environment variables (I think?) this assumes that XTERM_VERSION will never be set for a true
--- Terminal.app or iTerm.app session.
 --
 -- \todo add an implementation for windows that does not depend on terminfo. Should be installable
 -- with only what is provided in the haskell platform. Use ansi-terminal
 outputForConfig :: Config -> IO Output
 outputForConfig Config{ outputFd = Just fd, termName = Just termName, .. } = do
     t <- if "xterm" `isPrefixOf` termName
-        then do
-            -- the explicit nature of the code below was nice for development, not needed anymore.
-            maybeTerminalApp <- getEnv "TERM_PROGRAM"
-            case maybeTerminalApp of
-                Nothing
-                    -> XTermColor.reserveTerminal termName fd
-                Just v | v == "Apple_Terminal" || v == "iTerm.app" 
-                    -> do
-                        maybeXterm <- getEnv "XTERM_VERSION"
-                        case maybeXterm of
-                            Nothing -> MacOSX.reserveTerminal v fd
-                            Just _  -> XTermColor.reserveTerminal termName fd
-                -- Assume any other terminal that sets TERM_PROGRAM to not be an OS X terminal.app
-                -- like terminal?
-                _   -> XTermColor.reserveTerminal termName fd
+        then XTermColor.reserveTerminal termName fd
         -- Not an xterm-like terminal. try for generic terminfo.
         else TerminfoBased.reserveTerminal termName fd
     return t
