@@ -17,7 +17,6 @@ module Verify ( module Verify
               , module Text.Printf
               , succeeded
               , failed
-              , result
               , monadicIO
               , liftIO
               , liftBool
