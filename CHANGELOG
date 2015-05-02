@@ -1,3 +1,11 @@
+5.2.9
+  - dependency version bumps
+    - https://github.com/coreyoconnor/vty/pull/71
+    - https://github.com/coreyoconnor/vty/pull/70
+  - Correct/Simplify the example code
+    - Thanks glguy
+    - https://github.com/coreyoconnor/vty/pull/69
+
 5.2.8
   - blaze-builder, lens, utf8-string version constraint bump
       - Thanks glguy
