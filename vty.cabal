@@ -50,7 +50,7 @@ library
                        deepseq >= 1.1 && < 1.5,
                        directory,
                        filepath >= 1.0 && < 2.0,
-                       lens >= 3.9.0.2 && < 4.10,
+                       lens >= 3.9.0.2 && < 5.0,
                        -- required for nice installation with yi
                        hashable >= 1.2,
                        mtl >= 1.1.1.0 && < 2.3,
@@ -146,7 +146,7 @@ test-suite verify-attribute-ops
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
 
 test-suite verify-using-mock-terminal
@@ -179,7 +179,7 @@ test-suite verify-using-mock-terminal
                        text >= 0.11.3,
                        terminfo >= 0.3 && < 0.5,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
   
 test-suite verify-terminal
@@ -213,7 +213,7 @@ test-suite verify-terminal
                        terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
 
 test-suite verify-display-attributes
@@ -245,7 +245,7 @@ test-suite verify-display-attributes
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
 
 test-suite verify-empty-image-props
@@ -271,7 +271,7 @@ test-suite verify-empty-image-props
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
 
 test-suite verify-eval-terminfo-caps
@@ -292,7 +292,7 @@ test-suite verify-eval-terminfo-caps
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
-                       blaze-builder >= 0.3.3.2 && < 0.4,
+                       blaze-builder >= 0.3.3.2 && < 0.5,
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.4,
@@ -300,7 +300,7 @@ test-suite verify-eval-terminfo-caps
                        terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
 
 test-suite verify-image-ops
@@ -328,7 +328,7 @@ test-suite verify-image-ops
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
 
 test-suite verify-image-trans
@@ -356,7 +356,7 @@ test-suite verify-image-trans
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
 
 test-suite verify-inline
@@ -383,7 +383,7 @@ test-suite verify-inline
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
 
 test-suite verify-parse-terminfo-caps
@@ -412,7 +412,7 @@ test-suite verify-parse-terminfo-caps
                        terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
   
 test-suite verify-simple-span-generation
@@ -443,7 +443,7 @@ test-suite verify-simple-span-generation
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
   
   
@@ -475,7 +475,7 @@ test-suite verify-crop-span-generation
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
   
 
@@ -507,7 +507,7 @@ test-suite verify-layers-span-generation
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
 
 test-suite verify-utf8-width
@@ -533,7 +533,7 @@ test-suite verify-utf8-width
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
   
 test-suite verify-using-mock-input
@@ -564,7 +564,7 @@ test-suite verify-using-mock-input
                        terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
   
   ghc-options:         -threaded -Wall
@@ -600,7 +600,7 @@ test-suite verify-config
                        terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
+                       utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
 
   ghc-options:         -threaded -Wall
