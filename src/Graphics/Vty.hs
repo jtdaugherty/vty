@@ -14,16 +14,19 @@
 -- See the vty-examples package for a number of examples.
 --
 -- @
+--  import "Graphics.Vty"
+--
 --  main = do
---      vty <- 'mkVty' def
---      let line0 = 'string' (def `withForeColor` 'green') \"first line\"
---          line1 = 'string' (def `withBackColor` 'blue') \"second line\"
+--      cfg <- 'standardIOConfig'
+--      vty <- 'mkVty' cfg
+--      let line0 = 'string' ('defAttr' ` 'withForeColor' ` 'green') \"first line\"
+--          line1 = 'string' ('defAttr' ` 'withBackColor' ` 'blue') \"second line\"
 --          img = line0 '<->' line1
 --          pic = 'picForImage' img
 --      'update' vty pic
---      e :: 'Event' <- 'nextEvent' vty
+--      e <- 'nextEvent' vty
 --      'shutdown' vty
---      print $ \"Last event was: \" ++ show e
+--      'print' (\"Last event was: \" '++' 'show' e)
 -- @
 -- 
 -- Good sources of documentation for terminal programming are:
