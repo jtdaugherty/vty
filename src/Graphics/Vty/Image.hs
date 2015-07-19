@@ -117,7 +117,8 @@ char a c =
 -- directly to iso10646String or string.
 -- 
 iso10646String :: Attr -> String -> Image
-iso10646String a str = 
+iso10646String _ [] = EmptyImage
+iso10646String a str =
     let displayWidth = safeWcswidth str
     in HorizText a (TL.pack str) displayWidth (length str)
 
