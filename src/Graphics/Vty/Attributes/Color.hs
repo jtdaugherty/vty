@@ -47,5 +47,5 @@ import Data.Word
 --
 -- Seriously, terminal color support is INSANE.
 data Color = ISOColor !Word8 | Color240 !Word8
-    deriving ( Eq, Show )
+    deriving ( Eq, Show, Read )
 
