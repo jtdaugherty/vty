@@ -49,7 +49,7 @@ data Attr = Attr
     { attrStyle :: !(MaybeDefault Style)
     , attrForeColor :: !(MaybeDefault Color)
     , attrBackColor :: !(MaybeDefault Color)
-    } deriving ( Eq, Show )
+    } deriving ( Eq, Show, Read )
 
 -- This could be encoded into a single 32 bit word. The 32 bit word is first divided
 -- into 4 groups of 8 bits where: The first group codes what action should be taken with regards to
@@ -103,10 +103,11 @@ data FixedAttr = FixedAttr
 data MaybeDefault v where
     Default :: MaybeDefault v
     KeepCurrent :: MaybeDefault v
-    SetTo :: forall v . ( Eq v, Show v ) => !v -> MaybeDefault v
+    SetTo :: forall v . ( Eq v, Show v, Read v ) => !v -> MaybeDefault v
 
 deriving instance Eq v => Eq (MaybeDefault v)
 deriving instance Eq v => Show (MaybeDefault v)
+deriving instance (Eq v, Show v, Read v) => Read (MaybeDefault v)
 
 instance Eq v => Monoid ( MaybeDefault v ) where
     mempty = KeepCurrent
