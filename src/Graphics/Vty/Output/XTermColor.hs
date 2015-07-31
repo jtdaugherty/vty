@@ -1,3 +1,9 @@
+{-# LANGUAGE CPP #-}
+
+#ifndef MIN_VERSION_base
+#defined MIN_VERSION_base(x,y,z) 1
+#endif
+
 -- Copyright 2009-2010 Corey O'Connor
 module Graphics.Vty.Output.XTermColor ( reserveTerminal )
     where
@@ -8,14 +14,16 @@ import qualified Graphics.Vty.Output.TerminfoBased as TerminfoBased
 import Blaze.ByteString.Builder (writeToByteString)
 import Blaze.ByteString.Builder.Word (writeWord8)
 
-import Control.Applicative
 import Control.Monad (void)
 import Control.Monad.Trans
 
-import Data.Foldable (foldMap)
-
 import System.Posix.IO (fdWrite)
 import System.Posix.Types (Fd)
+
+#if !(MIN_VERSION_base(4,8,0))
+import Control.Applicative
+import Data.Foldable (foldMap)
+#endif
 
 -- | Initialize the display to UTF-8. 
 reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output

@@ -24,7 +24,13 @@
 -- 'putAttrChange'
 --
 -- Copyright 2009-2010 Corey O'Connor
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
+
+#ifndef MIN_VERSION_base
+#defined MIN_VERSION_base(x,y,z) 1
+#endif
+
 module Graphics.Vty.Inline ( module Graphics.Vty.Inline
                            , withVty
                            )
@@ -37,14 +43,17 @@ import Graphics.Vty.Output.Interface
 
 import Blaze.ByteString.Builder (writeToByteString)
 
-import Control.Applicative
 import Control.Monad.State.Strict
 
 import Data.Bits ( (.&.), complement )
 import Data.IORef
-import Data.Monoid ( mappend )
 
 import System.IO
+
+#if !(MIN_VERSION_base(4,8,0))
+import Control.Applicative
+import Data.Monoid ( mappend )
+#endif
 
 type InlineM v = State Attr v
 

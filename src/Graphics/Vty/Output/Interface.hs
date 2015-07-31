@@ -1,10 +1,16 @@
 -- Copyright Corey O'Connor
 -- General philosophy is: MonadIO is for equations exposed to clients.
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
+
+#ifndef MIN_VERSION_base
+#defined MIN_VERSION_base(x,y,z) 1
+#endif
+
 module Graphics.Vty.Output.Interface
 where
 
@@ -23,15 +29,18 @@ import Control.Monad.Trans
 
 import qualified Data.ByteString as BS
 import Data.IORef
-import Data.Monoid (mempty, mappend)
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Vector as Vector
 
+#if !(MIN_VERSION_base(4,8,0))
+import Data.Monoid (mempty, mappend)
+#endif
+
 data Output = Output
     { -- | Text identifier for the output device. Used for debugging. 
       terminalID :: String
-    , releaseTerminal :: MonadIO m => m ()
+    , releaseTerminal :: forall m. MonadIO m => m ()
     -- | Clear the display and initialize the terminal to some initial display state. 
     --
     -- The expectation of a program is that the display starts in some initial state. 
@@ -46,12 +55,12 @@ data Output = Output
     --
     --  - The previous state cannot be determined
     --  - When exclusive access to a display is released the display returns to the previous state.
-    , reserveDisplay :: MonadIO m => m ()
+    , reserveDisplay :: forall m. MonadIO m => m ()
     -- | Return the display to the state before `reserveDisplay`
     -- If no previous state then set the display state to the initial state.
-    , releaseDisplay :: MonadIO m => m ()
+    , releaseDisplay :: forall m. MonadIO m => m ()
     -- | Returns the current display bounds.
-    , displayBounds :: MonadIO m => m DisplayRegion
+    , displayBounds :: forall m. MonadIO m => m DisplayRegion
     -- | Output the byte string to the terminal device.
     , outputByteBuffer :: BS.ByteString -> IO ()
     -- | Maximum number of colors supported by the context.
@@ -62,7 +71,7 @@ data Output = Output
     -- | Acquire display access to the given region of the display.
     -- Currently all regions have the upper left corner of (0,0) and the lower right corner at 
     -- (max displayWidth providedWidth, max displayHeight providedHeight)
-    , mkDisplayContext :: MonadIO m => Output -> DisplayRegion -> m DisplayContext
+    , mkDisplayContext :: forall m. MonadIO m => Output -> DisplayRegion -> m DisplayContext
     }
 
 displayContext :: MonadIO m => Output -> DisplayRegion -> m DisplayContext
