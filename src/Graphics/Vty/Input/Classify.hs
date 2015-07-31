@@ -60,14 +60,21 @@ classify :: ClassifyMap -> [Char] -> KClass
 classify table =
     let standardClassifier = compile table
     in \s -> case s of
-        (c:_) | ord c >= 0xC2 && utf8Length (ord c) > length s -> Prefix -- beginning of an utf8 sequence
-        (c:_) | ord c >= 0xC2 -> classifyUtf8 s -- As soon as
-        _ -> standardClassifier s
+        c:cs | ord c >= 0xC2 -> classifyUtf8 c cs
+        _                    -> standardClassifier s
 
-classifyUtf8 :: [Char] -> KClass
-classifyUtf8 s = case decode ((map (fromIntegral . ord) s) :: [Word8]) of
-    Just (unicodeChar, _) -> Valid (EvKey (KChar unicodeChar) []) []
-    _ -> Invalid -- something bad happened; just ignore and continue.
+classifyUtf8 :: Char -> [Char] -> KClass
+classifyUtf8 c cs =
+  let n = utf8Length (ord c)
+      (codepoint,rest) = splitAt n (c:cs)
+
+      codepoint8 :: [Word8]
+      codepoint8 = map (fromIntegral . ord) codepoint
+
+  in case decode codepoint8 of
+       _ | n < length codepoint -> Prefix
+       Just (unicodeChar, _)    -> Valid (EvKey (KChar unicodeChar) []) rest
+       Nothing                  -> Invalid -- something bad happened; just ignore and continue.
 
 utf8Length :: (Num t, Ord a, Num a) => a -> t
 utf8Length c
