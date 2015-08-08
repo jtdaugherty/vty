@@ -1,12 +1,21 @@
 -- Copyright 2009-2010 Corey O'Connor
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
+
+#ifndef MIN_VERSION_base
+#defined MIN_VERSION_base(x,y,z) 1
+#endif
+
 module Graphics.Vty.DisplayAttributes
     where
 
 import Graphics.Vty.Attributes
 
 import Data.Bits ((.&.))
+
+#if !(MIN_VERSION_base(4,8,0))
 import Data.Monoid (Monoid(..), mconcat)
+#endif
 
 -- | Given the previously applied display attributes as a FixedAttr and the current display
 -- attributes as an Attr produces a FixedAttr that represents the current display attributes. This

@@ -1,7 +1,13 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# OPTIONS_GHC -funbox-strict-fields #-}
 {-# OPTIONS_HADDOCK hide #-}
+
+#ifndef MIN_VERSION_base
+#defined MIN_VERSION_base(x,y,z) 1
+#endif
+
 {- Evaluates the paramaterized terminfo string capability with the given parameters.
  -
  -}
@@ -17,10 +23,13 @@ import Control.Monad.State.Strict
 import Control.Monad.Writer
 
 import Data.Bits ((.|.), (.&.), xor)
-import Data.List 
-import Data.Word 
+import Data.List
 
 import qualified Data.Vector.Unboxed as Vector
+
+#if !(MIN_VERSION_base(4,8,0))
+import Data.Word
+#endif
 
 -- | capability evaluator state
 data EvalState = EvalState

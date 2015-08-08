@@ -1,6 +1,12 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
+
+#ifndef MIN_VERSION_base
+#defined MIN_VERSION_base(x,y,z) 1
+#endif
+
 -- | Display attributes
 --
 -- Typically the values 'defAttr' or 'currentAttr' are modified to form attributes:
@@ -33,11 +39,14 @@ module Graphics.Vty.Attributes ( module Graphics.Vty.Attributes
 
 import Data.Bits
 import Data.Default
-import Data.Monoid
 import Data.Word
 
 import Graphics.Vty.Attributes.Color
 import Graphics.Vty.Attributes.Color240
+
+#if !(MIN_VERSION_base(4,8,0))
+import Data.Monoid
+#endif
 
 -- | A display attribute defines the Color and Style of all the characters rendered after the
 -- attribute is applied.
