@@ -1,3 +1,17 @@
+5.2.12
+  - unreleased
+
+5.2.11
+  - deepseq bounds increased for tests.
+  - Clean up warnings when compiling on 7.10
+    - Thanks Eric Mertens
+  - Avoid discarding input bytes after multi-byte encoded codepoint
+    - Thanks Eric Mertens
+
+5.2.10
+  - "str" now returns EmptyImage for empty strings to match behavior of other string-like Image constructors (fixes #74)
+    - Thanks Jonathan Daugherty
+
 5.2.9
   - dependency version bumps
     - https://github.com/coreyoconnor/vty/pull/71
