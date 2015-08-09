@@ -149,7 +149,6 @@ outputPicture dc pic = liftIO $ do
                                   (Vector.toList ops)
         -- build the Write corresponding to the output image
         out = (if manipCursor then writeHideCursor dc else mempty)
-              `mappend` writeDefaultAttr dc
               `mappend` writeOutputOps dc initialAttr diffs ops
               `mappend`
                 (case picCursor pic of
@@ -167,30 +166,31 @@ outputPicture dc pic = liftIO $ do
     writeIORef (assumedStateRef $ contextDevice dc) as'
 
 writeOutputOps :: DisplayContext -> FixedAttr -> [Bool] -> DisplayOps -> Write
-writeOutputOps dc inFattr diffs ops =
-    let (_, out, _, _) = Vector.foldl' writeOutputOps' 
-                                       (0, mempty, inFattr, diffs) 
+writeOutputOps dc initialAttr diffs ops =
+    let (_, out, _) = Vector.foldl' writeOutputOps'
+                                       (0, mempty, diffs)
                                        ops
     in out
     where 
-        writeOutputOps' (y, out, fattr, True : diffs') spanOps
-            = let (spanOut, fattr') = writeSpanOps dc y fattr spanOps
-              in (y+1, out `mappend` spanOut, fattr', diffs')
-        writeOutputOps' (y, out, fattr, False : diffs') _spanOps
-            = (y + 1, out, fattr, diffs')
-        writeOutputOps' (_y, _out, _fattr, []) _spanOps
+        writeOutputOps' (y, out, True : diffs') spanOps
+            = let spanOut = writeSpanOps dc y initialAttr spanOps
+                  out' = out `mappend` spanOut
+              in (y+1, out', diffs')
+        writeOutputOps' (y, out, False : diffs') _spanOps
+            = (y + 1, out, diffs')
+        writeOutputOps' (_y, _out, []) _spanOps
             = error "vty - output spans without a corresponding diff."
 
-writeSpanOps :: DisplayContext -> Int -> FixedAttr -> SpanOps -> (Write, FixedAttr)
-writeSpanOps dc y inFattr spanOps =
+writeSpanOps :: DisplayContext -> Int -> FixedAttr -> SpanOps -> Write
+writeSpanOps dc y initialAttr spanOps =
     -- The first operation is to set the cursor to the start of the row
-    let start = writeMoveCursor dc 0 y
+    let start = writeMoveCursor dc 0 y `mappend` writeDefaultAttr dc
     -- then the span ops are serialized in the order specified
-    in Vector.foldl' (\(out, fattr) op -> case writeSpanOp dc op fattr of
-                                            (opOut, fattr') -> (out `mappend` opOut, fattr')
-                     )
-                     (start, inFattr)
-                     spanOps
+    in fst $ Vector.foldl' (\(out, fattr) op -> case writeSpanOp dc op fattr of
+                              (opOut, fattr') -> (out `mappend` opOut, fattr')
+                           )
+                           (start, initialAttr)
+                           spanOps
 
 writeSpanOp :: DisplayContext -> SpanOp -> FixedAttr -> (Write, FixedAttr)
 writeSpanOp dc (TextSpan attr _ _ str) fattr =
@@ -201,7 +201,7 @@ writeSpanOp dc (TextSpan attr _ _ str) fattr =
                `mappend` writeUtf8Text (T.encodeUtf8 $ TL.toStrict str)
     in (out, fattr')
 writeSpanOp _dc (Skip _) _fattr = error "writeSpanOp for Skip"
-writeSpanOp dc (RowEnd _) fattr = (writeRowEnd dc, fattr)
+writeSpanOp dc (RowEnd _) fattr = (writeDefaultAttr dc `mappend` writeRowEnd dc, fattr)
 
 -- | The cursor position is given in X,Y character offsets. Due to multi-column characters this
 -- needs to be translated to column, row positions.

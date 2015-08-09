@@ -221,8 +221,7 @@ buildSpans image outRegion = do
         return ()
     return outOps
 
--- | Add the operations required to build a given image to the current set of row operations
--- returns the number of columns and rows contributed to the output.
+-- | Add the operations required to build a given image to the current set of row operations.
 startImageBuild :: Image -> BlitM s ()
 startImageBuild image = do
     outOfBounds <- isOutOfBounds image <$> get

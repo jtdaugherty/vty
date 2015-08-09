@@ -1150,9 +1150,17 @@ cheesyAnim0 i background = do
     reserveDisplay t
     bounds <- displayBounds t
     d <- displayContext t bounds
-    forM_ [0..100] $ \t -> do
+    forM_ [0..2] $ \t -> do
+      forM_ [0..100] $ \t -> do
         let i_offset = translate (t `mod` fst bounds)
                                  (t `div` 2 `mod` snd bounds)
+                                 i
+        let pic = picForLayers $ i_offset : background
+        outputPicture d pic
+        threadDelay 50000
+      forM_ [0..100] $ \t -> do
+        let i_offset = translate (t * (-1) `mod` fst bounds)
+                                 (t * (-1) `div` 2 `mod` snd bounds)
                                  i
         let pic = picForLayers $ i_offset : background
         outputPicture d pic
