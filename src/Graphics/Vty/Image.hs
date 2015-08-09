@@ -184,7 +184,8 @@ pad inL inT inR inB inImage
                 where w = imageWidth  i + l
                       h = imageHeight i
 
--- | translates an image by padding or cropping the top and left.
+-- | translates an image by padding or cropping the left and top. First param is amount to translate
+-- left. Second param is amount to translate top.
 --
 -- This can have an unexpected effect: Translating an image to less than (0,0) then to greater than
 -- (0,0) will crop the image.
