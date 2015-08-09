@@ -1,5 +1,7 @@
 module Verify.Graphics.Vty.Output where
 
+import Control.Applicative ((<$>))
+
 import Graphics.Vty.Output.Mock
 
 import qualified Data.ByteString as BS
