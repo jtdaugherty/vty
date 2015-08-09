@@ -19,6 +19,8 @@ import Graphics.Vty.Input.Events
 
 import Control.Applicative
 import Control.Concurrent
+import Control.Concurrent.MVar
+import Control.Exception (mask, try, SomeException)
 import Control.Lens
 import Control.Monad (when, mzero, forM_)
 import Control.Monad.IO.Class (liftIO)
@@ -65,7 +67,6 @@ data InputState = InputState
     { _unprocessedBytes :: String
     , _appliedConfig :: Config
     , _inputBuffer :: InputBuffer
-    , _stopRequestRef :: IORef Bool
     , _classifier :: String -> KClass
     }
 
@@ -88,7 +89,7 @@ loopInputProcessor = do
     validEvents <- many parseEvent
     forM_ validEvents emit
     dropInvalid
-    stopIfRequested <|> loopInputProcessor
+    loopInputProcessor
 
 addBytesToProcess :: String -> InputM ()
 addBytesToProcess block = unprocessedBytes <>= block
@@ -115,6 +116,11 @@ readFromDevice = do
     bufferPtr <- use $ inputBuffer.ptr
     maxBytes  <- use $ inputBuffer.size
     stringRep <- liftIO $ do
+        -- The killThread used in shutdownInput will not interrupt the foreign call fdReadBuf uses
+        -- this provides a location to be interrupted prior to the foreign call. If there is input
+        -- on the FD then the fdReadBuf will return in a finite amount of time due to the vtime
+        -- terminal setting.
+        threadWaitRead fd
         bytesRead <- fdReadBuf fd bufferPtr (fromIntegral maxBytes)
         if bytesRead > 0
         then fmap (map $ chr . fromIntegral) $ peekArray (fromIntegral bytesRead) bufferPtr
@@ -147,18 +153,12 @@ dropInvalid = do
         logMsg "dropping input bytes"
         unprocessedBytes .= []
 
-stopIfRequested :: InputM ()
-stopIfRequested = do
-    True <- (liftIO . readIORef) =<< use stopRequestRef
-    return ()
-
-runInputProcessorLoop :: ClassifyMap -> Input -> IORef Bool -> IO ()
-runInputProcessorLoop classifyTable input stopFlag = do
+runInputProcessorLoop :: ClassifyMap -> Input -> IO ()
+runInputProcessorLoop classifyTable input = do
     let bufferSize = 1024
     allocaArray bufferSize $ \(bufferPtr :: Ptr Word8) -> do
         s0 <- InputState [] <$> readIORef (_configRef input)
                             <*> pure (InputBuffer bufferPtr bufferSize)
-                            <*> pure stopFlag
                             <*> pure (classify classifyTable)
         runReaderT (evalStateT loopInputProcessor s0) input
 
@@ -192,15 +192,23 @@ initInput config classifyTable = do
     let Just fd = inputFd config
     setFdOption fd NonBlockingRead False
     applyConfig fd config
-    stopFlag <- newIORef False
+    stopSync <- newEmptyMVar
     input <- Input <$> newChan
-                   <*> pure (writeIORef stopFlag True)
+                   <*> pure (return ())
                    <*> newIORef config
                    <*> maybe (return Nothing)
                              (\f -> Just <$> openFile f AppendMode)
                              (debugLog config)
     logInitialInputState input classifyTable
-    _ <- forkOS $ runInputProcessorLoop classifyTable input stopFlag
-    return input
+    inputThread <- forkOSFinally (runInputProcessorLoop classifyTable input)
+                                 (\_ -> putMVar stopSync ())
+    let killAndWait = do
+          killThread inputThread
+          takeMVar stopSync
+    return $ input { shutdownInput = killAndWait }
 
 foreign import ccall "vty_set_term_timing" setTermTiming :: Fd -> Int -> Int -> IO ()
+
+forkOSFinally :: IO a -> (Either SomeException a -> IO ()) -> IO ThreadId
+forkOSFinally action and_then =
+  mask $ \restore -> forkOS $ try (restore action) >>= and_then

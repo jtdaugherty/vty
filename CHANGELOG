@@ -4,6 +4,11 @@
     attribute would extend to the next start of content. This was odd to reason about and was the
     cause of https://github.com/coreyoconnor/vty/issues/76
     IIRC Yi requires the old behavior to display the selection region correctly.
+  - shutdown of the input thread is now performed using killThread and synchronization on an MVar.
+    For correct handling of the terminal read vmin and vtime the read must be a blocking read on an
+    OS thread. This places a threadWaitRead, which will be interrupted by the killThread, prior to
+    the uninterruptable read. An alternative would be to re-import the read foreign call as
+    interruptable.
 
 5.2.11
   - deepseq bounds increased for tests.
