@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/coreyoconnor/vty.png)](https://travis-ci.org/coreyoconnor/vty)
+
 vty is a terminal interface library.
 
 Project is hosted on github.com: https://github.com/coreyoconnor/vty
