@@ -1,5 +1,5 @@
 name:                vty-examples
-version:             5.2.0
+version:             5.2.11
 license:             BSD3
 license-file:        ../LICENSE
 author:              AUTHORS
@@ -27,42 +27,43 @@ executable vty-interactive-terminal-test
   default-extensions:  ScopedTypeVariables
   ghc-options:         -threaded
 
-  build-depends:       vty == 5.*,
-                       base >= 4 && < 5,
+  build-depends:       vty >= 5.2.11,
+                       base,
                        bytestring,
                        containers,
-                       data-default >= 0.5.3,
-                       deepseq >= 1.1 && < 1.4,
+                       data-default,
+                       deepseq,
                        lens,
-                       mtl >= 1.1.1.0 && < 2.3,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
+                       mtl,
+                       parallel,
+                       parsec,
                        string-qq,
-                       terminfo >= 0.3 && < 0.5,
-                       text >= 0.11.3,
+                       terminfo,
+                       text,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
-                       vector >= 0.7
+                       utf8-string,
+                       vector
 
 executable vty-event-echo
   main-is:             EventEcho.hs
 
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
+                       FlexibleContexts
   ghc-options:         -threaded
 
-  build-depends:       vty == 5.*,
-                       base >= 4 && < 5,
-                       array >= 0.4 && < 2.0,
+  build-depends:       vty >= 5.2.11,
+                       base,
+                       array,
                        bytestring,
                        containers,
-                       data-default >= 0.5.3,
+                       data-default,
                        lens,
-                       mtl >= 1.1.1.0 && < 2.3,
-                       parallel >= 2.2 && < 3.3,
-                       text >= 0.11.3,
-                       utf8-string >= 0.3 && < 0.4,
-                       vector >= 0.7
+                       mtl,
+                       parallel,
+                       text,
+                       utf8-string,
+                       vector
 
 executable vty-rogue
   main-is:             Rogue.hs
@@ -71,19 +72,19 @@ executable vty-rogue
   default-extensions:  ScopedTypeVariables
   ghc-options:         -threaded
 
-  build-depends:       vty == 5.*,
-                       base >= 4 && < 5,
-                       array >= 0.4 && < 2.0,
+  build-depends:       vty >= 5.2.11,
+                       base,
+                       array,
                        bytestring,
                        containers,
-                       data-default >= 0.5.3,
+                       data-default,
                        lens,
-                       mtl >= 1.1.1.0 && < 2.3,
-                       parallel >= 2.2 && < 3.3,
-                       random >= 1.0 && < 2.0,
-                       text >= 0.11.3,
-                       utf8-string >= 0.3 && < 0.4,
-                       vector >= 0.7
+                       mtl,
+                       parallel,
+                       random,
+                       text,
+                       utf8-string,
+                       vector
 
 executable vty-benchmark
   main-is:             benchmark.hs
@@ -92,23 +93,23 @@ executable vty-benchmark
   default-extensions:  ScopedTypeVariables
   ghc-options:         -threaded
 
-  build-depends:       vty == 5.*,
-                       base >= 4 && < 5,
+  build-depends:       vty >= 5.2.11,
+                       base,
                        bytestring,
-                       Cabal == 1.18.*,
+                       Cabal,
                        containers,
-                       data-default >= 0.5.3,
-                       deepseq >= 1.1 && < 1.4,
+                       data-default,
+                       deepseq,
                        lens,
-                       mtl >= 1.1.1.0 && < 2.3,
-                       parallel >= 2.2 && < 3.3,
-                       parsec >= 2 && < 4,
-                       QuickCheck >= 2.4,
-                       random == 1.0.*,
+                       mtl,
+                       parallel,
+                       parsec,
+                       QuickCheck,
+                       random,
                        string-qq,
-                       terminfo >= 0.3 && < 0.5,
-                       text >= 0.11.3,
+                       terminfo,
+                       text,
                        unix,
-                       utf8-string >= 0.3 && < 0.4,
-                       vector >= 0.7
+                       utf8-string,
+                       vector
 
