@@ -49,12 +49,11 @@ terminalsOfInterest =
 
 compareMockOutput :: MockData -> String -> IO Result
 compareMockOutput mockData expectedStr = do
-    outBytes <- readIORef mockData >>= return . UTF8.toRep
-    let expectedBytes :: BS.ByteString = UTF8.toRep $ UTF8.fromString expectedStr
-    if outBytes /=  expectedBytes
-        then return $ failed { reason = "bytes\n" ++ show outBytes
+    outStr <- UTF8.toString <$> readIORef mockData
+    if outStr /=  expectedStr
+        then return $ failed { reason = "bytes\n" ++ outStr
                                       ++ "\nare not the expected bytes\n"
-                                      ++ show expectedBytes
+                                      ++ expectedStr
                              }
         else return succeeded
 

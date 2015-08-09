@@ -46,8 +46,8 @@ singleTRow (MockWindow w h) = liftIOResult $ do
     -- The mock output string that represents the output bytes a single line containing the T
     -- string: Followed by h - 1 lines of a change to the background attribute and then the
     -- background character
-    let expected = "HD" ++ "MA" ++ replicate (fromEnum w) 'T'
-                 ++ concat (replicate (fromEnum h - 1) $ "MA" ++ replicate (fromEnum w) 'B')
+    let expected = "H" ++ "MDA" ++ replicate (fromEnum w) 'T'
+                 ++ concat (replicate (fromEnum h - 1) $ "MDA" ++ replicate (fromEnum w) 'B')
     compareMockOutput mockData expected
     
 manyTRows :: MockWindow -> Property
@@ -60,7 +60,7 @@ manyTRows (MockWindow w h) = liftIOResult $ do
     outputPicture dc pic
     -- The UTF8 string that represents the output bytes is h repeats of a move, 'M', followed by an
     -- attribute change. 'A', followed by w 'T's
-    let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
+    let expected = "H" ++ concat (replicate (fromEnum h) $ "MDA" ++ replicate (fromEnum w) 'T')
     compareMockOutput mockData expected
 
 manyTRowsCroppedWidth :: MockWindow -> Property
@@ -73,7 +73,7 @@ manyTRowsCroppedWidth (MockWindow w h) = liftIOResult $ do
     outputPicture dc pic
     -- The UTF8 string that represents the output bytes is h repeats of a move, 'M', followed by an
     -- attribute change. 'A', followed by w 'T's
-    let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
+    let expected = "H" ++ concat (replicate (fromEnum h) $ "MDA" ++ replicate (fromEnum w) 'T')
     compareMockOutput mockData expected
 
 manyTRowsCroppedHeight :: MockWindow -> Property
@@ -86,7 +86,7 @@ manyTRowsCroppedHeight (MockWindow w h) = liftIOResult $ do
     outputPicture dc pic
     -- The UTF8 string that represents the output bytes is h repeats of a move, 'M', followed by an
     -- attribute change. 'A', followed by w count 'T's
-    let expected = "HD" ++ concat (replicate (fromEnum h) $ "MA" ++ replicate (fromEnum w) 'T')
+    let expected = "H" ++ concat (replicate (fromEnum h) $ "MDA" ++ replicate (fromEnum w) 'T')
     compareMockOutput mockData expected
 
 tests :: IO [Test]
