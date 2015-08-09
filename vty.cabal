@@ -8,25 +8,28 @@ homepage:            https://github.com/coreyoconnor/vty
 category:            User Interfaces
 synopsis:            A simple terminal UI library
 description:
-  vty is terminal GUI library in the niche of ncurses.  It is intended to be easy to use, have no
-  confusing corner cases, and good support for common terminal types.
+  vty is terminal GUI library in the niche of ncurses. It is intended to
+  be easy to use, have no confusing corner cases, and good support for
+  common terminal types.
   .
-  Included in the source distribution is a program test/interactive_terminal_test.hs that
-  demonstrates the various features. 
+  Included in the source distribution is a program
+  test/interactive_terminal_test.hs that demonstrates the various
+  features.
   .
   Developers: See the "Graphics.Vty" module.
   .
   Users: See the "Graphics.Vty.Config" module.
   .
-  If your terminal is not behaving as expected the results of the vty-interactive-terminal-test
-  executable should be sent to the Vty maintainter to aid in debugging the issue.
+  If your terminal is not behaving as expected the results of the
+  vty-interactive-terminal-test executable should be sent to the Vty
+  maintainter to aid in debugging the issue.
   .
-  Notable infelicities: Assumes UTF-8 character encoding support by the terminal; Poor signal
-  handling; Requires terminfo.
+  Notable infelicities: Assumes UTF-8 character encoding support by the
+  terminal; Poor signal handling; Requires terminfo.
   .
-  Project is hosted on github.com: https:\/\/github.com\/coreyoconnor\/vty
+  This project is hosted on github.com: <https://github.com/coreyoconnor/vty>
   .
-  git clone git:\/\/github.com\/coreyoconnor\/vty.git
+  > git clone git://github.com/coreyoconnor/vty.git
   .
   &#169; 2006-2007 Stefan O'Rear; BSD3 license.
   .
