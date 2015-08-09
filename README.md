@@ -1,10 +1,20 @@
 [![Build Status](https://travis-ci.org/coreyoconnor/vty.png)](https://travis-ci.org/coreyoconnor/vty)
 
-vty is a terminal interface library.
+`vty` is a terminal interface library.
 
-Project is hosted on github.com: https://github.com/coreyoconnor/vty
+This project is hosted on github.com: https://github.com/coreyoconnor/vty
 
+Install via `git` with:
+
+```
 git clone git://github.com/coreyoconnor/vty.git
+```
+
+Install via `cabal` with:
+
+```
+cabal install vty
+```
 
 # Features
 
