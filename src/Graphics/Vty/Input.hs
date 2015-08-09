@@ -145,6 +145,8 @@ import System.Posix.Signals.Exts
 #if !(MIN_VERSION_base(4,8,0))
 import Data.Functor ((<$>))
 import Data.Monoid
+#else
+import Data.Monoid ((<>))
 #endif
 
 -- | Set up the terminal with file descriptor `inputFd` for input.  Returns a 'Input'.
@@ -201,4 +203,4 @@ inputForConfig config@Config{ termName = Just termName
             _ <- installHandler continueProcess Ignore Nothing
             unsetAttrs
         }
-inputForConfig config = mappend config <$> standardIOConfig >>= inputForConfig
+inputForConfig config = (<> config) <$> standardIOConfig >>= inputForConfig

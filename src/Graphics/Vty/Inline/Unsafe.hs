@@ -61,7 +61,7 @@ withOutput f = do
     mout <- readIORef globalOutput
     out <- case mout of
         Nothing -> do
-            config <- (<>) <$> userConfig <*> mkDupeConfig
+            config <- mappend <$> userConfig <*> mkDupeConfig
             out <- outputForConfig config
             writeIORef globalOutput (Just out)
             return out

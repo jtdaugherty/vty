@@ -50,6 +50,8 @@ import Data.List (isPrefixOf)
 
 #if !(MIN_VERSION_base(4,8,0))
 import Data.Monoid (mappend)
+#else
+import Data.Monoid ((<>))
 #endif
 
 -- | Returns a `Output` for the terminal specified in `Config`
@@ -76,7 +78,7 @@ outputForConfig Config{ outputFd = Just fd, termName = Just termName, .. } = do
         -- Not an xterm-like terminal. try for generic terminfo.
         else TerminfoBased.reserveTerminal termName fd
     return t
-outputForConfig config = mappend config <$> standardIOConfig >>= outputForConfig
+outputForConfig config = (<> config) <$> standardIOConfig >>= outputForConfig
 
 -- | Sets the cursor position to the given output column and row. 
 --

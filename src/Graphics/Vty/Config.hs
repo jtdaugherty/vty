@@ -139,8 +139,8 @@ instance Monoid Config where
         , vtime         = vtime c1    <|> vtime c0
         , debugLog      = debugLog c1 <|> debugLog c0
         , inputMap      = inputMap c0 <>  inputMap c1
-        , inputFd      = inputFd c1 <|> inputFd c1
-        , outputFd     = outputFd c1 <|> outputFd c1
+        , inputFd      = inputFd c1 <|> inputFd c0
+        , outputFd     = outputFd c1 <|> outputFd c0
         , termName      = termName c1 <|> termName c0
         }
 
@@ -151,8 +151,8 @@ userConfig :: IO Config
 userConfig = do
     configFile <- (mappend <$> getAppUserDataDirectory "vty" <*> pure "/config") >>= parseConfigFile
     overrideConfig <- maybe (return def) parseConfigFile =<< getEnv "VTY_CONFIG_FILE"
-    base <- (<> configFile <> overrideConfig) <$> standardIOConfig
-    (mappend base) <$> overrideEnvConfig
+    let base = configFile <> overrideConfig
+    mappend base <$> overrideEnvConfig
 
 overrideEnvConfig :: IO Config
 overrideEnvConfig = do

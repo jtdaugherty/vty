@@ -20,7 +20,7 @@ type App = RWST Vty () (Seq String) IO
 main = do
     vty <- if True -- change to false for emacs-like input processing
             then mkVty def
-            else mkVty (def { vmin = Just 2, vtime = Just 100 } )
+            else mkVty (def { vmin = Just 2, vtime = Just 300 } )
     _ <- execRWST (vtyInteract False) vty Seq.empty
     shutdown vty
 

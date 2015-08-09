@@ -19,7 +19,6 @@ import Graphics.Vty.Input.Events
 
 import Control.Applicative
 import Control.Concurrent
-import Control.Concurrent.MVar
 import Control.Exception (mask, try, SomeException)
 import Control.Lens
 import Control.Monad (when, mzero, forM_)
