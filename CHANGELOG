@@ -1,5 +1,9 @@
 5.2.12
-  - unreleased
+  - Correct handling of display attributes at end of line. The output attributes are set to default
+    at the end of content for the line and at the start of a new line.  Previously the current
+    attribute would extend to the next start of content. This was odd to reason about and was the
+    cause of https://github.com/coreyoconnor/vty/issues/76
+    IIRC Yi requires the old behavior to display the selection region correctly.
 
 5.2.11
   - deepseq bounds increased for tests.
