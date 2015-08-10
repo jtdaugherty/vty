@@ -1,6 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
-
 --  | Output interface.
 --
 --  Access to the current terminal or a specific terminal device.
@@ -8,8 +7,8 @@
 --  See also:
 --
 --  1. "Graphics.Vty.Output": This instantiates an abtract interface to the terminal interface based
---  on the TERM and COLORTERM environment variables. 
---  
+--  on the TERM and COLORTERM environment variables.
+--
 --  2. "Graphics.Vty.Output.Interface": Defines the generic interface all terminals need to implement.
 --
 --  3. "Graphics.Vty.Output.TerminfoBased": Defines a terminal instance that uses terminfo for all
@@ -18,7 +17,7 @@
 --
 --  4. "Graphics.Vty.Output.XTermColor": This module contains an interface suitable for xterm-like
 --  terminals. These are the terminals where TERM == xterm. This does use terminfo for as many
---  control codes as possible. 
+--  control codes as possible.
 module Graphics.Vty.Output ( module Graphics.Vty.Output
                            , Output(..) -- \todo hide constructors
                            , AssumedState(..)
@@ -27,7 +26,6 @@ module Graphics.Vty.Output ( module Graphics.Vty.Output
                            , displayContext
                            )
     where
-
 
 import Graphics.Vty.Prelude
 
@@ -70,7 +68,7 @@ outputForConfig Config{ outputFd = Just fd, termName = Just termName, .. } = do
     return t
 outputForConfig config = (<> config) <$> standardIOConfig >>= outputForConfig
 
--- | Sets the cursor position to the given output column and row. 
+-- | Sets the cursor position to the given output column and row.
 --
 -- This is not necessarially the same as the character position with the same coordinates.
 -- Characters can be a variable number of columns in width.
@@ -90,11 +88,10 @@ hideCursor t = do
     bounds <- displayBounds t
     dc <- displayContext t bounds
     liftIO $ outputByteBuffer t $ writeToByteString $ writeHideCursor dc
-    
+
 -- | Shows the cursor
 showCursor :: MonadIO m => Output -> m ()
 showCursor t = do
     bounds <- displayBounds t
     dc <- displayContext t bounds
     liftIO $ outputByteBuffer t $ writeToByteString $ writeShowCursor dc
-
