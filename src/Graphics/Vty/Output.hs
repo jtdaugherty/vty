@@ -49,7 +49,7 @@ import Control.Monad.Trans
 import Data.List (isPrefixOf)
 
 #if !(MIN_VERSION_base(4,8,0))
-import Data.Monoid (mappend)
+import Data.Monoid (mappend, (<>))
 #else
 import Data.Monoid ((<>))
 #endif
