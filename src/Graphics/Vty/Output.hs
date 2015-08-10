@@ -2,10 +2,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-#ifndef MIN_VERSION_base
-#defined MIN_VERSION_base(x,y,z) 1
-#endif
-
 --  | Output interface.
 --
 --  Access to the current terminal or a specific terminal device.
@@ -47,12 +43,7 @@ import Blaze.ByteString.Builder (writeToByteString)
 import Control.Monad.Trans
 
 import Data.List (isPrefixOf)
-
-#if !(MIN_VERSION_base(4,8,0))
-import Data.Monoid (mappend, (<>))
-#else
 import Data.Monoid ((<>))
-#endif
 
 -- | Returns a `Output` for the terminal specified in `Config`
 --
