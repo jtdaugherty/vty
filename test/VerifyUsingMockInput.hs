@@ -14,6 +14,7 @@ import Graphics.Vty.Input.Terminfo
 
 import Control.Applicative
 import Control.Concurrent
+import Control.Concurrent.STM
 import Control.Exception
 import Control.Lens ((^.))
 import Control.Monad
@@ -128,7 +129,7 @@ assertEventsFromSynInput table inputSpec expectedEvents = do
     let readEvents = readLoop eventCount
         readLoop 0 = return ()
         readLoop n = do
-            e <- readChan $ input^.eventChannel
+            e <- atomically $ readTChan $ input^.eventChannel
             modifyIORef eventsRef ((:) e)
             readLoop (n - 1)
     genEventsUsingIoActions maxDuration writeWaitClose readEvents

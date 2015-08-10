@@ -19,6 +19,7 @@ import Graphics.Vty.Input.Events
 
 import Control.Applicative
 import Control.Concurrent
+import Control.Concurrent.STM
 import Control.Exception (mask, try, SomeException)
 import Control.Lens
 import Control.Monad (when, mzero, forM_)
@@ -43,7 +44,7 @@ import Text.Printf (hPrintf)
 data Input = Input
     { -- | Channel of events direct from input processing. Unlike 'nextEvent' this will not refresh
       -- the display if the next event is an 'EvResize'.
-      _eventChannel  :: Chan Event
+      _eventChannel  :: TChan Event
       -- | Shuts down the input processing. This should return the terminal input state to before
       -- the input initialized.
     , shutdownInput :: IO ()
@@ -96,7 +97,7 @@ addBytesToProcess block = unprocessedBytes <>= block
 emit :: Event -> InputM ()
 emit event = do
     logMsg $ "parsed event: " ++ show event
-    view eventChannel >>= liftIO . flip writeChan event
+    view eventChannel >>= liftIO . atomically . flip writeTChan event
 
 -- The timing requirements are assured by the VMIN and VTIME set for the device.
 --
@@ -192,7 +193,7 @@ initInput config classifyTable = do
     setFdOption fd NonBlockingRead False
     applyConfig fd config
     stopSync <- newEmptyMVar
-    input <- Input <$> newChan
+    input <- Input <$> atomically newTChan
                    <*> pure (return ())
                    <*> newIORef config
                    <*> maybe (return Nothing)

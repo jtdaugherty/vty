@@ -59,7 +59,7 @@ import Graphics.Vty.Input
 import Graphics.Vty.Output
 import Graphics.Vty.Picture
 
-import Control.Concurrent
+import Control.Concurrent.STM
 
 import Data.IORef
 import Data.Monoid
@@ -165,7 +165,7 @@ intMkVty input out = do
             >>  readIORef lastPicRef 
             >>= maybe ( return () ) ( \pic -> innerUpdate pic ) 
 
-    let gkey = do k <- readChan $ _eventChannel input
+    let gkey = do k <- atomically $ readTChan $ _eventChannel input
                   case k of 
                     (EvResize _ _)  -> innerRefresh
                                        >> displayBounds out

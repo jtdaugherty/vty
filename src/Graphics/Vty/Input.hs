@@ -136,7 +136,7 @@ import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Loop
 import Graphics.Vty.Input.Terminfo
 
-import Control.Concurrent
+import Control.Concurrent.STM
 import Control.Lens
 
 import qualified System.Console.Terminfo as Terminfo
@@ -193,7 +193,7 @@ inputForConfig config@Config{ termName = Just termName
     let pokeIO = Catch $ do
             let e = error "vty internal failure: this value should not propagate to users"
             setAttrs
-            writeChan (input^.eventChannel) (EvResize e e)
+            atomically $ writeTChan (input^.eventChannel) (EvResize e e)
     _ <- installHandler windowChange pokeIO Nothing
     _ <- installHandler continueProcess pokeIO Nothing
     return $ input
