@@ -140,7 +140,7 @@ test-suite verify-attribute-ops
   test-module:         VerifyAttributeOps
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        bytestring,
@@ -172,7 +172,7 @@ test-suite verify-using-mock-terminal
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        bytestring,
@@ -205,7 +205,7 @@ test-suite verify-terminal
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        bytestring,
@@ -239,7 +239,7 @@ test-suite verify-display-attributes
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        bytestring,
@@ -265,7 +265,7 @@ test-suite verify-empty-image-props
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        bytestring,
@@ -292,7 +292,7 @@ test-suite verify-eval-terminfo-caps
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        blaze-builder >= 0.3.3.2 && < 0.5,
@@ -322,7 +322,7 @@ test-suite verify-image-ops
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        bytestring,
@@ -350,7 +350,7 @@ test-suite verify-image-trans
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        bytestring,
@@ -377,7 +377,7 @@ test-suite verify-inline
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        bytestring,
@@ -405,7 +405,7 @@ test-suite verify-parse-terminfo-caps
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        bytestring,
@@ -437,7 +437,7 @@ test-suite verify-simple-span-generation
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        bytestring,
@@ -469,7 +469,7 @@ test-suite verify-crop-span-generation
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        bytestring,
@@ -501,7 +501,7 @@ test-suite verify-layers-span-generation
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        bytestring,
@@ -527,7 +527,7 @@ test-suite verify-utf8-width
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
                        bytestring,
@@ -552,7 +552,7 @@ test-suite verify-using-mock-input
   build-depends:       vty,
                        Cabal >= 1.20,
                        data-default >= 0.5.3,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        smallcheck == 1.*,
                        quickcheck-assertions >= 0.1.1,
                        test-framework == 0.8.*,
@@ -586,7 +586,7 @@ test-suite verify-config
                        Cabal >= 1.20,
                        data-default >= 0.5.3,
                        HUnit,
-                       QuickCheck >= 2.4,
+                       QuickCheck >= 2.7,
                        smallcheck == 1.*,
                        quickcheck-assertions >= 0.1.1,
                        test-framework == 0.8.*,
