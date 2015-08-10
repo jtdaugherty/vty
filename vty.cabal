@@ -34,7 +34,7 @@ description:
   &#169; 2006-2007 Stefan O'Rear; BSD3 license.
   .
   &#169; Corey O'Connor; BSD3 license.
-cabal-version:       >= 1.18.0
+cabal-version:       >= 1.20.0
 build-type:          Simple
 data-files:          README.md,
                      TODO,
@@ -139,7 +139,7 @@ test-suite verify-attribute-ops
   hs-source-dirs:      test
   test-module:         VerifyAttributeOps
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -171,7 +171,7 @@ test-suite verify-using-mock-terminal
                        Verify.Graphics.Vty.Output
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -204,7 +204,7 @@ test-suite verify-terminal
                        Verify.Graphics.Vty.Output
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -238,7 +238,7 @@ test-suite verify-display-attributes
                        Verify.Graphics.Vty.Span
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -264,7 +264,7 @@ test-suite verify-empty-image-props
   other-modules:       Verify
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -291,7 +291,7 @@ test-suite verify-eval-terminfo-caps
                        Verify.Graphics.Vty.Output
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -321,7 +321,7 @@ test-suite verify-image-ops
                        Verify.Graphics.Vty.Image
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -349,7 +349,7 @@ test-suite verify-image-trans
                        Verify.Graphics.Vty.Image
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -376,7 +376,7 @@ test-suite verify-inline
                        Verify.Graphics.Vty.Output
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -404,7 +404,7 @@ test-suite verify-parse-terminfo-caps
                        Verify.Graphics.Vty.Output
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -436,7 +436,7 @@ test-suite verify-simple-span-generation
                        Verify.Graphics.Vty.Span
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -468,7 +468,7 @@ test-suite verify-crop-span-generation
                        Verify.Graphics.Vty.Span
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -500,7 +500,7 @@ test-suite verify-layers-span-generation
                        Verify.Graphics.Vty.Span
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -526,7 +526,7 @@ test-suite verify-utf8-width
   other-modules:       Verify
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        QuickCheck >= 2.4,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -550,7 +550,7 @@ test-suite verify-using-mock-input
   main-is:             VerifyUsingMockInput.hs
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        data-default >= 0.5.3,
                        QuickCheck >= 2.4,
                        smallcheck == 1.*,
@@ -583,7 +583,7 @@ test-suite verify-config
   main-is:             VerifyConfig.hs
 
   build-depends:       vty,
-                       Cabal >= 1.18,
+                       Cabal >= 1.20,
                        data-default >= 0.5.3,
                        HUnit,
                        QuickCheck >= 2.4,
