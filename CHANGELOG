@@ -1,3 +1,7 @@
+5.3.1
+  - Reverted cabal file to depend on Cabal >= 1.18 instead of 1.20 due
+    to possibly breaking this on reasonable GHC versions
+
 5.3
   - Upgraded QuickCheck dependency to 2.7
   - The standard IO Config (standardIOConfig) was overriding any provided application config.
