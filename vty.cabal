@@ -34,7 +34,7 @@ description:
   &#169; 2006-2007 Stefan O'Rear; BSD3 license.
   .
   &#169; Corey O'Connor; BSD3 license.
-cabal-version:       >= 1.20.0
+cabal-version:       >= 1.18
 build-type:          Simple
 data-files:          README.md,
                      TODO,
