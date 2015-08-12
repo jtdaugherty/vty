@@ -1,3 +1,8 @@
+5.4.0
+  - Changed eventChannel of Graphics.Vty.Input from Chan to TChan. This enables clients to query if
+    there are no pending events. The Graphics.Vty interface nextEvent is unchanged. Clients that use
+    eventChannel directly will require updating.
+    https://github.com/coreyoconnor/vty/issues/60
 5.3.1
   - Reverted cabal file to depend on Cabal >= 1.18 instead of 1.20 due
     to possibly breaking this on reasonable GHC versions
