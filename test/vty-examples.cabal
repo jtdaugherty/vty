@@ -28,7 +28,7 @@ executable vty-interactive-terminal-test
   ghc-options:         -threaded
 
   build-depends:       vty >= 5.2.11,
-                       base,
+                       base >= 4 && < 5,
                        bytestring,
                        containers,
                        data-default,
@@ -53,7 +53,7 @@ executable vty-event-echo
   ghc-options:         -threaded
 
   build-depends:       vty >= 5.2.11,
-                       base,
+                       base >= 4 && < 5,
                        array,
                        bytestring,
                        containers,
@@ -73,7 +73,7 @@ executable vty-rogue
   ghc-options:         -threaded
 
   build-depends:       vty >= 5.2.11,
-                       base,
+                       base >= 4 && < 5,
                        array,
                        bytestring,
                        containers,
@@ -94,7 +94,7 @@ executable vty-benchmark
   ghc-options:         -threaded
 
   build-depends:       vty >= 5.2.11,
-                       base,
+                       base >= 4 && < 5,
                        bytestring,
                        Cabal,
                        containers,
