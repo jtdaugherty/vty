@@ -9,3 +9,4 @@ test/benchmark
 .cabal-sandbox
 cabal.sandbox.config
 test/cabal.sandbox.config
+.stack-work

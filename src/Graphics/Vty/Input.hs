@@ -8,7 +8,15 @@
 -- | The input layer for VTY. This provides methods for initializing an 'Input' structure which can
 -- then be used to read 'Event's from the terminal.
 --
--- The history of terminals has resulted in a broken input process. Some keys and combinations will
+-- There are two implementations:
+--
+--  1. Input from terminal devices. Using terminfo to aid event deserialization. Posix systems only.
+--
+--  2. Windows Console. Windows systems only.
+--
+-- = Terminfo Based Input
+--
+-- The history of terminals has resulted in a ugly input process. Some keys and combinations will
 -- not reliably map to the expected events by any terminal program. Even those not using vty. There
 -- is no 1:1 mapping from key events to bytes read from the terminal input device. In very limited
 -- cases the terminal and vty's input process can be customized to resolve these issues.
@@ -16,9 +24,7 @@
 -- See "Graphics.Vty.Config" for how to configure vty's input processing. Customizing terminfo and
 -- the terminal is beyond the scope of this documentation.
 --
--- = VTY's Implementation
---
--- One can get the brain rot trying to understand all this. So, as far as I can care...
+-- == VTY's Implementation
 --
 -- There are two input modes:
 --
@@ -28,7 +34,7 @@
 --
 -- 7 bit input is the default and the expected in most use cases. This is what vty uses.
 --
--- == 7 bit input encoding
+-- === 7 bit input encoding
 --
 -- Control key combinations are represented by masking the two high bits of the 7bit input.  Back in
 -- the day the control key actually grounded the two high bit wires: 6 and 7. This is why
@@ -48,14 +54,14 @@
 -- * Hypothesis: Bit 6 is unset by upper case letters because, initially, there were only upper case
 -- letters used and a 5 bit encoding.
 --
--- == 8 bit encoding
+-- === 8 bit encoding
 --
 -- The 8th bit was originally used for parity checking. Useless for emulators. Some terminal
 -- emulators support a 8 bit input encoding. While this provides some advantages the actual usage is
 -- low. Most systems use 7bit mode but recognize 8bit control characters when escaped. This is what
 -- vty does.
 --
--- == Escaped Control Keys
+-- === Escaped Control Keys
 --
 -- Using 7 bit input encoding the @ESC@ byte can signal the start of an encoded control key. To
 -- differentiate a single @ESC@ eventfrom a control key the timing of the input is used.
@@ -74,7 +80,7 @@
 -- non-blocking reads and timers. The implementation was not reliable. A reliable implementation is
 -- possible, but there are no plans to implement this.
 --
--- == Unicode Input and Escaped Control Key Sequences
+-- === Unicode Input and Escaped Control Key Sequences
 --
 -- The input encoding determines how UTF-8 encoded characters are recognize.
 --
@@ -85,13 +91,13 @@
 -- * 8 bit mode: UTF-8 cannot be input unambiguously. This does not require using the timing of
 -- input bytes to differentiate the escape key. Many terminals do not support 8 bit mode.
 --
--- == Terminfo
+-- === Terminfo
 --
 -- The terminfo system is used to determine how some keys are encoded. Terminfo is incomplete. In
 -- some cases terminfo is incorrect. Vty assumes terminfo is correct but provides a mechanism to
 -- override terminfo. See "Graphics.Vty.Config" specifically 'inputOverrides'.
 --
--- == Terminal Input is Broken
+-- === Terminal Input is Broken
 --
 -- Clearly terminal input has fundemental issues. There is no easy way to reliably resolve these
 -- issues.
@@ -104,103 +110,35 @@
 -- mapping and xterm supports customizing the scancode to input byte mapping. With a lot of work a
 -- user's system can be set up to encode all the key combos in an almost-sane manner.
 --
--- There are other tricky work arounds that can be done. I have no interest in implementing most of
--- these. They are not really worth the time.
---
--- == Terminal Output is Also Broken
+-- === Terminal Output is Also Broken
 --
 -- This isn't the only odd aspect of terminals due to historical aspects that no longer apply. EG:
 -- Some terminfo capabilities specify millisecond delays. (Capabilities are how terminfo describes
 -- the control sequence to output red, for instance) This is to account for the slow speed of
 -- hardcopy teletype interfaces. Cause, uh, we totally still use those.
--- 
+--
 -- The output encoding of colors and attributes are also rife with issues.
 --
--- == See also
+-- = References
 --
 -- * http://www.leonerd.org.uk/hacks/fixterms/
 --
--- In my experience this cannot resolve the issues without changes to the terminal emulator and
--- device.
 module Graphics.Vty.Input ( Key(..)
                           , Modifier(..)
                           , Button(..)
                           , Event(..)
                           , Input(..)
-                          , inputForConfig
+                          , inputForConfig -- defined in the platform module
                           )
     where
 
-import Graphics.Vty.Config
 import Graphics.Vty.Input.Events
-import Graphics.Vty.Input.Loop
-import Graphics.Vty.Input.Terminfo
+import Graphics.Vty.Input.Interface
 
-import Control.Concurrent.STM
-import Control.Lens
-
-import qualified System.Console.Terminfo as Terminfo
-import System.Posix.Signals.Exts
-
-#if !(MIN_VERSION_base(4,8,0))
-import Data.Functor ((<$>))
-import Data.Monoid
-#else
-import Data.Monoid ((<>))
+#ifdef POSIX
+import Graphics.Vty.Input.Posix
 #endif
 
--- | Set up the terminal with file descriptor `inputFd` for input.  Returns a 'Input'.
---
--- The table used to determine the 'Events' to produce for the input bytes comes from
--- 'classifyMapForTerm'. Which is then overridden by the the applicable entries from
--- 'inputMap'.
---
--- The terminal device is configured with the attributes:
---
--- * IXON disabled
---      - disables software flow control on outgoing data. This stops the process from being
---        suspended if the output terminal cannot keep up. I presume this has little effect these
---        days. I hope this means that output will be buffered if the terminal cannot keep up. In the
---        old days the output might of been dropped?
--- 
--- "raw" mode is used for input.
---
--- * ISIG disabled
---      - enables keyboard combinations that result in signals. TODO: should probably be a dynamic
---      option.
---
--- * ECHO disabled
---      - input is not echod to the output. TODO: should be a dynamic option.
---
--- * ICANON disabled
---      - canonical mode (line mode) input is not used. TODO: should be a dynamic option.
---
--- * IEXTEN disabled
---      - extended functions are disabled. TODO: I don't know what those are.
---
-inputForConfig :: Config -> IO Input
-inputForConfig config@Config{ termName = Just termName
-                            , inputFd = Just termFd
-                            , vmin = Just _
-                            , vtime = Just _
-                            , .. } = do
-    terminal <- Terminfo.setupTerm termName
-    let inputOverrides = [(s,e) | (t,s,e) <- inputMap, t == Nothing || t == Just termName]
-        activeInputMap = classifyMapForTerm termName terminal `mappend` inputOverrides
-    (setAttrs,unsetAttrs) <- attributeControl termFd
-    setAttrs
-    input <- initInput config activeInputMap
-    let pokeIO = Catch $ do
-            let e = error "vty internal failure: this value should not propagate to users"
-            setAttrs
-            atomically $ writeTChan (input^.eventChannel) (EvResize e e)
-    _ <- installHandler windowChange pokeIO Nothing
-    _ <- installHandler continueProcess pokeIO Nothing
-    return $ input
-        { shutdownInput = do
-            shutdownInput input
-            _ <- installHandler windowChange Ignore Nothing
-            _ <- installHandler continueProcess Ignore Nothing
-            unsetAttrs
-        }
-inputForConfig config = (<> config) <$> standardIOConfig >>= inputForConfig
+#ifdef WINDOWS
+import Graphics.Vty.Input.Windows
+#endif

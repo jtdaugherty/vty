@@ -4,12 +4,12 @@
 #defined MIN_VERSION_base(x,y,z) 1
 #endif
 
--- Copyright 2009-2010 Corey O'Connor
-module Graphics.Vty.Output.XTermColor ( reserveTerminal )
+-- Copyright Corey O'Connor (coreyoconnor@gmail.com)
+module Graphics.Vty.Output.TermInfo.XTermColor ( reserveTerminal )
     where
 
 import Graphics.Vty.Output.Interface
-import qualified Graphics.Vty.Output.TerminfoBased as TerminfoBased
+import qualified Graphics.Vty.Output.TermInfo.Base as Base
 
 import Blaze.ByteString.Builder (writeToByteString)
 import Blaze.ByteString.Builder.Word (writeWord8)
@@ -25,7 +25,7 @@ import Control.Applicative
 import Data.Foldable (foldMap)
 #endif
 
--- | Initialize the display to UTF-8. 
+-- | Initialize the display to UTF-8.
 reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output
 reserveTerminal variant outFd = liftIO $ do
     let flushedPut = void . fdWrite outFd
@@ -33,7 +33,7 @@ reserveTerminal variant outFd = liftIO $ do
     -- xterm-color is broken.
     let variant' = if variant == "xterm-color" then "xterm" else variant
     flushedPut setUtf8CharSet
-    t <- TerminfoBased.reserveTerminal variant' outFd
+    t <- Base.reserveTerminal variant' outFd
     let t' = t
              { terminalID = terminalID t ++ " (xterm-color)"
              , releaseTerminal = do
@@ -59,4 +59,3 @@ xtermInlineHack :: Output -> IO ()
 xtermInlineHack t = do
     let writeReset = foldMap (writeWord8.toEnum.fromEnum) "\ESC[K"
     outputByteBuffer t $ writeToByteString writeReset
-

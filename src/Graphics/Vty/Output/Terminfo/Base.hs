@@ -15,7 +15,7 @@
 -- assumptions mixed in.
 --
 -- Copyright Corey O'Connor (coreyoconnor@gmail.com)
-module Graphics.Vty.Output.TerminfoBased ( reserveTerminal )
+module Graphics.Vty.Output.Terminfo.Base ( reserveTerminal )
     where
 
 import Graphics.Vty.Prelude
@@ -50,7 +50,7 @@ import Data.Foldable (foldMap)
 import Data.Monoid
 #endif
 
-data TerminfoCaps = TerminfoCaps 
+data TerminfoCaps = TerminfoCaps
     { smcup :: Maybe CapExpression
     , rmcup :: Maybe CapExpression
     , cup :: CapExpression
@@ -76,7 +76,7 @@ data DisplayAttrCaps = DisplayAttrCaps
     , enterDimMode :: Maybe CapExpression
     , enterBoldMode :: Maybe CapExpression
     }
-    
+
 -- kinda like: https://code.google.com/p/vim/source/browse/src/fileio.c#10422
 -- fdWriteBuf will throw on error. Unless the error is EINTR. On EINTR the write will be retried.
 fdWriteAll :: Fd -> Ptr Word8 -> Int -> Int -> IO Int
@@ -98,10 +98,10 @@ sendCapToTerminal t cap capParams = do
  - terminfo does not support some features that would increase efficiency and improve compatibility:
  -
  -  * determine the character encoding supported by the terminal. Should this be taken from the LANG
- - environment variable?  
+ - environment variable?
  -
  -  * Provide independent string capabilities for all display attributes.
- - 
+ -
  - todo: Some display attributes like underline and bold have independent string capabilities that
  - should be used instead of the generic "sgr" string capability.
  -}
@@ -112,7 +112,7 @@ reserveTerminal termName outFd = liftIO $ do
     -- if set foreground is not set then all color changing style attributes are filtered.
     msetaf <- probeCap ti "setaf"
     msetf <- probeCap ti "setf"
-    let (noColors, useAlt, setForeCap) 
+    let (noColors, useAlt, setForeCap)
             = case msetaf of
                 Just setaf -> (False, False, setaf)
                 Nothing -> case msetf of
@@ -120,7 +120,7 @@ reserveTerminal termName outFd = liftIO $ do
                     Nothing -> (True, True, error $ "no fore color support for terminal " ++ termName)
     msetab <- probeCap ti "setab"
     msetb <- probeCap ti "setb"
-    let set_back_cap 
+    let set_back_cap
             = case msetab of
                 Nothing -> case msetb of
                     Just setb -> setb
@@ -183,13 +183,13 @@ reserveTerminal termName outFd = liftIO $ do
     return t
 
 requireCap :: (Applicative m, MonadIO m) => Terminfo.Terminal -> String -> m CapExpression
-requireCap ti capName 
+requireCap ti capName
     = case Terminfo.getCapability ti (Terminfo.tiGetStr capName) of
         Nothing     -> fail $ "Terminal does not define required capability \"" ++ capName ++ "\""
         Just capStr -> parseCap capStr
 
 probeCap :: (Applicative m, MonadIO m) => Terminfo.Terminal -> String -> m (Maybe CapExpression)
-probeCap ti capName 
+probeCap ti capName
     = case Terminfo.getCapability ti (Terminfo.tiGetStr capName) of
         Nothing     -> return Nothing
         Just capStr -> Just <$> parseCap capStr
@@ -200,11 +200,11 @@ parseCap capStr = do
         Left e -> fail $ show e
         Right cap -> return cap
 
-currentDisplayAttrCaps :: ( Applicative m, MonadIO m ) 
-                       => Terminfo.Terminal 
+currentDisplayAttrCaps :: ( Applicative m, MonadIO m )
+                       => Terminfo.Terminal
                        -> m DisplayAttrCaps
-currentDisplayAttrCaps ti 
-    =   pure DisplayAttrCaps 
+currentDisplayAttrCaps ti
+    =   pure DisplayAttrCaps
     <*> probeCap ti "sgr"
     <*> probeCap ti "smso"
     <*> probeCap ti "rmso"
@@ -217,7 +217,7 @@ currentDisplayAttrCaps ti
 foreign import ccall "gwinsz.h vty_c_get_window_size" c_getWindowSize :: Fd -> IO CLong
 
 getWindowSize :: Fd -> IO (Int,Int)
-getWindowSize fd = do 
+getWindowSize fd = do
     (a,b) <- (`divMod` 65536) `fmap` c_getWindowSize fd
     return (fromIntegral b, fromIntegral a)
 
@@ -242,14 +242,14 @@ terminfoDisplayContext tActual terminfoCaps r = return dc
 -- | Portably setting the display attributes is a giant pain in the ass.
 --
 -- If the terminal supports the sgr capability (which sets the on/off state of each style
--- directly ; and, for no good reason, resets the colors to the default) this procedure is used: 
+-- directly ; and, for no good reason, resets the colors to the default) this procedure is used:
 --
 --  0. set the style attributes. This resets the fore and back color.
 --
 --  1, If a foreground color is to be set then set the foreground color
 --
 --  2. likewise with the background color
--- 
+--
 -- If the terminal does not support the sgr cap then:
 --  if there is a change from an applied color to the default (in either the fore or back color)
 --  then:
@@ -283,13 +283,13 @@ terminfoWriteSetAttr dc terminfoCaps prevAttr reqAttr diffs = do
                                      (styleToApplySeq $ fixedStyle attr) of
                 -- only way to reset a color to the defaults
                 EnterExitSeq caps -> writeDefaultAttr dc
-                                     `mappend` 
+                                     `mappend`
                                      foldMap (\cap -> writeCapExpr cap []) caps
                                      `mappend`
                                      setColors
                 -- implicitly resets the colors to the defaults
-                SetState state -> writeCapExpr (fromJust $ setAttrStates 
-                                                         $ displayAttrCaps 
+                SetState state -> writeCapExpr (fromJust $ setAttrStates
+                                                         $ displayAttrCaps
                                                          $ terminfoCaps
                                                )
                                                (sgrArgsForState state)
@@ -313,12 +313,12 @@ terminfoWriteSetAttr dc terminfoCaps prevAttr reqAttr diffs = do
                                      `mappend`
                                      writeColorDiff setBackColor (backColorDiff diffs)
                 -- implicitly resets the colors to the defaults
-                SetState state -> writeCapExpr (fromJust $ setAttrStates 
+                SetState state -> writeCapExpr (fromJust $ setAttrStates
                                                          $ displayAttrCaps terminfoCaps
                                                )
                                                (sgrArgsForState state)
                                   `mappend` setColors
-    where 
+    where
         colorMap = case useAltColorMap terminfoCaps of
                         False -> ansiColorIndex
                         True -> altColorIndex
@@ -350,7 +350,7 @@ ansiColorIndex (ISOColor v) = fromEnum v
 ansiColorIndex (Color240 v) = 16 + fromEnum v
 
 -- | For terminals without setaf/setab
--- 
+--
 -- See table in `man terminfo`
 -- Will error if not in table.
 altColorIndex :: Color -> Int
@@ -368,7 +368,7 @@ altColorIndex (Color240 v) = 16 + fromEnum v
 {- | The sequence of terminfo caps to apply a given style are determined according to these rules.
  -
  -  1. The assumption is that it's preferable to use the simpler enter/exit mode capabilities than
- -  the full set display attribute state capability. 
+ -  the full set display attribute state capability.
  -
  -  2. If a mode is supposed to be removed but there is not an exit capability defined then the
  -  display attributes are reset to defaults then the display attribute state is set.
@@ -415,7 +415,7 @@ reqDisplayCapSeqFor caps s diffs
         ( False, _    ) -> EnterExitSeq $ map enterExitCap diffs
         -- If not all the diffs have an enter-exit cap and there is no set state cap then filter out
         -- all unsupported diffs and just apply the rest
-        ( True, False ) -> EnterExitSeq $ map enterExitCap 
+        ( True, False ) -> EnterExitSeq $ map enterExitCap
                                         $ filter (not . noEnterExitCap) diffs
         -- if not all the diffs have an enter-exit can and there is a set state cap then just use
         -- the set state cap.
@@ -462,9 +462,8 @@ styleToApplySeq s = concat
     , applyIfRequired ApplyDim dim
     , applyIfRequired ApplyBlink bold
     ]
-    where 
-        applyIfRequired op flag 
+    where
+        applyIfRequired op flag
             = if 0 == (flag .&. s)
                 then []
                 else [op]
-
