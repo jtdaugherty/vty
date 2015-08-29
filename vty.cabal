@@ -173,9 +173,15 @@ test-suite verify-attribute-ops
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32
 
 test-suite verify-using-mock-terminal
   default-language:    Haskell2010
@@ -211,6 +217,9 @@ test-suite verify-using-mock-terminal
   if flag(curses) && !os(windows)
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32
 
 test-suite verify-terminal
   default-language:    Haskell2010
@@ -248,6 +257,9 @@ test-suite verify-terminal
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
 
+  if os(windows)
+    build-depends:    Win32
+
 test-suite verify-display-attributes
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
@@ -283,6 +295,9 @@ test-suite verify-display-attributes
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
 
+  if os(windows)
+    build-depends:    Win32
+
 test-suite verify-empty-image-props
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
@@ -311,6 +326,9 @@ test-suite verify-empty-image-props
   if flag(curses) && !os(windows)
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32
 
 test-suite verify-eval-terminfo-caps
   default-language:    Haskell2010
@@ -343,6 +361,9 @@ test-suite verify-eval-terminfo-caps
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
 
+  if os(windows)
+    build-depends:    Win32
+
 test-suite verify-image-ops
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
@@ -373,6 +394,9 @@ test-suite verify-image-ops
   if flag(curses) && !os(windows)
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32
 
 test-suite verify-image-trans
   default-language:    Haskell2010
@@ -405,6 +429,9 @@ test-suite verify-image-trans
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
 
+  if os(windows)
+    build-depends:    Win32
+
 test-suite verify-inline
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
@@ -434,6 +461,9 @@ test-suite verify-inline
   if flag(curses) && !os(windows)
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32
 
 test-suite verify-parse-terminfo-caps
   default-language:    Haskell2010
@@ -465,6 +495,9 @@ test-suite verify-parse-terminfo-caps
   if flag(curses) && !os(windows)
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32
 
 test-suite verify-simple-span-generation
   default-language:    Haskell2010
@@ -499,6 +532,9 @@ test-suite verify-simple-span-generation
   if flag(curses) && !os(windows)
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32
 
 
 test-suite verify-crop-span-generation
@@ -535,6 +571,9 @@ test-suite verify-crop-span-generation
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
 
+  if os(windows)
+    build-depends:    Win32
+
 
 test-suite verify-layers-span-generation
   default-language:    Haskell2010
@@ -570,6 +609,9 @@ test-suite verify-layers-span-generation
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
 
+  if os(windows)
+    build-depends:    Win32
+
 test-suite verify-utf8-width
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
@@ -598,6 +640,9 @@ test-suite verify-utf8-width
   if flag(curses) && !os(windows)
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32
 
 test-suite verify-using-mock-input
   default-language:    Haskell2010
@@ -632,6 +677,9 @@ test-suite verify-using-mock-input
   if flag(curses) && !os(windows)
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32
 
   ghc-options:         -threaded -Wall
 
@@ -670,5 +718,8 @@ test-suite verify-config
   if flag(curses) && !os(windows)
     build-depends:     unix,
                        terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32
 
   ghc-options:         -threaded -Wall
