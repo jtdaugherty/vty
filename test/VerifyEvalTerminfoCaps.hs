@@ -1,13 +1,19 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE NamedFieldPuns #-}
+-- TODO: Cannot conditionally compile tests?
+-- Seems reasonable that this should fail, with the expectation of failure
+-- on windows systems.
 module VerifyEvalTerminfoCaps where
 
 import Blaze.ByteString.Builder.Internal.Write (runWrite, getBound)
-import Data.Terminfo.Eval 
+import Data.Terminfo.Eval
 import Data.Terminfo.Parse
 import Control.DeepSeq
 
+#ifdef TERMINFO
 import qualified System.Console.Terminfo as Terminfo
+#endif
 
 import Verify
 import Verify.Graphics.Vty.Output
@@ -25,7 +31,7 @@ import Foreign.Ptr (Ptr, minusPtr)
 import Numeric
 
 -- If a terminal defines one of the caps then it's expected to be parsable.
-capsOfInterest = 
+capsOfInterest =
     [ "cup"
     , "sc"
     , "rc"
@@ -45,16 +51,17 @@ capsOfInterest =
     , "sgr0"
     ]
 
-fromCapname ti name = fromJust $ Terminfo.getCapability ti (Terminfo.tiGetStr name)
-
 tests :: IO [Test]
+#ifndef TERMINFO
+tests = return mempty
+#else
 tests = do
     evalBuffer :: Ptr Word8 <- mallocBytes (1024 * 1024) -- Should be big enough for any termcaps ;-)
     fmap concat $ forM terminalsOfInterest $ \termName -> do
         putStrLn $ "adding tests for terminal: " ++ termName
         mti <- try $ Terminfo.setupTerm termName
         case mti of
-            Left (_e :: SomeException) 
+            Left (_e :: SomeException)
                 -> return []
             Right ti -> do
                 fmap concat $ forM capsOfInterest $ \capName -> do
@@ -68,10 +75,12 @@ tests = do
                         Nothing      -> do
                             return []
 
+fromCapname ti name = fromJust $ Terminfo.getCapability ti (Terminfo.tiGetStr name)
+
 {-# NOINLINE verifyEvalCap #-}
 verifyEvalCap :: Ptr Word8 -> CapExpression -> Int -> Property
 verifyEvalCap evalBuffer expr !junkInt = do
-    forAll (vector 9) $ \inputValues -> 
+    forAll (vector 9) $ \inputValues ->
         let write = writeCapExpr expr inputValues
             !byteCount = getBound write
         in liftIOResult $ do
@@ -79,12 +88,13 @@ verifyEvalCap evalBuffer expr !junkInt = do
             forM_ [0..100] $ \i -> runWrite write startPtr
             endPtr <- runWrite write startPtr
             case endPtr `minusPtr` startPtr of
-                count | count < 0        -> 
+                count | count < 0        ->
                             return $ failed { reason = "End pointer before start pointer." }
-                      | toEnum count > byteCount -> 
-                            return $ failed { reason = "End pointer past end of buffer by " 
-                                                       ++ show (toEnum count - byteCount) 
+                      | toEnum count > byteCount ->
+                            return $ failed { reason = "End pointer past end of buffer by "
+                                                       ++ show (toEnum count - byteCount)
                                             }
-                      | otherwise        -> 
+                      | otherwise        ->
                             return succeeded
 
+#endif

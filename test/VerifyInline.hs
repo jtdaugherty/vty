@@ -1,8 +1,12 @@
+{-# LANGUAGE CPP #-}
 module VerifyInline where
 
 import Graphics.Vty.Inline
 import Graphics.Vty.Output
-import Graphics.Vty.Output.TerminfoBased as TerminfoBased
+
+#ifdef TERMINFO
+import Graphics.Vty.Output.Terminfo as Terminfo
+#endif
 
 import Verify.Graphics.Vty.Output
 

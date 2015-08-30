@@ -1,9 +1,12 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE NamedFieldPuns #-}
 module VerifyParseTerminfoCaps where
 
 import Prelude hiding ( catch )
 
+#ifdef TERMINFO
 import qualified System.Console.Terminfo as Terminfo
+#endif
 
 import Verify.Data.Terminfo.Parse
 import Verify.Graphics.Vty.Output
@@ -16,7 +19,7 @@ import Numeric
 
 -- If a terminal defines one of the caps then it's expected to be parsable.
 -- TODO: reduce duplication with terminfo terminal implementation.
-capsOfInterest = 
+capsOfInterest =
     [ "cup"
     , "sc"
     , "rc"
@@ -36,9 +39,11 @@ capsOfInterest =
     , "sgr0"
     ]
 
-fromCapname ti name = fromJust $ Terminfo.getCapability ti (Terminfo.tiGetStr name)
 
 tests :: IO [Test]
+#ifndef TERMINFO
+tests = return mempty
+#else
 tests = do
     parseTests <- concat <$> forM terminalsOfInterest (\termName ->
         liftIO (try $ Terminfo.setupTerm termName)
@@ -59,13 +64,15 @@ tests = do
              , verify "parse cap string with %pN op" pushParamCaps
              ] ++ parseTests
 
+fromCapname ti name = fromJust $ Terminfo.getCapability ti (Terminfo.tiGetStr name)
+
 verifyParseCap capString onParse =
     case parseCapExpression capString of
         Left error -> failed { reason = "parse error " ++ show error }
         Right e    -> onParse e
 
 nonParamaterizedCaps (NonParamCapString cap) = do
-    verifyParseCap cap $ \e -> 
+    verifyParseCap cap $ \e ->
         let expectedBytes = map (toEnum . fromEnum) cap
             outBytes = bytesForRange e 0 (length cap)
         in verifyBytesEqual outBytes expectedBytes
@@ -75,7 +82,7 @@ literalPercentCaps (LiteralPercentCap capString expectedBytes) = do
 
 incFirstTwoCaps (IncFirstTwoCap capString expectedBytes) = do
     verifyParseCap capString $ \e -> verifyBytesEqual (collectBytes e) expectedBytes
-    
+
 pushParamCaps (PushParamCap capString expectedParamCount expectedBytes) = do
     verifyParseCap capString $ \e ->
         let outBytes = collectBytes e
@@ -99,3 +106,4 @@ printExpression ti capName = do
     let parseResult = parseCapExpression $ fromCapname ti capName
     putStrLn $ capName ++ ": " ++ show parseResult
 
+#endif

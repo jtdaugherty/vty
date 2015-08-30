@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {- We setup the environment to envoke certain terminals of interest.
  - This assumes appropriate definitions exist in the current environment for the terminals of
  - interest.
@@ -14,7 +15,12 @@ import Control.Monad
 
 import Data.Default
 
+#ifndef TERMINFO
+tests :: IO [Test]
+tests = return mempty
+#else
 import qualified System.Console.Terminfo as Terminfo
+
 import System.Posix.Env
 import System.Posix.IO
 
@@ -52,4 +58,4 @@ smokeTestTerm termName i = do
     releaseTerminal t
     closeFd nullOut
     return succeeded
-
+#endif
