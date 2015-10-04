@@ -1,5 +1,7 @@
 flags: {}
 packages:
 - '.'
+- dependencies/ansi-terminal
+- dependencies/win32
 extra-deps: []
 resolver: nightly-2015-08-17

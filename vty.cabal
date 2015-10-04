@@ -60,6 +60,7 @@ library
                        -- required for nice installation with yi
                        hashable >= 1.2,
                        mtl >= 1.1.1.0 && < 2.3,
+                       operational >= 0.2.3 && < 1.0,
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        stm,
@@ -104,8 +105,8 @@ library
 
   -- non windows / curses components
   if flag(curses) && !os(windows)
-    exposed-modules:   Graphics.Vty.Output.XTermColor
-                       Graphics.Vty.Output.TerminfoBased
+    exposed-modules:   Graphics.Vty.Output.Terminfo.Base
+                       Graphics.Vty.Output.Terminfo.XTermColor
                        Graphics.Vty.Input.Posix
                        Graphics.Vty.Input.Posix.Loop
                        Graphics.Vty.Input.Terminfo
@@ -126,7 +127,9 @@ library
     cpp-options:       -DPOSIX -DTERMINFO
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0,
+                      ansi-terminal >= 0.6.2.4
+                      -- forces uses the ansi-terminal that does not interfere with Win32 2.4+
     exposed-modules:  Graphics.Vty.Windows
                       Graphics.Vty.Input.Windows
                       Graphics.Vty.Output.Windows
@@ -182,7 +185,7 @@ test-suite attribute-ops
                        terminfo >= 0.3 && < 0.5
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 test-suite using-mock-terminal
   default-language:    Haskell2010
@@ -220,7 +223,7 @@ test-suite using-mock-terminal
                        terminfo >= 0.3 && < 0.5
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 test-suite terminal
   default-language:    Haskell2010
@@ -260,7 +263,7 @@ test-suite terminal
     cpp-options:       -DPOSIX -DTERMINFO
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 test-suite display-attributes
   default-language:    Haskell2010
@@ -298,7 +301,7 @@ test-suite display-attributes
                        terminfo >= 0.3 && < 0.5
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 test-suite empty-image-props
   default-language:    Haskell2010
@@ -330,7 +333,7 @@ test-suite empty-image-props
                        terminfo >= 0.3 && < 0.5
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 test-suite eval-terminfo-caps
   default-language:    Haskell2010
@@ -365,7 +368,7 @@ test-suite eval-terminfo-caps
     cpp-options:       -DPOSIX -DTERMINFO
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 test-suite image-ops
   default-language:    Haskell2010
@@ -399,7 +402,7 @@ test-suite image-ops
                        terminfo >= 0.3 && < 0.5
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 test-suite image-trans
   default-language:    Haskell2010
@@ -433,7 +436,7 @@ test-suite image-trans
                        terminfo >= 0.3 && < 0.5
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 test-suite inline
   default-language:    Haskell2010
@@ -467,7 +470,7 @@ test-suite inline
     cpp-options:       -DPOSIX -DTERMINFO
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 test-suite parse-terminfo-caps
   default-language:    Haskell2010
@@ -502,7 +505,7 @@ test-suite parse-terminfo-caps
     cpp-options:       -DPOSIX -DTERMINFO
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 test-suite simple-span-generation
   default-language:    Haskell2010
@@ -539,7 +542,7 @@ test-suite simple-span-generation
                        terminfo >= 0.3 && < 0.5
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 
 test-suite crop-span-generation
@@ -577,7 +580,7 @@ test-suite crop-span-generation
                        terminfo >= 0.3 && < 0.5
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 
 test-suite layers-span-generation
@@ -615,7 +618,7 @@ test-suite layers-span-generation
                        terminfo >= 0.3 && < 0.5
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 test-suite utf8-width
   default-language:    Haskell2010
@@ -647,7 +650,7 @@ test-suite utf8-width
                        terminfo >= 0.3 && < 0.5
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
 test-suite using-mock-input
   default-language:    Haskell2010
@@ -685,7 +688,7 @@ test-suite using-mock-input
     cpp-options:       -DPOSIX -DTERMINFO
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
   ghc-options:         -threaded -Wall
 
@@ -726,6 +729,6 @@ test-suite config
                        terminfo >= 0.3 && < 0.5
 
   if os(windows)
-    build-depends:    Win32
+    build-depends:    Win32 >= 2.3.2.0
 
   ghc-options:         -threaded -Wall

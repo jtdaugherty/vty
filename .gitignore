@@ -10,3 +10,6 @@ test/benchmark
 cabal.sandbox.config
 test/cabal.sandbox.config
 .stack-work
+#
+.#
+*#
