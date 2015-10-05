@@ -1,5 +1,5 @@
 {-# OPTIONS_HADDOCK hide #-}
-module Graphics.Vty.Input.Classify
+module Graphics.Vty.Input.Terminfo.Classify
     ( classify
     , KClass(..)
     ) where

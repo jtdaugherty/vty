@@ -105,7 +105,8 @@ library
 
   -- non windows / curses components
   if flag(curses) && !os(windows)
-    exposed-modules:   Graphics.Vty.Output.Terminfo.Base
+    exposed-modules:   Graphics.Vty.Output.Terminfo
+                       Graphics.Vty.Output.Terminfo.Base
                        Graphics.Vty.Output.Terminfo.XTermColor
                        Graphics.Vty.Input.Posix
                        Graphics.Vty.Input.Posix.Loop
@@ -661,6 +662,7 @@ test-suite using-mock-input
   hs-source-dirs:      test
 
   main-is:             VerifyUsingMockInput.hs
+  other-modules:       Verify.Graphics.Vty.Output
 
   build-depends:       vty,
                        Cabal >= 1.20,

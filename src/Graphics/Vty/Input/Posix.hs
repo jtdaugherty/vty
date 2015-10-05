@@ -9,10 +9,15 @@ module Graphics.Vty.Input.Posix where
 
 import Graphics.Vty.Config
 import Graphics.Vty.Input.Events
+import Graphics.Vty.Input.Interface
+import Graphics.Vty.Input.Posix.Loop
+import Graphics.Vty.Input.Terminfo
 
 import Control.Concurrent.STM
 import Control.Lens
+import Control.Monad (when)
 
+import Data.Default
 #if !(MIN_VERSION_base(4,8,0))
 import Data.Functor ((<$>))
 import Data.Monoid
@@ -21,6 +26,8 @@ import Data.Monoid ((<>))
 #endif
 
 import qualified System.Console.Terminfo as Terminfo
+import System.Posix.Env (getEnv)
+import System.Posix.IO (stdInput)
 import System.Posix.Signals.Exts
 
 -- | Set up the terminal with file descriptor `inputFd` for input.  Returns an 'Input'.
@@ -81,10 +88,11 @@ inputForConfig config = (<> config) <$> defaultTerminfoInputConfig >>= inputForC
 
 defaultTerminfoInputConfig :: IO Config
 defaultTerminfoInputConfig = do
-    Just t <- getEnv "TERM"
-    return $ def { vmin = Just 1
-                 , vtime = Just 100
-                 , inputFd = Just stdInput
-                 , outputFd = Just stdOutput
-                 , termName = Just t
-                 }
+  termName <- getEnv "TERM"
+  when (termName == Nothing) $
+    fail "vty: Terminfo input requires the TERM environment variable to be set."
+  return $ def { vmin     = Just 1
+               , vtime    = Just 100
+               , inputFd  = Just stdInput
+               , termName = termName
+               }

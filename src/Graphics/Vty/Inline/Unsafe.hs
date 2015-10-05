@@ -13,8 +13,10 @@ import Graphics.Vty
 import Graphics.Vty.Inline.Unsafe.Posix
 #endif
 
-import Data.Default
-import Data.Monoid
+#ifdef WINDOWS
+import Data.Default (def)
+#endif
+
 import Data.IORef
 
 #if !(MIN_VERSION_base(4,8,0))

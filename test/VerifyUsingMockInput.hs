@@ -10,9 +10,10 @@ import Verify.Graphics.Vty.Output
 
 import Graphics.Vty hiding (resize)
 import Graphics.Vty.Input.Events
+import Graphics.Vty.Input.Interface
 
 #ifdef POSIX
-import Graphics.Vty.Input.Loop
+import Graphics.Vty.Input.Posix.Loop
 import Graphics.Vty.Input.Terminfo
 #endif
 
@@ -188,8 +189,8 @@ verifyVisibleSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) -> monadic 
 
 verifyCapsSynInputToEvent :: Property IO
 verifyCapsSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) ->
-    forEachOf terminalsOfInterest $ \termName -> monadic $ do
-        term <- setupTerm termName
+    forEachOf terminalsOfInterest $ \termToTest -> monadic $ do
+        term <- setupTerm termToTest
         let table         = capsClassifyMap term keysFromCapsTable
             inputSeq      = gen table
             events        = map snd inputSeq

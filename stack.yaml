@@ -2,8 +2,8 @@ flags: {}
 packages:
 - '.'
 - location: dependencies/ansi-terminal
-  valid-wanted: false
+  extra-dep: true
 - location: dependencies/win32
-  valid-wanted: false
+  extra-dep: true
 extra-deps: []
 resolver: nightly-2015-08-17

@@ -14,7 +14,7 @@
 module Graphics.Vty.Input.Posix.Loop where
 
 import Graphics.Vty.Config
-import Graphics.Vty.Input.Classify
+import Graphics.Vty.Input.Terminfo.Classify
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Interface
 

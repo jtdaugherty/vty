@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
-module Graphics.Vty.Output.Terminfo
+module Graphics.Vty.Output.Terminfo where
 
 import Graphics.Vty.Prelude
 
@@ -15,8 +15,12 @@ import Blaze.ByteString.Builder (writeToByteString)
 
 import Control.Monad.Trans
 
+import Data.Default (def)
 import Data.List (isPrefixOf)
 import Data.Monoid ((<>))
+
+import System.Posix.Env (getEnv)
+import System.Posix.IO (stdOutput)
 
 -- | Returns a `Output` for the terminal specified in `Config`
 --
@@ -42,4 +46,13 @@ outputForConfig Config{ outputFd = Just fd, termName = Just termName, .. } = do
         -- Not an xterm-like terminal. try for generic terminfo.
         else Base.reserveTerminal termName fd
     return t
-outputForConfig config = (<> config) <$> standardIOConfig >>= outputForConfig
+outputForConfig config = (<> config) <$> defaultTerminfoOutputConfig >>= outputForConfig
+
+defaultTerminfoOutputConfig :: IO Config
+defaultTerminfoOutputConfig = do
+  termName <- getEnv "TERM"
+  when (termName == Nothing) $
+    fail "vty: Terminfo output requires the TERM environment variable to be set."
+  return $ def { outputFd = Just stdOutput
+               , termName = termName
+               }

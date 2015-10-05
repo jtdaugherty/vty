@@ -69,6 +69,8 @@
 --
 module Graphics.Vty.Config where
 
+import Graphics.Vty.Input.Events
+
 #if __GLASGOW_HASKELL__ > 704
 import Prelude
 #else
@@ -84,10 +86,7 @@ import Control.Monad.Trans.Writer
 
 import qualified Data.ByteString as BS
 import Data.Default
-import Data.List (lookup)
 import Data.Monoid
-
-import Graphics.Vty.Input.Events
 
 import System.Directory (getAppUserDataDirectory)
 import System.Environment
@@ -118,11 +117,11 @@ data Config = Config
     , inputMap :: InputMap
     -- | The input file descriptor to use. If None then the default is used.
     -- The default depends on the selected output interface.
-    -- If Some then use of termcap based input is required.
+    -- If Some then use of Terminfo based input is required.
     , inputFd  :: Maybe Fd
     -- | The output file descriptor to use. If None then the default is used. The default depends
     -- on the selected output interface.
-    -- If Some then use of termcap based output is required.
+    -- If Some then use of Terminfo based output is required.
     , outputFd :: Maybe Fd
     -- | The terminal name used to look up terminfo capabilities.
     -- The default is the value of the TERM environment variable.

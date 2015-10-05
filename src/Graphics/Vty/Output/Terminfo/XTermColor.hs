@@ -5,11 +5,11 @@
 #endif
 
 -- Copyright Corey O'Connor (coreyoconnor@gmail.com)
-module Graphics.Vty.Output.TermInfo.XTermColor ( reserveTerminal )
+module Graphics.Vty.Output.Terminfo.XTermColor ( reserveTerminal )
     where
 
 import Graphics.Vty.Output.Interface
-import qualified Graphics.Vty.Output.TermInfo.Base as Base
+import qualified Graphics.Vty.Output.Terminfo.Base as Base
 
 import Blaze.ByteString.Builder (writeToByteString)
 import Blaze.ByteString.Builder.Word (writeWord8)

@@ -1,11 +1,12 @@
 module Graphics.Vty.Inline.Unsafe.Posix where
 
+import Graphics.Vty.Config
+
 import Data.Default
 
 import GHC.IO.Handle (hDuplicate)
 
 import System.IO (stdin, stdout, hSetBuffering, BufferMode(NoBuffering))
-
 import System.Posix.IO (handleToFd)
 
 mkDupeConfig :: IO Config
