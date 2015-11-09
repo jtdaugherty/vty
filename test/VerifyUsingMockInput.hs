@@ -62,6 +62,7 @@ main = defaultMain
     , testProperty "synthesized typing of 2x any key in the table translates to 2x paired event"
         verifyFullSynInputToEvent_2x
     ]
+
 -- processing a block of 16 chars is the largest I can do without taking too long to run the test.
 maxBlockSize :: Int
 maxBlockSize = 16

@@ -10,20 +10,20 @@ import Graphics.Vty.Attributes
 import Graphics.Vty.Debug.Image
 import Graphics.Vty.Span
 
-import qualified Data.Vector as Vector 
+import qualified Data.Vector as Vector
 
-rowOpsEffectedColumns :: DisplayOps -> [Int]
-rowOpsEffectedColumns ops 
-    = Vector.toList $ Vector.map spanOpsEffectedColumns ops
+displayOpsEffectedColumns :: DisplayOps -> [Int]
+displayOpsEffectedColumns ops
+    = Vector.toList $ Vector.map rowOpsEffectedColumns ops
 
 allSpansHaveWidth :: DisplayOps -> Int -> Bool
 allSpansHaveWidth ops expected
-    = all (== expected) $ Vector.toList $ Vector.map spanOpsEffectedColumns ops
+    = all (== expected) $ Vector.toList $ Vector.map rowOpsEffectedColumns ops
 
-spanOpsEffectedRows :: DisplayOps -> Int
-spanOpsEffectedRows ops
+rowOpsEffectedRows :: DisplayOps -> Int
+rowOpsEffectedRows ops
     = toEnum $ length (filter (not . null . Vector.toList) (Vector.toList ops))
-        
+
 type SpanConstructLog = [SpanConstructEvent]
 data SpanConstructEvent = SpanSetAttr Attr
 
@@ -37,4 +37,3 @@ data MockWindow = MockWindow Int Int
 
 regionForWindow :: MockWindow -> DisplayRegion
 regionForWindow (MockWindow w h) = (w,h)
-

@@ -35,7 +35,7 @@ import qualified Test.QuickCheck as QC
 import Test.QuickCheck.Modifiers
 import Test.QuickCheck.Property hiding ( Result(..) )
 import qualified Test.QuickCheck.Property as Prop
-import Test.QuickCheck.Monadic ( monadicIO ) 
+import Test.QuickCheck.Monadic ( monadicIO )
 
 import Text.Printf
 
@@ -52,11 +52,11 @@ verify :: Testable t => String -> t -> Test
 verify testName p = Test $ TestInstance
   { name = testName
   , run = do
-    qcResult <- quickCheckWithResult (stdArgs {chatty = False}) p
+    qcResult <- verboseCheckWithResult stdArgs p
     case qcResult of
-        QC.Success {..} -> return $ Finished TS.Pass
+        QC.Success {output} -> return $ Progress output $ return $ Finished TS.Pass
         QC.Failure {numShrinks,reason} -> return $ Finished
-            $ TS.Fail $ "After " 
+            $ TS.Fail $ "After "
                       ++ show numShrinks ++ " shrinks determined failure to be: "
                       ++ show reason
         _ -> return $ Finished $ TS.Fail "TODO(corey): add failure message"
@@ -87,7 +87,7 @@ liftIOResult = ioProperty
 
 #if __GLASGOW_HASKELL__ <= 701
 instance Random Word where
-    random g = 
+    random g =
         let (i :: Int, g') = random g
         in (toEnum i, g')
     randomR (l,h) g =
@@ -97,4 +97,3 @@ instance Random Word where
 
 data Bench where
     Bench :: forall v . NFData v => IO v -> (v -> IO ()) -> Bench
-

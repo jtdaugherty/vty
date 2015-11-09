@@ -1,9 +1,9 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
---  | Output interface.
+--  | Terminal Output.
 --
---  Access to the current terminal or a specific terminal device.
+--  Output access to the current terminal or a specific terminal device.
 --
 --  See also:
 --
@@ -22,17 +22,15 @@
 --  control codes as possible.
 module Graphics.Vty.Output ( module Graphics.Vty.Output
                            , Output(..) -- \todo hide constructors
+                           , DisplayContext(..)
                            , AssumedState(..)
-                           , DisplayContext(..) -- \todo hide constructors
-                           , displayContext
                            , outputPicture
+                           , outputPictureToContext
                            , outputForConfig
                            )
     where
 
 import Graphics.Vty.Prelude
-
-import Graphics.Vty.Config
 
 import Graphics.Vty.Output.Interface
 
@@ -44,8 +42,7 @@ import Graphics.Vty.Output.Terminfo
 import Graphics.Vty.Output.Windows
 #endif
 
-import Blaze.ByteString.Builder (writeToByteString)
-
+import Control.Monad.Operational
 import Control.Monad.Trans
 
 -- | Sets the cursor position to the given output column and row.
@@ -59,19 +56,12 @@ setCursorPos :: MonadIO m => Output -> Int -> Int -> m ()
 setCursorPos t x y = do
     bounds <- displayBounds t
     when (x >= 0 && x < regionWidth bounds && y >= 0 && y < regionHeight bounds) $ do
-        dc <- displayContext t bounds
-        liftIO $ outputByteBuffer t $ writeToByteString $ writeMoveCursor dc x y
+        outputDisplayCommands t $ singleton $ MoveCursor x y
 
 -- | Hides the cursor
 hideCursor :: MonadIO m => Output -> m ()
-hideCursor t = do
-    bounds <- displayBounds t
-    dc <- displayContext t bounds
-    liftIO $ outputByteBuffer t $ writeToByteString $ writeHideCursor dc
+hideCursor t = outputDisplayCommands t $ singleton $ HideCursor
 
 -- | Shows the cursor
 showCursor :: MonadIO m => Output -> m ()
-showCursor t = do
-    bounds <- displayBounds t
-    dc <- displayContext t bounds
-    liftIO $ outputByteBuffer t $ writeToByteString $ writeShowCursor dc
+showCursor t = outputDisplayCommands t $ singleton $ ShowCursor

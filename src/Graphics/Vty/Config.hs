@@ -155,6 +155,10 @@ instance Monoid Config where
 
 type ConfigParser s a = ParsecT s () (Writer Config) a
 
+-- | For backwards compatability with vty 5.x.
+standardIOConfig :: IO Config
+standardIOConfig = userConfig
+
 -- | Config from @'getAppUserDataDirectory'/config@ and @$VTY_CONFIG_FILE@
 userConfig :: IO Config
 userConfig = do

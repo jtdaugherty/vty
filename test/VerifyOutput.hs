@@ -46,10 +46,10 @@ smokeTestTerm termName i = do
     t <- outputForConfig $ def { outputFd = Just nullOut, termName = Just termName }
     -- putStrLn $ "context color count: " ++ show (contextColorCount t)
     reserveDisplay t
-    dc <- displayContext t (100,100)
+    let dc = DisplayContext t (100,100)
     -- always show the cursor to produce tests for terminals with no cursor support.
     let pic = (picForImage i) { picCursor = Cursor 0 0 }
-    outputPicture dc pic
+    outputPictureToContext dc pic
     setCursorPos t 0 0
     when (supportsCursorVisibility t) $ do
         hideCursor t

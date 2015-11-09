@@ -1,8 +1,7 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# OPTIONS_GHC -D_XOPEN_SOURCE=500 -fno-warn-warnings-deprecations #-}
-{-# CFILES gwinsz.c #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE RecordWildCards #-}
 
 #ifndef MIN_VERSION_base
 #defined MIN_VERSION_base(x,y,z) 1
@@ -20,29 +19,24 @@ module Graphics.Vty.Output.Terminfo.Base ( reserveTerminal )
 
 import Graphics.Vty.Prelude
 
-import Data.ByteString.Internal (toForeignPtr)
-import Data.Terminfo.Parse
-import Data.Terminfo.Eval
-
 import Graphics.Vty.Attributes
 import Graphics.Vty.DisplayAttributes
 import Graphics.Vty.Output.Interface
+import Graphics.Vty.Output.Terminfo.PosixIOExtras
 
-import Blaze.ByteString.Builder (Write, writeToByteString)
+import Blaze.ByteString.Builder (Builder, fromByteString)
 
+import Control.Monad.Operational
 import Control.Monad.Trans
+import Control.Monad.Trans.RWS.Strict
 
 import Data.Bits ((.&.))
 import Data.IORef
 import Data.Maybe (isJust, isNothing, fromJust)
-import Data.Word
-
-import Foreign.C.Types ( CInt(..), CLong(..) )
-import Foreign.ForeignPtr (withForeignPtr)
-import Foreign.Ptr (Ptr, plusPtr)
+import Data.Terminfo.Eval
+import Data.Terminfo.Parse
 
 import qualified System.Console.Terminfo as Terminfo
-import System.Posix.IO (fdWriteBuf)
 import System.Posix.Types (Fd(..))
 
 #if !(MIN_VERSION_base(4,8,0))
@@ -50,49 +44,33 @@ import Data.Foldable (foldMap)
 import Data.Monoid
 #endif
 
+-- TODO: Move all Maybe qualified capabilities into DisplayAttrCaps?
 data TerminfoCaps = TerminfoCaps
-    { smcup :: Maybe CapExpression
-    , rmcup :: Maybe CapExpression
-    , cup :: CapExpression
-    , cnorm :: Maybe CapExpression
-    , civis :: Maybe CapExpression
+    { smcup            :: Maybe CapExpression
+    , rmcup            :: Maybe CapExpression
+    , cup              :: CapExpression
+    , cnorm            :: Maybe CapExpression
+    , civis            :: Maybe CapExpression
     , supportsNoColors :: Bool
-    , useAltColorMap :: Bool
-    , setForeColor :: CapExpression
-    , setBackColor :: CapExpression
-    , setDefaultAttr :: CapExpression
-    , clearScreen :: CapExpression
-    , clearEol :: CapExpression
-    , displayAttrCaps :: DisplayAttrCaps
+    , useAltColorMap   :: Bool
+    , setForeColor     :: CapExpression
+    , setBackColor     :: CapExpression
+    , setDefaultAttr   :: CapExpression
+    , clearScreen      :: CapExpression
+    , clearEol         :: CapExpression
+    , displayAttrCaps  :: DisplayAttrCaps
     }
 
 data DisplayAttrCaps = DisplayAttrCaps
-    { setAttrStates :: Maybe CapExpression
-    , enterStandout :: Maybe CapExpression
-    , exitStandout :: Maybe CapExpression
-    , enterUnderline :: Maybe CapExpression
-    , exitUnderline :: Maybe CapExpression
+    { setAttrStates     :: Maybe CapExpression
+    , enterStandout     :: Maybe CapExpression
+    , exitStandout      :: Maybe CapExpression
+    , enterUnderline    :: Maybe CapExpression
+    , exitUnderline     :: Maybe CapExpression
     , enterReverseVideo :: Maybe CapExpression
-    , enterDimMode :: Maybe CapExpression
-    , enterBoldMode :: Maybe CapExpression
+    , enterDimMode      :: Maybe CapExpression
+    , enterBoldMode     :: Maybe CapExpression
     }
-
--- kinda like: https://code.google.com/p/vim/source/browse/src/fileio.c#10422
--- fdWriteBuf will throw on error. Unless the error is EINTR. On EINTR the write will be retried.
-fdWriteAll :: Fd -> Ptr Word8 -> Int -> Int -> IO Int
-fdWriteAll outFd ptr len count
-    | len <  0  = fail "fdWriteAll: len is less than 0"
-    | len == 0  = return count
-    | otherwise = do
-        writeCount <- fromEnum <$> fdWriteBuf outFd ptr (toEnum len)
-        let len' = len - writeCount
-            ptr' = ptr `plusPtr` writeCount
-            count' = count + writeCount
-        fdWriteAll outFd ptr' len' count'
-
-sendCapToTerminal :: Output -> CapExpression -> [CapParam] -> IO ()
-sendCapToTerminal t cap capParams = do
-    outputByteBuffer t $ writeToByteString $ writeCapExpr cap capParams
 
 {- | Uses terminfo for all control codes. While this should provide the most compatible terminal
  - terminfo does not support some features that would increase efficiency and improve compatibility:
@@ -141,46 +119,40 @@ reserveTerminal termName outFd = liftIO $ do
         <*> requireCap ti "el"
         <*> currentDisplayAttrCaps ti
     newAssumedStateRef <- newIORef initialAssumedState
-    let t = Output
-            { terminalID = termName
-            , releaseTerminal = liftIO $ do
-                sendCap setDefaultAttr []
-                maybeSendCap cnorm []
-            , reserveDisplay = liftIO $ do
-                -- If there is no support for smcup: Clear the screen and then move the mouse to the
-                -- home position to approximate the behavior.
-                maybeSendCap smcup []
-                sendCap clearScreen []
-            , releaseDisplay = liftIO $ do
-                maybeSendCap rmcup []
-                maybeSendCap cnorm []
-            , displayBounds = do
-                rawSize <- liftIO $ getWindowSize outFd
-                case rawSize of
-                    (w, h)  | w < 0 || h < 0 -> fail $ "getwinsize returned < 0 : " ++ show rawSize
-                            | otherwise      -> return (w,h)
-            , outputByteBuffer = \outBytes -> do
-                let (fptr, offset, len) = toForeignPtr outBytes
-                actualLen <- withForeignPtr fptr
-                             $ \ptr -> fdWriteAll outFd (ptr `plusPtr` offset) len 0
-                when (toEnum len /= actualLen) $ fail $ "Graphics.Vty.Output: outputByteBuffer "
-                  ++ "length mismatch. " ++ show len ++ " /= " ++ show actualLen
-                  ++ " Please report this bug to vty project."
-            , contextColorCount
-                = case supportsNoColors terminfoCaps of
-                    False -> case Terminfo.getCapability ti (Terminfo.tiGetNum "colors" ) of
-                        Nothing -> 8
-                        Just v -> toEnum v
-                    True -> 1
-            , supportsCursorVisibility = isJust $ civis terminfoCaps
-            , assumedStateRef = newAssumedStateRef
-            -- I think fix would help assure tActual is the only reference. I was having issues
-            -- tho.
-            , mkDisplayContext = \tActual -> liftIO . terminfoDisplayContext tActual terminfoCaps
-            }
-        sendCap s = sendCapToTerminal t (s terminfoCaps)
+    let sendCap s      = fdWriteBuilder outFd . writeCapExpr (s terminfoCaps)
         maybeSendCap s = when (isJust $ s terminfoCaps) . sendCap (fromJust . s)
-    return t
+    return $ Output
+        { terminalID = termName
+        , releaseTerminal = liftIO $ do
+            sendCap setDefaultAttr []
+            maybeSendCap cnorm []
+        , reserveDisplay = liftIO $ do
+            -- If there is no support for smcup: Clear the screen and then move the mouse to the
+            -- home position to approximate the behavior.
+            maybeSendCap smcup []
+            sendCap clearScreen []
+        , releaseDisplay = liftIO $ do
+            maybeSendCap rmcup []
+            maybeSendCap cnorm []
+        , displayBounds = do
+            rawSize <- liftIO $ getWindowSize outFd
+            case rawSize of
+                (w, h)  | w < 0 || h < 0 -> fail $ "getwinsize returned < 0 : " ++ show rawSize
+                        | otherwise      -> return (w,h)
+        , outputDisplayCommands = \cmds -> do
+            -- interpret the display commands into a Blaze.ByteString.Builder.Builder
+            let (a, builder) = interpretDisplayCommands terminfoCaps cmds
+            liftIO $ fdWriteBuilder outFd builder
+            return a
+        , contextColorCount
+            = case supportsNoColors terminfoCaps of
+                False -> case Terminfo.getCapability ti (Terminfo.tiGetNum "colors" ) of
+                    Nothing -> 8
+                    Just v -> toEnum v
+                True -> 1
+        , supportsCursorVisibility = isJust $ civis terminfoCaps
+        , assumedStateRef = newAssumedStateRef
+        }
 
 requireCap :: (Applicative m, MonadIO m) => Terminfo.Terminal -> String -> m CapExpression
 requireCap ti capName
@@ -214,30 +186,56 @@ currentDisplayAttrCaps ti
     <*> probeCap ti "dim"
     <*> probeCap ti "bold"
 
-foreign import ccall "gwinsz.h vty_c_get_window_size" c_getWindowSize :: Fd -> IO CLong
+type Interpret a = RWS TerminfoCaps Builder () a
 
-getWindowSize :: Fd -> IO (Int,Int)
-getWindowSize fd = do
-    (a,b) <- (`divMod` 65536) `fmap` c_getWindowSize fd
-    return (fromIntegral b, fromIntegral a)
+interpretDisplayCommands :: TerminfoCaps -> DisplayCommands a -> (a, Builder)
+interpretDisplayCommands terminfoCaps cmds =
+    let (a, _, builder) = runRWS (interpret cmds) terminfoCaps ()
+    in (a, builder)
 
-terminfoDisplayContext :: Output -> TerminfoCaps -> DisplayRegion -> IO DisplayContext
-terminfoDisplayContext tActual terminfoCaps r = return dc
-    where dc = DisplayContext
-            { contextDevice = tActual
-            , contextRegion = r
-            , writeMoveCursor = \x y -> writeCapExpr (cup terminfoCaps) [toEnum y, toEnum x]
-            , writeShowCursor = case cnorm terminfoCaps of
+tellCapExpr :: (TerminfoCaps -> CapExpression) -> [CapParam] -> Interpret ()
+tellCapExpr cap params = asks cap >>= tell . flip writeCapExpr params
+
+tellOptCapExpr :: (DisplayAttrCaps -> Maybe CapExpression) -> [CapParam] -> Interpret ()
+tellOptCapExpr displayCap params = do
+    maybeCapExpr <- asks (displayCap . displayAttrCaps)
+    forM_ maybeCapExpr $ \capExpr -> tell $! writeCapExpr capExpr params
+
+-- Given the Terminfo capabilities and DisplayCommands:
+-- Interpret the display commands into a sequence of output bytes. This
+-- sequence of output bytes is represented by a `Builder`.
+interpret :: DisplayCommands a -> Interpret a
+interpret = eval . view
+    where
+        eval :: ProgramView DisplayCommand a -> Interpret a
+        eval (Return a) = return a
+        eval (MoveCursor x y :>>= cmds') = do
+            tellCapExpr cup [toEnum y, toEnum x]
+            interpret $! cmds' ()
+        eval (ShowCursor :>>= cmds') = do
+            showCursorCapExpr <- asks cnorm
+            case showCursorCapExpr of
                 Nothing -> error "this terminal does not support show cursor"
-                Just c -> writeCapExpr c []
-            , writeHideCursor = case civis terminfoCaps of
+                Just c  -> tell $! writeCapExpr c []
+            interpret $! cmds' ()
+        eval (HideCursor :>>= cmds') = do
+            hideCursorCapExpr <- asks civis
+            case hideCursorCapExpr of
                 Nothing -> error "this terminal does not support hide cursor"
-                Just c -> writeCapExpr c []
-            , writeSetAttr = terminfoWriteSetAttr dc terminfoCaps
-            , writeDefaultAttr = writeCapExpr (setDefaultAttr terminfoCaps) []
-            , writeRowEnd = writeCapExpr (clearEol terminfoCaps) []
-            , inlineHack = return ()
-            }
+                Just c  -> tell $ writeCapExpr c []
+            interpret $! cmds' ()
+        eval (SetAttr fattr attr diff :>>= cmds') = do
+            writeSetAttr fattr attr diff
+            interpret $! cmds' ()
+        eval (DefaultAttr :>>= cmds') = do
+            tellCapExpr setDefaultAttr []
+            interpret $! cmds' ()
+        eval (DisplayRowEnd :>>= cmds') = do
+            tellCapExpr clearEol []
+            interpret $! cmds' ()
+        eval (Utf8Text utf8Bytes :>>= cmds') = do
+            tell $! fromByteString utf8Bytes
+            interpret $! cmds' ()
 
 -- | Portably setting the display attributes is a giant pain in the ass.
 --
@@ -246,12 +244,12 @@ terminfoDisplayContext tActual terminfoCaps r = return dc
 --
 --  0. set the style attributes. This resets the fore and back color.
 --
---  1, If a foreground color is to be set then set the foreground color
+--  1. If a foreground color is to be set then set the foreground color
 --
 --  2. likewise with the background color
 --
 -- If the terminal does not support the sgr cap then:
---  if there is a change from an applied color to the default (in either the fore or back color)
+--  If there is a change from an applied color to the default (in either the fore or back color)
 --  then:
 --
 --      0. reset all display attributes (sgr0)
@@ -267,78 +265,63 @@ terminfoDisplayContext tActual terminfoCaps r = return dc
 --
 -- This equation implements the above logic.
 --
--- \todo This assumes the removal of color changes in the display attributes is done as expected
+-- TODO: This assumes the removal of color changes in the display attributes is done as expected
 -- with noColors == True. See `limitAttrForDisplay`
 --
--- \todo This assumes that fewer state changes, followed by fewer bytes, is what to optimize. I
+-- TODO: This assumes that fewer state changes, followed by fewer bytes, is what to optimize. I
 -- haven't measured this or even examined terminal implementations. *shrug*
-terminfoWriteSetAttr :: DisplayContext -> TerminfoCaps -> FixedAttr -> Attr -> DisplayAttrDiff -> Write
-terminfoWriteSetAttr dc terminfoCaps prevAttr reqAttr diffs = do
+writeSetAttr :: FixedAttr -> Attr -> DisplayAttrDiff -> Interpret ()
+writeSetAttr prevAttr reqAttr diffs = do
+    -- Use the ANSI color map or the alternate color map when mapping from
+    -- the 16 color palette to output palette.
+    -- Where does the alternate palette come from?
+    colorMap <- asks useAltColorMap >>= return . (\b -> if b then altColorIndex else ansiColorIndex)
+    let attr = fixDisplayAttr prevAttr reqAttr
+        -- Set the foreground and background colors
+        setColors = do
+            forM_ (fixedForeColor attr) $ \c -> tellCapExpr setForeColor [toEnum $ colorMap c]
+            forM_ (fixedBackColor attr) $ \c -> tellCapExpr setBackColor [toEnum $ colorMap c]
+        writeColorDiff _f NoColorChange  = return ()
+        writeColorDiff _f ColorToDefault = error "ColorToDefault is not a possible case for applyColorDiffs"
+        writeColorDiff f  (SetColor c)   = tellCapExpr f [toEnum $ colorMap c]
     case (foreColorDiff diffs == ColorToDefault) || (backColorDiff diffs == ColorToDefault) of
         -- The only way to reset either color, portably, to the default is to use either the set
         -- state capability or the set default capability.
         True  -> do
-            case reqDisplayCapSeqFor (displayAttrCaps terminfoCaps)
+            displayAttrCaps <- asks displayAttrCaps
+            case reqDisplayCapSeqFor displayAttrCaps
                                      (fixedStyle attr )
                                      (styleToApplySeq $ fixedStyle attr) of
                 -- only way to reset a color to the defaults
-                EnterExitSeq caps -> writeDefaultAttr dc
-                                     `mappend`
-                                     foldMap (\cap -> writeCapExpr cap []) caps
-                                     `mappend`
-                                     setColors
+                EnterExitSeq caps -> do
+                    tellCapExpr setDefaultAttr []
+                    tell $ foldMap (\cap -> writeCapExpr cap []) caps
+                    setColors
                 -- implicitly resets the colors to the defaults
-                SetState state -> writeCapExpr (fromJust $ setAttrStates
-                                                         $ displayAttrCaps
-                                                         $ terminfoCaps
-                                               )
-                                               (sgrArgsForState state)
-                                  `mappend`
-                                  setColors
+                SetState attrState    -> do
+                    tellOptCapExpr setAttrStates $ sgrArgsForState attrState
+                    setColors
         -- Otherwise the display colors are not changing or changing between two non-default
         -- points.
+        -- Still, it could be the case that the change in display attributes requires the
+        -- colors to be reset because the required capability was not available.
         False -> do
-            -- Still, it could be the case that the change in display attributes requires the
-            -- colors to be reset because the required capability was not available.
-            case reqDisplayCapSeqFor (displayAttrCaps terminfoCaps)
+            displayAttrCaps <- asks displayAttrCaps
+            case reqDisplayCapSeqFor displayAttrCaps
                                      (fixedStyle attr)
                                      (styleDiffs diffs) of
                 -- Really, if terminals were re-implemented with modern concepts instead of bowing
                 -- down to 40 yr old dumb terminal requirements this would be the only case ever
                 -- reached!  Changes the style and color states according to the differences with
                 -- the currently applied states.
-                EnterExitSeq caps -> foldMap (\cap -> writeCapExpr cap []) caps
-                                     `mappend`
-                                     writeColorDiff setForeColor (foreColorDiff diffs)
-                                     `mappend`
-                                     writeColorDiff setBackColor (backColorDiff diffs)
+                EnterExitSeq caps -> do
+                    tell $ foldMap (\cap -> writeCapExpr cap []) caps
+                    writeColorDiff setForeColor (foreColorDiff diffs)
+                    writeColorDiff setBackColor (backColorDiff diffs)
                 -- implicitly resets the colors to the defaults
-                SetState state -> writeCapExpr (fromJust $ setAttrStates
-                                                         $ displayAttrCaps terminfoCaps
-                                               )
-                                               (sgrArgsForState state)
-                                  `mappend` setColors
-    where
-        colorMap = case useAltColorMap terminfoCaps of
-                        False -> ansiColorIndex
-                        True -> altColorIndex
-        attr = fixDisplayAttr prevAttr reqAttr
-        setColors =
-            (case fixedForeColor attr of
-                Just c -> writeCapExpr (setForeColor terminfoCaps)
-                                       [toEnum $ colorMap c]
-                Nothing -> mempty)
-            `mappend`
-            (case fixedBackColor attr of
-                Just c -> writeCapExpr (setBackColor terminfoCaps)
-                                       [toEnum $ colorMap c]
-                Nothing -> mempty)
-        writeColorDiff _f NoColorChange
-            = mempty
-        writeColorDiff _f ColorToDefault
-            = error "ColorToDefault is not a possible case for applyColorDiffs"
-        writeColorDiff f (SetColor c)
-            = writeCapExpr (f terminfoCaps) [toEnum $ colorMap c]
+                SetState attrState    -> do
+                    tellOptCapExpr setAttrStates $ sgrArgsForState attrState
+                    setColors
 
 -- | The color table used by a terminal is a 16 color set followed by a 240 color set that might not
 -- be supported by the terminal.
@@ -421,35 +404,35 @@ reqDisplayCapSeqFor caps s diffs
         -- the set state cap.
         ( True, True  ) -> SetState $ stateForStyle s
     where
-        noEnterExitCap ApplyStandout = isNothing $ enterStandout caps
-        noEnterExitCap RemoveStandout = isNothing $ exitStandout caps
-        noEnterExitCap ApplyUnderline = isNothing $ enterUnderline caps
-        noEnterExitCap RemoveUnderline = isNothing $ exitUnderline caps
-        noEnterExitCap ApplyReverseVideo = isNothing $ enterReverseVideo caps
+        noEnterExitCap ApplyStandout      = isNothing $ enterStandout caps
+        noEnterExitCap RemoveStandout     = isNothing $ exitStandout caps
+        noEnterExitCap ApplyUnderline     = isNothing $ enterUnderline caps
+        noEnterExitCap RemoveUnderline    = isNothing $ exitUnderline caps
+        noEnterExitCap ApplyReverseVideo  = isNothing $ enterReverseVideo caps
         noEnterExitCap RemoveReverseVideo = True
-        noEnterExitCap ApplyBlink = True
-        noEnterExitCap RemoveBlink = True
-        noEnterExitCap ApplyDim = isNothing $ enterDimMode caps
-        noEnterExitCap RemoveDim = True
-        noEnterExitCap ApplyBold = isNothing $ enterBoldMode caps
-        noEnterExitCap RemoveBold = True
-        enterExitCap ApplyStandout = fromJust $ enterStandout caps
-        enterExitCap RemoveStandout = fromJust $ exitStandout caps
-        enterExitCap ApplyUnderline = fromJust $ enterUnderline caps
-        enterExitCap RemoveUnderline = fromJust $ exitUnderline caps
+        noEnterExitCap ApplyBlink         = True
+        noEnterExitCap RemoveBlink        = True
+        noEnterExitCap ApplyDim           = isNothing $ enterDimMode caps
+        noEnterExitCap RemoveDim          = True
+        noEnterExitCap ApplyBold          = isNothing $ enterBoldMode caps
+        noEnterExitCap RemoveBold         = True
+        enterExitCap ApplyStandout     = fromJust $ enterStandout caps
+        enterExitCap RemoveStandout    = fromJust $ exitStandout caps
+        enterExitCap ApplyUnderline    = fromJust $ enterUnderline caps
+        enterExitCap RemoveUnderline   = fromJust $ exitUnderline caps
         enterExitCap ApplyReverseVideo = fromJust $ enterReverseVideo caps
-        enterExitCap ApplyDim = fromJust $ enterDimMode caps
-        enterExitCap ApplyBold = fromJust $ enterBoldMode caps
+        enterExitCap ApplyDim          = fromJust $ enterDimMode caps
+        enterExitCap ApplyBold         = fromJust $ enterBoldMode caps
         enterExitCap _ = error "enterExitCap applied to diff that was known not to have one."
 
 stateForStyle :: Style -> DisplayAttrState
 stateForStyle s = DisplayAttrState
-    { applyStandout = isStyleSet standout
-    , applyUnderline = isStyleSet underline
+    { applyStandout     = isStyleSet standout
+    , applyUnderline    = isStyleSet underline
     , applyReverseVideo = isStyleSet reverseVideo
-    , applyBlink = isStyleSet blink
-    , applyDim = isStyleSet dim
-    , applyBold = isStyleSet bold
+    , applyBlink        = isStyleSet blink
+    , applyDim          = isStyleSet dim
+    , applyBold         = isStyleSet bold
     }
     where isStyleSet = hasStyle s
 

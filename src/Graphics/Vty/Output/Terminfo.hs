@@ -11,10 +11,6 @@ import Graphics.Vty.Output.Interface
 import Graphics.Vty.Output.Terminfo.Base as Base
 import Graphics.Vty.Output.Terminfo.XTermColor as XTermColor
 
-import Blaze.ByteString.Builder (writeToByteString)
-
-import Control.Monad.Trans
-
 import Data.Default (def)
 import Data.List (isPrefixOf)
 import Data.Monoid ((<>))
@@ -37,8 +33,6 @@ import System.Posix.IO (stdOutput)
 --      * If TERM == xterm use XTermColor.
 --      * for any other TERM value TerminfoBased is used.
 --
--- \todo add an implementation for windows that does not depend on terminfo. Should be installable
--- with only what is provided in the haskell platform. Use ansi-terminal
 outputForConfig :: Config -> IO Output
 outputForConfig Config{ outputFd = Just fd, termName = Just termName, .. } = do
     t <- if "xterm" `isPrefixOf` termName

@@ -112,4 +112,3 @@ executable vty-benchmark
                        unix,
                        utf8-string,
                        vector
-

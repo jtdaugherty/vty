@@ -18,7 +18,6 @@ import Blaze.ByteString.Builder.Word
 import Blaze.ByteString.Builder
 import Data.Terminfo.Parse
 
-import Control.Monad.Identity
 import Control.Monad.State.Strict
 import Control.Monad.Writer
 
@@ -32,13 +31,14 @@ import Data.Word
 #endif
 
 -- | capability evaluator state
+-- TODO: strict list? Necessary?
 data EvalState = EvalState
-    { evalStack :: ![CapParam]
+    { evalStack      :: ![CapParam]
     , evalExpression :: !CapExpression
-    , evalParams :: ![CapParam]
+    , evalParams     :: ![CapParam]
     }
 
-type Eval a = StateT EvalState (Writer Write) a
+type Eval a = StateT EvalState (Writer Builder) a
 
 pop :: Eval CapParam
 pop = do
@@ -65,7 +65,9 @@ applyParamOps cap params = foldl applyParamOp params (paramOps cap)
 applyParamOp :: [CapParam] -> ParamOp -> [CapParam]
 applyParamOp params IncFirstTwo = map (+ 1) params
 
-writeCapExpr :: CapExpression -> [CapParam] -> Write
+-- | Evaluate the terminfo capability expression with the given paramenters
+-- to a `Builder`.
+writeCapExpr :: CapExpression -> [CapParam] -> Builder
 writeCapExpr cap params =
     let params' = applyParamOps cap params
         s0 = EvalState [] cap params'
@@ -78,20 +80,22 @@ writeCapOp :: CapOp -> Eval ()
 writeCapOp (Bytes !offset !count) = do
     !cap <- get >>= return . evalExpression
     let bytes = Vector.take count $ Vector.drop offset (capBytes cap)
-    Vector.forM_ bytes $ tell.writeWord8
+    tell $ foldMap (fromWrite . writeWord8) (Vector.toList bytes)
 writeCapOp DecOut = do
     p <- pop
-    forM_ (show p) $ tell.writeWord8.toEnum.fromEnum
+    tell $ foldMap (fromWrite.writeWord8.toEnum.fromEnum) (show p)
 writeCapOp CharOut = do
-    pop >>= tell.writeWord8.toEnum.fromEnum 
+    pop >>= tell.fromWrite.writeWord8.toEnum.fromEnum
 writeCapOp (PushParam pn) = do
     readParam pn >>= push
 writeCapOp (PushValue v) = do
     push v
+-- This violates the precondition for using a Write:
+-- "it is important to ensure that the bound on the number of bytes written is data-independent"
 writeCapOp (Conditional expr parts) = do
     writeCapOps expr
     writeContitionalParts parts
-    where 
+    where
         writeContitionalParts [] = return ()
         writeContitionalParts ((trueOps, falseOps) : falseParts) = do
             -- (man 5 terminfo)
@@ -137,4 +141,3 @@ writeCapOp CompareGt = do
     v1 <- pop
     v0 <- pop
     push $ if v0 > v1 then 1 else 0
-
