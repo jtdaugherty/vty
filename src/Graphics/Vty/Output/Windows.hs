@@ -9,7 +9,7 @@ import Graphics.Vty.Output.Interface
 import Control.Monad
 import Control.Monad.Operational
 import Control.Monad.Trans
-import Data.ByteString
+import qualified Data.ByteString as BS
 import Data.ByteString.Internal (toForeignPtr)
 import Data.Bits
 import Data.IORef
@@ -42,6 +42,7 @@ outputForConfig _config = do
                       Nothing
     -- TODO: Constant for this?
     setConsoleCP 65001
+    setConsoleOutputCP 65001
     stateRef <- newIORef $ AssumedState Nothing Nothing
     return $ Output { terminalID = "win32"
                     , releaseTerminal = liftIO $ closeHandle out
@@ -58,7 +59,7 @@ consoleDisplayBounds :: HANDLE -> IO DisplayRegion
 consoleDisplayBounds out =
     getConsoleScreenBufferInfo out >>=
         maybe (fail "Unable to query console size.")
-              (\info -> let size = csbiSize info
+              (\info -> let size = csbiMaximumWindowSize info
                         in return (fromIntegral $ coordX size, fromIntegral $ coordY size)
               )
 
@@ -67,13 +68,21 @@ consoleOutputDisplayCommands out = interpret
     where interpret = eval . view
           eval :: ProgramView DisplayCommand a -> IO a
           eval (Return a) = return a
-          eval (MoveCursor x y     :>>= cmds) = interpret $! cmds ()
+          eval (MoveCursor x y     :>>= cmds) = do
+              setConsoleCursorPosition out $ COORD (fromIntegral x) (fromIntegral y)
+              interpret $! cmds ()
           eval (ShowCursor         :>>= cmds) = interpret $! cmds ()
           eval (HideCursor         :>>= cmds) = interpret $! cmds ()
           eval (SetAttr fattr _ _  :>>= cmds) = interpret $! cmds ()
           eval (DefaultAttr        :>>= cmds) = interpret $! cmds ()
-          eval (DisplayRowEnd      :>>= cmds) = interpret $! cmds ()
+          eval (DisplayRowEnd      :>>= cmds) = do
+              Just info <- getConsoleScreenBufferInfo out
+              let remaining = (coordX $ csbiMaximumWindowSize info) - (coordX $ csbiCursorPosition info)
+                  bytes = BS.pack $ replicate (fromIntegral remaining) (toEnum $! fromEnum ' ')
+              _ <- BS.useAsCStringLen bytes $ \(ptr, len) ->
+                  win32_WriteFile out ptr (fromIntegral len) Nothing
+              interpret $! cmds ()
           eval (Utf8Text utf8Bytes :>>= cmds) = do
-              _ <- useAsCStringLen utf8Bytes $ \(ptr, len) ->
+              _ <- BS.useAsCStringLen utf8Bytes $ \(ptr, len) ->
                   win32_WriteFile out ptr (fromIntegral len) Nothing
               interpret $! cmds ()
