@@ -9,4 +9,5 @@ import System.Win32.File
 import System.Win32.Types
 
 inputForConfig :: Config -> IO Input
-inputForConfig _ = undefined
+inputForConfig _ = do
+    return undefined
