@@ -1,0 +1,16 @@
+-*.o
+-*.swp
+-*.hi
+-*.prof
+-/Setup
+-/Setup.hi
+-/Setup.o
+-/dist
+-/test/benchmark
+-*.hpc
+-.cabal-sandbox
+-/cabal.sandbox.config
+-/test/cabal.sandbox.config
+-.stack-work
+-#*
+-*#

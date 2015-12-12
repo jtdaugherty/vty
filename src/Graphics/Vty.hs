@@ -10,7 +10,7 @@
 --      - The constructors in "Graphics.Vty.Image.Internal" should not be used.
 --
 --  - 'Image's can be styled using 'Attr'. See "Graphics.Vty.Attributes".
--- 
+--
 -- See the vty-examples package for a number of examples.
 --
 -- @
@@ -28,7 +28,7 @@
 --      'shutdown' vty
 --      'print' (\"Last event was: \" '++' 'show' e)
 -- @
--- 
+--
 -- Good sources of documentation for terminal programming are:
 --
 --  - <https://github.com/b4winckler/vim/blob/master/src/term.c>
@@ -49,7 +49,7 @@ module Graphics.Vty ( Vty(..)
                     , module Graphics.Vty.Output
                     , module Graphics.Vty.Picture
                     , DisplayRegion
-                    ) 
+                    )
     where
 
 import Graphics.Vty.Prelude
@@ -82,7 +82,7 @@ import Data.Monoid
 -- when another update action is already then it's safe to call this on multiple threads.
 --
 -- \todo Remove explicit `shutdown` requirement.
-data Vty = Vty 
+data Vty = Vty
     { -- | Outputs the given Picture. Equivalent to 'outputPicture' applied to a display context
       -- implicitly managed by Vty. The managed display context is reset on resize.
       update :: Picture -> IO ()
@@ -99,7 +99,7 @@ data Vty = Vty
     , refresh :: IO ()
       -- | Clean up after vty.
       -- The above methods will throw an exception if executed after this is executed.
-    , shutdown :: IO () 
+    , shutdown :: IO ()
     }
 
 -- | Set up the state object for using vty.  At most one state object should be
@@ -145,28 +145,28 @@ intMkVty input out = do
             mlastUpdate <- readIORef lastUpdateRef
             updateData <- case mlastUpdate of
                 Nothing -> do
-                    dc <- displayContext out b
-                    outputPicture dc inPic'
+                    let dc = DisplayContext out b
+                    outputPictureToContext dc inPic'
                     return (b, dc)
                 Just (lastBounds, lastContext) -> do
                     if b /= lastBounds
                         then do
-                            dc <- displayContext out b
-                            outputPicture dc inPic'
+                            let dc = DisplayContext out b
+                            outputPictureToContext dc inPic'
                             return (b, dc)
                         else do
-                            outputPicture lastContext inPic'
+                            outputPictureToContext lastContext inPic'
                             return (b, lastContext)
             writeIORef lastUpdateRef $ Just updateData
             writeIORef lastPicRef $ Just inPic'
 
-    let innerRefresh 
+    let innerRefresh
             =   writeIORef lastUpdateRef Nothing
-            >>  readIORef lastPicRef 
-            >>= maybe ( return () ) ( \pic -> innerUpdate pic ) 
+            >>  readIORef lastPicRef
+            >>= maybe ( return () ) ( \pic -> innerUpdate pic )
 
     let gkey = do k <- atomically $ readTChan $ _eventChannel input
-                  case k of 
+                  case k of
                     (EvResize _ _)  -> innerRefresh
                                        >> displayBounds out
                                        >>= return . (\(w,h)-> EvResize w h)
@@ -179,4 +179,3 @@ intMkVty input out = do
                  , refresh = innerRefresh
                  , shutdown = shutdownIo
                  }
-

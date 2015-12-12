@@ -1,0 +1,7 @@
+[submodule "dependencies/win32"]
+	path = dependencies/win32
+	url = git@github.com:coreyoconnor/win32.git
+[submodule "dependencies/ansi-terminal"]
+	path = dependencies/ansi-terminal
+	url = git@github.com:coreyoconnor/ansi-terminal.git
+	branch = master

@@ -1,0 +1,10 @@
+flags: {}
+packages:
+- '.'
+- location: dependencies/ansi-terminal
+  extra-dep: true
+- location: dependencies/win32
+  extra-dep: true
+extra-deps:
+- cabal-test-quickcheck-0.1.6
+resolver: nightly-2015-12-01

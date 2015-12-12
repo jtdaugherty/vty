@@ -10,15 +10,13 @@ import Graphics.Vty.Prelude
 
 import Graphics.Vty.Output.Interface
 
-import Blaze.ByteString.Builder.Word (writeWord8)
-
+import Control.Monad.Operational
 import Control.Monad.Trans
 
-import qualified Data.ByteString as BS
 import Data.IORef
 import qualified Data.String.UTF8 as UTF8
 
-type MockData = IORef (UTF8.UTF8 BS.ByteString)
+type MockData = IORef String
 
 -- | The mock display terminal produces a string representation of the requested picture.  There is
 -- *not* an isomorphism between the string representation and the picture.  The string
@@ -42,29 +40,32 @@ mockTerminal r = liftIO $ do
             , reserveDisplay = return ()
             , releaseDisplay = return ()
             , displayBounds = return r
-            , outputByteBuffer = \bytes -> do
-                putStrLn $ "mock outputByteBuffer of " ++ show (BS.length bytes) ++ " bytes"
-                writeIORef outRef $ UTF8.fromRep bytes
             , contextColorCount = 16
             , supportsCursorVisibility = True
             , assumedStateRef = newAssumedStateRef
-            , mkDisplayContext = \tActual rActual -> return $ DisplayContext
-                { contextRegion = rActual
-                , contextDevice = tActual
-                -- A cursor move is always visualized as the single character 'M'
-                , writeMoveCursor = \_x _y -> writeWord8 $ toEnum $ fromEnum 'M'
-                -- Show cursor is always visualized as the single character 'S'
-                , writeShowCursor =  writeWord8 $ toEnum $ fromEnum 'S'
-                -- Hide cursor is always visualized as the single character 'H'
-                , writeHideCursor = writeWord8 $ toEnum $ fromEnum 'H'
-                -- An attr change is always visualized as the single character 'A'
-                , writeSetAttr = \_fattr _diffs _attr -> writeWord8 $ toEnum $ fromEnum 'A'
-                -- default attr is always visualized as the single character 'D'
-                , writeDefaultAttr = writeWord8 $ toEnum $ fromEnum 'D'
-                -- row end is always visualized as the single character 'E'
-                , writeRowEnd = writeWord8 $ toEnum $ fromEnum 'E'
-                , inlineHack = return ()
-                }
+            , outputDisplayCommands =
+                let out :: String -> IO ()
+                    out str = modifyIORef outRef (++ str)
+                    interpret :: DisplayCommands a -> IO a
+                    interpret = eval . view
+                    eval :: ProgramView DisplayCommand a -> IO a
+                    eval (Return a) = return a
+                    -- A cursor move is always visualized as the single character 'M'
+                    eval (MoveCursor _ _ :>>= cmds') = out "M" >> interpret (cmds' ())
+                    -- An attr change is always visualized as the single character 'A'
+                    eval (SetAttr _ _ _  :>>= cmds') = out "A" >> interpret (cmds' ())
+                    -- Show cursor is always visualized as the single character 'S'
+                    eval (ShowCursor     :>>= cmds') = out "S" >> interpret (cmds' ())
+                    -- Hide cursor is always visualized as the single character 'H'
+                    eval (HideCursor     :>>= cmds') = out "H" >> interpret (cmds' ())
+                    -- row end is always visualized as the single character 'E'
+                    eval (DisplayRowEnd  :>>= cmds') = out "E" >> interpret (cmds' ())
+                    -- default attr is always visualized as the single character 'D'
+                    eval (DefaultAttr    :>>= cmds') = out "D" >> interpret (cmds' ())
+                    -- UTF8 Text is represented as the input text converted to a String
+                    eval (Utf8Text bs    :>>= cmds') =
+                        let str = UTF8.toString $ UTF8.fromRep bs
+                        in out str >> interpret (cmds' ())
+                in \cmds -> liftIO $ writeIORef outRef "" >> interpret cmds
             }
     return (outRef, t)
-

@@ -1,8 +1,9 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
---  | Output interface.
+--  | Terminal Output.
 --
---  Access to the current terminal or a specific terminal device.
+--  Output access to the current terminal or a specific terminal device.
 --
 --  See also:
 --
@@ -11,62 +12,38 @@
 --
 --  2. "Graphics.Vty.Output.Interface": Defines the generic interface all terminals need to implement.
 --
---  3. "Graphics.Vty.Output.TerminfoBased": Defines a terminal instance that uses terminfo for all
+--  3. "Graphics.Vty.Output.Terminfo": Defines a terminal instance that uses terminfo for all
 --  control strings.  No attempt is made to change the character set to UTF-8 for these terminals.
---  I don't know a way to reliably determine if that is required or how to do so.
+--
+--  coconnor: I don't know a way to reliably determine if that is required or how to do so.
 --
 --  4. "Graphics.Vty.Output.XTermColor": This module contains an interface suitable for xterm-like
 --  terminals. These are the terminals where TERM == xterm. This does use terminfo for as many
 --  control codes as possible.
 module Graphics.Vty.Output ( module Graphics.Vty.Output
                            , Output(..) -- \todo hide constructors
+                           , DisplayContext(..)
                            , AssumedState(..)
-                           , DisplayContext(..) -- \todo hide constructors
                            , outputPicture
-                           , displayContext
+                           , outputPictureToContext
+                           , outputForConfig
                            )
     where
 
 import Graphics.Vty.Prelude
 
-import Graphics.Vty.Config
-
 import Graphics.Vty.Output.Interface
-import Graphics.Vty.Output.XTermColor as XTermColor
-import Graphics.Vty.Output.TerminfoBased as TerminfoBased
 
-import Blaze.ByteString.Builder (writeToByteString)
+#ifdef TERMINFO
+import Graphics.Vty.Output.Terminfo
+#endif
 
+#ifdef WINDOWS
+import Graphics.Vty.Output.Windows
+#endif
+
+import Control.Monad.Operational
 import Control.Monad.Trans
-
-import Data.List (isPrefixOf)
-import Data.Monoid ((<>))
-
--- | Returns a `Output` for the terminal specified in `Config`
---
--- The specific Output implementation used is hidden from the API user. All terminal implementations
--- are assumed to perform more, or less, the same. Currently, all implementations use terminfo for at
--- least some terminal specific information.
---
--- Specifics about it being based on terminfo are hidden from the API user. If a terminal
--- implementation is developed for a terminal without terminfo support then Vty should work as
--- expected on that terminal.
---
--- Selection of a terminal is done as follows:
---
---      * If TERM == xterm use XTermColor.
---      * for any other TERM value TerminfoBased is used.
---
--- \todo add an implementation for windows that does not depend on terminfo. Should be installable
--- with only what is provided in the haskell platform. Use ansi-terminal
-outputForConfig :: Config -> IO Output
-outputForConfig Config{ outputFd = Just fd, termName = Just termName, .. } = do
-    t <- if "xterm" `isPrefixOf` termName
-        then XTermColor.reserveTerminal termName fd
-        -- Not an xterm-like terminal. try for generic terminfo.
-        else TerminfoBased.reserveTerminal termName fd
-    return t
-outputForConfig config = (<> config) <$> standardIOConfig >>= outputForConfig
 
 -- | Sets the cursor position to the given output column and row.
 --
@@ -79,19 +56,12 @@ setCursorPos :: MonadIO m => Output -> Int -> Int -> m ()
 setCursorPos t x y = do
     bounds <- displayBounds t
     when (x >= 0 && x < regionWidth bounds && y >= 0 && y < regionHeight bounds) $ do
-        dc <- displayContext t bounds
-        liftIO $ outputByteBuffer t $ writeToByteString $ writeMoveCursor dc x y
+        outputDisplayCommands t $ singleton $ MoveCursor x y
 
 -- | Hides the cursor
 hideCursor :: MonadIO m => Output -> m ()
-hideCursor t = do
-    bounds <- displayBounds t
-    dc <- displayContext t bounds
-    liftIO $ outputByteBuffer t $ writeToByteString $ writeHideCursor dc
+hideCursor t = outputDisplayCommands t $ singleton $ HideCursor
 
 -- | Shows the cursor
 showCursor :: MonadIO m => Output -> m ()
-showCursor t = do
-    bounds <- displayBounds t
-    dc <- displayContext t bounds
-    liftIO $ outputByteBuffer t $ writeToByteString $ writeShowCursor dc
+showCursor t = outputDisplayCommands t $ singleton $ ShowCursor

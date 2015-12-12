@@ -19,7 +19,7 @@ import Data.Monoid
 import Data.String.QQ
 import Data.Word
 
-import Foreign.Marshal.Array 
+import Foreign.Marshal.Array
 
 import qualified System.Environment as Env
 
@@ -31,14 +31,14 @@ main = do
 outputFilePath = "test_results.list"
 
 printIntro = do
-    putStr $ [s| 
+    putStr $ [s|
 This is an interactive verification program for the terminal input and output
 support of the VTY library. This will ask a series of questions about what you
 see on screen. The goal is to verify that VTY's output and input support
 performs as expected with your terminal.
 
-This program produces a file named 
-    |] ++ outputFilePath ++ [s| 
+This program produces a file named
+    |] ++ outputFilePath ++ [s|
 in the current directory that contains the results for each test assertion. This
 can  be emailed to coreyoconnor@gmail.com and used by the VTY authors to improve
 support for your terminal. No personal information is contained in the report.
@@ -50,19 +50,19 @@ Each test follows, more or less, the following format:
     1. The program will produce some output or ask for you to press a key.
     2. You will then be asked to confirm if the behavior matched the provided
     description.  Just pressing enter implies the default response that
-    everything was as expected. 
+    everything was as expected.
 
 All the tests assume the following about the terminal display:
-    0. The terminal display will not be resized during a test and is at least 80 
-    characters in width. 
+    0. The terminal display will not be resized during a test and is at least 80
+    characters in width.
     1. The terminal display is using a monospaced font for both single width and
     double width characters.
-    2. A double width character is displayed with exactly twice the width of a 
+    2. A double width character is displayed with exactly twice the width of a
     single column character. This may require adjusting the font used by the
-    terminal. At least, that is the case using xterm. 
+    terminal. At least, that is the case using xterm.
     3. Fonts are installed, and usable by the terminal, that define glyphs for
     a good range of the unicode characters. Each test involving unicode display
-    describes the expected appearance of each glyph. 
+    describes the expected appearance of each glyph.
 
 Thanks for the help! :-D
 To exit the test early enter "q" anytime at the following menu screen.
@@ -74,12 +74,12 @@ with the test_results.list file pasted into the issue. A suitable summary is:
 |]
     waitForReturn
     results <- doTestMenu 1
-    envAttributes <- mapM ( \envName -> Control.Exception.catch ( Env.getEnv envName >>= return . (,) envName ) 
-                                                ( \ (_ :: SomeException) -> return (envName, "") ) 
-                          ) 
+    envAttributes <- mapM ( \envName -> Control.Exception.catch ( Env.getEnv envName >>= return . (,) envName )
+                                                ( \ (_ :: SomeException) -> return (envName, "") )
+                          )
                           [ "TERM", "COLORTERM", "LANG", "TERM_PROGRAM", "XTERM_VERSION" ]
     t <- standardIOConfig >>= outputForConfig
-    let resultsTxt = show envAttributes ++ "\n" 
+    let resultsTxt = show envAttributes ++ "\n"
                      ++ terminalID t ++ "\n"
                      ++ show results ++ "\n"
     releaseTerminal t
@@ -94,7 +94,7 @@ testMenu :: [(String, Test)]
 testMenu = zip (map show [1..]) allTests
 
 doTestMenu :: Int -> IO [(String, Bool)]
-doTestMenu nextID 
+doTestMenu nextID
     | nextID > length allTests = do
         putStrLn $ "Done! Please email the " ++ outputFilePath ++ " file to coreyoconnor@gmail.com"
         return []
@@ -108,26 +108,26 @@ doTestMenu nextID
         s <- getLine >>= return . filter (/= '\n')
         case s of
             "q" -> return mempty
-            "" -> do 
-                r <- runTest $ show nextID 
+            "" -> do
+                r <- runTest $ show nextID
                 rs <- doTestMenu ( nextID + 1 )
                 return $ r : rs
             i | isJust ( lookup i testMenu ) -> do
-                r <- runTest i 
+                r <- runTest i
                 rs <- doTestMenu ( read i + 1 )
                 return $ r : rs
         where
-            displayTestMenu 
+            displayTestMenu
                 = mapM_ displayTestMenu' testMenu
-            displayTestMenu' ( i, t ) 
-                = putStrLn $ ( if i == show nextID 
-                                then "> " 
+            displayTestMenu' ( i, t )
+                = putStrLn $ ( if i == show nextID
+                                then "> "
                                 else "  "
                              ) ++ i ++ ". " ++ testName t
 
 runTest :: String -> IO (String, Bool)
 runTest i = do
-    let t = fromJust $ lookup i testMenu 
+    let t = fromJust $ lookup i testMenu
     printSummary t
     waitForReturn
     testAction t
@@ -153,8 +153,8 @@ data Test = Test
     , confirmResults :: IO Bool
     }
 
-allTests 
-    = [ reserveOutputTest 
+allTests
+    = [ reserveOutputTest
       , displayBoundsTest0
       , displayBoundsTest1
       , displayBoundsTest2
@@ -185,7 +185,7 @@ allTests
       , layer1
       ]
 
-reserveOutputTest = Test 
+reserveOutputTest = Test
     { testName = "Initialize and reserve terminal output then restore previous state."
     , testID = "reserveOutputTest"
     , testAction = do
@@ -203,7 +203,7 @@ reserveOutputTest = Test
     , printSummary = do
         putStr $ [s|
 Once return is pressed:
-    0. The screen will be cleared. 
+    0. The screen will be cleared.
     1. Four lines of text should be visible.
     1. The cursor should be visible and at the start of the fifth line.
 
@@ -281,8 +281,8 @@ displayBoundsTest2 = Test
             endRow = firstRow
             image = firstRow <-> middleRows <-> endRow
             pic = (picForImage image) { picCursor = Cursor (w - 1) (h - 1) }
-        d <- displayContext t bounds
-        outputPicture d pic
+        let dc = DisplayContext t bounds
+        outputPictureToContext dc pic
         getLine
         releaseDisplay t
         releaseTerminal t
@@ -332,7 +332,7 @@ Once return is pressed:
         else putStr "    1. The cursor will NOT be visible."
     putStr [s|
 
-    2. The border of the display will be outlined in Xs. 
+    2. The border of the display will be outlined in Xs.
        So if - and | represented the edge of the terminal window:
          |-------------|
          |XXXXXXXXXXXXX|
@@ -391,7 +391,7 @@ utf8Txt0 = [ [ 0xe2 , 0x86 , 0x91 ]
 
 iso10646Txt0 :: String
 iso10646Txt0 = map toEnum
-    [ 8593 
+    [ 8593
     , 8593
     , 8595
     , 8595
@@ -432,8 +432,7 @@ unicodeSingleWidth1 = Test
             image = line0 <-> line1
             line0 = iso10646String defAttr iso10646Txt0
             line1 = string defAttr "0123456789"
-        d <- displayBounds t >>= displayContext t
-        outputPicture d pic
+        outputPicture t pic
         getLine
         releaseDisplay t
         releaseTerminal t
@@ -463,10 +462,10 @@ Once return is pressed:
             | 8      | B             |
             | 9      | A             |
             ( see: http://en.wikipedia.org/wiki/Arrow_(symbol) )
-        b. The second will be: 0123456789. 
+        b. The second will be: 0123456789.
 
-Verify: 
-    * The far right extent of the glyphs on both lines are equal; 
+Verify:
+    * The far right extent of the glyphs on both lines are equal;
     * The glyphs are as described.
 
 After return is pressed for the second time:
@@ -514,8 +513,7 @@ unicodeDoubleWidth1 = Test
             image = line0 <-> line1
             line0 = iso10646String defAttr iso10646Txt1
             line1 = string defAttr "012345"
-        d <- displayBounds t >>= displayContext t
-        outputPicture d pic
+        outputPicture t pic
         getLine
         releaseDisplay t
         releaseTerminal t
@@ -540,10 +538,10 @@ Once return is pressed:
             | 3      | second half of hao3       |
             | 4      | first half of ma          |
             | 5      | second half of ma         |
-        b. The second will be: 012345. 
+        b. The second will be: 012345.
 
-Verify: 
-    * The far right extent of the glyphs on both lines are equal; 
+Verify:
+    * The far right extent of the glyphs on both lines are equal;
     * The glyphs are as described.
 
 After return is pressed for the second time:
@@ -554,11 +552,11 @@ After return is pressed for the second time:
 allColors = zip [ black, red, green, yellow, blue, magenta, cyan, white ]
                 [ "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white" ]
 
-allBrightColors 
+allBrightColors
     = zip [ brightBlack, brightRed, brightGreen, brightYellow, brightBlue, brightMagenta, brightCyan, brightWhite ]
           [ "bright black", "bright red", "bright green", "bright yellow", "bright blue", "bright magenta", "bright cyan", "bright white" ]
 
-attributesTest0 = Test 
+attributesTest0 = Test
     { testName = "Character attributes: foreground colors."
     , testID = "attributesTest0"
     , testAction = do
@@ -570,8 +568,7 @@ attributesTest0 = Test
             border = vertCat $ replicate (length allColors) $ string defAttr " | "
             column1 = vertCat $ map (string defAttr . snd) allColors
             lineWithColor (c, cName) = string (defAttr `withForeColor` c) cName
-        d <- displayBounds t >>= displayContext t
-        outputPicture d pic
+        outputPicture t pic
         getLine
         releaseDisplay t
         releaseTerminal t
@@ -587,7 +584,7 @@ Once return is pressed:
     rendered in the magenta color. The second column will be the name of a
     standard color rendered with the default attributes.
 
-Verify: 
+Verify:
     * In the first column: The foreground color matches the named color.
     * The second column: All text is rendered with the default attributes.
     * The vertical bars used in each line to mark the border of a column are
@@ -604,7 +601,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
-attributesTest1 = Test 
+attributesTest1 = Test
     { testName = "Character attributes: background colors."
     , testID = "attributesTest1"
     , testAction = do
@@ -616,8 +613,7 @@ attributesTest1 = Test
             border = vertCat $ replicate (length allColors) $ string defAttr " | "
             column1 = vertCat $ map (string defAttr . snd) allColors
             lineWithColor (c, cName) = string (defAttr `withBackColor` c) cName
-        d <- displayBounds t >>= displayContext t
-        outputPicture d pic
+        outputPicture t pic
         getLine
         releaseDisplay t
         releaseTerminal t
@@ -635,7 +631,7 @@ Once return is pressed:
     second column will be the name of a standard color rendered with the default
     attributes.
 
-Verify: 
+Verify:
     * The first column: The background color matches the named color.
     * The second column: All text is rendered with the default attributes.
     * The vertical bars used in each line to mark the border of a column are
@@ -659,7 +655,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
-attributesTest2 = Test 
+attributesTest2 = Test
     { testName = "Character attributes: Vivid foreground colors."
     , testID = "attributesTest2"
     , testAction = do
@@ -673,8 +669,7 @@ attributesTest2 = Test
             column2 = vertCat $ map (string defAttr . snd) allColors
             lineWithColor0 (c, cName) = string (defAttr `withForeColor` c) cName
             lineWithColor1 (c, cName) = string (defAttr `withForeColor` c) cName
-        d <- displayBounds t >>= displayContext t
-        outputPicture d pic
+        outputPicture t pic
         getLine
         releaseDisplay t
         releaseTerminal t
@@ -686,23 +681,23 @@ Once return is pressed:
     1. The cursor will be hidden.
     2. 9 lines of text in three columns will be drawn:
         a. The first column will be a name of a standard color (for an 8 color
-        terminal) rendered with that color as the foreground color.  
+        terminal) rendered with that color as the foreground color.
         b. The next column will be also be the name of a standard color rendered
         with that color as the foreground color but the shade used should be
-        more vivid than the shade used in the first column.    
+        more vivid than the shade used in the first column.
         c. The final column will be the name of a color rendered with the
         default attributes.
 
 For instance, one line will be the word "magenta" and that word should be
-rendered in the magenta color. 
+rendered in the magenta color.
 
 I'm not actually sure exactly what "vivid" means in this context. For xterm the
-vivid colors are brighter.  
+vivid colors are brighter.
 
-Verify: 
+Verify:
     * The first column: The foreground color matches the named color.
     * The second column: The foreground color matches the named color but is
-    more vivid than the color used in the first column.  
+    more vivid than the color used in the first column.
     * The third column: All text is rendered with the default attributes.
     * The vertical bars used in each line to mark the border of a column are
     lined up.
@@ -718,7 +713,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
-attributesTest3 = Test 
+attributesTest3 = Test
     { testName = "Character attributes: Vivid background colors."
     , testID = "attributesTest3"
     , testAction = do
@@ -732,8 +727,7 @@ attributesTest3 = Test
             column2 = vertCat $ map (string defAttr . snd) allColors
             lineWithColor0 (c, cName) = string (defAttr `withBackColor` c) cName
             lineWithColor1 (c, cName) = string (defAttr `withBackColor` c) cName
-        d <- displayBounds t >>= displayContext t
-        outputPicture d pic
+        outputPicture t pic
         getLine
         releaseDisplay t
         releaseTerminal t
@@ -746,23 +740,23 @@ Once return is pressed:
     2. 9 lines of text in three columns will be drawn:
         a. The first column will contain be a name of a standard color for an 8
         color terminal rendered with the default foreground color with a
-        background the named color.  
+        background the named color.
         b. The first column will contain be a name of a standard color for an 8
         color terminal rendered with the default foreground color with the
-        background a vivid version of the named color. 
+        background a vivid version of the named color.
         c. The third column will be the name of a standard color rendered with
         the default attributes.
-        
+
 For instance, one line will contain be the word "magenta" and the word should
-be rendered in the default foreground color over a magenta background. 
+be rendered in the default foreground color over a magenta background.
 
 I'm not actually sure exactly what "vivid" means in this context. For xterm the
 vivid colors are brighter.
 
-Verify: 
+Verify:
     * The first column: The background color matches the named color.
     * The second column: The background color matches the named color and is
-    more vivid than the color used in the first column.  
+    more vivid than the color used in the first column.
     * The third column column: All text is rendered with the default attributes.
     * The vertical bars used in each line to mark the border of a column are
     lined up.
@@ -785,7 +779,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
-attrCombos = 
+attrCombos =
     [ ( "default", id )
     , ( "bold", flip withStyle bold )
     , ( "blink", flip withStyle blink )
@@ -796,7 +790,7 @@ attrCombos =
     , ( "bold + blink + underline", flip withStyle (bold + blink + underline) )
     ]
 
-attributesTest4 = Test 
+attributesTest4 = Test
     { testName = "Character attributes: Bold; Blink; Underline."
     , testID = "attributesTest4"
     , testAction = do
@@ -808,8 +802,7 @@ attributesTest4 = Test
             column0 = vertCat $ map lineWithAttrs attrCombos
             column1 = vertCat $ map (string defAttr . fst) attrCombos
             lineWithAttrs (desc, attrF) = string (attrF defAttr) desc
-        d <- displayBounds t >>= displayContext t
-        outputPicture d pic
+        outputPicture t pic
         getLine
         releaseDisplay t
         releaseTerminal t
@@ -819,10 +812,10 @@ attributesTest4 = Test
 Once return is pressed:
     0. The screen will be cleared.
     1. The cursor will be hidden.
-    2. 8 rows of text in two columns. 
+    2. 8 rows of text in two columns.
     The rows will contain the following text:
         default
-        bold 
+        bold
         blink
         underline
         bold + blink
@@ -831,8 +824,8 @@ Once return is pressed:
         bold + blink + underline
     The first column will be rendered with the described attributes. The second
     column will be rendered with the default attributes.
-        
-Verify: 
+
+Verify:
     * The vertical bars used in each line to mark the border of a column are
     lined up.
     * The text in the first column is rendered as described.
@@ -848,7 +841,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
-attributesTest5 = Test 
+attributesTest5 = Test
     { testName = "Character attributes: 240 color palette"
     , testID = "attributesTest5"
     , testAction = do
@@ -859,8 +852,7 @@ attributesTest5 = Test
             colorImages = map (\i -> string (currentAttr `withBackColor` Color240 i) " ") [0..239]
             splitColorImages [] = []
             splitColorImages is = (take 20 is ++ [string defAttr " "]) : (splitColorImages (drop 20 is))
-        d <- displayBounds t >>= displayContext t
-        outputPicture d pic
+        outputPicture t pic
         getLine
         releaseDisplay t
         releaseTerminal t
@@ -873,7 +865,7 @@ Once return is pressed:
     2. A 20 character wide and 12 row high block of color squares. This should look like a palette
     of some sort. I'm not exactly sure if all color terminals use the same palette. I doubt it...
 
-Verify: 
+Verify:
 
 After return is pressed for the second time:
     0. The screen containing the test summary should be restored.
@@ -965,13 +957,12 @@ outputPicAndWait :: Picture -> IO ()
 outputPicAndWait pic = do
     t <- standardIOConfig >>= outputForConfig
     reserveDisplay t
-    d <- displayBounds t >>= displayContext t
-    outputPicture d pic
+    outputPicture t pic
     getLine
     releaseDisplay t
     releaseTerminal t
     return ()
-    
+
 vertCropTest0 :: Test
 vertCropTest0 = Test
     { testName = "Verify bottom cropping works as expected with single column chars"
@@ -1046,7 +1037,7 @@ horizCropTest0 = Test
     , testID = "cropTest0"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsum
-            croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage 
+            croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage
             image = baseImage <-> backgroundFill 10 2 <-> croppedImage
         outputImageAndWait image
     , printSummary = putStr $ [s|
@@ -1063,7 +1054,7 @@ horizCropTest1 = Test
     , testID = "cropTest0"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsumChinese
-            croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage 
+            croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage
             image = baseImage <-> backgroundFill 10 2 <-> croppedImage
         outputImageAndWait image
     , printSummary = putStr $ [s|
@@ -1080,7 +1071,7 @@ horizCropTest2 = Test
     , testID = "cropTest0"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsum
-            croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage 
+            croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage
             image = baseImage <-> backgroundFill 10 2 <-> croppedImage
         outputImageAndWait image
     , printSummary = putStr $ [s|
@@ -1097,7 +1088,7 @@ horizCropTest3 = Test
     , testID = "cropTest0"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsumChinese
-            croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage 
+            croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage
             image = baseImage <-> backgroundFill 10 2 <-> croppedImage
         outputImageAndWait image
     , printSummary = putStr $ [s|
@@ -1149,21 +1140,21 @@ cheesyAnim0 i background = do
     t <- standardIOConfig >>= outputForConfig
     reserveDisplay t
     bounds <- displayBounds t
-    d <- displayContext t bounds
+    let d = DisplayContext t bounds
     forM_ [0..2] $ \t -> do
       forM_ [0..100] $ \t -> do
         let i_offset = translate (t `mod` fst bounds)
                                  (t `div` 2 `mod` snd bounds)
                                  i
         let pic = picForLayers $ i_offset : background
-        outputPicture d pic
+        outputPictureToContext d pic
         threadDelay 50000
       forM_ [0..100] $ \t -> do
         let i_offset = translate (t * (-1) `mod` fst bounds)
                                  (t * (-1) `div` 2 `mod` snd bounds)
                                  i
         let pic = picForLayers $ i_offset : background
-        outputPicture d pic
+        outputPictureToContext d pic
         threadDelay 50000
     releaseDisplay t
     releaseTerminal t
@@ -1190,4 +1181,3 @@ lorumIpsumChinese = lines [s|
 鬎鯪, 鐩闤 硻禂稢 谾踘遳 撱 赲 迡 箷 蛃袚觙 萇雊蜩 壿嫷 鋡 縢羱聬 跐鉠鉣 蔝蓶蓨 匢奾灱 溮煡煟 雥齆犪
 蔰 虈觿, 腷腯葹 鍹餳駷 蛚袲褁蜸 皯竻 瀁瀎 蜭蜸覟 梪涫湴 揗斝湁 毼
 |]
-

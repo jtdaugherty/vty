@@ -93,7 +93,7 @@ data Attr = Attr
 
 instance Monoid Attr where
     mempty = Attr mempty mempty mempty
-    mappend attr0 attr1 = 
+    mappend attr0 attr1 =
         Attr ( attrStyle attr0     `mappend` attrStyle attr1 )
              ( attrForeColor attr0 `mappend` attrForeColor attr1 )
              ( attrBackColor attr0 `mappend` attrBackColor attr1 )
@@ -102,7 +102,7 @@ instance Monoid Attr where
 -- the previously applied display attribute. The display attributes can still depend on the
 -- terminal's default colors (unfortunately).
 data FixedAttr = FixedAttr
-    { fixedStyle :: !Style
+    { fixedStyle     :: !Style
     , fixedForeColor :: !(Maybe Color)
     , fixedBackColor :: !(Maybe Color)
     } deriving ( Eq, Show )
@@ -141,7 +141,7 @@ magenta= ISOColor 5
 cyan   = ISOColor 6
 white  = ISOColor 7
 
--- | Bright/Vivid variants of the standard 8-color ANSI 
+-- | Bright/Vivid variants of the standard 8-color ANSI
 brightBlack, brightRed, brightGreen, brightYellow :: Color
 brightBlue, brightMagenta, brightCyan, brightWhite :: Color
 brightBlack  = ISOColor 8
@@ -176,7 +176,7 @@ type Style = Word8
 standout, underline, reverseVideo, blink, dim, bold :: Style
 standout        = 0x01
 underline       = 0x02
-reverseVideo   = 0x04
+reverseVideo    = 0x04
 blink           = 0x08
 dim             = 0x10
 bold            = 0x20
@@ -185,7 +185,7 @@ defaultStyleMask :: Style
 defaultStyleMask = 0x00
 
 styleMask :: Attr -> Word8
-styleMask attr 
+styleMask attr
     = case attrStyle attr of
         Default  -> 0
         KeepCurrent -> 0
@@ -224,4 +224,3 @@ instance Default Attr where
 -- set to brightMagenta.
 currentAttr :: Attr
 currentAttr = Attr KeepCurrent KeepCurrent KeepCurrent
-

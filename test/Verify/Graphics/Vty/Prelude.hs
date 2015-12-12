@@ -20,7 +20,6 @@ instance Show EmptyWindow where
 
 instance Arbitrary MockWindow where
     arbitrary = do
-        w <- choose (1,1024)
-        h <- choose (1,1024)
+        w <- choose (1,200)
+        h <- choose (1,200)
         return $ MockWindow w h
-

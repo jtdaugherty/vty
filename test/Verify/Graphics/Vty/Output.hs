@@ -15,7 +15,7 @@ import Test.QuickCheck.Property
 -- not be supported were removed. Then a few more were pruned until a reasonable looking set was
 -- made.
 terminalsOfInterest :: [String]
-terminalsOfInterest = 
+terminalsOfInterest =
     [ "vt100"
     , "vt220"
     , "vt102"
@@ -51,11 +51,10 @@ terminalsOfInterest =
 
 compareMockOutput :: MockData -> String -> IO Result
 compareMockOutput mockData expectedStr = do
-    outStr <- UTF8.toString <$> readIORef mockData
+    outStr <- readIORef mockData
     if outStr /=  expectedStr
         then return $ failed { reason = "bytes\n" ++ outStr
                                       ++ "\nare not the expected bytes\n"
                                       ++ expectedStr
                              }
         else return succeeded
-

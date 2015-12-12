@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE KindSignatures #-}
--- | A 'Config' can be provided to mkVty to customize the applications use of vty. A config file can
+-- | A 'Config' can be provided to mkVty to customize the application's use of vty. A config file can
 -- be used to customize vty for a user's system.
 --
 -- The 'Config' provided is mappend'd to 'Config's loaded from @'getAppUserDataDirectory'/config@
@@ -12,8 +12,11 @@
 -- Lines in config files that fail to parse are ignored.  Later entries take precedence over
 -- earlier.
 --
+-- The config interface does not depend on the supported frontends. Config settings that are not
+-- applicable to the selected frontend are silently ignored.
+--
 -- For all directives:
--- 
+--
 -- @
 --  string := \"\\\"\" chars+ \"\\\"\"
 -- @
@@ -39,7 +42,7 @@
 --
 -- @
 --  \"map\" term string key modifier_list
---  where 
+--  where
 --      key := KEsc | KChar Char | KBS ... (same as 'Key')
 --      modifier_list := \"[\" modifier+ \"]\"
 --      modifier := MShift | MCtrl | MMeta | MAlt
@@ -66,6 +69,8 @@
 --
 module Graphics.Vty.Config where
 
+import Graphics.Vty.Input.Events
+
 #if __GLASGOW_HASKELL__ > 704
 import Prelude
 #else
@@ -83,12 +88,9 @@ import qualified Data.ByteString as BS
 import Data.Default
 import Data.Monoid
 
-import Graphics.Vty.Input.Events
-
 import System.Directory (getAppUserDataDirectory)
-import System.Posix.Env (getEnv)
-import System.Posix.IO (stdInput, stdOutput)
-import System.Posix.Types (Fd(..))
+import System.Environment
+import System.PosixCompat.Types (Fd(..))
 
 import Text.Parsec hiding ((<|>))
 import Text.Parsec.Token ( GenLanguageDef(..) )
@@ -101,23 +103,30 @@ type InputMap = [(Maybe String, String, Event)]
 data Config = Config
     {
     -- | The default is 1 character.
-      vmin  :: Maybe Int
+    -- Only supported on the terminfo output interface.
+      vmin     :: Maybe Int
     -- | The default is 100 milliseconds, 0.1 seconds.
-    , vtime :: Maybe Int
+    -- Only supported on the terminfo output interface.
+    , vtime    :: Maybe Int
     -- | Debug information is appended to this file if not Nothing.
-    , debugLog           :: Maybe FilePath
+    , debugLog :: Maybe FilePath
     -- | The (input byte, output event) pairs extend the internal input table of VTY and the table
     -- from terminfo.
     --
     -- See "Graphics.Vty.Config" module documentation for documentation of the @map@ directive.
-    , inputMap           :: InputMap
-    -- | The input file descriptor to use. The default is 'System.Posix.IO.stdInput'
-    , inputFd           :: Maybe Fd
-    -- | The output file descriptor to use. The default is 'System.Posix.IO.stdOutput'
-    , outputFd          :: Maybe Fd
+    , inputMap :: InputMap
+    -- | The input file descriptor to use. If None then the default is used.
+    -- The default depends on the selected output interface.
+    -- If Some then use of Terminfo based input is required.
+    , inputFd  :: Maybe Fd
+    -- | The output file descriptor to use. If None then the default is used. The default depends
+    -- on the selected output interface.
+    -- If Some then use of Terminfo based output is required.
+    , outputFd :: Maybe Fd
     -- | The terminal name used to look up terminfo capabilities.
     -- The default is the value of the TERM environment variable.
-    , termName           :: Maybe String
+    -- TODO: Support Win32 Console selection via termName?
+    , termName :: Maybe String
     } deriving (Show, Eq)
 
 instance Default Config where
@@ -146,28 +155,24 @@ instance Monoid Config where
 
 type ConfigParser s a = ParsecT s () (Writer Config) a
 
+-- | For backwards compatability with vty 5.x.
+standardIOConfig :: IO Config
+standardIOConfig = userConfig
+
 -- | Config from @'getAppUserDataDirectory'/config@ and @$VTY_CONFIG_FILE@
 userConfig :: IO Config
 userConfig = do
     configFile <- (mappend <$> getAppUserDataDirectory "vty" <*> pure "/config") >>= parseConfigFile
-    overrideConfig <- maybe (return def) parseConfigFile =<< getEnv "VTY_CONFIG_FILE"
+    -- lookup + getEnvironment for Windows portability.
+    overrideConfig <- maybe (return def) parseConfigFile =<< (lookup "VTY_CONFIG_FILE" <$> getEnvironment)
     let base = configFile <> overrideConfig
     mappend base <$> overrideEnvConfig
 
 overrideEnvConfig :: IO Config
 overrideEnvConfig = do
-    d <- getEnv "VTY_DEBUG_LOG"
+    -- lookup + getEnvironment for Windows portability.
+    d <- lookup "VTY_DEBUG_LOG" <$> getEnvironment
     return $ def { debugLog = d }
-
-standardIOConfig :: IO Config
-standardIOConfig = do
-    Just t <- getEnv "TERM"
-    return $ def { vmin = Just 1
-                 , vtime = Just 100
-                 , inputFd = Just stdInput
-                 , outputFd = Just stdOutput
-                 , termName = Just t
-                 }
 
 parseConfigFile :: FilePath -> IO Config
 parseConfigFile path = do

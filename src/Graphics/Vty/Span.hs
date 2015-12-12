@@ -27,11 +27,14 @@ import qualified Data.Vector as Vector
 
 -- | This represents an operation on the terminal. Either an attribute change or the output of a
 -- text string.
+--
+-- TODO: the `DisplayCommand` operations appear to be a superset of these.
+-- TODO: look into transforming this into an operational monad
 data SpanOp =
     -- | a span of UTF-8 text occupies a specific number of screen space columns. A single UTF
     -- character does not necessarially represent 1 colunm. See Codec.Binary.UTF8.Width
     -- TextSpan [Attr] [output width in columns] [number of characters] [data]
-      TextSpan 
+      TextSpan
       { textSpanAttr :: !Attr
       , textSpanOutputWidth :: !Int
       , textSpanCharWidth :: !Int
@@ -48,16 +51,17 @@ data SpanOp =
     | RowEnd !Int
     deriving Eq
 
--- | vector of span operations. executed in succession. This represents the operations required to
--- render a row of the terminal. The operations in one row may effect subsequent rows.
+-- | The operations required to render a row of the terminal.
+-- The changes to terminal state in one row will persist to effect subsequent rows.
+--
 -- EG: Setting the foreground color in one row will effect all subsequent rows until the foreground
 -- color is changed.
-type SpanOps = Vector SpanOp
+type RowOps = Vector SpanOp
 
-dropOps :: Int -> SpanOps -> SpanOps
+dropOps :: Int -> RowOps -> RowOps
 dropOps w = snd . splitOpsAt w
 
-splitOpsAt :: Int -> SpanOps -> (SpanOps, SpanOps)
+splitOpsAt :: Int -> RowOps -> (RowOps, RowOps)
 splitOpsAt inW inOps = splitOpsAt' inW inOps
     where
         splitOpsAt' 0 ops = (Vector.empty, ops)
@@ -89,10 +93,10 @@ splitOpsAt inW inOps = splitOpsAt' inW inOps
                      , Vector.cons (Skip (w - remainingColumns)) (Vector.tail ops)
                      )
             RowEnd _ -> error "cannot split ops containing a row end"
-        
 
--- | vector of span operation vectors for display. One per row of the output region.
-type DisplayOps = Vector SpanOps
+
+-- | An array of `RowOps`. One per row of the output region.
+type DisplayOps = Vector RowOps
 
 instance Show SpanOp where
     show (TextSpan attr ow cw _) = "TextSpan(" ++ show attr ++ ")(" ++ show ow ++ ", " ++ show cw ++ ")"
@@ -101,9 +105,9 @@ instance Show SpanOp where
 
 -- | Number of columns the DisplayOps are defined for
 --
--- All spans are verified to define same number of columns. See: VerifySpanOps
+-- All spans are verified to define same number of columns. See: VerifyRowOps
 displayOpsColumns :: DisplayOps -> Int
-displayOpsColumns ops 
+displayOpsColumns ops
     | Vector.length ops == 0 = 0
     | otherwise              = Vector.length $ Vector.head ops
 
@@ -114,13 +118,13 @@ displayOpsRows ops = Vector.length ops
 effectedRegion :: DisplayOps -> DisplayRegion
 effectedRegion ops = (displayOpsColumns ops, displayOpsRows ops)
 
--- | The number of columns a SpanOps effects.
-spanOpsEffectedColumns :: SpanOps -> Int
-spanOpsEffectedColumns inOps = Vector.foldl' spanOpsEffectedColumns' 0 inOps
-    where 
-        spanOpsEffectedColumns' t (TextSpan _ w _ _ ) = t + w
-        spanOpsEffectedColumns' t (Skip w) = t + w
-        spanOpsEffectedColumns' t (RowEnd w) = t + w
+-- | The number of columns a RowOps effects.
+rowOpsEffectedColumns :: RowOps -> Int
+rowOpsEffectedColumns inOps = Vector.foldl' rowOpsEffectedColumns' 0 inOps
+    where
+        rowOpsEffectedColumns' t (TextSpan _ w _ _ ) = t + w
+        rowOpsEffectedColumns' t (Skip w) = t + w
+        rowOpsEffectedColumns' t (RowEnd w) = t + w
 
 -- | The width of a single SpanOp in columns
 spanOpHasWidth :: SpanOp -> Maybe (Int, Int)
@@ -135,4 +139,3 @@ columnsToCharOffset cx (TextSpan _ _ _ utf8Str) =
     in wcswidth (take cx str)
 columnsToCharOffset cx (Skip _) = cx
 columnsToCharOffset cx (RowEnd _) = cx
-

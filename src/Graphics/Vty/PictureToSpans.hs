@@ -41,9 +41,9 @@ import qualified Data.Text.Lazy as TL
 import Data.Monoid (mappend)
 #endif
 
-type MRowOps s = MVector s SpanOps
+type MDisplayOps s = MVector s RowOps
 
-type MSpanOps s = MVector s SpanOp
+type MRowOps s = MVector s SpanOp
 
 -- transform plus clip. More or less.
 data BlitState = BlitState
@@ -69,7 +69,7 @@ makeLenses ''BlitState
 
 data BlitEnv s = BlitEnv
     { _region :: DisplayRegion
-    , _mrowOps :: MRowOps s
+    , _mrowOps :: MDisplayOps s
     }
 
 makeLenses ''BlitEnv
@@ -91,7 +91,7 @@ displayOpsForImage i = displayOpsForPic (picForImage i) (imageWidth i, imageHeig
 --
 -- TODO: a fold over a builder function. start with span ops that are a bg fill of the entire
 -- region.
-combinedOpsForLayers :: Picture -> DisplayRegion -> ST s (MRowOps s)
+combinedOpsForLayers :: Picture -> DisplayRegion -> ST s (MDisplayOps s)
 combinedOpsForLayers pic r
     | regionWidth r == 0 || regionHeight r == 0 = MVector.new 0
     | otherwise = do
@@ -105,7 +105,7 @@ combinedOpsForLayers pic r
                 ops <- foldM mergeUnder topOps lowerOps
                 substituteSkips (picBackground pic) ops
 
-substituteSkips :: Background -> MRowOps s -> ST s (MRowOps s)
+substituteSkips :: Background -> MDisplayOps s -> ST s (MDisplayOps s)
 substituteSkips ClearBackground ops = do
     forM_ [0 .. MVector.length ops - 1] $ \row -> do
         rowOps <- MVector.read ops row
@@ -138,7 +138,7 @@ substituteSkips (Background {backgroundChar, backgroundAttr}) ops = do
                     MVector.write ops row rowOps'
     return ops
 
-mergeUnder :: MRowOps s -> MRowOps s -> ST s (MRowOps s)
+mergeUnder :: MDisplayOps s -> MDisplayOps s -> ST s (MDisplayOps s)
 mergeUnder upper lower = do
     forM_ [0 .. MVector.length upper - 1] $ \row -> do
         upperRowOps <- MVector.read upper row
@@ -148,12 +148,12 @@ mergeUnder upper lower = do
     return upper
 
 -- fugly
-mergeRowUnder :: SpanOps -> SpanOps -> SpanOps
+mergeRowUnder :: RowOps -> RowOps -> RowOps
 mergeRowUnder upperRowOps lowerRowOps =
     onUpperOp Vector.empty (Vector.head upperRowOps) (Vector.tail upperRowOps) lowerRowOps
     where
         -- H: it will never be the case that we are out of upper ops before lower ops.
-        onUpperOp :: SpanOps -> SpanOp -> SpanOps -> SpanOps -> SpanOps
+        onUpperOp :: RowOps -> SpanOp -> RowOps -> RowOps -> RowOps
         onUpperOp outOps op@(TextSpan _ w _ _) upperOps lowerOps =
             let lowerOps' = dropOps w lowerOps
                 outOps' = Vector.snoc outOps op
@@ -169,13 +169,13 @@ mergeRowUnder upperRowOps lowerRowOps =
         onUpperOp _ (RowEnd _) _ _ = error "cannot merge rows containing RowEnd ops"
 
 
-swapSkipsForSingleColumnCharSpan :: Char -> Attr -> SpanOps -> SpanOps
+swapSkipsForSingleColumnCharSpan :: Char -> Attr -> RowOps -> RowOps
 swapSkipsForSingleColumnCharSpan c a = Vector.map f
     where f (Skip ow) = let txt = TL.pack $ replicate ow c
                         in TextSpan a ow ow txt
           f v = v
 
-swapSkipsForCharSpan :: Int -> Char -> Attr -> SpanOps -> SpanOps
+swapSkipsForCharSpan :: Int -> Char -> Attr -> RowOps -> RowOps
 swapSkipsForCharSpan w c a = Vector.map f
     where
         f (Skip ow) = let txt0Cw = ow `div` w
@@ -192,13 +192,13 @@ swapSkipsForCharSpan w c a = Vector.map f
 -- Crops to the given display region.
 --
 -- \todo I'm pretty sure there is an algorithm that does not require a mutable buffer.
-buildSpans :: Image -> DisplayRegion -> ST s (MRowOps s)
+buildSpans :: Image -> DisplayRegion -> ST s (MDisplayOps s)
 buildSpans image outRegion = do
     -- First we create a mutable vector for each rows output operations.
     outOps <- MVector.replicate (regionHeight outRegion) Vector.empty
     -- \todo I think building the span operations in display order would provide better performance.
     -- However, I got stuck trying to implement an algorithm that did this. This will be considered
-    -- as a possible future optimization. 
+    -- as a possible future optimization.
     --
     -- A depth first traversal of the image is performed.  ordered according to the column range
     -- defined by the image from least to greatest.  The output row ops will at least have the
@@ -206,7 +206,7 @@ buildSpans image outRegion = do
     -- all unspecified columns.
     --
     -- The images are made into span operations from left to right. It's possible that this could
-    -- easily be made to assure top to bottom output as well. 
+    -- easily be made to assure top to bottom output as well.
     when (regionHeight outRegion > 0 && regionWidth outRegion > 0) $ do
         -- The ops builder recursively descends the image and outputs span ops that would
         -- display that image. The number of columns remaining in this row before exceeding the
@@ -293,7 +293,7 @@ addMaybeClipped CropTop {croppedImage, topSkip} = do
     skipRows += topSkip
     addMaybeClipped croppedImage
 
-addMaybeClippedJoin :: forall s . String 
+addMaybeClippedJoin :: forall s . String
                        -> Lens BlitState BlitState Int Int
                        -> Lens BlitState BlitState Int Int
                        -> Lens BlitState BlitState Int Int
@@ -308,7 +308,7 @@ addMaybeClippedJoin name skip remaining offset i0Dim i0 i1 size = do
     case state^.skip of
         s -- TODO: check if clipped in other dim. if not use addUnclipped
           | s >= size -> fail $ name ++ " on fully clipped"
-          | s == 0    -> if state^.remaining > i0Dim 
+          | s == 0    -> if state^.remaining > i0Dim
                             then do
                                 addMaybeClipped i0
                                 put $ state & offset +~ i0Dim & remaining -~ i0Dim
@@ -339,7 +339,7 @@ addRowCompletion :: DisplayRegion -> Int -> BlitM s ()
 addRowCompletion displayRegion row = do
     allRowOps <- view mrowOps
     rowOps <- lift $ lift $ MVector.read allRowOps row
-    let endX = spanOpsEffectedColumns rowOps
+    let endX = rowOpsEffectedColumns rowOps
     when (endX < regionWidth displayRegion) $ do
         let ow = regionWidth displayRegion - endX
         snocOp (Skip ow) row
@@ -352,6 +352,6 @@ snocOp !op !row = do
     lift $ lift $ do
         ops <- MVector.read theMrowOps row
         let ops' = Vector.snoc ops op
-        when (spanOpsEffectedColumns ops' > regionWidth theRegion)
+        when (rowOpsEffectedColumns ops' > regionWidth theRegion)
              $ fail $ "row " ++ show row ++ " now exceeds region width"
         MVector.write theMrowOps row ops'

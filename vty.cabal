@@ -1,5 +1,5 @@
 name:                vty
-version:             5.4.1
+version:             5.5.0
 license:             BSD3
 license-file:        LICENSE
 author:              AUTHORS
@@ -25,7 +25,7 @@ description:
   maintainter to aid in debugging the issue.
   .
   Notable infelicities: Assumes UTF-8 character encoding support by the
-  terminal; Poor signal handling; Requires terminfo.
+  terminal; Poor signal handling; Requires terminfo on POSIX systems.
   .
   This project is hosted on github.com: <https://github.com/coreyoconnor/vty>
   .
@@ -43,6 +43,9 @@ data-files:          README.md,
                      LICENSE
 tested-with:         GHC >= 7.6.2
 
+flag curses
+  description: Use curses based terminfo
+
 library
   default-language:    Haskell2010
   build-depends:       base >= 4 && < 5,
@@ -57,15 +60,15 @@ library
                        -- required for nice installation with yi
                        hashable >= 1.2,
                        mtl >= 1.1.1.0 && < 2.3,
+                       operational >= 0.2.3 && < 1.0,
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        stm,
-                       terminfo >= 0.3 && < 0.5,
                        transformers >= 0.3.0.0,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
+                       vector >= 0.11,
+                       unix-compat >= 0.4.1.4 && < 0.5
 
   exposed-modules:     Graphics.Vty
                        Graphics.Vty.Attributes
@@ -76,37 +79,64 @@ library
                        Graphics.Vty.Inline.Unsafe
                        Graphics.Vty.Input
                        Graphics.Vty.Input.Events
+                       Graphics.Vty.Input.Interface
                        Graphics.Vty.Picture
                        Graphics.Vty.Prelude
                        Graphics.Vty.Output
                        Graphics.Text.Width
-                       -- the modules below are only meant to be used by the tests.
-                       Codec.Binary.UTF8.Debug
                        Data.Terminfo.Parse
                        Data.Terminfo.Eval
+                       -- the modules below are only meant to be used by the tests.
+                       Codec.Binary.UTF8.Debug
                        Graphics.Vty.Debug
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.Image.Internal
-                       Graphics.Vty.Input.Classify
-                       Graphics.Vty.Input.Loop
-                       Graphics.Vty.Input.Terminfo
                        Graphics.Vty.PictureToSpans
                        Graphics.Vty.Span
                        Graphics.Vty.Output.Mock
                        Graphics.Vty.Output.Interface
-                       Graphics.Vty.Output.XTermColor
-                       Graphics.Vty.Output.TerminfoBased
 
   other-modules:       Graphics.Vty.Attributes.Color
                        Graphics.Vty.Attributes.Color240
                        Graphics.Vty.Debug.Image
-                       Graphics.Vty.Input.Terminfo.ANSIVT
 
-  c-sources:           cbits/gwinsz.c
-                       cbits/set_term_timing.c
-                       cbits/mk_wcwidth.c
+  c-sources:           foreign/vty_mk_wcwidth.c
+  include-dirs:        foreign
 
-  include-dirs:        cbits
+  -- non windows / curses components
+  if flag(curses) && !os(windows)
+    exposed-modules:   Graphics.Vty.Output.Terminfo
+                       Graphics.Vty.Output.Terminfo.Base
+                       Graphics.Vty.Output.Terminfo.XTermColor
+                       Graphics.Vty.Input.Posix
+                       Graphics.Vty.Input.Posix.Loop
+                       Graphics.Vty.Input.Terminfo
+                       Graphics.Vty.Input.Terminfo.Classify
+
+    other-modules:     Graphics.Vty.Input.Terminfo.ANSIVT
+                       Graphics.Vty.Inline.Unsafe.Posix
+                       Graphics.Vty.Output.Terminfo.PosixIOExtras
+
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+
+    c-sources:         foreign/posix/gwinsz.c
+                       foreign/posix/set_term_timing.c
+
+    include-dirs:      foreign/posix
+
+    -- both are defined but I know of no case where only one would be true.
+    cpp-options:       -DPOSIX -DTERMINFO
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0,
+                      ansi-terminal >= 0.6.2.4
+                      -- forces uses the ansi-terminal that does not interfere with Win32 2.4+
+    exposed-modules:  Graphics.Vty.Windows
+                      Graphics.Vty.Input.Windows
+                      Graphics.Vty.Output.Windows
+
+    cpp-options:      -DWINDOWS
 
   hs-source-dirs:      src
 
@@ -133,7 +163,7 @@ executable vty-demo
                        lens,
                        mtl >= 1.1.1.0 && < 2.3
 
-test-suite verify-attribute-ops
+test-suite attribute-ops
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
   type:                detailed-0.9
@@ -141,6 +171,7 @@ test-suite verify-attribute-ops
   test-module:         VerifyAttributeOps
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -149,11 +180,17 @@ test-suite verify-attribute-ops
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
+                       vector >= 0.11
 
-test-suite verify-using-mock-terminal
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+test-suite using-mock-terminal
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -173,6 +210,7 @@ test-suite verify-using-mock-terminal
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -181,12 +219,17 @@ test-suite verify-using-mock-terminal
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       terminfo >= 0.3 && < 0.5,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
-  
-test-suite verify-terminal
+                       vector >= 0.11
+
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+test-suite terminal
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -206,6 +249,7 @@ test-suite verify-terminal
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -214,13 +258,19 @@ test-suite verify-terminal
                        data-default >= 0.5.3,
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
-                       terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
+                       vector >= 0.11
 
-test-suite verify-display-attributes
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+    cpp-options:       -DPOSIX -DTERMINFO
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+test-suite display-attributes
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -240,6 +290,7 @@ test-suite verify-display-attributes
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -248,11 +299,17 @@ test-suite verify-display-attributes
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
+                       vector >= 0.11
 
-test-suite verify-empty-image-props
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+test-suite empty-image-props
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -266,6 +323,7 @@ test-suite verify-empty-image-props
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -274,11 +332,17 @@ test-suite verify-empty-image-props
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
+                       vector >= 0.11
 
-test-suite verify-eval-terminfo-caps
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+test-suite eval-terminfo-caps
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -293,6 +357,7 @@ test-suite verify-eval-terminfo-caps
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -301,13 +366,19 @@ test-suite verify-eval-terminfo-caps
                        containers,
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
-                       terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
+                       vector >= 0.11
 
-test-suite verify-image-ops
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+    cpp-options:       -DPOSIX -DTERMINFO
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+test-suite image-ops
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -323,6 +394,7 @@ test-suite verify-image-ops
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -331,11 +403,17 @@ test-suite verify-image-ops
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
+                       vector >= 0.11
 
-test-suite verify-image-trans
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+test-suite image-trans
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -351,6 +429,7 @@ test-suite verify-image-trans
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -359,11 +438,17 @@ test-suite verify-image-trans
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
+                       vector >= 0.11
 
-test-suite verify-inline
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+test-suite inline
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -378,6 +463,7 @@ test-suite verify-inline
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -386,11 +472,18 @@ test-suite verify-inline
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
+                       vector >= 0.11
 
-test-suite verify-parse-terminfo-caps
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+    cpp-options:       -DPOSIX -DTERMINFO
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+test-suite parse-terminfo-caps
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -406,6 +499,7 @@ test-suite verify-parse-terminfo-caps
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -413,13 +507,55 @@ test-suite verify-parse-terminfo-caps
                        containers,
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
-                       terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
-  
-test-suite verify-simple-span-generation
+                       vector >= 0.11
+
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+    cpp-options:       -DPOSIX -DTERMINFO
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+test-suite win32
+  default-language:    Haskell2010
+  default-extensions:  ScopedTypeVariables
+
+  type:                detailed-0.9
+
+  hs-source-dirs:      test
+
+  test-module:         VerifyWin32
+
+  other-modules:       Verify
+                       Verify.Graphics.Vty.Output
+
+  build-depends:       vty,
+                       Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
+                       QuickCheck >= 2.7,
+                       random >= 1.0 && < 1.2,
+                       base >= 4 && < 5,
+                       bytestring,
+                       containers,
+                       deepseq >= 1.1 && < 1.5,
+                       mtl >= 1.1.1.0 && < 2.3,
+                       text >= 0.11.3,
+                       utf8-string >= 0.3 && < 1.1,
+                       vector >= 0.11
+
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+    cpp-options:       -DPOSIX -DTERMINFO
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+    cpp-options:       -DWINDOWS
+
+test-suite simple-span-generation
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -438,6 +574,7 @@ test-suite verify-simple-span-generation
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -446,12 +583,18 @@ test-suite verify-simple-span-generation
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
-  
-  
-test-suite verify-crop-span-generation
+                       vector >= 0.11
+
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+
+test-suite crop-span-generation
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -470,6 +613,7 @@ test-suite verify-crop-span-generation
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -478,12 +622,18 @@ test-suite verify-crop-span-generation
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
-  
+                       vector >= 0.11
 
-test-suite verify-layers-span-generation
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+
+test-suite layers-span-generation
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -502,6 +652,7 @@ test-suite verify-layers-span-generation
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -510,11 +661,17 @@ test-suite verify-layers-span-generation
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
+                       vector >= 0.11
 
-test-suite verify-utf8-width
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+test-suite utf8-width
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -528,6 +685,7 @@ test-suite verify-utf8-width
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4 && < 5,
@@ -536,11 +694,17 @@ test-suite verify-utf8-width
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
-  
-test-suite verify-using-mock-input
+                       vector >= 0.11
+
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
+test-suite using-mock-input
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -549,9 +713,11 @@ test-suite verify-using-mock-input
   hs-source-dirs:      test
 
   main-is:             VerifyUsingMockInput.hs
+  other-modules:       Verify.Graphics.Vty.Output
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        data-default >= 0.5.3,
                        QuickCheck >= 2.7,
                        smallcheck == 1.*,
@@ -566,15 +732,21 @@ test-suite verify-using-mock-input
                        lens >= 3.9.0.2 && < 5.0,
                        mtl >= 1.1.1.0 && < 2.3,
                        stm,
-                       terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
-  
+                       vector >= 0.11
+
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+    cpp-options:       -DPOSIX -DTERMINFO
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
+
   ghc-options:         -threaded -Wall
 
-test-suite verify-config
+test-suite config
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
 
@@ -586,6 +758,7 @@ test-suite verify-config
 
   build-depends:       vty,
                        Cabal >= 1.20,
+                       cabal-test-quickcheck >= 0.1.6,
                        data-default >= 0.5.3,
                        HUnit,
                        QuickCheck >= 2.7,
@@ -602,11 +775,15 @@ test-suite verify-config
                        lens >= 3.9.0.2 && < 5.0,
                        mtl >= 1.1.1.0 && < 2.3,
                        string-qq,
-                       terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
-                       vector >= 0.7
+                       vector >= 0.11
+
+  if flag(curses) && !os(windows)
+    build-depends:     unix,
+                       terminfo >= 0.3 && < 0.5
+
+  if os(windows)
+    build-depends:    Win32 >= 2.3.2.0
 
   ghc-options:         -threaded -Wall
-

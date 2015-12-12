@@ -9,21 +9,21 @@ module Graphics.Vty.Inline.Unsafe where
 
 import Graphics.Vty
 
-import Data.Default
-import Data.Monoid
+#ifdef POSIX
+import Graphics.Vty.Inline.Unsafe.Posix
+#endif
+
+#ifdef WINDOWS
+import Data.Default (def)
+#endif
+
 import Data.IORef
-
-import GHC.IO.Handle (hDuplicate)
-
-import System.IO (stdin, stdout, hSetBuffering, BufferMode(NoBuffering))
-
-import System.IO.Unsafe
-
-import System.Posix.IO (handleToFd)
 
 #if !(MIN_VERSION_base(4,8,0))
 import Control.Applicative
 #endif
+
+import System.IO.Unsafe
 
 globalVty :: IORef (Maybe Vty)
 {-# NOINLINE globalVty #-}
@@ -32,14 +32,6 @@ globalVty = unsafePerformIO $ newIORef Nothing
 globalOutput :: IORef (Maybe Output)
 {-# NOINLINE globalOutput #-}
 globalOutput = unsafePerformIO $ newIORef Nothing
-
-mkDupeConfig :: IO Config
-mkDupeConfig = do
-    hSetBuffering stdout NoBuffering
-    hSetBuffering stdin NoBuffering
-    stdinDupe <- hDuplicate stdin >>= handleToFd
-    stdoutDupe <- hDuplicate stdout >>= handleToFd
-    return $ def { inputFd = Just stdinDupe, outputFd = Just stdoutDupe }
 
 -- | This will create a Vty instance using 'mkVty' and execute an IO action provided that instance.
 -- The created Vty instance will be stored to the unsafe 'IORef' 'globalVty'.
@@ -50,7 +42,12 @@ withVty f = do
     mvty <- readIORef globalVty
     vty <- case mvty of
         Nothing -> do
+#ifdef POSIX
             vty <- mkDupeConfig >>= mkVty
+#endif
+#ifdef WINDOWS
+            vty <- mkVty def
+#endif
             writeIORef globalVty (Just vty)
             return vty
         Just vty -> return vty
@@ -61,7 +58,12 @@ withOutput f = do
     mout <- readIORef globalOutput
     out <- case mout of
         Nothing -> do
+#ifdef POSIX
             config <- mappend <$> userConfig <*> mkDupeConfig
+#endif
+#ifdef WINDOWS
+            config <- userConfig
+#endif
             out <- outputForConfig config
             writeIORef globalOutput (Just out)
             return out

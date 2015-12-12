@@ -1,5 +1,6 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {- Generate some input bytes and delays between blocks of input bytes. Verify the events produced
  - are as expected.
  -}
@@ -9,8 +10,12 @@ import Verify.Graphics.Vty.Output
 
 import Graphics.Vty hiding (resize)
 import Graphics.Vty.Input.Events
-import Graphics.Vty.Input.Loop
+import Graphics.Vty.Input.Interface
+
+#ifdef POSIX
+import Graphics.Vty.Input.Posix.Loop
 import Graphics.Vty.Input.Terminfo
+#endif
 
 import Control.Applicative
 import Control.Concurrent
@@ -23,10 +28,15 @@ import Data.Default
 import Data.IORef
 import Data.List (intersperse, reverse, nubBy)
 
+#ifdef TERMINFO
 import System.Console.Terminfo
+#endif
+
+#ifdef POSIX
 import System.Posix.IO
 import System.Posix.Terminal (openPseudoTerminal)
 import System.Posix.Types
+#endif
 import System.Timeout
 
 import Test.Framework.Providers.SmallCheck
@@ -35,6 +45,23 @@ import Test.SmallCheck
 import Test.SmallCheck.Series
 
 import Text.Printf
+
+main :: IO ()
+#ifndef TERMINFO
+main = defaultMain []
+#else
+main = defaultMain
+    [ testProperty "synthesized typing of single visible chars translates to expected events"
+        verifyVisibleSynInputToEvent
+    , testProperty "synthesized typing of keys from capabilities tables translates to expected events"
+        verifyCapsSynInputToEvent
+    , testProperty "synthesized typing of hard coded special keys translates to expected events"
+        verifySpecialSynInputToEvent
+    , testProperty "synthesized typing of any key in the table translates to its paired event"
+        verifyFullSynInputToEvent
+    , testProperty "synthesized typing of 2x any key in the table translates to 2x paired event"
+        verifyFullSynInputToEvent_2x
+    ]
 
 -- processing a block of 16 chars is the largest I can do without taking too long to run the test.
 maxBlockSize :: Int
@@ -163,8 +190,8 @@ verifyVisibleSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) -> monadic 
 
 verifyCapsSynInputToEvent :: Property IO
 verifyCapsSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) ->
-    forEachOf terminalsOfInterest $ \termName -> monadic $ do
-        term <- setupTerm termName
+    forEachOf terminalsOfInterest $ \termToTest -> monadic $ do
+        term <- setupTerm termToTest
         let table         = capsClassifyMap term keysFromCapsTable
             inputSeq      = gen table
             events        = map snd inputSeq
@@ -203,17 +230,4 @@ verifyFullSynInputToEvent_2x = forAll $ \(InputBlocksUsingTable gen) ->
             input         = intersperse (Delay testKeyDelay) keydowns ++ [Delay testKeyDelay]
         assertEventsFromSynInput table input events
 
-main :: IO ()
-main = defaultMain
-    [ testProperty "synthesized typing of single visible chars translates to expected events"
-        verifyVisibleSynInputToEvent
-    , testProperty "synthesized typing of keys from capabilities tables translates to expected events"
-        verifyCapsSynInputToEvent
-    , testProperty "synthesized typing of hard coded special keys translates to expected events"
-        verifySpecialSynInputToEvent
-    , testProperty "synthesized typing of any key in the table translates to its paired event"
-        verifyFullSynInputToEvent
-    , testProperty "synthesized typing of 2x any key in the table translates to 2x paired event"
-        verifyFullSynInputToEvent_2x
-    ]
-
+#endif

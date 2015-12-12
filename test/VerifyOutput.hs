@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {- We setup the environment to envoke certain terminals of interest.
  - This assumes appropriate definitions exist in the current environment for the terminals of
  - interest.
@@ -14,7 +15,12 @@ import Control.Monad
 
 import Data.Default
 
+#ifndef TERMINFO
+tests :: IO [Test]
+tests = return mempty
+#else
 import qualified System.Console.Terminfo as Terminfo
+
 import System.Posix.Env
 import System.Posix.IO
 
@@ -40,10 +46,10 @@ smokeTestTerm termName i = do
     t <- outputForConfig $ def { outputFd = Just nullOut, termName = Just termName }
     -- putStrLn $ "context color count: " ++ show (contextColorCount t)
     reserveDisplay t
-    dc <- displayContext t (100,100)
+    let dc = DisplayContext t (100,100)
     -- always show the cursor to produce tests for terminals with no cursor support.
     let pic = (picForImage i) { picCursor = Cursor 0 0 }
-    outputPicture dc pic
+    outputPictureToContext dc pic
     setCursorPos t 0 0
     when (supportsCursorVisibility t) $ do
         hideCursor t
@@ -52,4 +58,4 @@ smokeTestTerm termName i = do
     releaseTerminal t
     closeFd nullOut
     return succeeded
-
+#endif
