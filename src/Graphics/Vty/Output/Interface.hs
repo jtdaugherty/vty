@@ -253,7 +253,7 @@ limitAttrForDisplay t attr
             | contextColorCount t < 16 && v >= 8 = SetTo $ ISOColor (v - 8)
             | otherwise                          = SetTo $ ISOColor v
         clampColor' (Color240 v)
-            -- TODO: Choose closes ISO color?
+            -- TODO: Choose closest ISO color?
             | contextColorCount t <  8           = Default
             | contextColorCount t <  16          = Default
             | contextColorCount t <= 256         = SetTo $ Color240 v
