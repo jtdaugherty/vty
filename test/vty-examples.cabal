@@ -1,7 +1,7 @@
 name:                vty-examples
 version:             5.4.1
 license:             BSD3
-license-file:        ../LICENSE
+license-file:        LICENSE
 author:              AUTHORS
 maintainer:          Corey O'Connor (coreyoconnor@gmail.com)
 homepage:            https://github.com/coreyoconnor/vty
@@ -19,6 +19,10 @@ description:
   &#169; Corey O'Connor; BSD3 license.
 cabal-version:        >= 1.18.0
 build-type:           Simple
+
+source-repository head
+  type: git
+  location: https://github.com/coreyoconnor/vty.git
 
 executable vty-interactive-terminal-test
   main-is:             interactive_terminal_test.hs
@@ -43,6 +47,9 @@ executable vty-interactive-terminal-test
                        unix,
                        utf8-string,
                        vector
+
+  other-modules:       Verify.Data.Terminfo.Parse
+                       Verify
 
 executable vty-event-echo
   main-is:             EventEcho.hs
@@ -112,4 +119,11 @@ executable vty-benchmark
                        unix,
                        utf8-string,
                        vector
+
+  other-modules:       BenchImageFuzz
+                       BenchNoDiffOpt
+                       BenchRenderChar
+                       BenchVerticalScroll
+                       Verify.Graphics.Vty.Image
+                       Verify.Graphics.Vty.Attributes
 
