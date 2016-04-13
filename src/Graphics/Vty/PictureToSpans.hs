@@ -21,7 +21,9 @@ import Graphics.Vty.Image.Internal
 import Graphics.Vty.Picture
 import Graphics.Vty.Span
 
-import Control.Lens hiding ( op )
+import Lens.Micro
+import Lens.Micro.Mtl
+import Lens.Micro.TH
 import Control.Monad.Reader
 import Control.Monad.State.Strict hiding ( state )
 
@@ -355,3 +357,9 @@ snocOp !op !row = do
         when (spanOpsEffectedColumns ops' > regionWidth theRegion)
              $ fail $ "row " ++ show row ++ " now exceeds region width"
         MVector.write theMrowOps row ops'
+
+(-~) :: Num a => ASetter s t a a -> a -> s -> t
+l -~ n = over l (subtract n)
+
+(+~) :: Num a => ASetter s t a a -> a -> s -> t
+l +~ n = over l (n +)

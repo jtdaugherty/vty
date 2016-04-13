@@ -16,7 +16,7 @@ import Control.Applicative
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Exception
-import Control.Lens ((^.))
+import Lens.Micro ((^.))
 import Control.Monad
 
 import Data.Default

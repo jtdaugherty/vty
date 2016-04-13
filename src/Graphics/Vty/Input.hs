@@ -137,7 +137,7 @@ import Graphics.Vty.Input.Loop
 import Graphics.Vty.Input.Terminfo
 
 import Control.Concurrent.STM
-import Control.Lens
+import Lens.Micro
 
 import qualified System.Console.Terminfo as Terminfo
 import System.Posix.Signals.Exts

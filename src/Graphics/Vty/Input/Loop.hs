@@ -21,10 +21,13 @@ import Control.Applicative
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Exception (mask, try, SomeException)
-import Control.Lens
+import Lens.Micro
+import Lens.Micro.Mtl
+import Lens.Micro.TH
 import Control.Monad (when, mzero, forM_)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.State (StateT(..), evalStateT)
+import Control.Monad.State.Class (MonadState, modify)
 import Control.Monad.Trans.Reader (ReaderT(..))
 
 import Data.Char
@@ -212,3 +215,9 @@ foreign import ccall "vty_set_term_timing" setTermTiming :: Fd -> Int -> Int -> 
 forkOSFinally :: IO a -> (Either SomeException a -> IO ()) -> IO ThreadId
 forkOSFinally action and_then =
   mask $ \restore -> forkOS $ try (restore action) >>= and_then
+
+(<>=) :: (MonadState s m, Monoid a) => ASetter' s a -> a -> m ()
+l <>= a = modify (l <>~ a)
+
+(<>~) :: Monoid a => ASetter s t a a -> a -> s -> t
+l <>~ n = over l (`mappend` n)
