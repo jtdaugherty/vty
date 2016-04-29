@@ -57,7 +57,9 @@ library
                        deepseq >= 1.1 && < 1.5,
                        directory,
                        filepath >= 1.0 && < 2.0,
-                       lens >= 3.9.0.2 && < 5.0,
+                       microlens,
+                       microlens-mtl,
+                       microlens-th,
                        -- required for nice installation with yi
                        hashable >= 1.2,
                        mtl >= 1.1.1.0 && < 2.3,
@@ -134,7 +136,8 @@ executable vty-demo
                        base >= 4 && < 5,
                        containers,
                        data-default >= 0.5.3,
-                       lens,
+                       microlens,
+                       microlens-mtl,
                        mtl >= 1.1.1.0 && < 2.3
 
 test-suite verify-attribute-ops
@@ -567,7 +570,8 @@ test-suite verify-using-mock-input
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.5,
-                       lens >= 3.9.0.2 && < 5.0,
+                       microlens,
+                       microlens-mtl,
                        mtl >= 1.1.1.0 && < 2.3,
                        stm,
                        terminfo >= 0.3 && < 0.5,
@@ -603,7 +607,8 @@ test-suite verify-config
                        bytestring,
                        containers,
                        deepseq >= 1.1 && < 1.5,
-                       lens >= 3.9.0.2 && < 5.0,
+                       microlens,
+                       microlens-mtl,
                        mtl >= 1.1.1.0 && < 2.3,
                        string-qq,
                        terminfo >= 0.3 && < 0.5,
