@@ -6,6 +6,7 @@ notifications:
 matrix:
   allow_failures:
     - env: CABALVER=head GHCVER=head
+    - env: CABALVER=1.20 GHCVER=7.4.2
 
 env:
  - CABALVER=1.20 GHCVER=7.4.2
