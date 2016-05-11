@@ -1,3 +1,9 @@
+5.5.0
+  - Replaced lens dependency with microlens, microlens-mtl, microlens-th dependencies. Issue #90
+    - Thanks Jonathan Daugherty
+  - Cabal corrections.
+    - Thanks Lennart Spitzner
+
 5.4.0
   - Changed eventChannel of Graphics.Vty.Input from Chan to TChan. This enables clients to query if
     there are no pending events. The Graphics.Vty interface nextEvent is unchanged. Clients that use
@@ -92,7 +98,7 @@
   - removed: derivedVtime, derivedVmin, inputForCurrentTerminal, inputForNameAndIO,
     outputForCurrentTerminal, outputForNameAndIO
   - added: inputForConfig, outputForConfig
-  - updates to vty-rogue from jtdaugherty. Thanks! 
+  - updates to vty-rogue from jtdaugherty. Thanks!
   - the oldest version of GHC tested to support vty is 7.6.2.
   - the oldest version of GHC that vty compiles under is 7.4.2
 
@@ -190,8 +196,8 @@
             - put_attr_change applies a display attribute change immediately to a terminal
             - For instance, can be used to change the display attrbiutes of text output via putStrLn
               and putStr. EX: "put_attr_change $ back_color red" will set the
-              background color to red. 
-            - Changes do not apply to a Picture output via output_picture. 
+              background color to red.
+            - Changes do not apply to a Picture output via output_picture.
             - See Graphics.Vty.Inline
         - Moved all IO actions into any monad an instance of MonadIO
 
@@ -231,11 +237,11 @@
           enough.
         - The details required to display the desired picture on a terminal are well encapsulated.
         - Terminfo based display terminal implementation. With specialized derivitives for xterm,
-          Terminal.app, and iTerm.app. 
+          Terminal.app, and iTerm.app.
             - Attempts to robustly handle even terminals that don't support all display attributes.
             - I've tested the following terminals with success: iTerm.app, Terminal.app, xterm,
               rxvt, mlterm, Eterm, gnome-terminal, konsole, screen, linux vty. Hopefully you will be
-              as successfull. 
+              as successfull.
         - Improved unicode support. Double wide characters will display as expected.
     - 256 color support. See Graphics.Vty.Attributes.Color240. The actual output color is adjusted
       according to the number of colors the terminal supports.
@@ -251,10 +257,9 @@
             - http://trac.haskell.org/vty/ticket/14
         - "Multi-byte characters are not displayed correctly on update"
             - http://trac.haskell.org/vty/ticket/10
-        - "Redraw does not handle rendering a line that extends beyond screen width characters" 
+        - "Redraw does not handle rendering a line that extends beyond screen width characters"
             - http://trac.haskell.org/vty/ticket/13
-        - "The <|> and <-> combinators should be more forgiving of mismatched dimensions" 
+        - "The <|> and <-> combinators should be more forgiving of mismatched dimensions"
             - http://trac.haskell.org/vty/ticket/9
-        - "256-color support" 
+        - "256-color support"
             - http://trac.haskell.org/vty/ticket/19
-

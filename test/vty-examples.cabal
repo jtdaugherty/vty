@@ -1,5 +1,5 @@
 name:                vty-examples
-version:             5.4.1
+version:             5.5.0
 license:             BSD3
 license-file:        LICENSE
 author:              AUTHORS
@@ -126,4 +126,3 @@ executable vty-benchmark
                        BenchVerticalScroll
                        Verify.Graphics.Vty.Image
                        Verify.Graphics.Vty.Attributes
-

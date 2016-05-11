@@ -1,5 +1,5 @@
 name:                vty
-version:             5.4.1
+version:             5.5.0
 license:             BSD3
 license-file:        LICENSE
 author:              AUTHORS
@@ -192,7 +192,7 @@ test-suite verify-using-mock-terminal
                        unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
-  
+
 test-suite verify-terminal
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
@@ -425,7 +425,7 @@ test-suite verify-parse-terminfo-caps
                        unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
-  
+
 test-suite verify-simple-span-generation
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
@@ -456,8 +456,8 @@ test-suite verify-simple-span-generation
                        unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
-  
-  
+
+
 test-suite verify-crop-span-generation
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
@@ -488,7 +488,7 @@ test-suite verify-crop-span-generation
                        unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
-  
+
 
 test-suite verify-layers-span-generation
   default-language:    Haskell2010
@@ -546,7 +546,7 @@ test-suite verify-utf8-width
                        unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
-  
+
 test-suite verify-using-mock-input
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
@@ -579,7 +579,7 @@ test-suite verify-using-mock-input
                        unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
-  
+
   ghc-options:         -threaded -Wall
 
 test-suite verify-config
@@ -618,4 +618,3 @@ test-suite verify-config
                        vector >= 0.7
 
   ghc-options:         -threaded -Wall
-
