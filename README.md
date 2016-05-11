@@ -83,12 +83,22 @@ cygwin only.
 
 ## Under NixOS
 
+### Using cabal
+
 After installing ncurses to user env.
 
 ~~~
 LIBRARY_PATH=$HOME/.nix-profile/lib/ cabal configure --enable-tests --extra-lib-dirs=$HOME/.nix-profile/lib
 LIBRARY_PATH=$HOME/.nix-profile/lib/ cabal build
 LIBRARY_PATH=$HOME/.nix-profile/lib/ cabal test
+~~~
+
+### Using stack
+
+~~~
+stack build
+stack test
+stack install
 ~~~
 
 ## Coverage
