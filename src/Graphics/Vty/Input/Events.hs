@@ -25,7 +25,7 @@ data Modifier = MShift | MCtrl | MMeta | MAlt
 --
 -- \todo not supported.
 data Button = BLeft | BMiddle | BRight
-    deriving (Eq,Show,Ord)
+    deriving (Eq,Show,Read,Ord)
 
 -- | Events.
 data Event
@@ -36,6 +36,6 @@ data Event
     -- 'nextEvent' this is the size at the time the event was processed by Vty. Typically these are
     -- the same, but if somebody is resizing the terminal quickly they can be different.
     | EvResize Int Int
-    deriving (Eq,Show,Ord)
+    deriving (Eq,Show,Read,Ord)
 
 type ClassifyMap = [(String,Event)]
