@@ -61,7 +61,7 @@ import Data.Monoid ((<>))
 -- with only what is provided in the haskell platform. Use ansi-terminal
 outputForConfig :: Config -> IO Output
 outputForConfig Config{ outputFd = Just fd, termName = Just termName, .. } = do
-    t <- if "xterm" `isPrefixOf` termName
+    t <- if "xterm" `isPrefixOf` termName || "screen" `isPrefixOf` termName
         then XTermColor.reserveTerminal termName fd
         -- Not an xterm-like terminal. try for generic terminfo.
         else TerminfoBased.reserveTerminal termName fd

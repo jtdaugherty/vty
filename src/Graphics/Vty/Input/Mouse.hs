@@ -2,6 +2,7 @@ module Graphics.Vty.Input.Mouse
     ( requestSGRMouseEvents
     , disableSGRMouseEvents
     , classifySGRMouseEvent
+    , classifyNormalMouseEvent
     ) where
 
 import Graphics.Vty.Input.Events
@@ -63,8 +64,8 @@ hasBitSet :: Int -> Int -> Bool
 hasBitSet val bit = val .&. bit > 0
 
 -- Given a modifer/button value, determine which button was indicated
-getButton :: Int -> Parser Button
-getButton mods =
+getSGRButton :: Int -> Parser Button
+getSGRButton mods =
     let buttonMap = [ (leftButton,   BLeft)
                     , (middleButton, BMiddle)
                     , (rightButton,  BRight)
@@ -112,6 +113,27 @@ expectChar c = do
     c' <- readChar
     if c' == c then return () else failParse
 
+-- Attempt to classify a control sequence as a "normal" mouse event. To
+-- get here we should have already read "\ESC[M" so that will not be
+-- included in the string to be parsed.
+classifyNormalMouseEvent :: [Char] -> KClass
+classifyNormalMouseEvent s = runParser s $ do
+    statusChar <- readChar
+    xCoordChar <- readChar
+    yCoordChar <- readChar
+
+    let xCoord = fromEnum xCoordChar - 32
+        yCoord = fromEnum yCoordChar - 32
+        status = fromEnum statusChar
+        modifiers = getModifiers status
+
+    let press = status .&. buttonMask /= 3
+    case press of
+            True -> do
+                button <- getSGRButton status
+                return $ EvMouseDown xCoord yCoord button modifiers
+            False -> return $ EvMouseUp xCoord yCoord Nothing
+
 -- Attempt to classify a control sequence as an SGR mouse event. To
 -- get here we should have already read "\ESC[<" so that will not be
 -- included in the string to be parsed.
@@ -125,8 +147,8 @@ classifySGRMouseEvent s = runParser s $ do
     final <- readChar
 
     let modifiers = getModifiers mods
-    button <- getButton mods
+    button <- getSGRButton mods
     case final of
         'M' -> return $ EvMouseDown xCoord yCoord button modifiers
-        'm' -> return $ EvMouseUp   xCoord yCoord button
+        'm' -> return $ EvMouseUp   xCoord yCoord (Just button)
         _ -> failParse
