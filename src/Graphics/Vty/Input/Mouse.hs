@@ -1,5 +1,6 @@
 module Graphics.Vty.Input.Mouse
     ( requestSGRMouseEvents
+    , disableSGRMouseEvents
     , classifySGRMouseEvent
     ) where
 
@@ -30,6 +31,10 @@ import Data.Bits ((.&.))
 -- sequences.  This requests SGR extended mouse events.
 requestSGRMouseEvents :: String
 requestSGRMouseEvents = "\ESC[?1000h\ESC[?1006h"
+
+-- | These sequences disable mouse events.
+disableSGRMouseEvents :: String
+disableSGRMouseEvents = "\ESC[?1000l\ESC[?1006l"
 
 -- Modifier bits:
 shiftBit :: Int
