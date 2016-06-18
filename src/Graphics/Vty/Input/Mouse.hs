@@ -90,6 +90,7 @@ classifyMouseEvent s = runParser s $ do
     case ty of
         '<' -> classifySGRMouseEvent
         'M' -> classifyNormalMouseEvent
+        _   -> failParse
 
 -- Given a modifer/button value, determine which button was indicated
 getSGRButton :: Int -> Parser Button
