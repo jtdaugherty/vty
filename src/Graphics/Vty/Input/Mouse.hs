@@ -125,9 +125,7 @@ readInt :: Parser Int
 readInt = do
     s <- get
     case (reads :: ReadS Int) s of
-        [(i, rest)] -> do
-            put rest
-            return i
+        [(i, rest)] -> put rest >> return i
         _ -> failParse
 
 readChar :: Parser Char
