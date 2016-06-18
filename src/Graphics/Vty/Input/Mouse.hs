@@ -1,6 +1,6 @@
 module Graphics.Vty.Input.Mouse
-    ( requestSGRMouseEvents
-    , disableSGRMouseEvents
+    ( requestMouseEvents
+    , disableMouseEvents
     , isMouseEvent
     , classifyMouseEvent
     ) where
@@ -30,13 +30,13 @@ import Data.Bits ((.&.))
 -- * the final character is 'M' for a press, 'm' for a release
 
 -- | These sequences set xterm-based terminals to send mouse event
--- sequences.  This requests SGR extended mouse events.
-requestSGRMouseEvents :: String
-requestSGRMouseEvents = "\ESC[?1000h\ESC[?1006h"
+-- sequences.
+requestMouseEvents :: String
+requestMouseEvents = "\ESC[?1000h\ESC[?1006h\ESC[?1003h"
 
 -- | These sequences disable mouse events.
-disableSGRMouseEvents :: String
-disableSGRMouseEvents = "\ESC[?1000l\ESC[?1006l"
+disableMouseEvents :: String
+disableMouseEvents = "\ESC[?1000l\ESC[?1006l\ESC[?1003l"
 
 -- | Does the specified string begin with a mouse event?"
 isMouseEvent :: String -> Bool
