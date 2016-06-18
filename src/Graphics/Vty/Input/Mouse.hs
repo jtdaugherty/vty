@@ -1,8 +1,8 @@
 module Graphics.Vty.Input.Mouse
     ( requestSGRMouseEvents
     , disableSGRMouseEvents
-    , classifySGRMouseEvent
-    , classifyNormalMouseEvent
+    , isMouseEvent
+    , classifyMouseEvent
     ) where
 
 import Graphics.Vty.Input.Events
@@ -10,6 +10,7 @@ import Graphics.Vty.Input.Classify.Types
 
 import Control.Monad.Trans.Maybe
 import Control.Monad.State
+import Data.List (isPrefixOf)
 import Data.Maybe (catMaybes)
 import Data.Bits ((.&.))
 
@@ -37,6 +38,22 @@ requestSGRMouseEvents = "\ESC[?1000h\ESC[?1006h"
 disableSGRMouseEvents :: String
 disableSGRMouseEvents = "\ESC[?1000l\ESC[?1006l"
 
+-- | Does the specified string begin with a mouse event?"
+isMouseEvent :: String -> Bool
+isMouseEvent s = isSGREvent s || isNormalEvent s
+
+isSGREvent :: String -> Bool
+isSGREvent = isPrefixOf sgrPrefix
+
+sgrPrefix :: String
+sgrPrefix = "\ESC[M"
+
+isNormalEvent :: String -> Bool
+isNormalEvent = isPrefixOf normalPrefix
+
+normalPrefix :: String
+normalPrefix = "\ESC[<"
+
 -- Modifier bits:
 shiftBit :: Int
 shiftBit = 4
@@ -62,6 +79,17 @@ rightButton = 2
 
 hasBitSet :: Int -> Int -> Bool
 hasBitSet val bit = val .&. bit > 0
+
+classifyMouseEvent :: String -> KClass
+classifyMouseEvent s = runParser s $ do
+    when (not $ isMouseEvent s) failParse
+
+    expectChar '\ESC'
+    expectChar '['
+    ty <- readChar
+    case ty of
+        '<' -> classifySGRMouseEvent
+        'M' -> classifyNormalMouseEvent
 
 -- Given a modifer/button value, determine which button was indicated
 getSGRButton :: Int -> Parser Button
@@ -116,8 +144,8 @@ expectChar c = do
 -- Attempt to classify a control sequence as a "normal" mouse event. To
 -- get here we should have already read "\ESC[M" so that will not be
 -- included in the string to be parsed.
-classifyNormalMouseEvent :: [Char] -> KClass
-classifyNormalMouseEvent s = runParser s $ do
+classifyNormalMouseEvent :: Parser Event
+classifyNormalMouseEvent = do
     statusChar <- readChar
     xCoordChar <- readChar
     yCoordChar <- readChar
@@ -137,8 +165,8 @@ classifyNormalMouseEvent s = runParser s $ do
 -- Attempt to classify a control sequence as an SGR mouse event. To
 -- get here we should have already read "\ESC[<" so that will not be
 -- included in the string to be parsed.
-classifySGRMouseEvent :: [Char] -> KClass
-classifySGRMouseEvent s = runParser s $ do
+classifySGRMouseEvent :: Parser Event
+classifySGRMouseEvent = do
     mods <- readInt
     expectChar ';'
     xCoord <- readInt

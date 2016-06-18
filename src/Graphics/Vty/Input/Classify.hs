@@ -56,8 +56,7 @@ classify :: ClassifyMap -> [Char] -> KClass
 classify table =
     let standardClassifier = compile table
     in \s -> case s of
-        ('\ESC':'[':'<':cs) | length cs >= 6 -> classifySGRMouseEvent cs
-        ('\ESC':'[':'M':cs) | length cs >= 3 -> classifyNormalMouseEvent cs
+        _ | isMouseEvent s   -> classifyMouseEvent s
         c:cs | ord c >= 0xC2 -> classifyUtf8 c cs
         _                    -> standardClassifier s
 
