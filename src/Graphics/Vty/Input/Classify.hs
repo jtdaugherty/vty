@@ -15,7 +15,7 @@ import Graphics.Vty.Input.Events
 
 import Codec.Binary.UTF8.Generic (decode)
 
-import Data.List(inits)
+import Data.List (inits, isPrefixOf, isInfixOf)
 import qualified Data.Map as M( fromList, lookup )
 import Data.Maybe ( mapMaybe )
 import qualified Data.Set as S( fromList, member )
@@ -60,6 +60,10 @@ classify :: ClassifyMap -> [Char] -> KClass
 classify table =
     let standardClassifier = compile table
     in \s -> case s of
+        _ | bracketedPasteStarted s ->
+            if bracketedPasteFinished s
+            then parseBracketedPaste s
+            else Prefix
         c:cs | ord c >= 0xC2 -> classifyUtf8 c cs
         _                    -> standardClassifier s
 
@@ -82,3 +86,31 @@ utf8Length c
     | c < 0xE0 = 2
     | c < 0xF0 = 3
     | otherwise = 4
+
+bracketedPasteStart :: String
+bracketedPasteStart = "\ESC[200~"
+
+bracketedPasteEnd :: String
+bracketedPasteEnd = "\ESC[201~"
+
+bracketedPasteStarted :: String -> Bool
+bracketedPasteStarted = isPrefixOf bracketedPasteStart
+
+bracketedPasteFinished :: String -> Bool
+bracketedPasteFinished = isInfixOf bracketedPasteEnd
+
+takeUntil :: (Eq a) => [a] -> [a] -> ([a],[a])
+takeUntil [] _ = ([], [])
+takeUntil cs sub
+  | length cs < length sub      = (cs, [])
+  | take (length sub) cs == sub = ([], drop (length sub) cs)
+  | otherwise                   = let (pre, suf) = takeUntil (tail cs) sub
+                                  in (head cs:pre, suf)
+
+parseBracketedPaste :: String -> KClass
+parseBracketedPaste s =
+    let (p, rest) = takeUntil (drop (length bracketedPasteStart) s) bracketedPasteEnd
+        rest' = if bracketedPasteEnd `isPrefixOf` rest
+                then drop (length bracketedPasteEnd) rest
+                else rest
+    in Valid (EvPaste p) rest'

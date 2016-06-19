@@ -33,17 +33,28 @@ reserveTerminal variant outFd = liftIO $ do
     -- xterm-color is broken.
     let variant' = if variant == "xterm-color" then "xterm" else variant
     flushedPut setUtf8CharSet
+    flushedPut enableBracketedPastes
     t <- TerminfoBased.reserveTerminal variant' outFd
     let t' = t
              { terminalID = terminalID t ++ " (xterm-color)"
              , releaseTerminal = do
                  liftIO $ flushedPut setDefaultCharSet
+                 liftIO $ flushedPut disableBracketedPastes
                  releaseTerminal t
              , mkDisplayContext = \tActual r -> do
                 dc <- mkDisplayContext t tActual r
                 return $ dc { inlineHack = xtermInlineHack t' }
              }
     return t'
+
+-- | Enable bracketed paste mode:
+-- http://cirw.in/blog/bracketed-paste
+enableBracketedPastes :: String
+enableBracketedPastes = "\ESC[?2004h"
+
+-- | Disable bracketed paste mode:
+disableBracketedPastes :: String
+disableBracketedPastes = "\ESC[?2004l"
 
 -- | These sequences set xterm based terminals to UTF-8 output.
 --
