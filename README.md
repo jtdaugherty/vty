@@ -68,6 +68,9 @@ cabal install vty
 * Uses the TIOCGWINSZ ioctl to find the current window size, which appears to be
   limited to Linux and BSD.
 
+* Supports "normal" and "extended" (SGR) mouse modes as described at
+  http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
+
 # Platform Support
 
 ## Posix Terminals
