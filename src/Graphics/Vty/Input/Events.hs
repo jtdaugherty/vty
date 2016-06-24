@@ -30,13 +30,20 @@ data Button = BLeft | BMiddle | BRight
 -- | Events.
 data Event
     = EvKey Key [Modifier]
-    -- | \todo mouse events are not supported
+    -- ^ A keyboard key was pressed with the specified modifiers.
     | EvMouseDown Int Int Button [Modifier]
+    -- ^ A mouse button was pressed at the specified column and row. Any
+    -- modifiers available in the event are also provided.
     | EvMouseUp Int Int (Maybe Button)
-    -- | if read from 'eventChannel' this is the size at the time of the signal. If read from
-    -- 'nextEvent' this is the size at the time the event was processed by Vty. Typically these are
-    -- the same, but if somebody is resizing the terminal quickly they can be different.
+    -- ^ A mouse button was released at the specified column and
+    -- row. Some terminals report only that a button was released
+    -- without specifying which one; in that case, Nothing is provided.
+    -- Otherwise Just the button released is included in the event.
     | EvResize Int Int
+    -- ^ If read from 'eventChannel' this is the size at the time of the
+    -- signal. If read from 'nextEvent' this is the size at the time the
+    -- event was processed by Vty. Typically these are the same, but if
+    -- somebody is resizing the terminal quickly they can be different.
     deriving (Eq,Show,Read,Ord)
 
 type ClassifyMap = [(String,Event)]
