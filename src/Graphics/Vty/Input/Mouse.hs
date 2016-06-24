@@ -11,6 +11,7 @@ module Graphics.Vty.Input.Mouse
 
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Classify.Types
+import Graphics.Vty.Input.Classify.Parse
 
 import Control.Monad.Trans.Maybe
 import Control.Monad.State
@@ -109,36 +110,6 @@ getModifiers mods =
               , if mods `hasBitSet` metaBit  then Just MMeta  else Nothing
               , if mods `hasBitSet` ctrlBit  then Just MCtrl  else Nothing
               ]
-
-type Parser a = MaybeT (State String) a
-
-runParser :: String -> Parser Event -> KClass
-runParser s parser =
-    case runState (runMaybeT parser) s of
-        (Nothing, _)        -> Invalid
-        (Just e, remaining) -> Valid e remaining
-
-failParse :: Parser a
-failParse = fail "invalid parse"
-
-readInt :: Parser Int
-readInt = do
-    s <- get
-    case (reads :: ReadS Int) s of
-        [(i, rest)] -> put rest >> return i
-        _ -> failParse
-
-readChar :: Parser Char
-readChar = do
-    s <- get
-    case s of
-        c:rest -> put rest >> return c
-        _ -> failParse
-
-expectChar :: Char -> Parser ()
-expectChar c = do
-    c' <- readChar
-    if c' == c then return () else failParse
 
 -- Attempt to classify a control sequence as a "normal" mouse event. To
 -- get here we should have already read "\ESC[M" so that will not be
