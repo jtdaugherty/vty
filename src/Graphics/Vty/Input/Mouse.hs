@@ -39,7 +39,7 @@ requestMouseEvents = "\ESC[?1000h\ESC[?1002h\ESC[?1006h\ESC[?1005h"
 disableMouseEvents :: String
 disableMouseEvents = "\ESC[?1000l\ESC[?1002l\ESC[?1006l\ESC[?1005l"
 
--- | Does the specified string begin with a mouse event?"
+-- | Does the specified string begin with a mouse event?
 isMouseEvent :: String -> Bool
 isMouseEvent s = isSGREvent s || isNormalEvent s
 
@@ -81,6 +81,7 @@ rightButton = 2
 hasBitSet :: Int -> Int -> Bool
 hasBitSet val bit = val .&. bit > 0
 
+-- | Attempt to lassify an input string as a mouse event.
 classifyMouseEvent :: String -> KClass
 classifyMouseEvent s = runParser s $ do
     when (not $ isMouseEvent s) failParse
