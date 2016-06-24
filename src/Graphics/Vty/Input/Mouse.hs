@@ -1,3 +1,7 @@
+-- | This module provides parsers for mouse events for both "normal" and
+-- "extended" modes. This implementation was informed by
+--
+-- http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
 module Graphics.Vty.Input.Mouse
     ( requestMouseEvents
     , disableMouseEvents
@@ -13,10 +17,6 @@ import Control.Monad.State
 import Data.List (isPrefixOf)
 import Data.Maybe (catMaybes)
 import Data.Bits ((.&.))
-
--- This implementation was informed by
---
--- http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
 
 -- A mouse event in SGR extended mode is
 --
