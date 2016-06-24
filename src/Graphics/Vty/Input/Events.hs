@@ -22,8 +22,6 @@ data Modifier = MShift | MCtrl | MMeta | MAlt
     deriving (Eq,Show,Read,Ord)
 
 -- | Mouse buttons.
---
--- \todo not supported.
 data Button = BLeft | BMiddle | BRight
     deriving (Eq,Show,Read,Ord)
 
