@@ -13,11 +13,12 @@ module Graphics.Vty.Input.Classify
 
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Mouse
+import Graphics.Vty.Input.Paste
 import Graphics.Vty.Input.Classify.Types
 
 import Codec.Binary.UTF8.Generic (decode)
 
-import Data.List(inits)
+import Data.List (inits)
 import qualified Data.Map as M( fromList, lookup )
 import Data.Maybe ( mapMaybe )
 import qualified Data.Set as S( fromList, member )
@@ -56,6 +57,10 @@ classify :: ClassifyMap -> [Char] -> KClass
 classify table =
     let standardClassifier = compile table
     in \s -> case s of
+        _ | bracketedPasteStarted s ->
+            if bracketedPasteFinished s
+            then parseBracketedPaste s
+            else Prefix
         _ | isMouseEvent s   -> classifyMouseEvent s
         c:cs | ord c >= 0xC2 -> classifyUtf8 c cs
         _                    -> standardClassifier s

@@ -42,6 +42,12 @@ data Event
     -- signal. If read from 'nextEvent' this is the size at the time the
     -- event was processed by Vty. Typically these are the same, but if
     -- somebody is resizing the terminal quickly they can be different.
+    | EvPaste String
+    -- ^ A paste event occurs when a bracketed paste input sequence is
+    -- received. For terminals that support bracketed paste mode, these
+    -- events will be triggered on a paste event. Terminals that do not
+    -- support bracketed pastes will send the paste contents as ordinary
+    -- input (which is probably bad, so beware!)
     deriving (Eq,Show,Read,Ord)
 
 type ClassifyMap = [(String,Event)]
