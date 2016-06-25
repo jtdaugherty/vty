@@ -9,6 +9,7 @@ module Graphics.Vty.Output.XTermColor ( reserveTerminal )
     where
 
 import Graphics.Vty.Output.Interface
+import Graphics.Vty.Input.Mouse
 import qualified Graphics.Vty.Output.TerminfoBased as TerminfoBased
 
 import Blaze.ByteString.Builder (writeToByteString)
@@ -34,12 +35,14 @@ reserveTerminal variant outFd = liftIO $ do
     let variant' = if variant == "xterm-color" then "xterm" else variant
     flushedPut setUtf8CharSet
     flushedPut enableBracketedPastes
+    flushedPut requestMouseEvents
     t <- TerminfoBased.reserveTerminal variant' outFd
     let t' = t
              { terminalID = terminalID t ++ " (xterm-color)"
              , releaseTerminal = do
                  liftIO $ flushedPut setDefaultCharSet
                  liftIO $ flushedPut disableBracketedPastes
+                 liftIO $ flushedPut disableMouseEvents
                  releaseTerminal t
              , mkDisplayContext = \tActual r -> do
                 dc <- mkDisplayContext t tActual r

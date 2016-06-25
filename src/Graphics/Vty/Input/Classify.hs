@@ -12,6 +12,8 @@ module Graphics.Vty.Input.Classify
     ) where
 
 import Graphics.Vty.Input.Events
+import Graphics.Vty.Input.Mouse
+import Graphics.Vty.Input.Classify.Types
 
 import Codec.Binary.UTF8.Generic (decode)
 
@@ -22,12 +24,6 @@ import qualified Data.Set as S( fromList, member )
 
 import Data.Char
 import Data.Word
-
-data KClass
-    = Valid Event [Char]
-    | Invalid
-    | Prefix
-    deriving(Show, Eq)
 
 compile :: ClassifyMap -> [Char] -> KClass
 compile table = cl' where
@@ -64,6 +60,7 @@ classify table =
             if bracketedPasteFinished s
             then parseBracketedPaste s
             else Prefix
+        _ | isMouseEvent s   -> classifyMouseEvent s
         c:cs | ord c >= 0xC2 -> classifyUtf8 c cs
         _                    -> standardClassifier s
 
