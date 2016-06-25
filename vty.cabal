@@ -94,7 +94,10 @@ library
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.Image.Internal
                        Graphics.Vty.Input.Classify
+                       Graphics.Vty.Input.Classify.Types
+                       Graphics.Vty.Input.Classify.Parse
                        Graphics.Vty.Input.Loop
+                       Graphics.Vty.Input.Mouse
                        Graphics.Vty.Input.Terminfo
                        Graphics.Vty.PictureToSpans
                        Graphics.Vty.Span
