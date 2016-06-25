@@ -13,7 +13,6 @@ import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Classify.Types
 import Graphics.Vty.Input.Classify.Parse
 
-import Control.Monad.Trans.Maybe
 import Control.Monad.State
 import Data.List (isPrefixOf)
 import Data.Maybe (catMaybes)
