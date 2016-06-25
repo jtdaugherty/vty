@@ -1,3 +1,13 @@
+5.6
+  - Added support for normal and extended mouse modes in Xterm-like
+    terminals via the MouseDown and MouseUp Event constructors
+  - Added support for bracketed paste mode in Xterm-like terminals via
+    the EvPaste event constructor
+  - Added derived Show instances for Event and Button (thanks Felix
+    Hirn)
+  - Now TERM values containing "screen" will automatically use the
+    XtermColor driver rather than just TerminfoBased
+
 5.5.0
   - Replaced lens dependency with microlens, microlens-mtl, microlens-th dependencies. Issue #90
     - Thanks Jonathan Daugherty
