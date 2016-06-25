@@ -54,8 +54,8 @@ import Data.Monoid ((<>))
 --
 -- Selection of a terminal is done as follows:
 --
---      * If TERM == xterm use XTermColor.
---      * for any other TERM value TerminfoBased is used.
+--      * If TERM contains "xterm" or "screen", use XTermColor.
+--      * otherwise use the TerminfoBased driver.
 --
 -- \todo add an implementation for windows that does not depend on terminfo. Should be installable
 -- with only what is provided in the haskell platform. Use ansi-terminal
