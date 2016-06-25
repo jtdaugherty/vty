@@ -71,6 +71,9 @@ cabal install vty
 * Supports "normal" and "extended" (SGR) mouse modes as described at
   http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
 
+* Supports bracketed paste mode as described at
+  http://cirw.in/blog/bracketed-paste
+
 # Platform Support
 
 ## Posix Terminals
