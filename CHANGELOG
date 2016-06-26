@@ -1,3 +1,17 @@
+5.7
+  - Mouse and paste modes are now off by default.
+  - The Config type got new fields: mouseMode and bracketedPasteMode.  These
+    determine whether these modes are enabled initially (for terminals
+    that support them).
+  - Added a Mode type for modal terminal features (mouse events, bracketed
+    paste mode) that is used with new Output interface functions:
+    * supportsMode :: Mode -> Bool tells whether the device supports a
+      mode
+    * setMode :: Mode -> Bool -> IO () turns a mode on or off
+    * getModeStatus :: Mode -> IO Bool tells you whether a mode is on or
+      off
+  - Added a new demo program, ModeDemo.hs, to demonstrate usage of modes
+
 5.6
   - Added support for normal and extended mouse modes in Xterm-like
     terminals via the MouseDown and MouseUp Event constructors
