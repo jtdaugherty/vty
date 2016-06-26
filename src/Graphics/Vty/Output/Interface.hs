@@ -37,6 +37,11 @@ import qualified Data.Vector as Vector
 import Data.Monoid (mempty, mappend)
 #endif
 
+-- | Modal terminal features that can be enabled and disabled.
+data Mode = Mouse
+          | BracketedPaste
+          deriving (Eq, Read, Show)
+
 data Output = Output
     { -- | Text identifier for the output device. Used for debugging. 
       terminalID :: String
@@ -67,6 +72,12 @@ data Output = Output
     , contextColorCount :: Int
     -- | if the cursor can be shown / hidden
     , supportsCursorVisibility :: Bool
+    -- | Indicates support for terminal modes for this output device
+    , supportsMode :: Mode -> Bool
+    -- | Enables or disables a mode (does nothing if the mode is unsupported)
+    , setMode :: forall m. MonadIO m => Mode -> Bool -> m ()
+    -- | Returns whether a mode is enabled
+    , getModeStatus :: forall m. MonadIO m => Mode -> m Bool
     , assumedStateRef :: IORef AssumedState
     -- | Acquire display access to the given region of the display.
     -- Currently all regions have the upper left corner of (0,0) and the lower right corner at 

@@ -47,6 +47,9 @@ mockTerminal r = liftIO $ do
                 writeIORef outRef $ UTF8.fromRep bytes
             , contextColorCount = 16
             , supportsCursorVisibility = True
+            , supportsMode = const False
+            , setMode = const $ const $ return ()
+            , getModeStatus = const $ return False
             , assumedStateRef = newAssumedStateRef
             , mkDisplayContext = \tActual rActual -> return $ DisplayContext
                 { contextRegion = rActual

@@ -104,6 +104,10 @@ data Config = Config
       vmin  :: Maybe Int
     -- | The default is 100 milliseconds, 0.1 seconds.
     , vtime :: Maybe Int
+    -- | The default is False.
+    , mouseMode :: Maybe Bool
+    -- | The default is False.
+    , bracketedPasteMode :: Maybe Bool
     -- | Debug information is appended to this file if not Nothing.
     , debugLog           :: Maybe FilePath
     -- | The (input byte, output event) pairs extend the internal input table of VTY and the table
@@ -127,6 +131,8 @@ instance Monoid Config where
     mempty = Config
         { vmin         = Nothing
         , vtime        = Nothing
+        , mouseMode    = Nothing
+        , bracketedPasteMode = Nothing
         , debugLog     = mempty
         , inputMap     = mempty
         , inputFd     = Nothing
@@ -137,6 +143,8 @@ instance Monoid Config where
         -- latter config takes priority for everything but inputMap
         { vmin          = vmin c1     <|> vmin c0
         , vtime         = vtime c1    <|> vtime c0
+        , mouseMode     = mouseMode c1
+        , bracketedPasteMode = bracketedPasteMode c1
         , debugLog      = debugLog c1 <|> debugLog c0
         , inputMap      = inputMap c0 <>  inputMap c1
         , inputFd      = inputFd c1 <|> inputFd c0
@@ -163,6 +171,8 @@ standardIOConfig :: IO Config
 standardIOConfig = do
     Just t <- getEnv "TERM"
     return $ def { vmin = Just 1
+                 , mouseMode = Just False
+                 , bracketedPasteMode = Just False
                  , vtime = Just 100
                  , inputFd = Just stdInput
                  , outputFd = Just stdOutput

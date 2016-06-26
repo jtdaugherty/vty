@@ -173,6 +173,9 @@ reserveTerminal termName outFd = liftIO $ do
                         Just v -> toEnum v
                     True -> 1
             , supportsCursorVisibility = isJust $ civis terminfoCaps
+            , supportsMode = const False
+            , setMode = const $ const $ return ()
+            , getModeStatus = const $ return False
             , assumedStateRef = newAssumedStateRef
             -- I think fix would help assure tActual is the only reference. I was having issues
             -- tho.

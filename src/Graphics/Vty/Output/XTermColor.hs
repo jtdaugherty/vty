@@ -15,8 +15,9 @@ import qualified Graphics.Vty.Output.TerminfoBased as TerminfoBased
 import Blaze.ByteString.Builder (writeToByteString)
 import Blaze.ByteString.Builder.Word (writeWord8)
 
-import Control.Monad (void)
+import Control.Monad (void, when)
 import Control.Monad.Trans
+import Data.IORef
 
 import System.Posix.IO (fdWrite)
 import System.Posix.Types (Fd)
@@ -34,19 +35,42 @@ reserveTerminal variant outFd = liftIO $ do
     -- xterm-color is broken.
     let variant' = if variant == "xterm-color" then "xterm" else variant
     flushedPut setUtf8CharSet
-    flushedPut enableBracketedPastes
-    flushedPut requestMouseEvents
     t <- TerminfoBased.reserveTerminal variant' outFd
+
+    mouseModeStatus <- newIORef False
+    pasteModeStatus <- newIORef False
+
+    let xtermSetMode t' m newStatus = do
+          curStatus <- getModeStatus t' m
+          when (newStatus /= curStatus) $
+              case m of
+                  Mouse -> liftIO $ do
+                      case newStatus of
+                          True -> flushedPut requestMouseEvents
+                          False -> flushedPut disableMouseEvents
+                      writeIORef mouseModeStatus newStatus
+                  BracketedPaste -> liftIO $ do
+                      case newStatus of
+                          True -> flushedPut enableBracketedPastes
+                          False -> flushedPut disableBracketedPastes
+                      writeIORef pasteModeStatus newStatus
+
+        xtermGetMode Mouse = liftIO $ readIORef mouseModeStatus
+        xtermGetMode BracketedPaste = liftIO $ readIORef pasteModeStatus
+
     let t' = t
              { terminalID = terminalID t ++ " (xterm-color)"
              , releaseTerminal = do
                  liftIO $ flushedPut setDefaultCharSet
-                 liftIO $ flushedPut disableBracketedPastes
-                 liftIO $ flushedPut disableMouseEvents
+                 setMode t' BracketedPaste False
+                 setMode t' Mouse False
                  releaseTerminal t
              , mkDisplayContext = \tActual r -> do
                 dc <- mkDisplayContext t tActual r
                 return $ dc { inlineHack = xtermInlineHack t' }
+             , supportsMode = const True
+             , getModeStatus = xtermGetMode
+             , setMode = xtermSetMode t'
              }
     return t'
 

@@ -49,6 +49,7 @@ module Graphics.Vty ( Vty(..)
                     , module Graphics.Vty.Output
                     , module Graphics.Vty.Picture
                     , DisplayRegion
+                    , Mode(..)
                     ) 
     where
 
@@ -57,6 +58,7 @@ import Graphics.Vty.Prelude
 import Graphics.Vty.Config
 import Graphics.Vty.Input
 import Graphics.Vty.Output
+import Graphics.Vty.Output.Interface
 import Graphics.Vty.Picture
 
 import Control.Concurrent.STM

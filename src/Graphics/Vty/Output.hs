@@ -65,6 +65,15 @@ outputForConfig Config{ outputFd = Just fd, termName = Just termName, .. } = do
         then XTermColor.reserveTerminal termName fd
         -- Not an xterm-like terminal. try for generic terminfo.
         else TerminfoBased.reserveTerminal termName fd
+
+    case mouseMode of
+        Just s -> setMode t Mouse s
+        Nothing -> return ()
+
+    case bracketedPasteMode of
+        Just s -> setMode t BracketedPaste s
+        Nothing -> return ()
+
     return t
 outputForConfig config = (<> config) <$> standardIOConfig >>= outputForConfig
 
