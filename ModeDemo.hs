@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Applicative
 import Data.Monoid
 
 import Graphics.Vty
