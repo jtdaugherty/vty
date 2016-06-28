@@ -1,3 +1,6 @@
+5.7.1
+  - ModeDemo: added an explicit Control.Applicative import for older GHCs
+
 5.7
   - Mouse and paste modes are now off by default.
   - The Config type got new fields: mouseMode and bracketedPasteMode.  These
