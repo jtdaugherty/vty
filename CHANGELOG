@@ -1,3 +1,8 @@
+5.8
+  - API change: EvPaste input event now provides paste data as a raw
+    ByteString rather than a String to allow the application to decode
+    how best to decode it
+
 5.7.1
   - Changed ModeDemo to import Control.Applicative explicitly for older
     GHCs
