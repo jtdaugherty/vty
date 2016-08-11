@@ -7,6 +7,8 @@ module Graphics.Vty.Input.Paste
     , bracketedPasteFinished
     ) where
 
+import qualified Data.ByteString.Char8 as BS8
+
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Classify.Types
 
@@ -35,7 +37,7 @@ parseBracketedPaste s =
         rest' = if bracketedPasteEnd `isPrefixOf` rest
                 then drop (length bracketedPasteEnd) rest
                 else rest
-    in Valid (EvPaste p) rest'
+    in Valid (EvPaste $ BS8.pack p) rest'
 
 takeUntil :: (Eq a) => [a] -> [a] -> ([a],[a])
 takeUntil [] _ = ([], [])
