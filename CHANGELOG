@@ -1,3 +1,8 @@
+5.9.1
+  - Vty now only emits UTF8 charset sequences in terminals without a
+    preexisting UTF8 declaration to avoid emitting garbage sequences
+    (fixes #89)
+
 5.9
   - Added new Output methods supportsBell and ringTerminalBell to find out
     whether the output device has an audio bell and to ring it (see #102)
