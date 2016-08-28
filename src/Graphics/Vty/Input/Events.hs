@@ -1,5 +1,7 @@
 module Graphics.Vty.Input.Events where
 
+import Data.ByteString
+
 -- | Representations of non-modifier keys.
 --
 -- * KFun is indexed from 0 to 63. Range of supported FKeys varies by terminal and keyboard.
@@ -42,12 +44,14 @@ data Event
     -- signal. If read from 'nextEvent' this is the size at the time the
     -- event was processed by Vty. Typically these are the same, but if
     -- somebody is resizing the terminal quickly they can be different.
-    | EvPaste String
+    | EvPaste ByteString
     -- ^ A paste event occurs when a bracketed paste input sequence is
     -- received. For terminals that support bracketed paste mode, these
     -- events will be triggered on a paste event. Terminals that do not
     -- support bracketed pastes will send the paste contents as ordinary
-    -- input (which is probably bad, so beware!)
+    -- input (which is probably bad, so beware!) Note that the data is
+    -- provided in raw form and you'll have to decode (e.g. as UTF-8) if
+    -- that's what your application expects.
     deriving (Eq,Show,Read,Ord)
 
 type ClassifyMap = [(String,Event)]
