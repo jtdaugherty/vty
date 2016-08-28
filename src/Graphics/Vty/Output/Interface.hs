@@ -83,6 +83,10 @@ data Output = Output
     -- Currently all regions have the upper left corner of (0,0) and the lower right corner at 
     -- (max displayWidth providedWidth, max displayHeight providedHeight)
     , mkDisplayContext :: forall m. MonadIO m => Output -> DisplayRegion -> m DisplayContext
+    -- | Ring the terminal bell if supported.
+    , ringTerminalBell :: forall m. MonadIO m => m ()
+    -- | Returns whether the terminal has an audio bell feature.
+    , supportsBell :: forall m. MonadIO m => m Bool
     }
 
 displayContext :: MonadIO m => Output -> DisplayRegion -> m DisplayContext

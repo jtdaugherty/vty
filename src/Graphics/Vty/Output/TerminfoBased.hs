@@ -64,6 +64,7 @@ data TerminfoCaps = TerminfoCaps
     , clearScreen :: CapExpression
     , clearEol :: CapExpression
     , displayAttrCaps :: DisplayAttrCaps
+    , ringBellAudio :: Maybe CapExpression
     }
 
 data DisplayAttrCaps = DisplayAttrCaps
@@ -140,12 +141,15 @@ reserveTerminal termName outFd = liftIO $ do
         <*> requireCap ti "clear"
         <*> requireCap ti "el"
         <*> currentDisplayAttrCaps ti
+        <*> probeCap ti "bel"
     newAssumedStateRef <- newIORef initialAssumedState
     let t = Output
             { terminalID = termName
             , releaseTerminal = liftIO $ do
                 sendCap setDefaultAttr []
                 maybeSendCap cnorm []
+            , supportsBell = return $ isJust $ ringBellAudio terminfoCaps
+            , ringTerminalBell = liftIO $ maybeSendCap ringBellAudio []
             , reserveDisplay = liftIO $ do
                 -- If there is no support for smcup: Clear the screen and then move the mouse to the
                 -- home position to approximate the behavior.
