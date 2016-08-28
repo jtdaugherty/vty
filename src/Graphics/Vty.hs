@@ -162,10 +162,13 @@ intMkVty input out = do
             writeIORef lastUpdateRef $ Just updateData
             writeIORef lastPicRef $ Just inPic'
 
-    let innerRefresh 
-            =   writeIORef lastUpdateRef Nothing
-            >>  readIORef lastPicRef 
-            >>= maybe ( return () ) ( \pic -> innerUpdate pic ) 
+    let innerRefresh = do
+            writeIORef lastUpdateRef Nothing
+            bounds <- displayBounds out
+            dc <- displayContext out bounds
+            writeIORef (assumedStateRef $ contextDevice dc) initialAssumedState
+            mPic <- readIORef lastPicRef
+            maybe (return ()) innerUpdate mPic
 
     let gkey = do k <- atomically $ readTChan $ _eventChannel input
                   case k of 
