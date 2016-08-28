@@ -1,3 +1,6 @@
+5.8.1
+  - Fixed "refresh" to work as advertised (see #104)
+
 5.8
   - API change: EvPaste input event now provides paste data as a raw
     ByteString rather than a String to allow the application to decode
