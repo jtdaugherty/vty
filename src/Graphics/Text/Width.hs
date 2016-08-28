@@ -8,12 +8,7 @@ module Graphics.Text.Width ( wcwidth
                            )
     where
 
-import Foreign.C.Types (CInt(..))
-
-foreign import ccall unsafe "vty_mk_wcwidth" c_wcwidth :: Char -> CInt
-
-wcwidth :: Char -> Int
-wcwidth = fromIntegral . c_wcwidth
+foreign import ccall unsafe "vty_mk_wcwidth" wcwidth :: Char -> Int
 
 wcswidth :: String -> Int
 wcswidth = sum . map wcwidth
