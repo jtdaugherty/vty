@@ -8,7 +8,12 @@ module Graphics.Text.Width ( wcwidth
                            )
     where
 
-foreign import ccall unsafe "vty_mk_wcwidth" wcwidth :: Char -> Int
+import Foreign.C.Types (CInt(..))
+
+foreign import ccall unsafe "vty_mk_wcwidth" c_wcwidth :: Char -> CInt
+
+wcwidth :: Char -> Int
+wcwidth = fromIntegral . c_wcwidth
 
 wcswidth :: String -> Int
 wcswidth = sum . map wcwidth
@@ -22,13 +27,8 @@ wcswidth = sum . map wcwidth
 
 -- | Returns the display width of a character. Assumes all characters with unknown widths are 0 width
 safeWcwidth :: Char -> Int
-safeWcwidth c = case wcwidth c of
-    i   | i < 0 -> 0
-        | otherwise -> i
+safeWcwidth = max 0 . wcwidth
 
 -- | Returns the display width of a string. Assumes all characters with unknown widths are 0 width
 safeWcswidth :: String -> Int
-safeWcswidth str = case wcswidth str of
-    i   | i < 0 -> 0
-        | otherwise -> i
-
+safeWcswidth = sum . map safeWcwidth
