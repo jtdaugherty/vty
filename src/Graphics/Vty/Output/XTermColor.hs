@@ -21,11 +21,16 @@ import Data.IORef
 
 import System.Posix.IO (fdWrite)
 import System.Posix.Types (Fd)
+import System.Posix.Env (getEnv)
 
 #if !(MIN_VERSION_base(4,8,0))
 import Control.Applicative
 import Data.Foldable (foldMap)
 #endif
+
+import Data.List (isInfixOf)
+import Data.Maybe (catMaybes)
+import Data.Monoid ((<>))
 
 -- | Initialize the display to UTF-8. 
 reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output
@@ -34,7 +39,9 @@ reserveTerminal variant outFd = liftIO $ do
     -- If the terminal variant is xterm-color use xterm instead since, more often than not,
     -- xterm-color is broken.
     let variant' = if variant == "xterm-color" then "xterm" else variant
-    flushedPut setUtf8CharSet
+
+    utf8a <- utf8Active
+    when (not utf8a) $ flushedPut setUtf8CharSet
     t <- TerminfoBased.reserveTerminal variant' outFd
 
     mouseModeStatus <- newIORef False
@@ -61,7 +68,7 @@ reserveTerminal variant outFd = liftIO $ do
     let t' = t
              { terminalID = terminalID t ++ " (xterm-color)"
              , releaseTerminal = do
-                 liftIO $ flushedPut setDefaultCharSet
+                 when (not utf8a) $ liftIO $ flushedPut setDefaultCharSet
                  setMode t' BracketedPaste False
                  setMode t' Mouse False
                  releaseTerminal t
@@ -73,6 +80,14 @@ reserveTerminal variant outFd = liftIO $ do
              , setMode = xtermSetMode t'
              }
     return t'
+
+utf8Active :: IO Bool
+utf8Active = do
+    let vars = ["LC_ALL", "LANG", "LC_CTYPE"]
+    results <- catMaybes <$> mapM getEnv vars
+    let matches = filter ("UTF8" `isInfixOf`) results <>
+                  filter ("UTF-8" `isInfixOf`) results
+    return $ not $ null matches
 
 -- | Enable bracketed paste mode:
 -- http://cirw.in/blog/bracketed-paste
