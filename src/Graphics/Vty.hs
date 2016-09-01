@@ -129,43 +129,25 @@ intMkVty input out = do
     lastUpdateRef <- newIORef Nothing
 
     let innerUpdate inPic = do
-            b@(w,h) <- displayBounds out
+            b <- displayBounds out
             let cursor  = picCursor inPic
-                inPic' = case cursor of
-                  AbsoluteCursor x y ->
-                    let x' = max 0 (min (w-1) x)
-                        y' = max 0 (min (h-1) y)
-                    in inPic { picCursor = AbsoluteCursor x' y' }
-                  -- TODO: account for logical width in Cursor case
-                  Cursor x y ->
-                    let
-                       x'      = case x of
-                                   _ | x < 0     -> 0
-                                     | x >= w    -> w - 1
-                                     | otherwise -> x
-                       y'      = case y of
-                                   _ | y < 0     -> 0
-                                     | y >= h    -> h - 1
-                                     | otherwise -> y
-                     in inPic { picCursor = Cursor x' y' }
-                  _ -> inPic
             mlastUpdate <- readIORef lastUpdateRef
             updateData <- case mlastUpdate of
                 Nothing -> do
                     dc <- displayContext out b
-                    outputPicture dc inPic'
+                    outputPicture dc inPic
                     return (b, dc)
                 Just (lastBounds, lastContext) -> do
                     if b /= lastBounds
                         then do
                             dc <- displayContext out b
-                            outputPicture dc inPic'
+                            outputPicture dc inPic
                             return (b, dc)
                         else do
-                            outputPicture lastContext inPic'
+                            outputPicture lastContext inPic
                             return (b, lastContext)
             writeIORef lastUpdateRef $ Just updateData
-            writeIORef lastPicRef $ Just inPic'
+            writeIORef lastPicRef $ Just inPic
 
     let innerRefresh = do
             writeIORef lastUpdateRef Nothing

@@ -166,15 +166,20 @@ outputPicture dc pic = liftIO $ do
         out = (if manipCursor then writeHideCursor dc else mempty)
               `mappend` writeOutputOps dc initialAttr diffs ops
               `mappend`
-                (case picCursor pic of
+                (let (w,h) = contextRegion dc
+                     clampX = max 0 . min (w-1)
+                     clampY = max 0 . min (h-1) in
+                 case picCursor pic of
                     _ | not manipCursor -> mempty
                     NoCursor            -> mempty
                     AbsoluteCursor x y ->
-                        writeShowCursor dc `mappend` writeMoveCursor dc x y
+                        writeShowCursor dc `mappend`
+                        writeMoveCursor dc (clampX x) (clampY y)
                     Cursor x y           ->
                         let m = cursorOutputMap ops $ picCursor pic
                             (ox, oy) = charToOutputPos m (x,y)
-                        in writeShowCursor dc `mappend` writeMoveCursor dc ox oy
+                        in writeShowCursor dc `mappend`
+                           writeMoveCursor dc (clampX ox) (clampY oy)
                 )
     -- ... then serialize
     outputByteBuffer (contextDevice dc) (writeToByteString out)
