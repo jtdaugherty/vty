@@ -168,7 +168,9 @@ outputPicture dc pic = liftIO $ do
               `mappend`
                 (case picCursor pic of
                     _ | not manipCursor -> mempty
-                    NoCursor             -> mempty
+                    NoCursor            -> mempty
+                    AbsoluteCursor x y ->
+                        writeShowCursor dc `mappend` writeMoveCursor dc x y
                     Cursor x y           ->
                         let m = cursorOutputMap ops $ picCursor pic
                             (ox, oy) = charToOutputPos m (x,y)

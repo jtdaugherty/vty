@@ -132,6 +132,11 @@ intMkVty input out = do
             b@(w,h) <- displayBounds out
             let cursor  = picCursor inPic
                 inPic' = case cursor of
+                  AbsoluteCursor x y ->
+                    let x' = max 0 (min (w-1) x)
+                        y' = max 0 (min (h-1) y)
+                    in inPic { picCursor = AbsoluteCursor x' y' }
+                  -- TODO: account for logical width in Cursor case
                   Cursor x y ->
                     let
                        x'      = case x of
