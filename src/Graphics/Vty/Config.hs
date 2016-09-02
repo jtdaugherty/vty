@@ -79,6 +79,7 @@ import Control.Monad (liftM, guard, void)
 
 import qualified Data.ByteString as BS
 import Data.Default
+import Data.Maybe
 import Data.Monoid
 
 import Graphics.Vty.Input.Events
@@ -167,7 +168,7 @@ overrideEnvConfig = do
 
 standardIOConfig :: IO Config
 standardIOConfig = do
-    Just t <- getEnv "TERM"
+    t <- fromMaybe (error "TERM is missing") <$> getEnv "TERM"
     return $ def { vmin = Just 1
                  , mouseMode = Just False
                  , bracketedPasteMode = Just False
