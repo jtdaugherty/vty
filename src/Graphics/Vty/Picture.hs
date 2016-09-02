@@ -69,13 +69,16 @@ picForLayers is = Picture
 --
 -- todo: The Cursor can be given a (character,row) offset outside of the visible bounds of the
 -- output region. In this case the cursor will not be shown.
-data Cursor = 
+data Cursor =
+      -- | Hide the cursor
       NoCursor
-    | Cursor Int Int
+      -- | Show the cursor at the given logical column accounting for char width and row
+    | Cursor !Int !Int
+      -- | Show the cursor at the given absolute terminal column and row
+    | AbsoluteCursor !Int !Int
 
 instance NFData Cursor where
-    rnf NoCursor = ()
-    rnf (Cursor w h) = w `seq` h `seq` ()
+    rnf c = c `seq` ()
 
 -- | A 'Picture' has a background pattern. The background is either ClearBackground. Which shows the
 -- layer below or is blank if the bottom layer. Or the background pattern is a character and a
@@ -85,11 +88,11 @@ instance NFData Cursor where
 -- \todo The current attribute is always set to the default attributes at the start of updating the
 -- screen to a picture.
 data Background
-    = Background 
+    = Background
     { backgroundChar :: Char
     , backgroundAttr :: Attr
     }
-     -- | A ClearBackground is: 
+     -- | A ClearBackground is:
      --
      -- * the space character if there are remaining non-skip ops
      --

@@ -1,3 +1,6 @@
+5.10
+  - Add aboslute cursor positioning mode AbsoluteCursor to Cursor
+
 5.9.1
   - Vty now only emits UTF8 charset sequences in terminals without a
     preexisting UTF8 declaration to avoid emitting garbage sequences

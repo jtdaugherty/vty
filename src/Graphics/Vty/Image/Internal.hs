@@ -38,12 +38,13 @@ clipText txt leftSkip rightClip =
         txt' = if padPrefix then TL.cons '…' (TL.drop (toDrop+1) txt) else TL.drop toDrop txt
         (toTake,padSuffix) = clipForCharWidth rightClip txt' 0
         txt'' = TL.append (TL.take toTake txt') (if padSuffix then TL.singleton '…' else TL.empty)
-        clipForCharWidth 0 _ n = (n, False)
+        -- Note: some characters and zero-width and combining characters
+        -- combine to the left, so keep taking characters even if the width
+        -- is zero.
         clipForCharWidth w t n
             | TL.null t = (n, False)
-            | w <  cw = (n, True)
-            | w == cw = (n+1, False)
-            | w >  cw = clipForCharWidth (w - cw) (TL.tail t) (n + 1)
+            | w < cw    = (n, w /= 0)
+            | otherwise = clipForCharWidth (w - cw) (TL.tail t) (n + 1)
             where cw = safeWcwidth (TL.head t)
         clipForCharWidth _ _ _ = error "clipForCharWidth applied to undefined"
     in txt''
