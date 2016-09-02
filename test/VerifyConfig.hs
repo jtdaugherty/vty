@@ -6,13 +6,14 @@ import Graphics.Vty.Input.Events
 
 import Data.Default
 import Data.String.QQ
+import qualified Data.ByteString.Char8 as B
 
 import Test.Framework
 import Test.Framework.Providers.HUnit
 import Test.HUnit hiding (Test)
 
-exampleConfig :: String
-exampleConfig = [s|
+exampleConfig :: B.ByteString
+exampleConfig = B.pack [s|
 -- comments should be ignored.
 map _ "\ESC[B" KUp []
 askfjla dfasjdflk jasdlkfj asdfj -- lines failing parse should be ignored
@@ -33,9 +34,10 @@ exampleConfigConfig = def
     }
 
 exampleConfigParses :: IO ()
-exampleConfigParses = assertEqual "example config parses as expected"
-                                  exampleConfigConfig
-                                  (runParseConfig "exampleConfig" exampleConfig)
+exampleConfigParses =
+  assertEqual "example config parses as expected"
+    exampleConfigConfig
+    (runParseConfig "exampleConfig" exampleConfig)
 
 main :: IO ()
 main = defaultMain
