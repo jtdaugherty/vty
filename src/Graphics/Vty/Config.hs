@@ -266,7 +266,7 @@ parseModifier :: forall s u (m :: * -> *).
 parseModifier = do
     m <- P.identifier configLexer
     case m of
-        "KMenu" -> return MShift
+        "MShift" -> return MShift
         "MCtrl" -> return MCtrl
         "MMeta" -> return MMeta
         "MAlt" -> return MAlt
