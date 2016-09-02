@@ -232,8 +232,8 @@ ignoreLine = void $ manyTill anyChar newline
 parseConfig :: Parser Config
 parseConfig = liftM mconcat $ many $ do
     P.whiteSpace configLexer
-    let directives = [mapDecl, debugLogDecl]
-    try (choice directives) <|> (ignoreLine >> return def)
+    let directives = [try mapDecl, try debugLogDecl]
+    choice directives <|> (ignoreLine >> return def)
 
 class    Parse a        where parseValue :: Parser a
 instance Parse Char     where parseValue = P.charLiteral configLexer
