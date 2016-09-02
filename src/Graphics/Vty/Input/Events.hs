@@ -1,6 +1,8 @@
+{-# Language DeriveGeneric #-}
 module Graphics.Vty.Input.Events where
 
 import Data.ByteString
+import GHC.Generics
 
 -- | Representations of non-modifier keys.
 --
@@ -15,17 +17,17 @@ data Key = KEsc  | KChar Char | KBS | KEnter
          | KUpLeft | KUpRight | KDownLeft | KDownRight | KCenter
          | KFun Int | KBackTab | KPrtScr | KPause | KIns
          | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin | KMenu
-    deriving (Eq,Show,Read,Ord)
+    deriving (Eq,Show,Read,Ord,Generic)
 
 -- | Modifier keys.  Key codes are interpreted such that users are more likely to
 -- have Meta than Alt; for instance on the PC Linux console, 'MMeta' will
 -- generally correspond to the physical Alt key.
 data Modifier = MShift | MCtrl | MMeta | MAlt
-    deriving (Eq,Show,Read,Ord)
+    deriving (Eq,Show,Read,Ord,Generic)
 
 -- | Mouse buttons.
 data Button = BLeft | BMiddle | BRight
-    deriving (Eq,Show,Read,Ord)
+    deriving (Eq,Show,Read,Ord,Generic)
 
 -- | Events.
 data Event
@@ -52,6 +54,6 @@ data Event
     -- input (which is probably bad, so beware!) Note that the data is
     -- provided in raw form and you'll have to decode (e.g. as UTF-8) if
     -- that's what your application expects.
-    deriving (Eq,Show,Read,Ord)
+    deriving (Eq,Show,Read,Ord,Generic)
 
 type ClassifyMap = [(String,Event)]
