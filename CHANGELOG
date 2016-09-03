@@ -1,5 +1,19 @@
 5.10
-  - Add aboslute cursor positioning mode AbsoluteCursor to Cursor
+  - Add absolute cursor positioning mode AbsoluteCursor to Cursor. This
+    mode provides greater control over cursor positioning by bypassing
+    the logical positioning provided by default. Rather than positioning
+    the cursor by looking at the widths of characters involved, this
+    constructor lets you provide a physical row and column instead. This
+    is useful in more sophisticated programs. (thanks Eric Mertens)
+  - Added a new Generic-derived config parser (thanks Eric Mertens)
+  - Fixed the MShift case in the configuration file parser (thanks Eric
+    Mertens)
+  - Fixed wcwidth import and matched safeWcswidth to its documented
+    behavior. Previously vty_mk_wcwidth was being imported with
+    the wrong type causing the -1 return value to be mapped to the
+    wrong Int value. Additionally safeWcswidth was using the unsafe
+    character width function and only ensuring that the final result was
+    non-negative. (thanks Eric Mertens)
 
 5.9.1
   - Vty now only emits UTF8 charset sequences in terminals without a
