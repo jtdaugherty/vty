@@ -64,7 +64,15 @@
 -- Set VTY_DEBUG_LOG. Run vty. Check debug log for incorrect mappings. Add corrected mappings to
 -- .vty/config
 --
-module Graphics.Vty.Config where
+module Graphics.Vty.Config
+  ( InputMap
+  , Config(..)
+  , userConfig
+  , overrideEnvConfig
+  , standardIOConfig
+  , runParseConfig
+  , parseConfigFile
+  ) where
 
 #if __GLASGOW_HASKELL__ > 704
 import Prelude
@@ -182,13 +190,15 @@ parseConfigFile path = do
     catch (runParseConfig path <$> BS.readFile path)
           (\(_ :: IOException) -> return def)
 
-type Parser = Parsec BS.ByteString ()
-
 runParseConfig :: String -> BS.ByteString -> Config
 runParseConfig name cfgTxt =
   case runParser parseConfig () name cfgTxt of
     Right cfg -> cfg
     Left{}    -> def
+
+------------------------------------------------------------------------
+
+type Parser = Parsec BS.ByteString ()
 
 -- I tried to use the haskellStyle here but that was specialized (without requirement?) to the
 -- String stream type.
