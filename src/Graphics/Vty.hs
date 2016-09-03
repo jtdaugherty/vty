@@ -130,7 +130,6 @@ intMkVty input out = do
 
     let innerUpdate inPic = do
             b <- displayBounds out
-            let cursor  = picCursor inPic
             mlastUpdate <- readIORef lastUpdateRef
             updateData <- case mlastUpdate of
                 Nothing -> do
