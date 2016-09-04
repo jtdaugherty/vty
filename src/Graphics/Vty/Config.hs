@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -67,6 +68,7 @@
 module Graphics.Vty.Config
   ( InputMap
   , Config(..)
+  , VtyConfigurationError(..)
   , userConfig
   , overrideEnvConfig
   , standardIOConfig
@@ -82,12 +84,13 @@ import Prelude hiding (catch)
 
 import Control.Applicative hiding (many)
 
-import Control.Exception (catch, IOException)
+import Control.Exception (catch, IOException, Exception(..), throwIO)
 import Control.Monad (liftM, guard, void)
 
 import qualified Data.ByteString as BS
 import Data.Default
 import Data.Monoid
+import Data.Typeable (Typeable)
 
 import Graphics.Vty.Input.Events
 
@@ -101,6 +104,16 @@ import System.Posix.Types (Fd(..))
 import Text.Parsec hiding ((<|>))
 import Text.Parsec.Token ( GenLanguageDef(..) )
 import qualified Text.Parsec.Token as P
+
+-- | Type of errors that can be thrown when configuring VTY
+data VtyConfigurationError
+  = VtyMissingTermEnvVar -- ^ TERM environment variable not set
+  deriving (Show, Eq, Typeable)
+
+instance Exception VtyConfigurationError where
+#if MIN_VERSION_base(4,8,0)
+  displayException VtyMissingTermEnvVar = "TERM environment variable not set"
+#endif
 
 -- | Mappings from input bytes to event in the order specified. Later entries take precedence over
 -- earlier in the case multiple entries have the same byte string.
@@ -173,17 +186,23 @@ overrideEnvConfig = do
     d <- getEnv "VTY_DEBUG_LOG"
     return $ def { debugLog = d }
 
+-- | Configures VTY using defaults suitable for terminals. This action
+-- can raise 'VtyConfigurationError'.
 standardIOConfig :: IO Config
 standardIOConfig = do
-    Just t <- getEnv "TERM"
-    return $ def { vmin = Just 1
-                 , mouseMode = Just False
-                 , bracketedPasteMode = Just False
-                 , vtime = Just 100
-                 , inputFd = Just stdInput
-                 , outputFd = Just stdOutput
-                 , termName = Just t
-                 }
+    mb <- getEnv "TERM"
+    case mb of
+      Nothing -> throwIO VtyMissingTermEnvVar
+      Just t ->
+        return def
+          { vmin               = Just 1
+          , mouseMode          = Just False
+          , bracketedPasteMode = Just False
+          , vtime              = Just 100
+          , inputFd            = Just stdInput
+          , outputFd           = Just stdOutput
+          , termName           = Just t
+          }
 
 parseConfigFile :: FilePath -> IO Config
 parseConfigFile path = do
