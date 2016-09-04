@@ -1,3 +1,9 @@
+5.11
+  - Vty now raises a VtyConfigurationError exception when the TERM
+    evironment variable is missing (thanks Eric Mertens)
+  - Graphics.Vty.Config got an explicit export list to avoid accidentally
+    exporting internal types (thanks Eric Mertens)
+
 5.10
   - Add absolute cursor positioning mode AbsoluteCursor to Cursor. This
     mode provides greater control over cursor positioning by bypassing
