@@ -3,7 +3,7 @@ version:             5.11
 license:             BSD3
 license-file:        LICENSE
 author:              AUTHORS
-maintainer:          Corey O'Connor (coreyoconnor@gmail.com)
+maintainer:          Jonathan Daugherty (cygnus@foobox.com)
 homepage:            https://github.com/coreyoconnor/vty
 category:            User Interfaces
 synopsis:            A simple terminal UI library
