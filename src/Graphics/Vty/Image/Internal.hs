@@ -46,7 +46,6 @@ clipText txt leftSkip rightClip =
             | w < cw    = (n, w /= 0)
             | otherwise = clipForCharWidth (w - cw) (TL.tail t) (n + 1)
             where cw = safeWcwidth (TL.head t)
-        clipForCharWidth _ _ _ = error "clipForCharWidth applied to undefined"
     in txt''
 
 -- | This is the internal representation of Images. Use the constructors in "Graphics.Vty.Image" to
