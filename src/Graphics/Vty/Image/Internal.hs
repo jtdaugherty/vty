@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# OPTIONS_HADDOCK hide #-}
 
 #ifndef MIN_VERSION_base
@@ -10,6 +11,8 @@ module Graphics.Vty.Image.Internal where
 
 import Graphics.Vty.Attributes
 import Graphics.Text.Width
+
+import GHC.Generics
 
 import Control.DeepSeq
 
@@ -139,7 +142,7 @@ data Image =
     -- 
     -- Any image of zero size equals the empty image.
     | EmptyImage
-    deriving Eq
+    deriving (Eq, Generic)
 
 instance Show Image where
     show ( HorizText { attr, displayText, outputWidth, charWidth } )
