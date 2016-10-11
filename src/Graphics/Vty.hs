@@ -158,8 +158,7 @@ intMkVty input out = do
 
     let gkey = do k <- atomically $ readTChan $ _eventChannel input
                   case k of 
-                    (EvResize _ _)  -> innerRefresh
-                                       >> displayBounds out
+                    (EvResize _ _)  -> displayBounds out
                                        >>= return . (\(w,h)-> EvResize w h)
                     _               -> return k
 
