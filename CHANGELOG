@@ -1,3 +1,10 @@
+5.11.1
+  - Add Generic instance for Image
+  - nextEvent: stop trying to refresh on a resize event (fixes segfault
+    on refresh with normal cursor positioning mode)
+  - Remove redundant clause from clipForCharWidth (thanks Eric Mertens)
+  - Update maintainer
+
 5.11
   - Vty now raises a VtyConfigurationError exception when the TERM
     evironment variable is missing (thanks Eric Mertens)
