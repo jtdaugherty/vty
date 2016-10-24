@@ -1,3 +1,7 @@
+5.11.2
+  - Mouse events were modified so that the upper-left corner of the window is
+    (0,0) rather than (1,1).
+
 5.11.1
   - Add Generic instance for Image
   - nextEvent: stop trying to refresh on a resize event (fixes segfault
