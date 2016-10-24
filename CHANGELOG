@@ -1,3 +1,6 @@
+5.11.3
+  - Fix mouse event offsets in mouse-up events
+
 5.11.2
   - Mouse events were modified so that the upper-left corner of the window is
     (0,0) rather than (1,1).
