@@ -129,7 +129,7 @@ classifyNormalMouseEvent = do
     case press of
             True -> do
                 button <- getSGRButton status
-                return $ EvMouseDown xCoord yCoord button modifiers
+                return $ EvMouseDown (xCoord-1) (yCoord-1) button modifiers
             False -> return $ EvMouseUp xCoord yCoord Nothing
 
 -- Attempt to classify a control sequence as an SGR mouse event. To
@@ -147,6 +147,6 @@ classifySGRMouseEvent = do
     let modifiers = getModifiers mods
     button <- getSGRButton mods
     case final of
-        'M' -> return $ EvMouseDown xCoord yCoord button modifiers
+        'M' -> return $ EvMouseDown (xCoord-1) (yCoord-1) button modifiers
         'm' -> return $ EvMouseUp   xCoord yCoord (Just button)
         _ -> failParse
