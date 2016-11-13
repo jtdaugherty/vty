@@ -1,3 +1,10 @@
+5.12
+  - Replaced 'wcwidth' with a call to the utf8proc library's character
+    width function, which is much more up to date (by several Unicode
+    versions) and returns the right width for a much larger set of
+    characters.
+  - Added a bundled version of the utf8proc C library.
+
 5.11.3
   - Fix mouse event offsets in mouse-up events
 
