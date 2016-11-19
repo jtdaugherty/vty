@@ -1,5 +1,5 @@
 name:                vty
-version:             5.12
+version:             5.11.3
 license:             BSD3
 license-file:        LICENSE
 author:              AUTHORS
@@ -116,10 +116,7 @@ library
                        cbits/set_term_timing.c
                        cbits/mk_wcwidth.c
 
-  extra-libraries:     utf8proc
-
-  include-dirs:        cbits /usr/local/include
-  extra-lib-dirs:      /usr/local/lib
+  include-dirs:        cbits
 
   hs-source-dirs:      src
 
