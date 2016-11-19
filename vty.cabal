@@ -40,13 +40,7 @@ data-files:          README.md,
                      TODO,
                      AUTHORS,
                      CHANGELOG,
-                     LICENSE,
-                     cbits/utf8proc/utf8proc_data.c
-                     cbits/utf8proc/utf8proc.h
-                     cbits/utf8proc/LICENSE.md
-                     cbits/utf8proc/README.md
-                     cbits/utf8proc/COMMIT
-
+                     LICENSE
 tested-with:         GHC >= 7.6.2
 
 source-repository head
@@ -121,10 +115,11 @@ library
   c-sources:           cbits/gwinsz.c
                        cbits/set_term_timing.c
                        cbits/mk_wcwidth.c
-                       cbits/utf8proc/utf8proc.c
 
-  include-dirs:        cbits
-                       cbits/utf8proc
+  extra-libraries:     utf8proc
+
+  include-dirs:        cbits /usr/local/include
+  extra-lib-dirs:      /usr/local/lib
 
   hs-source-dirs:      src
 
