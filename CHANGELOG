@@ -1,3 +1,8 @@
+5.13
+  - Reverted changes in 5.12 due to disagreements between terminal emulators
+    and utf8proc; for more details, please see the ticket discussion at
+    https://github.com/coreyoconnor/vty/issues/115
+
 5.12
   - Replaced 'wcwidth' with a call to the utf8proc library's character
     width function, which is much more up to date (by several Unicode
