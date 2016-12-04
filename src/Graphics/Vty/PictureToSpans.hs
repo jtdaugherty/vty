@@ -259,17 +259,19 @@ addMaybeClipped (HorizText a textStr ow _cw) = do
                  in addUnclippedText a textStr'
             else addUnclippedText a textStr
 addMaybeClipped (VertJoin topImage bottomImage _ow oh) = do
-    addMaybeClippedJoin "vert_join" skipRows remainingRows rowOffset
-                           (imageHeight topImage)
-                           topImage
-                           bottomImage
-                           oh
+    when (imageHeight topImage + imageHeight bottomImage > 0) $
+        addMaybeClippedJoin "vert_join" skipRows remainingRows rowOffset
+                            (imageHeight topImage)
+                            topImage
+                            bottomImage
+                            oh
 addMaybeClipped (HorizJoin leftImage rightImage ow _oh) = do
-    addMaybeClippedJoin "horiz_join" skipColumns remainingColumns columnOffset
-                           (imageWidth leftImage)
-                           leftImage
-                           rightImage
-                           ow
+    when (imageWidth leftImage + imageWidth rightImage > 0) $
+        addMaybeClippedJoin "horiz_join" skipColumns remainingColumns columnOffset
+                            (imageWidth leftImage)
+                            leftImage
+                            rightImage
+                            ow
 addMaybeClipped BGFill {outputWidth, outputHeight} = do
     s <- get
     let outputWidth'  = min (outputWidth  - s^.skipColumns) (s^.remainingColumns)
