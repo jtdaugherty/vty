@@ -311,7 +311,7 @@ addMaybeClippedJoin name skip remaining offset i0Dim i0 i1 size = do
     when (state^.remaining <= 0) $ fail $ name ++ " with remaining <= 0"
     case state^.skip of
         s -- TODO: check if clipped in other dim. if not use addUnclipped
-          | s > size -> fail $ name ++ " on fully clipped"
+          | s > size -> put $ state & skip -~ size
           | s == 0    -> if state^.remaining > i0Dim 
                             then do
                                 addMaybeClipped i0
