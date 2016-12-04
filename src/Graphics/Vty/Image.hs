@@ -88,17 +88,13 @@ vertCat = foldr vertJoin EmptyImage
 
 -- | A Data.Text.Lazy value
 text :: Attr -> TL.Text -> Image
-text a txt
-    | TL.length txt == 0 = EmptyImage
-    | otherwise          = let displayWidth = safeWcswidth (TL.unpack txt)
-                           in HorizText a txt displayWidth (fromIntegral $! TL.length txt)
+text a txt = let displayWidth = safeWcswidth (TL.unpack txt)
+             in HorizText a txt displayWidth (fromIntegral $! TL.length txt)
 
 -- | A Data.Text value
 text' :: Attr -> T.Text -> Image
-text' a txt
-    | T.length txt == 0 = EmptyImage
-    | otherwise         = let displayWidth = safeWcswidth (T.unpack txt)
-                          in HorizText a (TL.fromStrict txt) displayWidth (T.length txt)
+text' a txt = let displayWidth = safeWcswidth (T.unpack txt)
+              in HorizText a (TL.fromStrict txt) displayWidth (T.length txt)
 
 -- | an image of a single character. This is a standard Haskell 31-bit character assumed to be in
 -- the ISO-10646 encoding.
@@ -117,7 +113,6 @@ char a c =
 -- directly to iso10646String or string.
 -- 
 iso10646String :: Attr -> String -> Image
-iso10646String _ [] = EmptyImage
 iso10646String a str =
     let displayWidth = safeWcswidth str
     in HorizText a (TL.pack str) displayWidth (length str)

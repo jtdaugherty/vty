@@ -66,14 +66,14 @@ clipText txt leftSkip rightClip =
 --
 -- * an empty image of no size or content.
 data Image = 
-    -- | A horizontal text span is always >= 1 column and has a row height of 1.
+    -- | A horizontal text span has a row height of 1.
       HorizText
       { attr :: Attr
       -- | The text to display. The display width of the text is always outputWidth.
       , displayText :: DisplayText
-      -- | The number of display columns for the text. Always > 0.
+      -- | The number of display columns for the text.
       , outputWidth :: Int
-      -- | the number of characters in the text. Always > 0.
+      -- | the number of characters in the text.
       , charWidth :: Int
       }
     -- | A horizontal join can be constructed between any two images. However a HorizJoin instance is
@@ -82,7 +82,7 @@ data Image =
     | HorizJoin
       { partLeft :: Image 
       , partRight :: Image
-      , outputWidth :: Int -- ^ imageWidth partLeft == imageWidth partRight. Always > 1
+      , outputWidth :: Int -- ^ imageWidth partLeft == imageWidth partRight. Always > 0
       , outputHeight :: Int -- ^ imageHeight partLeft == imageHeight partRight. Always > 0
       }
     -- | A veritical join can be constructed between any two images. However a VertJoin instance is
