@@ -1,3 +1,12 @@
+5.14
+  - addMaybeClippedJoin: instead of raising an exception when the join
+    is totally clipped, just reduce the clip amount and continue
+  - addMaybeClipped: skip blit of joins when their primary dimension is
+    zero
+  - 'string' and related text functions no longer treat an empty string
+    as an empty image (thanks Chris Penner). This means that now it is
+    possible to use 'str ""' as a non-empty image with height 1.
+
 5.13
   - Reverted changes in 5.12 due to disagreements between terminal emulators
     and utf8proc; for more details, please see the ticket discussion at
