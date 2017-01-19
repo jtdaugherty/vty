@@ -83,7 +83,7 @@ some omissions from terminfo.
 
 ## Windows
 
-cygwin only.
+Unsupported (but contributions and testing here are very welcome!)
 
 # Development Notes
 
