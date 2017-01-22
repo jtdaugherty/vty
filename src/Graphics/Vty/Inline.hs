@@ -43,7 +43,6 @@ where
 import Graphics.Vty
 import Graphics.Vty.DisplayAttributes
 import Graphics.Vty.Inline.Unsafe
-import Graphics.Vty.Output.Interface
 
 import Blaze.ByteString.Builder (writeToByteString)
 

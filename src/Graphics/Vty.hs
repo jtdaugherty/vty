@@ -54,6 +54,7 @@ module Graphics.Vty
   , module Graphics.Vty.Config
   , module Graphics.Vty.Input
   , module Graphics.Vty.Output
+  , module Graphics.Vty.Output.Interface
   , module Graphics.Vty.Picture
   , module Graphics.Vty.Image
   , module Graphics.Vty.Attributes

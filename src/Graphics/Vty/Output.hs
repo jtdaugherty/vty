@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
--- | Output interface.
+-- | Output functions.
 --
 -- Access to the current terminal or a specific terminal device.
 --
@@ -23,12 +23,10 @@
 -- where TERM == xterm. This does use terminfo for as many control codes
 -- as possible.
 module Graphics.Vty.Output
-  ( module Graphics.Vty.Output
-  , Output(..) -- \todo hide constructors
-  , AssumedState(..)
-  , DisplayContext(..) -- \todo hide constructors
-  , outputPicture
-  , displayContext
+  ( outputForConfig
+  , setCursorPos
+  , hideCursor
+  , showCursor
   )
 where
 
