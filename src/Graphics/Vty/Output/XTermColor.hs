@@ -36,8 +36,8 @@ import Data.Monoid ((<>))
 reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output
 reserveTerminal variant outFd = liftIO $ do
     let flushedPut = void . fdWrite outFd
-    -- If the terminal variant is xterm-color use xterm instead since, more often than not,
-    -- xterm-color is broken.
+    -- If the terminal variant is xterm-color use xterm instead since,
+    -- more often than not, xterm-color is broken.
     let variant' = if variant == "xterm-color" then "xterm" else variant
 
     utf8a <- utf8Active
@@ -105,9 +105,9 @@ setUtf8CharSet, setDefaultCharSet :: String
 setUtf8CharSet = "\ESC%G"
 setDefaultCharSet = "\ESC%@"
 
--- | I think xterm is broken: Reseting the background color as the first bytes serialized on a
--- new line does not effect the background color xterm uses to clear the line. Which is used
--- *after* the next newline.
+-- | I think xterm is broken: Reseting the background color as the first
+-- bytes serialized on a new line does not effect the background color
+-- xterm uses to clear the line. Which is used *after* the next newline.
 xtermInlineHack :: Output -> IO ()
 xtermInlineHack t = do
     let writeReset = foldMap (writeWord8.toEnum.fromEnum) "\ESC[K"

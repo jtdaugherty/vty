@@ -3,12 +3,15 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE CPP #-}
--- | The input layer used to be a single function that correctly accounted for the non-threaded
--- runtime by emulating the terminal VMIN adn VTIME handling. This has been removed and replace with
--- a more straightforward parser. The non-threaded runtime is no longer supported.
+-- | The input layer used to be a single function that correctly
+-- accounted for the non-threaded runtime by emulating the terminal
+-- VMIN adn VTIME handling. This has been removed and replace with a
+-- more straightforward parser. The non-threaded runtime is no longer
+-- supported.
 --
--- This is an example of an algorithm where code coverage could be high, even 100%, but the
--- behavior is still under tested. I should collect more of these examples...
+-- This is an example of an algorithm where code coverage could be high,
+-- even 100%, but the behavior is still under tested. I should collect
+-- more of these examples...
 --
 -- reference: http://www.unixwiz.net/techtips/termios-vmin-vtime.html
 module Graphics.Vty.Input.Loop where
@@ -46,11 +49,12 @@ import System.Posix.Types (Fd(..))
 import Text.Printf (hPrintf)
 
 data Input = Input
-    { -- | Channel of events direct from input processing. Unlike 'nextEvent' this will not refresh
-      -- the display if the next event is an 'EvResize'.
+    { -- | Channel of events direct from input processing. Unlike
+      -- 'nextEvent' this will not refresh the display if the next event
+      -- is an 'EvResize'.
       _eventChannel  :: TChan Event
-      -- | Shuts down the input processing. This should return the terminal input state to before
-      -- the input initialized.
+      -- | Shuts down the input processing. This should return the
+      -- terminal input state to before he input initialized.
     , shutdownInput :: IO ()
       -- | Changes to this value are reflected after the next event.
     , _configRef :: IORef Config
@@ -86,7 +90,8 @@ logMsg msg = do
         Just h -> liftIO $ hPutStrLn h msg >> hFlush h
 
 -- this must be run on an OS thread dedicated to this input handling.
--- otherwise the terminal timing read behavior will block the execution of the lightweight threads.
+-- otherwise the terminal timing read behavior will block the execution
+-- of the lightweight threads.
 loopInputProcessor :: InputM ()
 loopInputProcessor = do
     readFromDevice >>= addBytesToProcess
@@ -103,10 +108,11 @@ emit event = do
     logMsg $ "parsed event: " ++ show event
     view eventChannel >>= liftIO . atomically . flip writeTChan event
 
--- The timing requirements are assured by the VMIN and VTIME set for the device.
+-- The timing requirements are assured by the VMIN and VTIME set for the
+-- device.
 --
--- Precondition: Under the threaded runtime. Only current use is from a forkOS thread. That case
--- satisfies precondition.
+-- Precondition: Under the threaded runtime. Only current use is from a
+-- forkOS thread. That case satisfies precondition.
 -- TODO: When under the non-threaded runtime emulate VMIN and VTIME
 readFromDevice :: InputM String
 readFromDevice = do
@@ -120,10 +126,11 @@ readFromDevice = do
     bufferPtr <- use $ inputBuffer.ptr
     maxBytes  <- use $ inputBuffer.size
     stringRep <- liftIO $ do
-        -- The killThread used in shutdownInput will not interrupt the foreign call fdReadBuf uses
-        -- this provides a location to be interrupted prior to the foreign call. If there is input
-        -- on the FD then the fdReadBuf will return in a finite amount of time due to the vtime
-        -- terminal setting.
+        -- The killThread used in shutdownInput will not interrupt the
+        -- foreign call fdReadBuf uses this provides a location to be
+        -- interrupted prior to the foreign call. If there is input on
+        -- the FD then the fdReadBuf will return in a finite amount of
+        -- time due to the vtime terminal setting.
         threadWaitRead fd
         bytesRead <- fdReadBuf fd bufferPtr (fromIntegral maxBytes)
         if bytesRead > 0

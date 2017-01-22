@@ -3,15 +3,17 @@
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ScopedTypeVariables #-}
--- | A 'Config' can be provided to mkVty to customize the applications use of vty. A config file can
--- be used to customize vty for a user's system.
+-- | A 'Config' can be provided to mkVty to customize the applications
+-- use of vty. A config file can be used to customize vty for a user's
+-- system.
 --
--- The 'Config' provided is mappend'd to 'Config's loaded from @'getAppUserDataDirectory'/config@
--- and @$VTY_CONFIG_FILE@. The @$VTY_CONFIG_FILE@ takes precedence over the @config@ file or the
+-- The 'Config' provided is mappend'd to 'Config's loaded from
+-- @'getAppUserDataDirectory'/config@ and @$VTY_CONFIG_FILE@. The
+-- @$VTY_CONFIG_FILE@ takes precedence over the @config@ file or the
 -- application provided 'Config'.
 --
--- Lines in config files that fail to parse are ignored.  Later entries take precedence over
--- earlier.
+-- Lines in config files that fail to parse are ignored. Later entries
+-- take precedence over earlier.
 --
 -- For all directives:
 --
@@ -29,8 +31,8 @@
 --  \"debugLog\" string
 -- @
 --
--- The value of the environment variable @VTY_DEBUG_LOG@ is equivalent to a debugLog entry at the
--- end of the last config file.
+-- The value of the environment variable @VTY_DEBUG_LOG@ is equivalent
+-- to a debugLog entry at the end of the last config file.
 --
 -- = Input Processing
 --
@@ -55,15 +57,16 @@
 --  map \"xterm\" \"\\ESC[D\"    KLeft []
 -- @
 --
--- Then the bytes @\"\\ESC[B\"@ will result in the KUp event on all terminals. The bytes
--- @\"\\ESC[1;3B\"@ will result in the event KDown with the MAlt modifier on all terminals.
--- The bytes @\"\\ESC[D\"@ will result in the KLeft event when @TERM@ is @xterm@.
+-- Then the bytes @\"\\ESC[B\"@ will result in the KUp event on all
+-- terminals. The bytes @\"\\ESC[1;3B\"@ will result in the event KDown
+-- with the MAlt modifier on all terminals. The bytes @\"\\ESC[D\"@ will
+-- result in the KLeft event when @TERM@ is @xterm@.
 --
--- If a debug log is requested then vty will output the current input table to the log in the above
--- format.
+-- If a debug log is requested then vty will output the current input
+-- table to the log in the above format.
 --
--- Set VTY_DEBUG_LOG. Run vty. Check debug log for incorrect mappings. Add corrected mappings to
--- .vty/config
+-- Set VTY_DEBUG_LOG. Run vty. Check debug log for incorrect mappings.
+-- Add corrected mappings to .vty/config
 --
 module Graphics.Vty.Config
   ( InputMap
@@ -115,8 +118,9 @@ instance Exception VtyConfigurationError where
   displayException VtyMissingTermEnvVar = "TERM environment variable not set"
 #endif
 
--- | Mappings from input bytes to event in the order specified. Later entries take precedence over
--- earlier in the case multiple entries have the same byte string.
+-- | Mappings from input bytes to event in the order specified. Later
+-- entries take precedence over earlier in the case multiple entries
+-- have the same byte string.
 type InputMap = [(Maybe String, String, Event)]
 
 data Config = Config
@@ -131,14 +135,17 @@ data Config = Config
     , bracketedPasteMode :: Maybe Bool
     -- | Debug information is appended to this file if not Nothing.
     , debugLog           :: Maybe FilePath
-    -- | The (input byte, output event) pairs extend the internal input table of VTY and the table
-    -- from terminfo.
+    -- | The (input byte, output event) pairs extend the internal input
+    -- table of VTY and the table from terminfo.
     --
-    -- See "Graphics.Vty.Config" module documentation for documentation of the @map@ directive.
+    -- See "Graphics.Vty.Config" module documentation for documentation
+    -- of the @map@ directive.
     , inputMap           :: InputMap
-    -- | The input file descriptor to use. The default is 'System.Posix.IO.stdInput'
+    -- | The input file descriptor to use. The default is
+    -- 'System.Posix.IO.stdInput'
     , inputFd           :: Maybe Fd
-    -- | The output file descriptor to use. The default is 'System.Posix.IO.stdOutput'
+    -- | The output file descriptor to use. The default is
+    -- 'System.Posix.IO.stdOutput'
     , outputFd          :: Maybe Fd
     -- | The terminal name used to look up terminfo capabilities.
     -- The default is the value of the TERM environment variable.
@@ -173,7 +180,8 @@ instance Monoid Config where
         , termName      = termName c1 <|> termName c0
         }
 
--- | Config from @'getAppUserDataDirectory'/config@ and @$VTY_CONFIG_FILE@
+-- | Config from @'getAppUserDataDirectory'/config@ and
+-- @$VTY_CONFIG_FILE@
 userConfig :: IO Config
 userConfig = do
     configFile <- (mappend <$> getAppUserDataDirectory "vty" <*> pure "/config") >>= parseConfigFile
@@ -219,8 +227,8 @@ runParseConfig name cfgTxt =
 
 type Parser = Parsec BS.ByteString ()
 
--- I tried to use the haskellStyle here but that was specialized (without requirement?) to the
--- String stream type.
+-- I tried to use the haskellStyle here but that was specialized
+-- (without requirement?) to the String stream type.
 configLanguage :: Monad m => P.GenLanguageDef BS.ByteString () m
 configLanguage = LanguageDef
     { commentStart    = "{-"

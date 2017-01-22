@@ -1,13 +1,17 @@
 -- | Vty supports input and output to terminal devices.
 --
---  - Input to the terminal is provided to the app as a sequence of 'Event's.
+-- - Input to the terminal is provided to the app as a sequence of
+--   'Event's.
 --
---  - The output is defined by a 'Picture'. Which is one or more layers of 'Image's.
+-- - The output is defined by a 'Picture'. Which is one or more layers
+--   of 'Image's.
 --
---      - The module "Graphics.Vty.Image" provides a number of constructor equations that will build
---      correct 'Image' values. See 'string', '<|>', and '<->' for starters.
+--      - The module "Graphics.Vty.Image" provides a number of
+--        constructor equations that will build correct 'Image' values.
+--        See 'string', '<|>', and '<->' for starters.
 --
---      - The constructors in "Graphics.Vty.Image.Internal" should not be used.
+--      - The constructors in "Graphics.Vty.Image.Internal" should not
+--        be used.
 --
 --  - 'Image's can be styled using 'Attr'. See "Graphics.Vty.Attributes".
 --
@@ -19,8 +23,10 @@
 --  main = do
 --      cfg <- 'standardIOConfig'
 --      vty <- 'mkVty' cfg
---      let line0 = 'string' ('defAttr' ` 'withForeColor' ` 'green') \"first line\"
---          line1 = 'string' ('defAttr' ` 'withBackColor' ` 'blue') \"second line\"
+--      let line0 = 'string' ('defAttr' ` 'withForeColor' ` 'green')
+--                           \"first line\"
+--          line1 = 'string' ('defAttr' ` 'withBackColor' ` 'blue')
+--                           \"second line\"
 --          img = line0 '<->' line1
 --          pic = 'picForImage' img
 --      'update' vty pic
@@ -78,37 +84,42 @@ import Data.Monoid
 --
 --    3. shutdown vty.
 --
--- An alternative to tracking the Vty instance is to use 'withVty' in "Graphics.Vty.Inline.Unsafe".
+-- An alternative to tracking the Vty instance is to use 'withVty' in
+-- "Graphics.Vty.Inline.Unsafe".
 --
--- This does not assure any thread safety. In theory, as long as an update action is not executed
--- when another update action is already then it's safe to call this on multiple threads.
+-- This does not assure any thread safety. In theory, as long as an
+-- update action is not executed when another update action is already
+-- then it's safe to call this on multiple threads.
 --
 -- \todo Remove explicit `shutdown` requirement.
 data Vty = Vty
-    { -- | Outputs the given Picture. Equivalent to 'outputPicture' applied to a display context
-      -- implicitly managed by Vty. The managed display context is reset on resize.
+    { -- | Outputs the given Picture. Equivalent to 'outputPicture'
+      -- applied to a display context implicitly managed by Vty. The
+      -- managed display context is reset on resize.
       update :: Picture -> IO ()
-      -- | Get one Event object, blocking if necessary. This will refresh the terminal if the event
-      -- is a 'EvResize'.
+      -- | Get one Event object, blocking if necessary. This will
+      -- refresh the terminal if the event is a 'EvResize'.
     , nextEvent :: IO Event
       -- | The input interface. See 'Input'
     , inputIface :: Input
       -- | The output interface. See 'Output'
     , outputIface :: Output
-      -- | Refresh the display. 'nextEvent' will refresh the display if a resize occurs.
-      -- If other programs output to the terminal and mess up the display then the application might
-      -- want to force a refresh.
+      -- | Refresh the display. 'nextEvent' will refresh the display if
+      -- a resize occurs. If other programs output to the terminal and
+      -- mess up the display then the application might want to force a
+      -- refresh.
     , refresh :: IO ()
       -- | Clean up after vty.
-      -- The above methods will throw an exception if executed after this is executed.
+      -- The above methods will throw an exception if executed after
+      -- this is executed.
     , shutdown :: IO ()
     }
 
--- | Set up the state object for using vty.  At most one state object should be
--- created at a time for a given terminal device.
+-- | Set up the state object for using vty. At most one state object
+-- should be created at a time for a given terminal device.
 --
--- The specified config is added to the 'userConfig'. With the 'userConfig' taking precedence.
--- See "Graphics.Vty.Config"
+-- The specified config is added to the 'userConfig'. With the
+-- 'userConfig' taking precedence. See "Graphics.Vty.Config"
 --
 -- For most applications @mkVty def@ is sufficient.
 mkVty :: Config -> IO Vty

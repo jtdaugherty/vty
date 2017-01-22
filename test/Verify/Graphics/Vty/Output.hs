@@ -10,10 +10,10 @@ import qualified Data.String.UTF8 as UTF8
 
 import Test.QuickCheck.Property
 
--- A list of terminals that should be supported.
--- This started with a list of terminals ubuntu supported. Then those terminals that really could
--- not be supported were removed. Then a few more were pruned until a reasonable looking set was
--- made.
+-- A list of terminals that should be supported. This started with a
+-- list of terminals ubuntu supported. Then those terminals that really
+-- could not be supported were removed. Then a few more were pruned
+-- until a reasonable looking set was made.
 terminalsOfInterest :: [String]
 terminalsOfInterest =
     [ "vt100"

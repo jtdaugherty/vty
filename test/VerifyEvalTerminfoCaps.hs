@@ -24,7 +24,8 @@ import Foreign.Marshal.Alloc (mallocBytes)
 import Foreign.Ptr (Ptr, minusPtr)
 import Numeric
 
--- If a terminal defines one of the caps then it's expected to be parsable.
+-- If a terminal defines one of the caps then it's expected to be
+-- parsable.
 capsOfInterest =
     [ "cup"
     , "sc"
@@ -49,7 +50,8 @@ fromCapname ti name = fromJust $ Terminfo.getCapability ti (Terminfo.tiGetStr na
 
 tests :: IO [Test]
 tests = do
-    evalBuffer :: Ptr Word8 <- mallocBytes (1024 * 1024) -- Should be big enough for any termcaps ;-)
+    -- 1 MB should be big enough for any termcaps ;-)
+    evalBuffer :: Ptr Word8 <- mallocBytes (1024 * 1024)
     fmap concat $ forM terminalsOfInterest $ \termName -> do
         putStrLn $ "adding tests for terminal: " ++ termName
         mti <- try $ Terminfo.setupTerm termName
@@ -87,4 +89,3 @@ verifyEvalCap evalBuffer expr !junkInt = do
                                             }
                       | otherwise        ->
                             return succeeded
-

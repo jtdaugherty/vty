@@ -9,8 +9,8 @@ import Data.Word
 
 import Numeric
 
--- | Converts an array of ISO-10646 characters (Char type) to an array of Word8 bytes that is the
--- corresponding UTF8 byte sequence
+-- | Converts an array of ISO-10646 characters (Char type) to an array
+-- of Word8 bytes that is the corresponding UTF8 byte sequence
 utf8FromIso :: [Int] -> [Word8]
 utf8FromIso = encode . map toEnum
 

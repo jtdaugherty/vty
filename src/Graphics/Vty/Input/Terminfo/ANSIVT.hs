@@ -1,15 +1,18 @@
--- | Input mappings for ANSI/VT100/VT50 terminals that is missing from terminfo.
+-- | Input mappings for ANSI/VT100/VT50 terminals that is missing from
+-- terminfo.
 --
--- Or that are sent regardless of terminfo by terminal emulators. EG: Terminal emulators will often
--- use VT50 input bytes regardless of declared terminal type. This provides compatibility with
--- programs that don't follow terminfo.
+-- Or that are sent regardless of terminfo by terminal emulators. EG:
+-- Terminal emulators will often use VT50 input bytes regardless of
+-- declared terminal type. This provides compatibility with programs
+-- that don't follow terminfo.
 module Graphics.Vty.Input.Terminfo.ANSIVT where
 
 import Graphics.Vty.Input.Events
 
 -- | Encoding for navigation keys.
 --
--- TODO: This is not the same as the input bytes pulled from teh caps table.
+-- TODO: This is not the same as the input bytes pulled from teh caps
+-- table.
 navKeys0 :: ClassifyMap
 navKeys0 =
     [ k "G" KCenter
@@ -30,8 +33,10 @@ navKeys1 =
    [("\ESC[" ++ charCnt ++ show mc++c,EvKey s m)
     | charCnt <- ["1;", ""], -- we can have a count or not
     (m,mc) <- [([MShift],2::Int), ([MCtrl],5), ([MMeta],3),
-               ([MShift, MCtrl],6), ([MShift, MMeta],4)], -- modifiers and their codes
-    (c,s) <- [("A", KUp), ("B", KDown), ("C", KRight), ("D", KLeft), ("H", KHome), ("F", KEnd)] -- directions and their codes
+               -- modifiers and their codes
+               ([MShift, MCtrl],6), ([MShift, MMeta],4)],
+    -- directions and their codes
+    (c,s) <- [("A", KUp), ("B", KDown), ("C", KRight), ("D", KLeft), ("H", KHome), ("F", KEnd)]
    ]
 
 -- | encoding for ins, del, pageup, pagedown, home, end
@@ -64,11 +69,13 @@ functionKeys1 =
 --
 -- TODO: resolve -
 --
--- 1. removed 'ESC' from second list due to duplication with "special_support_keys".
--- 2. removed '[' from second list due to conflict with 7-bit encoding for ESC. Whether meta+[ is
--- the same as ESC should examine km and current encoding.
--- 3. stopped enumeration at '~' instead of '\DEL'. The latter is mapped to KBS by
--- special_support_keys.
+-- 1. removed 'ESC' from second list due to duplication with
+-- "special_support_keys".
+-- 2. removed '[' from second list due to conflict with 7-bit encoding
+-- for ESC. Whether meta+[ is the same as ESC should examine km and
+-- current encoding.
+-- 3. stopped enumeration at '~' instead of '\DEL'. The latter is mapped
+-- to KBS by special_support_keys.
 functionKeys2 :: ClassifyMap
 functionKeys2 = [ ('\ESC':[x],EvKey (KChar x) [MMeta])
                   | x <- '\t':[' ' .. '~']

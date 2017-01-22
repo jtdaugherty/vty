@@ -55,11 +55,11 @@ type CapOps = [CapOp]
 data CapOp =
       Bytes !Int !Int -- offset count
     | DecOut | CharOut
-    -- This stores a 0-based index to the parameter. However the operation that implies this op is
-    -- 1-based
+    -- This stores a 0-based index to the parameter. However the
+    -- operation that implies this op is 1-based
     | PushParam !Word | PushValue !Word
-    -- The conditional parts are the sequence of (%t expression, %e expression) pairs.
-    -- The %e expression may be NOP
+    -- The conditional parts are the sequence of (%t expression, %e
+    -- The expression) pairs. %e expression may be NOP
     | Conditional
       { conditionalExpr :: !CapOps
       , conditionalParts :: ![(CapOps, CapOps)]
@@ -107,8 +107,10 @@ constructCapExpression :: [Char] -> BuildResults -> CapExpression
 constructCapExpression capString buildResults =
     let expr = CapExpression
                 { capOps = outCapOps buildResults
-                -- The cap bytes are the lower 8 bits of the input string's characters.
-                -- \todo Verify the input string actually contains an 8bit byte per character.
+                -- The cap bytes are the lower 8 bits of the input
+                -- string's characters.
+                -- \todo Verify the input string actually contains an
+                -- 8bit byte per character.
                 , capBytes = Vector.fromList $ map (toEnum.fromEnum) capString
                 , sourceString = capString
                 , paramCount = outParamCount buildResults

@@ -100,9 +100,9 @@ instance Arbitrary ImageResize where
 
 instance Arbitrary SingleRowSingleAttrImage where
     arbitrary = do
-        -- The text must contain at least one character. Otherwise the image simplifies to the
-        -- IdImage which has a height of 0. If this is to represent a single row then the height
-        -- must be 1
+        -- The text must contain at least one character. Otherwise the
+        -- image simplifies to the IdImage which has a height of 0. If
+        -- this is to represent a single row then the height must be 1
         singleColumnRowText <- Verify.resize 16 (listOf1 arbitrary)
         a <- arbitrary
         let outImage = horizCat $ [char a c | SingleColumnChar c <- singleColumnRowText]

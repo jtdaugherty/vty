@@ -3,6 +3,7 @@ module Graphics.Vty.Error
 
 -- | The type of exceptions specific to vty.
 --
--- These have fully qualified names by default since, IMO, exception handling requires this.
+-- These have fully qualified names by default since, IMO, exception
+-- handling requires this.
 data VtyException
     =  VtyFailure String -- ^ Uncategorized failure specific to vty.

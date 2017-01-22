@@ -1,7 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
-{- Generate some input bytes and delays between blocks of input bytes. Verify the events produced
- - are as expected.
+{- Generate some input bytes and delays between blocks of input bytes.
+ - Verify the events produced are as expected.
  -}
 module Main where
 
@@ -36,7 +36,8 @@ import Test.SmallCheck.Series
 
 import Text.Printf
 
--- processing a block of 16 chars is the largest I can do without taking too long to run the test.
+-- processing a block of 16 chars is the largest I can do without taking
+-- too long to run the test.
 maxBlockSize :: Int
 maxBlockSize = 16
 
@@ -47,8 +48,11 @@ forEachOf :: (Show a, Testable m b) => [a] -> (a -> b) -> Property m
 forEachOf l = over (generate (\n -> take n l))
 
 data InputEvent
-    = Bytes String  -- | input sequence encoded as a string. Regardless, the input is read a byte at a time.
-    | Delay Int     -- | microsecond delay
+    = Bytes String
+    -- ^ Input sequence encoded as a string. Regardless, the input is
+    -- read a byte at a time.
+    | Delay Int
+    -- ^ Microsecond delay
     deriving Show
 
 type InputSpec = [InputEvent]

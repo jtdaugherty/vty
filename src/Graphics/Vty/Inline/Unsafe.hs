@@ -41,8 +41,9 @@ mkDupeConfig = do
     stdoutDupe <- hDuplicate stdout >>= handleToFd
     return $ def { inputFd = Just stdinDupe, outputFd = Just stdoutDupe }
 
--- | This will create a Vty instance using 'mkVty' and execute an IO action provided that instance.
--- The created Vty instance will be stored to the unsafe 'IORef' 'globalVty'.
+-- | This will create a Vty instance using 'mkVty' and execute an IO
+-- action provided that instance. The created Vty instance will be
+-- stored to the unsafe 'IORef' 'globalVty'.
 --
 -- This instance will use duplicates of the stdin and stdout Handles.
 withVty :: (Vty -> IO b) -> IO b

@@ -7,8 +7,8 @@ import qualified Graphics.Vty.Input.Terminfo.ANSIVT as ANSIVT
 import Control.Arrow
 import System.Console.Terminfo
 
--- | queries the terminal for all capability based input sequences then adds on a terminal dependent
--- input sequence mapping.
+-- | Queries the terminal for all capability based input sequences then
+-- adds on a terminal dependent input sequence mapping.
 --
 -- For reference see:
 --
@@ -20,9 +20,9 @@ import System.Console.Terminfo
 --
 -- * http://aperiodic.net/phil/archives/Geekery/term-function-keys.html
 --
--- This is painful. Terminfo is incomplete. The vim source implies that terminfo is also incorrect.
--- Vty assumes that the an internal terminfo table added to the system provided terminfo table is
--- correct.
+-- This is painful. Terminfo is incomplete. The vim source implies that
+-- terminfo is also incorrect. Vty assumes that the an internal terminfo
+-- table added to the system provided terminfo table is correct.
 --
 -- 1. build terminfo table for all caps. Missing caps are not added.
 --
@@ -30,7 +30,8 @@ import System.Console.Terminfo
 --
 -- 3. add internally defined table for given terminal type.
 --
--- Precedence is currently implicit in the 'compile' algorithm. Which is a bit odd.
+-- Precedence is currently implicit in the 'compile' algorithm. Which is
+-- a bit odd.
 --
 -- \todo terminfo meta is not supported.
 -- \todo no 8bit
@@ -50,7 +51,8 @@ capsClassifyMap :: Terminal -> [(String,Event)] -> ClassifyMap
 capsClassifyMap terminal table = [(x,y) | (Just x,y) <- map extractCap table]
     where extractCap = first (getCapability terminal . tiGetStr)
 
--- | tables specific to a given terminal that are not derivable from terminfo.
+-- | Tables specific to a given terminal that are not derivable from
+-- terminfo.
 --
 -- TODO: Adds the ANSI/VT100/VT50 tables regardless of term identifier.
 termSpecificTables :: String -> [ClassifyMap]
@@ -58,8 +60,8 @@ termSpecificTables _termName = ANSIVT.classifyTable
 
 -- | Visible characters in the ISO-8859-1 and UTF-8 common set.
 --
--- we limit to < 0xC1. The UTF8 sequence detector will catch all values 0xC2 and above before this
--- classify table is reached.
+-- We limit to < 0xC1. The UTF8 sequence detector will catch all values
+-- 0xC2 and above before this classify table is reached.
 --
 -- TODO: resolve
 -- 1. start at ' '. The earlier characters are all 'ctrlChar'
@@ -68,7 +70,8 @@ visibleChars = [ ([x], EvKey (KChar x) [])
                | x <- [' ' .. toEnum 0xC1]
                ]
 
--- | Non visible characters in the ISO-8859-1 and UTF-8 common set translated to ctrl + char.
+-- | Non visible characters in the ISO-8859-1 and UTF-8 common set
+-- translated to ctrl + char.
 --
 -- \todo resolve CTRL-i is the same as tab
 ctrlChars :: ClassifyMap

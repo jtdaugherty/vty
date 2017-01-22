@@ -8,11 +8,11 @@
 #defined MIN_VERSION_base(x,y,z) 1
 #endif
 
--- |  Terminfo based terminal handling.
+-- | Terminfo based terminal handling.
 --
--- The color handling assumes tektronix like. No HP support provided. If the terminal is not one I
--- have easy access to then color support is entirely based of the docs. Probably with some
--- assumptions mixed in.
+-- The color handling assumes tektronix like. No HP support provided. If
+-- the terminal is not one I have easy access to then color support is
+-- entirely based of the docs. Probably with some assumptions mixed in.
 --
 -- Copyright Corey O'Connor (coreyoconnor@gmail.com)
 module Graphics.Vty.Output.TerminfoBased ( reserveTerminal )
@@ -78,8 +78,10 @@ data DisplayAttrCaps = DisplayAttrCaps
     , enterBoldMode :: Maybe CapExpression
     }
 
--- kinda like: https://code.google.com/p/vim/source/browse/src/fileio.c#10422
--- fdWriteBuf will throw on error. Unless the error is EINTR. On EINTR the write will be retried.
+-- kinda like:
+-- https://code.google.com/p/vim/source/browse/src/fileio.c#10422
+-- fdWriteBuf will throw on error. Unless the error is EINTR. On EINTR
+-- the write will be retried.
 fdWriteAll :: Fd -> Ptr Word8 -> Int -> Int -> IO Int
 fdWriteAll outFd ptr len count
     | len <  0  = fail "fdWriteAll: len is less than 0"
@@ -95,22 +97,25 @@ sendCapToTerminal :: Output -> CapExpression -> [CapParam] -> IO ()
 sendCapToTerminal t cap capParams = do
     outputByteBuffer t $ writeToByteString $ writeCapExpr cap capParams
 
-{- | Uses terminfo for all control codes. While this should provide the most compatible terminal
- - terminfo does not support some features that would increase efficiency and improve compatibility:
+{- | Uses terminfo for all control codes. While this should provide the
+ - most compatible terminal terminfo does not support some features that
+ - would increase efficiency and improve compatibility:
  -
- -  * determine the character encoding supported by the terminal. Should this be taken from the LANG
- - environment variable?
+ -  * determine the character encoding supported by the terminal. Should
+ - this be taken from the LANG environment variable?
  -
  -  * Provide independent string capabilities for all display attributes.
  -
- - todo: Some display attributes like underline and bold have independent string capabilities that
- - should be used instead of the generic "sgr" string capability.
+ - todo: Some display attributes like underline and bold have
+ - independent string capabilities that should be used instead of the
+ - generic "sgr" string capability.
  -}
 reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output
 reserveTerminal termName outFd = liftIO $ do
     ti <- Terminfo.setupTerm termName
     -- assumes set foreground always implies set background exists.
-    -- if set foreground is not set then all color changing style attributes are filtered.
+    -- if set foreground is not set then all color changing style
+    -- attributes are filtered.
     msetaf <- probeCap ti "setaf"
     msetf <- probeCap ti "setf"
     let (noColors, useAlt, setForeCap)
@@ -151,8 +156,9 @@ reserveTerminal termName outFd = liftIO $ do
             , supportsBell = return $ isJust $ ringBellAudio terminfoCaps
             , ringTerminalBell = liftIO $ maybeSendCap ringBellAudio []
             , reserveDisplay = liftIO $ do
-                -- If there is no support for smcup: Clear the screen and then move the mouse to the
-                -- home position to approximate the behavior.
+                -- If there is no support for smcup: Clear the screen
+                -- and then move the mouse to the home position to
+                -- approximate the behavior.
                 maybeSendCap smcup []
                 sendCap clearScreen []
             , releaseDisplay = liftIO $ do
@@ -181,8 +187,8 @@ reserveTerminal termName outFd = liftIO $ do
             , setMode = const $ const $ return ()
             , getModeStatus = const $ return False
             , assumedStateRef = newAssumedStateRef
-            -- I think fix would help assure tActual is the only reference. I was having issues
-            -- tho.
+            -- I think fix would help assure tActual is the only
+            -- reference. I was having issues tho.
             , mkDisplayContext = \tActual -> liftIO . terminfoDisplayContext tActual terminfoCaps
             }
         sendCap s = sendCapToTerminal t (s terminfoCaps)
@@ -248,8 +254,9 @@ terminfoDisplayContext tActual terminfoCaps r = return dc
 
 -- | Portably setting the display attributes is a giant pain in the ass.
 --
--- If the terminal supports the sgr capability (which sets the on/off state of each style
--- directly ; and, for no good reason, resets the colors to the default) this procedure is used:
+-- If the terminal supports the sgr capability (which sets the on/off
+-- state of each style directly ; and, for no good reason, resets the
+-- colors to the default) this procedure is used:
 --
 --  0. set the style attributes. This resets the fore and back color.
 --
@@ -257,33 +264,37 @@ terminfoDisplayContext tActual terminfoCaps r = return dc
 --
 --  2. likewise with the background color
 --
--- If the terminal does not support the sgr cap then:
---  if there is a change from an applied color to the default (in either the fore or back color)
---  then:
+-- If the terminal does not support the sgr cap then: if there is a
+-- change from an applied color to the default (in either the fore or
+-- back color) then:
 --
---      0. reset all display attributes (sgr0)
+--  0. reset all display attributes (sgr0)
 --
---      1. enter required style modes
+--  1. enter required style modes
 --
---      2. set the fore color if required
+--  2. set the fore color if required
 --
---      3. set the back color if required
+--  3. set the back color if required
 --
--- Entering the required style modes could require a reset of the display attributes. If this is
--- the case then the back and fore colors always need to be set if not default.
+-- Entering the required style modes could require a reset of the
+-- display attributes. If this is the case then the back and fore colors
+-- always need to be set if not default.
 --
 -- This equation implements the above logic.
 --
--- \todo This assumes the removal of color changes in the display attributes is done as expected
--- with noColors == True. See `limitAttrForDisplay`
+-- \todo This assumes the removal of color changes in the display
+-- attributes is done as expected with noColors == True. See
+-- `limitAttrForDisplay`
 --
--- \todo This assumes that fewer state changes, followed by fewer bytes, is what to optimize. I
--- haven't measured this or even examined terminal implementations. *shrug*
+-- \todo This assumes that fewer state changes, followed by fewer
+-- bytes, is what to optimize. I haven't measured this or even examined
+-- terminal implementations. *shrug*
 terminfoWriteSetAttr :: DisplayContext -> TerminfoCaps -> FixedAttr -> Attr -> DisplayAttrDiff -> Write
 terminfoWriteSetAttr dc terminfoCaps prevAttr reqAttr diffs = do
     case (foreColorDiff diffs == ColorToDefault) || (backColorDiff diffs == ColorToDefault) of
-        -- The only way to reset either color, portably, to the default is to use either the set
-        -- state capability or the set default capability.
+        -- The only way to reset either color, portably, to the default
+        -- is to use either the set state capability or the set default
+        -- capability.
         True  -> do
             case reqDisplayCapSeqFor (displayAttrCaps terminfoCaps)
                                      (fixedStyle attr )
@@ -302,18 +313,21 @@ terminfoWriteSetAttr dc terminfoCaps prevAttr reqAttr diffs = do
                                                (sgrArgsForState state)
                                   `mappend`
                                   setColors
-        -- Otherwise the display colors are not changing or changing between two non-default
-        -- points.
+        -- Otherwise the display colors are not changing or changing
+        -- between two non-default points.
         False -> do
-            -- Still, it could be the case that the change in display attributes requires the
-            -- colors to be reset because the required capability was not available.
+            -- Still, it could be the case that the change in display
+            -- attributes requires the colors to be reset because the
+            -- required capability was not available.
             case reqDisplayCapSeqFor (displayAttrCaps terminfoCaps)
                                      (fixedStyle attr)
                                      (styleDiffs diffs) of
-                -- Really, if terminals were re-implemented with modern concepts instead of bowing
-                -- down to 40 yr old dumb terminal requirements this would be the only case ever
-                -- reached!  Changes the style and color states according to the differences with
-                -- the currently applied states.
+                -- Really, if terminals were re-implemented with modern
+                -- concepts instead of bowing down to 40 yr old dumb
+                -- terminal requirements this would be the only case
+                -- ever reached! Changes the style and color states
+                -- according to the differences with the currently
+                -- applied states.
                 EnterExitSeq caps -> foldMap (\cap -> writeCapExpr cap []) caps
                                      `mappend`
                                      writeColorDiff setForeColor (foreColorDiff diffs)
@@ -347,11 +361,11 @@ terminfoWriteSetAttr dc terminfoCaps prevAttr reqAttr diffs = do
         writeColorDiff f (SetColor c)
             = writeCapExpr (f terminfoCaps) [toEnum $ colorMap c]
 
--- | The color table used by a terminal is a 16 color set followed by a 240 color set that might not
--- be supported by the terminal.
+-- | The color table used by a terminal is a 16 color set followed by a
+-- 240 color set that might not be supported by the terminal.
 --
--- This takes a Color which clearly identifies which pallete to use and computes the index
--- into the full 256 color pallete.
+-- This takes a Color which clearly identifies which pallete to use and
+-- computes the index into the full 256 color pallete.
 ansiColorIndex :: Color -> Int
 ansiColorIndex (ISOColor v) = fromEnum v
 ansiColorIndex (Color240 v) = 16 + fromEnum v
@@ -372,20 +386,23 @@ altColorIndex (ISOColor 7) = 7
 altColorIndex (ISOColor v) = fromEnum v
 altColorIndex (Color240 v) = 16 + fromEnum v
 
-{- | The sequence of terminfo caps to apply a given style are determined according to these rules.
+{- | The sequence of terminfo caps to apply a given style are determined
+ - according to these rules.
  -
- -  1. The assumption is that it's preferable to use the simpler enter/exit mode capabilities than
- -  the full set display attribute state capability.
+ -  1. The assumption is that it's preferable to use the simpler
+ -  enter/exit mode capabilities than the full set display attribute
+ -  state capability.
  -
- -  2. If a mode is supposed to be removed but there is not an exit capability defined then the
- -  display attributes are reset to defaults then the display attribute state is set.
+ -  2. If a mode is supposed to be removed but there is not an exit
+ -  capability defined then the display attributes are reset to defaults
+ -  then the display attribute state is set.
  -
- -  3. If a mode is supposed to be applied but there is not an enter capability defined then then
- -  display attribute state is set if possible. Otherwise the mode is not applied.
+ -  3. If a mode is supposed to be applied but there is not an enter
+ -  capability defined then then display attribute state is set if
+ -  possible. Otherwise the mode is not applied.
  -
- -  4. If the display attribute state is being set then just update the arguments to that for any
- -  apply/remove.
- -
+ -  4. If the display attribute state is being set then just update the
+ -  arguments to that for any apply/remove.
  -}
 data DisplayAttrSeq
     = EnterExitSeq [CapExpression]
@@ -415,17 +432,19 @@ sgrArgsForState attrState = map (\b -> if b then 1 else 0)
 
 reqDisplayCapSeqFor :: DisplayAttrCaps -> Style -> [StyleStateChange] -> DisplayAttrSeq
 reqDisplayCapSeqFor caps s diffs
-    -- if the state transition implied by any diff cannot be supported with an enter/exit mode cap
-    -- then either the state needs to be set or the attribute change ignored.
+    -- if the state transition implied by any diff cannot be supported
+    -- with an enter/exit mode cap then either the state needs to be set
+    -- or the attribute change ignored.
     = case (any noEnterExitCap diffs, isJust $ setAttrStates caps) of
         -- If all the diffs have an enter-exit cap then just use those
         ( False, _    ) -> EnterExitSeq $ map enterExitCap diffs
-        -- If not all the diffs have an enter-exit cap and there is no set state cap then filter out
-        -- all unsupported diffs and just apply the rest
+        -- If not all the diffs have an enter-exit cap and there is no
+        -- set state cap then filter out all unsupported diffs and just
+        -- apply the rest
         ( True, False ) -> EnterExitSeq $ map enterExitCap
                                         $ filter (not . noEnterExitCap) diffs
-        -- if not all the diffs have an enter-exit can and there is a set state cap then just use
-        -- the set state cap.
+        -- if not all the diffs have an enter-exit can and there is a
+        -- set state cap then just use the set state cap.
         ( True, True  ) -> SetState $ stateForStyle s
     where
         noEnterExitCap ApplyStandout = isNothing $ enterStandout caps

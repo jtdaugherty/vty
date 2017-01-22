@@ -39,7 +39,8 @@ module Graphics.Vty.Image ( DisplayText
                           , translate
                           , translateX
                           , translateY
-                          -- | The possible display attributes used in constructing an `Image`.
+                          -- | The possible display attributes used in
+                          -- constructing an `Image`.
                           , module Graphics.Vty.Attributes
                           )
     where
@@ -59,7 +60,8 @@ import Data.Word
 infixr 5 <|>
 infixr 4 <->
 
--- | An area of the picture's bacground (See Background) of w columns and h rows.
+-- | An area of the picture's bacground (See Background) of w columns
+-- and h rows.
 backgroundFill :: Int -> Int -> Image
 backgroundFill w h
     | w == 0    = EmptyImage
@@ -96,38 +98,40 @@ text' :: Attr -> T.Text -> Image
 text' a txt = let displayWidth = safeWcswidth (T.unpack txt)
               in HorizText a (TL.fromStrict txt) displayWidth (T.length txt)
 
--- | an image of a single character. This is a standard Haskell 31-bit character assumed to be in
--- the ISO-10646 encoding.
+-- | An image of a single character. This is a standard Haskell 31-bit
+-- character assumed to be in the ISO-10646 encoding.
 char :: Attr -> Char -> Image
 char a c =
     let displayWidth = safeWcwidth c
     in HorizText a (TL.singleton c) displayWidth 1
 
--- | A string of characters layed out on a single row with the same display attribute. The string is
--- assumed to be a sequence of ISO-10646 characters.
+-- | A string of characters layed out on a single row with the same
+-- display attribute. The string is assumed to be a sequence of
+-- ISO-10646 characters.
 --
--- Note: depending on how the Haskell compiler represents string literals a string literal in a
--- UTF-8 encoded source file, for example, may be represented as a ISO-10646 string.
--- That is, I think, the case with GHC 6.10. This means, for the most part, you don't need to worry
--- about the encoding format when outputting string literals. Just provide the string literal
--- directly to iso10646String or string.
---
+-- Note: depending on how the Haskell compiler represents string
+-- literals a string literal in a UTF-8 encoded source file, for
+-- example, may be represented as a ISO-10646 string. That is, I think,
+-- the case with GHC 6.10. This means, for the most part, you don't need
+-- to worry about the encoding format when outputting string literals.
+-- Just provide the string literal directly to iso10646String or string.
 iso10646String :: Attr -> String -> Image
 iso10646String a str =
     let displayWidth = safeWcswidth str
     in HorizText a (TL.pack str) displayWidth (length str)
 
--- | Alias for iso10646String. Since the usual case is that a literal string like "foo" is
--- represented internally as a list of ISO 10646 31 bit characters.
+-- | Alias for iso10646String. Since the usual case is that a literal
+-- string like "foo" is represented internally as a list of ISO 10646 31
+-- bit characters.
 --
--- Note: Keep in mind that GHC will compile source encoded as UTF-8 but the literal strings, while
--- UTF-8 encoded in the source, will be transcoded to a ISO 10646 31 bit characters runtime
--- representation.
+-- Note: Keep in mind that GHC will compile source encoded as UTF-8
+-- but the literal strings, while UTF-8 encoded in the source, will be
+-- transcoded to a ISO 10646 31 bit characters runtime representation.
 string :: Attr -> String -> Image
 string = iso10646String
 
--- | A string of characters layed out on a single row. The input is assumed to be the bytes for
--- UTF-8 encoded text.
+-- | A string of characters layed out on a single row. The input is
+-- assumed to be the bytes for UTF-8 encoded text.
 utf8String :: Attr -> [Word8] -> Image
 utf8String a bytes = utf8Bytestring a (BL.pack bytes)
 
@@ -139,8 +143,8 @@ utf8Bytestring a bs = text a (TL.decodeUtf8 bs)
 utf8Bytestring' :: Attr -> B.ByteString -> Image
 utf8Bytestring' a bs = text' a (T.decodeUtf8 bs)
 
--- | creates a fill of the specified character. The dimensions are in number of characters wide and
--- number of rows high.
+-- | Creates a fill of the specified character. The dimensions are in
+-- number of characters wide and number of rows high.
 charFill :: Integral d => Attr -> Char -> d -> d -> Image
 charFill _a _c 0  _h = EmptyImage
 charFill _a _c _w 0  = EmptyImage
@@ -151,13 +155,14 @@ charFill a c w h =
         displayWidth = safeWcwidth c * (fromIntegral w)
         charWidth = fromIntegral w
 
--- | The empty image. Useful for fold combinators. These occupy no space nor define any display
--- attributes.
+-- | The empty image. Useful for fold combinators. These occupy no space
+-- nor define any display attributes.
 emptyImage :: Image
 emptyImage = EmptyImage
 
--- | pad the given image. This adds background character fills to the left, top, right, bottom.
--- The pad values are how many display columns or rows to add.
+-- | Pad the given image. This adds background character fills to the
+-- left, top, right, bottom. The pad values are how many display columns
+-- or rows to add.
 pad :: Int -> Int -> Int -> Int -> Image -> Image
 pad 0 0 0 0 i = i
 pad inL inT inR inB inImage
@@ -179,11 +184,12 @@ pad inL inT inR inB inImage
                 where w = imageWidth  i + l
                       h = imageHeight i
 
--- | translates an image by padding or cropping the left and top. First param is amount to translate
--- left. Second param is amount to translate top.
+-- | Translates an image by padding or cropping the left and top.
+-- First param is amount to translate left. Second param is amount to
+-- translate top.
 --
--- This can have an unexpected effect: Translating an image to less than (0,0) then to greater than
--- (0,0) will crop the image.
+-- This can have an unexpected effect: Translating an image to less than
+-- (0,0) then to greater than (0,0) will crop the image.
 translate :: Int -> Int -> Image -> Image
 translate x y i = translateX x (translateY y i)
 
@@ -201,18 +207,19 @@ translateY y i
     | y == 0    = i
     | otherwise = let w = imageWidth i in VertJoin (BGFill w y) i w (imageHeight i + y)
 
--- | Ensure an image is no larger than the provided size. If the image is larger then crop the right
--- or bottom.
+-- | Ensure an image is no larger than the provided size. If the image
+-- is larger then crop the right or bottom.
 --
--- This is transformed to a vertical crop from the bottom followed by horizontal crop from the
--- right.
+-- This is transformed to a vertical crop from the bottom followed by
+-- horizontal crop from the right.
 crop :: Int -> Int -> Image -> Image
 crop 0 _ _ = EmptyImage
 crop _ 0 _ = EmptyImage
 crop w h i = cropBottom h (cropRight w i)
 
--- | crop the display height. If the image is less than or equal in height then this operation has
--- no effect. Otherwise the image is cropped from the bottom.
+-- | crop the display height. If the image is less than or equal in
+-- height then this operation has no effect. Otherwise the image is
+-- cropped from the bottom.
 cropBottom :: Int -> Image -> Image
 cropBottom 0 _ = EmptyImage
 cropBottom h inI
@@ -227,8 +234,8 @@ cropBottom h inI
                 | h >= imageHeight i = i
                 | otherwise           = CropBottom i (imageWidth i) h
 
--- | ensure the image is no wider than the given width. If the image is wider then crop the right
--- side.
+-- | ensure the image is no wider than the given width. If the image is
+-- wider then crop the right side.
 cropRight :: Int -> Image -> Image
 cropRight 0 _ = EmptyImage
 cropRight w inI
@@ -243,8 +250,8 @@ cropRight w inI
                 | w >= imageWidth i = i
                 | otherwise          = CropRight i w (imageHeight i)
 
--- | ensure the image is no wider than the given width. If the image is wider then crop the left
--- side.
+-- | ensure the image is no wider than the given width. If the image is
+-- wider then crop the left side.
 cropLeft :: Int -> Image -> Image
 cropLeft 0 _ = EmptyImage
 cropLeft w inI
@@ -261,8 +268,9 @@ cropLeft w inI
                 | imageWidth i <= w = i
                 | otherwise          = CropLeft i (imageWidth i - w) w (imageHeight i)
 
--- | crop the display height. If the image is less than or equal in height then this operation has
--- no effect. Otherwise the image is cropped from the top.
+-- | crop the display height. If the image is less than or equal in
+-- height then this operation has no effect. Otherwise the image is
+-- cropped from the top.
 cropTop :: Int -> Image -> Image
 cropTop 0 _ = EmptyImage
 cropTop h inI
@@ -279,21 +287,22 @@ cropTop h inI
                 | imageHeight i <= h = i
                 | otherwise          = CropTop i (imageHeight i - h) (imageWidth i) h
 
--- | Generic resize. Pads and crops as required to assure the given display width and height.
--- This is biased to pad/crop the right and bottom.
+-- | Generic resize. Pads and crops as required to assure the given
+-- display width and height. This is biased to pad/crop the right and
+-- bottom.
 resize :: Int -> Int -> Image -> Image
 resize w h i = resizeHeight h (resizeWidth w i)
 
--- | Resize the width. Pads and crops as required to assure the given display width.
--- This is biased to pad/crop the right.
+-- | Resize the width. Pads and crops as required to assure the given
+-- display width. This is biased to pad/crop the right.
 resizeWidth :: Int -> Image -> Image
 resizeWidth w i = case w `compare` imageWidth i of
     LT -> cropRight w i
     EQ -> i
     GT -> i <|> BGFill (w - imageWidth i) (imageHeight i)
 
--- | Resize the height. Pads and crops as required to assure the given display height.
--- This is biased to pad/crop the bottom.
+-- | Resize the height. Pads and crops as required to assure the given
+-- display height. This is biased to pad/crop the bottom.
 resizeHeight :: Int -> Image -> Image
 resizeHeight h i = case h `compare` imageHeight i of
     LT -> cropBottom h i

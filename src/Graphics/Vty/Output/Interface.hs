@@ -46,23 +46,26 @@ data Output = Output
     { -- | Text identifier for the output device. Used for debugging.
       terminalID :: String
     , releaseTerminal :: forall m. MonadIO m => m ()
-    -- | Clear the display and initialize the terminal to some initial display state.
+    -- | Clear the display and initialize the terminal to some initial
+    -- display state.
     --
-    -- The expectation of a program is that the display starts in some initial state.
-    -- The initial state would consist of fixed values:
+    -- The expectation of a program is that the display starts in some
+    -- The initial state. initial state would consist of fixed values:
     --
     --  - cursor at top left
     --  - UTF-8 character encoding
     --  - drawing characteristics are the default
     --
-    -- The abstract operation I think all these behaviors are instances of is reserving exclusive
-    -- access to a display such that:
+    -- The abstract operation I think all these behaviors are instances
+    -- of is reserving exclusive access to a display such that:
     --
     --  - The previous state cannot be determined
-    --  - When exclusive access to a display is released the display returns to the previous state.
+    --  - When exclusive access to a display is released the display
+    --    returns to the previous state.
     , reserveDisplay :: forall m. MonadIO m => m ()
     -- | Return the display to the state before `reserveDisplay`
-    -- If no previous state then set the display state to the initial state.
+    -- If no previous state then set the display state to the initial
+    -- state.
     , releaseDisplay :: forall m. MonadIO m => m ()
     -- | Returns the current display bounds.
     , displayBounds :: forall m. MonadIO m => m DisplayRegion
@@ -74,14 +77,16 @@ data Output = Output
     , supportsCursorVisibility :: Bool
     -- | Indicates support for terminal modes for this output device
     , supportsMode :: Mode -> Bool
-    -- | Enables or disables a mode (does nothing if the mode is unsupported)
+    -- | Enables or disables a mode (does nothing if the mode is
+    -- unsupported)
     , setMode :: forall m. MonadIO m => Mode -> Bool -> m ()
     -- | Returns whether a mode is enabled
     , getModeStatus :: forall m. MonadIO m => Mode -> m Bool
     , assumedStateRef :: IORef AssumedState
     -- | Acquire display access to the given region of the display.
-    -- Currently all regions have the upper left corner of (0,0) and the lower right corner at
-    -- (max displayWidth providedWidth, max displayHeight providedHeight)
+    -- Currently all regions have the upper left corner of (0,0) and
+    -- the lower right corner at (max displayWidth providedWidth, max
+    -- displayHeight providedHeight)
     , mkDisplayContext :: forall m. MonadIO m => Output -> DisplayRegion -> m DisplayContext
     -- | Ring the terminal bell if supported.
     , ringTerminalBell :: forall m. MonadIO m => m ()
@@ -104,22 +109,27 @@ data DisplayContext = DisplayContext
     { contextDevice :: Output
     -- | Provide the bounds of the display context.
     , contextRegion :: DisplayRegion
-    --  | sets the output position to the specified row and column. Where the number of bytes
-    --  required for the control codes can be specified seperate from the actual byte sequence.
+    -- | sets the output position to the specified row and column.
+    -- Where the number of bytes required for the control codes can be
+    -- specified seperate from the actual byte sequence.
     , writeMoveCursor :: Int -> Int -> Write
     , writeShowCursor :: Write
     , writeHideCursor :: Write
-    --  | Assure the specified output attributes will be applied to all the following text until the
-    --  next output attribute change. Where the number of bytes required for the control codes can
-    --  be specified seperate from the actual byte sequence.  The required number of bytes must be
-    --  at least the maximum number of bytes required by any attribute changes.  The serialization
-    --  equations must provide the ptr to the next byte to be specified in the output buffer.
+    -- | Assure the specified output attributes will be applied to
+    -- all the following text until the next output attribute change.
+    -- Where the number of bytes required for the control codes can be
+    -- specified seperate from the actual byte sequence. The required
+    -- number of bytes must be at least the maximum number of bytes
+    -- required by any attribute changes. The serialization equations
+    -- must provide the ptr to the next byte to be specified in the
+    -- output buffer.
     --
-    --  The currently applied display attributes are provided as well. The Attr data type can
-    --  specify the style or color should not be changed from the currently applied display
-    --  attributes. In order to support this the currently applied display attributes are required.
-    --  In addition it may be possible to optimize the state changes based off the currently applied
-    --  display attributes.
+    -- The currently applied display attributes are provided as well.
+    -- The Attr data type can specify the style or color should not be
+    -- changed from the currently applied display attributes. In order
+    -- to support this the currently applied display attributes are
+    -- required. In addition it may be possible to optimize the state
+    -- changes based off the currently applied display attributes.
     , writeSetAttr :: FixedAttr -> Attr -> DisplayAttrDiff -> Write
     -- | Reset the display attributes to the default display attributes
     , writeDefaultAttr :: Write
@@ -128,7 +138,8 @@ data DisplayContext = DisplayContext
     , inlineHack :: IO ()
     }
 
--- | All terminals serialize UTF8 text to the terminal device exactly as serialized in memory.
+-- | All terminals serialize UTF8 text to the terminal device exactly as
+-- serialized in memory.
 writeUtf8Text  :: BS.ByteString -> Write
 writeUtf8Text = writeByteString
 
@@ -153,8 +164,8 @@ outputPicture dc pic = liftIO $ do
         r = contextRegion dc
         ops = displayOpsForPic pic r
         initialAttr = FixedAttr defaultStyleMask Nothing Nothing
-        -- Diff the previous output against the requested output. Differences are currently on a per-row
-        -- basis.
+        -- Diff the previous output against the requested output.
+        -- Differences are currently on a per-row basis.
         -- \todo handle resizes that crop the dominate directions better.
         diffs :: [Bool] = case prevOutputOps as of
             Nothing -> replicate (fromEnum $ regionHeight $ effectedRegion ops) True
@@ -225,8 +236,9 @@ writeSpanOp dc (TextSpan attr _ _ str) fattr =
 writeSpanOp _dc (Skip _) _fattr = error "writeSpanOp for Skip"
 writeSpanOp dc (RowEnd _) fattr = (writeDefaultAttr dc `mappend` writeRowEnd dc, fattr)
 
--- | The cursor position is given in X,Y character offsets. Due to multi-column characters this
--- needs to be translated to column, row positions.
+-- | The cursor position is given in X,Y character offsets. Due to
+-- multi-column characters this needs to be translated to column, row
+-- positions.
 data CursorOutputMap = CursorOutputMap
     { charToOutputPos :: (Int, Int) -> (Int, Int)
     }
@@ -261,8 +273,8 @@ cursorColumnOffset ops cx cy =
                       cursorRowOps
     in outOffset
 
--- | Not all terminals support all display attributes. This filters a display attribute to what the
--- given terminal can display.
+-- | Not all terminals support all display attributes. This filters a
+-- display attribute to what the given terminal can display.
 limitAttrForDisplay :: Output -> Attr -> Attr
 limitAttrForDisplay t attr
     = attr { attrForeColor = clampColor $ attrForeColor attr

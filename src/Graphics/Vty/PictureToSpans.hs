@@ -49,19 +49,21 @@ type MSpanOps s = MVector s SpanOp
 
 -- transform plus clip. More or less.
 data BlitState = BlitState
-    -- we always snoc to the operation vectors. Thus the columnOffset = length of row at rowOffset
-    -- although, one possibility is to merge layers right in snocOp (naming it something else, of
-    -- course). In which case columnnOffset would be applicable.
-    -- Right now we need it to exist.
+    -- we always snoc to the operation vectors. Thus the columnOffset =
+    -- length of row at rowOffset although, one possibility is to merge
+    -- layers right in snocOp (naming it something else, of course). In
+    -- which case columnnOffset would be applicable. Right now we need
+    -- it to exist.
     { _columnOffset :: Int
     , _rowOffset :: Int
-    -- clip coordinate space is in image space. Which means it's >= 0 and < imageWidth.
+    -- clip coordinate space is in image space. Which means it's >= 0
+    -- and < imageWidth.
     , _skipColumns :: Int
     -- >= 0 and < imageHeight
     , _skipRows :: Int
-    -- includes consideration of skipColumns. In display space.
-    -- The number of columns from the next column to be defined to the end of the display for the
-    -- row.
+    -- includes consideration of skipColumns. In display space. The
+    -- number of columns from the next column to be defined to the end
+    -- of the display for the row.
     , _remainingColumns :: Int
     -- includes consideration of skipRows. In display space.
     , _remainingRows :: Int
@@ -78,12 +80,13 @@ makeLenses ''BlitEnv
 
 type BlitM s a = ReaderT (BlitEnv s) (StateT BlitState (ST s)) a
 
--- | Produces the span ops that will render the given picture, possibly cropped or padded, into the
--- specified region.
+-- | Produces the span ops that will render the given picture, possibly
+-- cropped or padded, into the specified region.
 displayOpsForPic :: Picture -> DisplayRegion -> DisplayOps
 displayOpsForPic pic r = Vector.create (combinedOpsForLayers pic r)
 
--- | Returns the DisplayOps for an image rendered to a window the size of the image.
+-- | Returns the DisplayOps for an image rendered to a window the size
+-- of the image.
 --
 -- largerly used only for debugging.
 displayOpsForImage :: Image -> DisplayOps
@@ -91,8 +94,8 @@ displayOpsForImage i = displayOpsForPic (picForImage i) (imageWidth i, imageHeig
 
 -- | Produces the span ops for each layer then combines them.
 --
--- TODO: a fold over a builder function. start with span ops that are a bg fill of the entire
--- region.
+-- TODO: a fold over a builder function. start with span ops that are a
+-- bg fill of the entire region.
 combinedOpsForLayers :: Picture -> DisplayRegion -> ST s (MRowOps s)
 combinedOpsForLayers pic r
     | regionWidth r == 0 || regionHeight r == 0 = MVector.new 0
@@ -101,8 +104,8 @@ combinedOpsForLayers pic r
         case layerOps of
             []    -> fail "empty picture"
             [ops] -> substituteSkips (picBackground pic) ops
-            -- instead of merging ops after generation the merging can be performed as part of
-            -- snocOp.
+            -- instead of merging ops after generation the merging can
+            -- be performed as part of snocOp.
             topOps : lowerOps -> do
                 ops <- foldM mergeUnder topOps lowerOps
                 substituteSkips (picBackground pic) ops
@@ -111,21 +114,24 @@ substituteSkips :: Background -> MRowOps s -> ST s (MRowOps s)
 substituteSkips ClearBackground ops = do
     forM_ [0 .. MVector.length ops - 1] $ \row -> do
         rowOps <- MVector.read ops row
-        -- the image operations assure that background fills are combined.
-        -- clipping a background fill does not split the background fill.
-        -- merging of image layers can split a skip, but only by the insertion of a non skip.
-        -- all this combines to mean we can check the last operation and remove it if it's a skip
+        -- the image operations assure that background fills are
+        -- combined. clipping a background fill does not split the
+        -- background fill. merging of image layers can split a skip,
+        -- but only by the insertion of a non skip. all this combines to
+        -- mean we can check the last operation and remove it if it's a
+        -- skip
         -- todo: or does it?
         let rowOps' = case Vector.last rowOps of
                         Skip w -> Vector.init rowOps `Vector.snoc` RowEnd w
                         _      -> rowOps
-        -- now all the skips can be replaced by replications of ' ' of the required width.
+        -- now all the skips can be replaced by replications of ' ' of
+        -- the required width.
         let rowOps'' = swapSkipsForSingleColumnCharSpan ' ' currentAttr rowOps'
         MVector.write ops row rowOps''
     return ops
 substituteSkips (Background {backgroundChar, backgroundAttr}) ops = do
-    -- At this point we decide if the background character is single column or not.
-    -- obviously, single column is easier.
+    -- At this point we decide if the background character is single
+    -- column or not. obviously, single column is easier.
     case safeWcwidth backgroundChar of
         w | w == 0 -> fail $ "invalid background character " ++ show backgroundChar
           | w == 1 -> do
@@ -149,12 +155,12 @@ mergeUnder upper lower = do
         MVector.write upper row rowOps
     return upper
 
--- fugly
 mergeRowUnder :: SpanOps -> SpanOps -> SpanOps
 mergeRowUnder upperRowOps lowerRowOps =
     onUpperOp Vector.empty (Vector.head upperRowOps) (Vector.tail upperRowOps) lowerRowOps
     where
-        -- H: it will never be the case that we are out of upper ops before lower ops.
+        -- H: it will never be the case that we are out of upper ops
+        -- before lower ops.
         onUpperOp :: SpanOps -> SpanOp -> SpanOps -> SpanOps -> SpanOps
         onUpperOp outOps op@(TextSpan _ w _ _) upperOps lowerOps =
             let lowerOps' = dropOps w lowerOps
@@ -189,30 +195,37 @@ swapSkipsForCharSpan w c a = Vector.map f
                       in TextSpan a ow cw txt
         f v = v
 
--- | Builds a vector of row operations that will output the given picture to the terminal.
+-- | Builds a vector of row operations that will output the given
+-- picture to the terminal.
 --
 -- Crops to the given display region.
 --
--- \todo I'm pretty sure there is an algorithm that does not require a mutable buffer.
+-- \todo I'm pretty sure there is an algorithm that does not require a
+-- mutable buffer.
 buildSpans :: Image -> DisplayRegion -> ST s (MRowOps s)
 buildSpans image outRegion = do
     -- First we create a mutable vector for each rows output operations.
     outOps <- MVector.replicate (regionHeight outRegion) Vector.empty
-    -- \todo I think building the span operations in display order would provide better performance.
-    -- However, I got stuck trying to implement an algorithm that did this. This will be considered
-    -- as a possible future optimization.
+    -- \todo I think building the span operations in display order
+    -- would provide better performance. However, I got stuck trying to
+    -- implement an algorithm that did this. This will be considered as
+    -- a possible future optimization.
     --
-    -- A depth first traversal of the image is performed.  ordered according to the column range
-    -- defined by the image from least to greatest.  The output row ops will at least have the
-    -- region of the image specified. Iterate over all output rows and output background fills for
-    -- all unspecified columns.
+    -- A depth first traversal of the image is performed. ordered
+    -- according to the column range defined by the image from least
+    -- to greatest. The output row ops will at least have the region
+    -- of the image specified. Iterate over all output rows and output
+    -- background fills for all unspecified columns.
     --
-    -- The images are made into span operations from left to right. It's possible that this could
-    -- easily be made to assure top to bottom output as well.
+    -- The images are made into span operations from left to right. It's
+    -- possible that this could easily be made to assure top to bottom
+    -- output as well.
     when (regionHeight outRegion > 0 && regionWidth outRegion > 0) $ do
-        -- The ops builder recursively descends the image and outputs span ops that would
-        -- display that image. The number of columns remaining in this row before exceeding the
-        -- bounds is also provided. This is used to clip the span ops produced to the display.
+        -- The ops builder recursively descends the image and outputs
+        -- span ops that would display that image. The number of columns
+        -- remaining in this row before exceeding the bounds is also
+        -- provided. This is used to clip the span ops produced to the
+        -- display.
         let fullBuild = do
                 startImageBuild image
                 -- Fill in any unspecified columns with a skip.
@@ -223,7 +236,8 @@ buildSpans image outRegion = do
         return ()
     return outOps
 
--- | Add the operations required to build a given image to the current set of row operations.
+-- | Add the operations required to build a given image to the current
+-- set of row operations.
 startImageBuild :: Image -> BlitM s ()
 startImageBuild image = do
     outOfBounds <- isOutOfBounds image <$> get
@@ -237,11 +251,12 @@ isOutOfBounds i s
     | s ^. skipRows         >= imageHeight i = True
     | otherwise = False
 
--- | This adds an image that might be partially clipped to the output ops.
+-- | This adds an image that might be partially clipped to the output
+-- ops.
 --
--- This is a very touchy algorithm. Too touchy. For instance, the CropRight and CropBottom
--- implementations are odd. They pass the current tests but something seems terribly wrong about all
--- this.
+-- This is a very touchy algorithm. Too touchy. For instance, the
+-- CropRight and CropBottom implementations are odd. They pass the
+-- current tests but something seems terribly wrong about all this.
 --
 -- \todo prove this cannot be called in an out of bounds case.
 addMaybeClipped :: forall s . Image -> BlitM s ()

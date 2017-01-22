@@ -15,15 +15,18 @@ wcswidth = sum . map wcwidth
 
 -- XXX: Characters with unknown widths occupy 1 column?
 --
--- Not sure if this is actually correct.  I presume there is a replacement character that is output
--- by the terminal instead of the character and this replacement character is 1 column wide. If this
--- is not true for all terminals then a per-terminal replacement character width needs to be
--- implemented.
+-- Not sure if this is actually correct. I presume there is a
+-- replacement character that is output by the terminal instead of the
+-- character and this replacement character is 1 column wide. If this is
+-- not true for all terminals then a per-terminal replacement character
+-- width needs to be implemented.
 
--- | Returns the display width of a character. Assumes all characters with unknown widths are 0 width
+-- | Returns the display width of a character. Assumes all characters
+-- with unknown widths are 0 width
 safeWcwidth :: Char -> Int
 safeWcwidth = max 0 . wcwidth
 
--- | Returns the display width of a string. Assumes all characters with unknown widths are 0 width
+-- | Returns the display width of a string. Assumes all characters with
+-- unknown widths are 0 width
 safeWcswidth :: String -> Int
 safeWcswidth = sum . map safeWcwidth

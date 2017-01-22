@@ -17,9 +17,10 @@ import Data.Bits ((.&.))
 import Data.Monoid (Monoid(..), mconcat)
 #endif
 
--- | Given the previously applied display attributes as a FixedAttr and the current display
--- attributes as an Attr produces a FixedAttr that represents the current display attributes. This
--- is done by using the previously applied display attributes to remove the "KeepCurrent"
+-- | Given the previously applied display attributes as a FixedAttr and
+-- the current display attributes as an Attr produces a FixedAttr that
+-- represents the current display attributes. This is done by using the
+-- previously applied display attributes to remove the "KeepCurrent"
 -- abstraction.
 fixDisplayAttr :: FixedAttr -> Attr -> FixedAttr
 fixDisplayAttr fattr attr
@@ -34,12 +35,13 @@ fixDisplayAttr fattr attr
         fixColor c KeepCurrent        = c
         fixColor _c (SetTo c)         = Just c
 
--- | difference between two display attributes. Used in the calculation of the operations required
--- to go from one display attribute to the next.
+-- | difference between two display attributes. Used in the calculation
+-- of the operations required to go from one display attribute to the
+-- next.
 --
--- Previously, vty would reset display attributes to default then apply the new display attributes.
--- This turned out to be very expensive: A *lot* more data would be sent to the terminal than
--- required.
+-- Previously, vty would reset display attributes to default then apply
+-- the new display attributes. This turned out to be very expensive: A
+-- *lot* more data would be sent to the terminal than required.
 data DisplayAttrDiff = DisplayAttrDiff
     { styleDiffs    :: [StyleStateChange]
     , foreColorDiff :: DisplayColorDiff
@@ -61,8 +63,8 @@ instance Monoid DisplayAttrDiff where
 simplifyStyleDiffs :: [StyleStateChange] -> [StyleStateChange] -> [StyleStateChange]
 simplifyStyleDiffs cs0 cs1 = cs0 `mappend` cs1
 
--- | Consider two display color attributes diffs. What display color attribute diff are these
--- equivalent to?
+-- | Consider two display color attributes diffs. What display color
+-- attribute diff are these equivalent to?
 --
 -- TODO(corey): not really a simplify but a monoid instance.
 simplifyColorDiffs :: DisplayColorDiff -> DisplayColorDiff -> DisplayColorDiff
@@ -77,8 +79,8 @@ data DisplayColorDiff
     | SetColor !Color
     deriving (Show, Eq)
 
--- | Style attribute changes are transformed into a sequence of apply/removes of the individual
--- attributes.
+-- | Style attribute changes are transformed into a sequence of
+-- apply/removes of the individual attributes.
 data StyleStateChange
     = ApplyStandout
     | RemoveStandout
@@ -94,8 +96,8 @@ data StyleStateChange
     | RemoveBold
     deriving (Show, Eq)
 
--- | Determines the diff between two display&color attributes. This diff determines the operations
--- that actually get output to the terminal.
+-- | Determines the diff between two display&color attributes. This diff
+-- determines the operations that actually get output to the terminal.
 displayAttrDiffs :: FixedAttr -> FixedAttr -> DisplayAttrDiff
 displayAttrDiffs attr attr' = DisplayAttrDiff
     { styleDiffs    = diffStyles (fixedStyle attr)      (fixedStyle attr')

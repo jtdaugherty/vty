@@ -24,16 +24,17 @@ import Data.Monoid
 
 -- | A display text is a Data.Text.Lazy
 --
--- TODO(corey): hm. there is an explicit equation for each type which goes to a lazy text. Each
--- application probably uses a single type. Perhaps parameterize the entire vty interface by the
--- input text type?
--- TODO: Try using a builder instead of a TL.Text instance directly. That might improve performance
--- for the usual case of appending a bunch of characters with the same attribute together.
+-- TODO(corey): hm. there is an explicit equation for each type which
+-- goes to a lazy text. Each application probably uses a single type.
+-- Perhaps parameterize the entire vty interface by the input text type?
+-- TODO: Try using a builder instead of a TL.Text instance directly.
+-- That might improve performance for the usual case of appending a
+-- bunch of characters with the same attribute together.
 type DisplayText = TL.Text
 
 -- TODO: store a skip list in HorizText(?)
--- TODO: represent display strings containing chars that are not 1 column chars as a separate
--- display string value?
+-- TODO: represent display strings containing chars that are not 1
+-- column chars as a separate display string value?
 clipText :: DisplayText -> Int -> Int -> DisplayText
 clipText txt leftSkip rightClip =
     -- CPS would clarify this I think
@@ -42,8 +43,8 @@ clipText txt leftSkip rightClip =
         (toTake,padSuffix) = clipForCharWidth rightClip txt' 0
         txt'' = TL.append (TL.take toTake txt') (if padSuffix then TL.singleton '…' else TL.empty)
         -- Note: some characters and zero-width and combining characters
-        -- combine to the left, so keep taking characters even if the width
-        -- is zero.
+        -- combine to the left, so keep taking characters even if the
+        -- width is zero.
         clipForCharWidth w t n
             | TL.null t = (n, False)
             | w < cw    = (n, w /= 0)
@@ -51,8 +52,8 @@ clipText txt leftSkip rightClip =
             where cw = safeWcwidth (TL.head t)
     in txt''
 
--- | This is the internal representation of Images. Use the constructors in "Graphics.Vty.Image" to
--- create instances.
+-- | This is the internal representation of Images. Use the constructors
+-- in "Graphics.Vty.Image" to create instances.
 --
 -- Images are:
 --
@@ -69,45 +70,57 @@ data Image =
     -- | A horizontal text span has a row height of 1.
       HorizText
       { attr :: Attr
-      -- | The text to display. The display width of the text is always outputWidth.
+      -- | The text to display. The display width of the text is always
+      -- outputWidth.
       , displayText :: DisplayText
       -- | The number of display columns for the text.
       , outputWidth :: Int
       -- | the number of characters in the text.
       , charWidth :: Int
       }
-    -- | A horizontal join can be constructed between any two images. However a HorizJoin instance is
-    -- required to be between two images of equal height. The horizJoin constructor adds background
-    -- fills to the provided images that assure this is true for the HorizJoin value produced.
+    -- | A horizontal join can be constructed between any two images.
+    -- However a HorizJoin instance is required to be between two images
+    -- of equal height. The horizJoin constructor adds background fills
+    -- to the provided images that assure this is true for the HorizJoin
+    -- value produced.
     | HorizJoin
       { partLeft :: Image
       , partRight :: Image
-      , outputWidth :: Int -- ^ imageWidth partLeft == imageWidth partRight. Always > 0
-      , outputHeight :: Int -- ^ imageHeight partLeft == imageHeight partRight. Always > 0
+      , outputWidth :: Int
+      -- ^ imageWidth partLeft == imageWidth partRight. Always > 0
+      , outputHeight :: Int
+      -- ^ imageHeight partLeft == imageHeight partRight. Always > 0
       }
-    -- | A veritical join can be constructed between any two images. However a VertJoin instance is
-    -- required to be between two images of equal width. The vertJoin constructor adds background
-    -- fills to the provides images that assure this is true for the VertJoin value produced.
+    -- | A veritical join can be constructed between any two images.
+    -- However a VertJoin instance is required to be between two images
+    -- of equal width. The vertJoin constructor adds background fills
+    -- to the provides images that assure this is true for the VertJoin
+    -- value produced.
     | VertJoin
       { partTop :: Image
       , partBottom :: Image
-      , outputWidth :: Int -- ^ imageWidth partTop == imageWidth partBottom. always > 0
-      , outputHeight :: Int -- ^ imageHeight partTop == imageHeight partBottom. always > 1
+      , outputWidth :: Int
+      -- ^ imageWidth partTop == imageWidth partBottom. always > 0
+      , outputHeight :: Int
+      -- ^ imageHeight partTop == imageHeight partBottom. always > 1
       }
-    -- | A background fill will be filled with the background char. The background char is
-    -- defined as a property of the Picture this Image is used to form.
+    -- | A background fill will be filled with the background char. The
+    -- background char is defined as a property of the Picture this
+    -- Image is used to form.
     | BGFill
       { outputWidth :: Int -- ^ always > 0
       , outputHeight :: Int -- ^ always > 0
       }
-    -- | Crop an image horizontally to a size by reducing the size from the right.
+    -- | Crop an image horizontally to a size by reducing the size from
+    -- the right.
     | CropRight
       { croppedImage :: Image
       -- | Always < imageWidth croppedImage > 0
       , outputWidth :: Int
       , outputHeight :: Int -- ^ imageHeight croppedImage
       }
-    -- | Crop an image horizontally to a size by reducing the size from the left.
+    -- | Crop an image horizontally to a size by reducing the size from
+    -- the left.
     | CropLeft
       { croppedImage :: Image
       -- | Always < imageWidth croppedImage > 0
@@ -116,7 +129,8 @@ data Image =
       , outputWidth :: Int
       , outputHeight :: Int
       }
-    -- | Crop an image vertically to a size by reducing the size from the bottom
+    -- | Crop an image vertically to a size by reducing the size from
+    -- the bottom
     | CropBottom
       { croppedImage :: Image
       -- | imageWidth croppedImage
@@ -124,7 +138,8 @@ data Image =
       -- | height image is cropped to. Always < imageHeight croppedImage > 0
       , outputHeight :: Int
       }
-    -- | Crop an image vertically to a size by reducing the size from the top
+    -- | Crop an image vertically to a size by reducing the size from
+    -- the top
     | CropTop
       { croppedImage :: Image
       -- | Always < imageHeight croppedImage > 0
@@ -210,7 +225,8 @@ instance NFData Image where
     rnf (HorizJoin l r w h) = l `deepseq` r `deepseq` w `seq` h `seq` ()
     rnf (HorizText a s w cw) = a `seq` s `deepseq` w `seq` cw `seq` ()
 
--- | The width of an Image. This is the number display columns the image will occupy.
+-- | The width of an Image. This is the number display columns the image
+-- will occupy.
 imageWidth :: Image -> Int
 imageWidth HorizText { outputWidth = w } = w
 imageWidth HorizJoin { outputWidth = w } = w
@@ -222,7 +238,8 @@ imageWidth CropBottom { outputWidth = w } = w
 imageWidth CropTop { outputWidth = w } = w
 imageWidth EmptyImage = 0
 
--- | The height of an Image. This is the number of display rows the image will occupy.
+-- | The height of an Image. This is the number of display rows the
+-- image will occupy.
 imageHeight :: Image -> Int
 imageHeight HorizText {} = 1
 imageHeight HorizJoin { outputHeight = h } = h
@@ -241,12 +258,13 @@ instance Monoid Image where
 
 -- | combines two images side by side
 --
--- Combines text chunks where possible. Assures outputWidth and outputHeight properties are not
--- violated.
+-- Combines text chunks where possible. Assures outputWidth and
+-- outputHeight properties are not violated.
 --
--- The result image will have a width equal to the sum of the two images width.  And the height will
--- equal the largest height of the two images.  The area not defined in one image due to a height
--- missmatch will be filled with the background pattern.
+-- The result image will have a width equal to the sum of the two images
+-- width. And the height will equal the largest height of the two
+-- images. The area not defined in one image due to a height missmatch
+-- will be filled with the background pattern.
 --
 -- TODO: the bg fill is biased towards top to bottom languages(?)
 horizJoin :: Image -> Image -> Image
@@ -276,19 +294,21 @@ horizJoin _ _ = error "horizJoin applied to undefined values."
 
 -- | combines two images vertically
 --
--- The result image will have a height equal to the sum of the heights of both images.
--- The width will equal the largest width of the two images.
--- The area not defined in one image due to a width missmatch will be filled with the background
--- pattern.
+-- The result image will have a height equal to the sum of the heights
+-- of both images. The width will equal the largest width of the two
+-- images. The area not defined in one image due to a width missmatch
+-- will be filled with the background pattern.
 --
 -- TODO: the bg fill is biased towards right to left languages(?)
 vertJoin :: Image -> Image -> Image
 vertJoin EmptyImage i          = i
 vertJoin i          EmptyImage = i
 vertJoin i0 i1
-    -- If the images are of the same width then no background padding is required
+    -- If the images are of the same width then no background padding is
+    -- required
     | w0 == w1 = VertJoin i0 i1 w0 h
-    -- Otherwise one of the images needs to be padded to the size of the other image.
+    -- Otherwise one of the images needs to be padded to the size of the
+    -- other image.
     | w0 < w1
         = let padAmount = w1 - w0
           in VertJoin (HorizJoin i0 (BGFill padAmount h0) w1 h0) i1 w1 h

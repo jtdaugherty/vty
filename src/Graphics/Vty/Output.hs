@@ -1,23 +1,27 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
---  | Output interface.
+-- | Output interface.
 --
---  Access to the current terminal or a specific terminal device.
+-- Access to the current terminal or a specific terminal device.
 --
---  See also:
+-- See also:
 --
---  1. "Graphics.Vty.Output": This instantiates an abtract interface to the terminal interface based
---  on the TERM and COLORTERM environment variables.
+-- 1. "Graphics.Vty.Output": This instantiates an abtract interface to
+-- the terminal interface based on the TERM and COLORTERM environment
+-- variables.
 --
---  2. "Graphics.Vty.Output.Interface": Defines the generic interface all terminals need to implement.
+-- 2. "Graphics.Vty.Output.Interface": Defines the generic interface all
+-- terminals need to implement.
 --
---  3. "Graphics.Vty.Output.TerminfoBased": Defines a terminal instance that uses terminfo for all
---  control strings.  No attempt is made to change the character set to UTF-8 for these terminals.
---  I don't know a way to reliably determine if that is required or how to do so.
+-- 3. "Graphics.Vty.Output.TerminfoBased": Defines a terminal instance
+-- that uses terminfo for all control strings. No attempt is made to
+-- change the character set to UTF-8 for these terminals. I don't know a
+-- way to reliably determine if that is required or how to do so.
 --
---  4. "Graphics.Vty.Output.XTermColor": This module contains an interface suitable for xterm-like
---  terminals. These are the terminals where TERM == xterm. This does use terminfo for as many
---  control codes as possible.
+-- 4. "Graphics.Vty.Output.XTermColor": This module contains an
+-- interface suitable for xterm-like terminals. These are the terminals
+-- where TERM == xterm. This does use terminfo for as many control codes
+-- as possible.
 module Graphics.Vty.Output ( module Graphics.Vty.Output
                            , Output(..) -- \todo hide constructors
                            , AssumedState(..)
@@ -44,21 +48,24 @@ import Data.Monoid ((<>))
 
 -- | Returns a `Output` for the terminal specified in `Config`
 --
--- The specific Output implementation used is hidden from the API user. All terminal implementations
--- are assumed to perform more, or less, the same. Currently, all implementations use terminfo for at
--- least some terminal specific information.
+-- The specific Output implementation used is hidden from the API user.
+-- All terminal implementations are assumed to perform more, or less,
+-- the same. Currently, all implementations use terminfo for at least
+-- some terminal specific information.
 --
--- Specifics about it being based on terminfo are hidden from the API user. If a terminal
--- implementation is developed for a terminal without terminfo support then Vty should work as
--- expected on that terminal.
+-- Specifics about it being based on terminfo are hidden from the API
+-- user. If a terminal implementation is developed for a terminal
+-- without terminfo support then Vty should work as expected on that
+-- terminal.
 --
 -- Selection of a terminal is done as follows:
 --
 --      * If TERM contains "xterm" or "screen", use XTermColor.
 --      * otherwise use the TerminfoBased driver.
 --
--- \todo add an implementation for windows that does not depend on terminfo. Should be installable
--- with only what is provided in the haskell platform. Use ansi-terminal
+-- \todo add an implementation for windows that does not depend on
+-- terminfo. Should be installable with only what is provided in the
+-- haskell platform. Use ansi-terminal
 outputForConfig :: Config -> IO Output
 outputForConfig Config{ outputFd = Just fd, termName = Just termName, .. } = do
     t <- if "xterm" `isPrefixOf` termName || "screen" `isPrefixOf` termName
@@ -79,11 +86,13 @@ outputForConfig config = (<> config) <$> standardIOConfig >>= outputForConfig
 
 -- | Sets the cursor position to the given output column and row.
 --
--- This is not necessarially the same as the character position with the same coordinates.
--- Characters can be a variable number of columns in width.
+-- This is not necessarially the same as the character position with the
+-- same coordinates. Characters can be a variable number of columns in
+-- width.
 --
--- Currently, the only way to set the cursor position to a given character coordinate is to specify
--- the coordinate in the Picture instance provided to outputPicture or refresh.
+-- Currently, the only way to set the cursor position to a given
+-- character coordinate is to specify the coordinate in the Picture
+-- instance provided to outputPicture or refresh.
 setCursorPos :: MonadIO m => Output -> Int -> Int -> m ()
 setCursorPos t x y = do
     bounds <- displayBounds t

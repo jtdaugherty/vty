@@ -1,12 +1,14 @@
--- | The inline module provides a limited interface to changing the style of terminal output. The
--- intention is for this interface to be used inline with other output systems.
+-- | The inline module provides a limited interface to changing the
+-- style of terminal output. The intention is for this interface to be
+-- used inline with other output systems.
 --
--- The changes specified by the InlineM monad are applied to the terminals display attributes. These
--- display attributes effect the display of all following text output to the terminal file
--- descriptor.
+-- The changes specified by the InlineM monad are applied to the
+-- terminals display attributes. These display attributes effect the
+-- display of all following text output to the terminal file descriptor.
 --
--- For example, in an IO monad the following code with print the text \"Not styled. \" Followed by the
--- text \" Styled! \" drawn over a red background and underlined.
+-- For example, in an IO monad the following code with print the text
+-- \"Not styled. \" Followed by the text \" Styled! \" drawn over a red
+-- background and underlined.
 --
 -- @
 --      putStr \"Not styled. \"
@@ -18,10 +20,11 @@
 --      putStrLn \"Not styled.\"
 -- @
 --
--- 'putAttrChange' outputs the control codes to the terminal device 'Handle'. This is a duplicate
--- of the 'stdout' handle when the 'terminalHandle' was (first) acquired. If 'stdout' has since been
--- changed then 'putStr', 'putStrLn', 'print' etc.. will output to a different 'Handle' than
--- 'putAttrChange'
+-- 'putAttrChange' outputs the control codes to the terminal device
+-- 'Handle'. This is a duplicate of the 'stdout' handle when the
+-- 'terminalHandle' was (first) acquired. If 'stdout' has since been
+-- changed then 'putStr', 'putStrLn', 'print' etc.. will output to a
+-- different 'Handle' than 'putAttrChange'
 --
 -- Copyright 2009-2010 Corey O'Connor
 {-# LANGUAGE CPP #-}
@@ -67,14 +70,16 @@ foreColor c = modify $ flip mappend ( currentAttr `withForeColor` c )
 
 -- | Attempt to change the 'Style' of the following text.
 --
--- If the terminal does not support the style change no error is produced. The style can still be
--- removed.
+-- If the terminal does not support the style change no error is
+-- produced. The style can still be removed.
 applyStyle :: Style -> InlineM ()
 applyStyle s = modify $ flip mappend ( currentAttr `withStyle` s )
 
--- | Attempt to remove the specified 'Style' from the display of the following text.
+-- | Attempt to remove the specified 'Style' from the display of the
+-- following text.
 --
--- This will fail if applyStyle for the given style has not been previously called.
+-- This will fail if applyStyle for the given style has not been
+-- previously called.
 removeStyle :: Style -> InlineM ()
 removeStyle sMask = modify $ \attr ->
     let style' = case attrStyle attr of
@@ -87,7 +92,8 @@ removeStyle sMask = modify $ \attr ->
 defaultAll :: InlineM ()
 defaultAll = put defAttr
 
--- | Apply the provided display attribute changes to the given terminal output device.
+-- | Apply the provided display attribute changes to the given terminal
+-- output device.
 --
 -- This does not flush the terminal.
 putAttrChange :: ( Applicative m, MonadIO m ) => Output -> InlineM () -> m ()
@@ -108,8 +114,9 @@ putAttrChange out c = liftIO $ do
     modifyIORef (assumedStateRef out) $ \s -> s { prevFattr = Just fattr' }
     inlineHack dc
 
--- | Apply the provided display attributes changes to the terminal output device that was current at
--- the time this was first used. Which, for most use cases, is the current terminal.
+-- | Apply the provided display attributes changes to the terminal
+-- output device that was current at the time this was first used.
+-- Which, for most use cases, is the current terminal.
 --
 -- This will flush the terminal output.
 putAttrChange_ :: ( Applicative m, MonadIO m ) => InlineM () -> m ()

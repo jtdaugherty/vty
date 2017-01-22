@@ -9,26 +9,30 @@
 
 -- | Display attributes
 --
--- Typically the values 'defAttr' or 'currentAttr' are modified to form attributes:
+-- Typically the values 'defAttr' or 'currentAttr' are modified to form
+-- attributes:
 --
 -- @
 --     defAttr `withForeColor` red
 -- @
 --
--- Is the attribute that will set the foreground color to red and the background color to the
--- default.
+-- Is the attribute that will set the foreground color to red and the
+-- background color to the default.
 --
--- This can then be used to build an image with a red foreground like so:
+-- This can then be used to build an image with a red foreground like
+-- so:
 --
 -- @
 --      string (defAttr `withForeColor` red) "this text will be red"
 -- @
 --
--- The default attributes set by 'defAttr' have a presentation determined by the terminal.  This is
--- not something VTY can control. The user is free to define the color scheme of the terminal as
--- they see fit. Up to the limits of the terminal anyways.
+-- The default attributes set by 'defAttr' have a presentation
+-- determined by the terminal. This is not something VTY can control.
+-- The user is free to define the color scheme of the terminal as they
+-- see fit. Up to the limits of the terminal anyways.
 --
--- The value 'currentAttr' will keep the attributes of whatever was output previously.
+-- The value 'currentAttr' will keep the attributes of whatever was
+-- output previously.
 --
 -- \todo This API is very verbose IMO. I'd like something more succinct.
 module Graphics.Vty.Attributes ( module Graphics.Vty.Attributes
@@ -48,21 +52,22 @@ import Graphics.Vty.Attributes.Color240
 import Data.Monoid
 #endif
 
--- | A display attribute defines the Color and Style of all the characters rendered after the
--- attribute is applied.
+-- | A display attribute defines the Color and Style of all the
+-- characters rendered after the attribute is applied.
 --
---  At most 256 colors, picked from a 240 and 16 color palette, are possible for the background and
---  foreground. The 240 colors and 16 colors are points in different palettes. See Color for more
---  information.
+-- At most 256 colors, picked from a 240 and 16 color palette, are
+-- possible for the background and foreground. The 240 colors and
+-- 16 colors are points in different palettes. See Color for more
+-- information.
 data Attr = Attr
     { attrStyle :: !(MaybeDefault Style)
     , attrForeColor :: !(MaybeDefault Color)
     , attrBackColor :: !(MaybeDefault Color)
     } deriving ( Eq, Show, Read )
 
--- This could be encoded into a single 32 bit word. The 32 bit word is first divided
--- into 4 groups of 8 bits where: The first group codes what action should be taken with regards to
--- the other groups.
+-- This could be encoded into a single 32 bit word. The 32 bit word is
+-- first divided into 4 groups of 8 bits where: The first group codes
+-- what action should be taken with regards to the other groups.
 --      XXYYZZ__
 --      XX - style action
 --          00 => reset to default
@@ -98,17 +103,19 @@ instance Monoid Attr where
              ( attrForeColor attr0 `mappend` attrForeColor attr1 )
              ( attrBackColor attr0 `mappend` attrBackColor attr1 )
 
--- | Specifies the display attributes such that the final style and color values do not depend on
--- the previously applied display attribute. The display attributes can still depend on the
--- terminal's default colors (unfortunately).
+-- | Specifies the display attributes such that the final style and
+-- color values do not depend on the previously applied display
+-- attribute. The display attributes can still depend on the terminal's
+-- default colors (unfortunately).
 data FixedAttr = FixedAttr
     { fixedStyle :: !Style
     , fixedForeColor :: !(Maybe Color)
     , fixedBackColor :: !(Maybe Color)
     } deriving ( Eq, Show )
 
--- | The style and color attributes can either be the terminal defaults. Or be equivalent to the
--- previously applied style. Or be a specific value.
+-- | The style and color attributes can either be the terminal defaults.
+-- Or be equivalent to the previously applied style. Or be a specific
+-- value.
 data MaybeDefault v where
     Default :: MaybeDefault v
     KeepCurrent :: MaybeDefault v
@@ -153,8 +160,9 @@ brightMagenta= ISOColor 13
 brightCyan   = ISOColor 14
 brightWhite  = ISOColor 15
 
--- | Styles are represented as an 8 bit word. Each bit in the word is 1 if the style attribute
--- assigned to that bit should be applied and 0 if the style attribute should not be applied.
+-- | Styles are represented as an 8 bit word. Each bit in the word is 1
+-- if the style attribute assigned to that bit should be applied and 0
+-- if the style attribute should not be applied.
 type Style = Word8
 
 -- | The 6 possible style attributes:
@@ -171,8 +179,8 @@ type Style = Word8
 --
 --      * bold/bright
 --
---  ( The invisible, protect, and altcharset display attributes some terminals support are not
---  supported via VTY.)
+--  (The invisible, protect, and altcharset display attributes some
+--  terminals support are not supported via VTY.)
 standout, underline, reverseVideo, blink, dim, bold :: Style
 standout        = 0x01
 underline       = 0x02
@@ -207,20 +215,21 @@ withBackColor attr c = attr { attrBackColor = SetTo c }
 withStyle :: Attr -> Style -> Attr
 withStyle attr styleFlag = attr { attrStyle = SetTo $ styleMask attr .|. styleFlag }
 
--- | Sets the style, background color and foreground color to the default values for the terminal.
--- There is no easy way to determine what the default background and foreground colors are.
+-- | Sets the style, background color and foreground color to the
+-- default values for the terminal. There is no easy way to determine
+-- what the default background and foreground colors are.
 defAttr :: Attr
 defAttr = Attr Default Default Default
 
 instance Default Attr where
     def = defAttr
 
--- | Keeps the style, background color and foreground color that was previously set. Used to
--- override some part of the previous style.
+-- | Keeps the style, background color and foreground color that was
+-- previously set. Used to override some part of the previous style.
 --
 -- EG: current_style `withForeColor` brightMagenta
 --
--- Would be the currently applied style (be it underline, bold, etc) but with the foreground color
--- set to brightMagenta.
+-- Would be the currently applied style (be it underline, bold, etc) but
+-- with the foreground color set to brightMagenta.
 currentAttr :: Attr
 currentAttr = Attr KeepCurrent KeepCurrent KeepCurrent

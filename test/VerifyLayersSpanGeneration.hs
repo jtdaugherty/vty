@@ -25,8 +25,9 @@ largerHorizSpanOcclusion row0 row1 =
         ops = displayOpsForPic p (imageWidth iLarger,imageHeight iLarger)
     in verifyOpsEquality expectedOps ops
 
--- | Two rows stacked vertical is equivalent to the first row rendered as the top layer and the
--- second row rendered as a bottom layer with a background fill where the first row would be.
+-- | Two rows stacked vertical is equivalent to the first row rendered
+-- as the top layer and the second row rendered as a bottom layer with a
+-- background fill where the first row would be.
 vertStackLayerEquivalence0 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
 vertStackLayerEquivalence0 row0 row1 =
     let i0 = rowImage row0
@@ -52,8 +53,9 @@ vertStackLayerEquivalence1 row0 row1 =
         opsLayered = displayOpsForPic pLayered (imageWidth iLower,imageHeight iLower)
     in verifyOpsEquality expectedOps opsLayered
 
--- | Two rows horiz joined is equivalent to the first row rendered as the top layer and the
--- second row rendered as a bottom layer with a background fill where the first row would be.
+-- | Two rows horiz joined is equivalent to the first row rendered as
+-- the top layer and the second row rendered as a bottom layer with a
+-- background fill where the first row would be.
 horizJoinLayerEquivalence0 :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
 horizJoinLayerEquivalence0 row0 row1 =
     let i0 = rowImage row0
@@ -125,4 +127,3 @@ tests = return
     -- , verify "alternating images using joins is the same as alternating images using layers (1)"
     --     horizJoinAlternate1
     ]
-

@@ -1,6 +1,6 @@
 {- We setup the environment to envoke certain terminals of interest.
- - This assumes appropriate definitions exist in the current environment for the terminals of
- - interest.
+ - This assumes appropriate definitions exist in the current environment
+ - for the terminals of interest.
  -}
 module VerifyOutput where
 import Verify
@@ -41,7 +41,8 @@ smokeTestTerm termName i = do
     -- putStrLn $ "context color count: " ++ show (contextColorCount t)
     reserveDisplay t
     dc <- displayContext t (100,100)
-    -- always show the cursor to produce tests for terminals with no cursor support.
+    -- always show the cursor to produce tests for terminals with no
+    -- cursor support.
     let pic = (picForImage i) { picCursor = Cursor 0 0 }
     outputPicture dc pic
     setCursorPos t 0 0

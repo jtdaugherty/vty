@@ -6,12 +6,14 @@ import GHC.Generics
 
 -- | Representations of non-modifier keys.
 --
--- * KFun is indexed from 0 to 63. Range of supported FKeys varies by terminal and keyboard.
+-- * KFun is indexed from 0 to 63. Range of supported FKeys varies by
+-- terminal and keyboard.
 --
--- * KUpLeft, KUpRight, KDownLeft, KDownRight, KCenter support varies by terminal and keyboard.
+-- * KUpLeft, KUpRight, KDownLeft, KDownRight, KCenter support varies by
+-- terminal and keyboard.
 --
--- * Actually, support for most of these but KEsc, KChar, KBS, and KEnter vary by terminal and
--- keyboard.
+-- * Actually, support for most of these but KEsc, KChar, KBS, and
+-- KEnter vary by terminal and keyboard.
 data Key = KEsc  | KChar Char | KBS | KEnter
          | KLeft | KRight | KUp | KDown
          | KUpLeft | KUpRight | KDownLeft | KDownRight | KCenter
@@ -19,9 +21,9 @@ data Key = KEsc  | KChar Char | KBS | KEnter
          | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin | KMenu
     deriving (Eq,Show,Read,Ord,Generic)
 
--- | Modifier keys.  Key codes are interpreted such that users are more likely to
--- have Meta than Alt; for instance on the PC Linux console, 'MMeta' will
--- generally correspond to the physical Alt key.
+-- | Modifier keys. Key codes are interpreted such that users are more
+-- likely to have Meta than Alt; for instance on the PC Linux console,
+-- 'MMeta' will generally correspond to the physical Alt key.
 data Modifier = MShift | MCtrl | MMeta | MAlt
     deriving (Eq,Show,Read,Ord,Generic)
 

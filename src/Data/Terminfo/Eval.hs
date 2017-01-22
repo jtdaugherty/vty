@@ -8,7 +8,8 @@
 #defined MIN_VERSION_base(x,y,z) 1
 #endif
 
-{- Evaluates the paramaterized terminfo string capability with the given parameters.
+{- Evaluates the paramaterized terminfo string capability with the given
+ - parameters.
  -
  -}
 module Data.Terminfo.Eval (writeCapExpr)
@@ -95,9 +96,10 @@ writeCapOp (Conditional expr parts) = do
         writeContitionalParts [] = return ()
         writeContitionalParts ((trueOps, falseOps) : falseParts) = do
             -- (man 5 terminfo)
-            -- Usually the %? expr part pushes a value onto the stack, and %t pops  it  from  the
-            -- stack, testing if it is nonzero (true).  If it is zero (false), control
-            -- passes to the %e (else) part.
+            -- Usually the %? expr part pushes a value onto the stack,
+            -- and %t pops it from the stack, testing if it is nonzero
+            -- (true). If it is zero (false), control passes to the %e
+            -- (else) part.
             v <- pop
             if v /= 0
                 then writeCapOps trueOps
