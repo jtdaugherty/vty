@@ -99,14 +99,6 @@ LIBRARY_PATH=$HOME/.nix-profile/lib/ cabal build
 LIBRARY_PATH=$HOME/.nix-profile/lib/ cabal test
 ~~~
 
-### Using stack
-
-~~~
-stack build
-stack test
-stack install
-~~~
-
 ## Coverage
 
 As of last testing, profiling causes issues with coverage when enabled. To
