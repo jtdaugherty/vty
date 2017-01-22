@@ -1,4 +1,6 @@
-The following people should be thanked for contributing to the vty library:
+The following people should be thanked for contributing to the vty
+library:
+
     * Andrea Vezzosi
     * Corey O'Connor
     * Emily Backes
@@ -17,4 +19,4 @@ The following people should be thanked for contributing to the vty library:
     * Yoshikuni Jujo
     * Dmitry Ivanov
 
-Plus others.. Check the git log for a full list.
+Plus others.. Check the git log and CHANGELOG for a full list.
