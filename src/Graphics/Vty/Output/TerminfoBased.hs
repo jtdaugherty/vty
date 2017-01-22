@@ -3,11 +3,7 @@
 {-# OPTIONS_GHC -D_XOPEN_SOURCE=500 -fno-warn-warnings-deprecations #-}
 {-# CFILES gwinsz.c #-}
 
--- | Terminfo based terminal handling.
---
--- The color handling assumes tektronix like. No HP support provided. If
--- the terminal is not one I have easy access to then color support is
--- entirely based of the docs. Probably with some assumptions mixed in.
+-- | Terminfo-based terminal output driver.
 --
 -- Copyright Corey O'Connor (coreyoconnor@gmail.com)
 module Graphics.Vty.Output.TerminfoBased
@@ -89,14 +85,16 @@ sendCapToTerminal :: Output -> CapExpression -> [CapParam] -> IO ()
 sendCapToTerminal t cap capParams = do
     outputByteBuffer t $ writeToByteString $ writeCapExpr cap capParams
 
--- | Uses terminfo for all control codes. While this should provide the
--- most compatible terminal terminfo does not support some features that
--- would increase efficiency and improve compatibility:
+-- | Constructs an output driver that uses terminfo for all control
+-- codes. While this should provide the most compatible terminal,
+-- terminfo does not support some features that would increase
+-- efficiency and improve compatibility:
 --
---  * determine the character encoding supported by the terminal. Should
--- this be taken from the LANG environment variable?
+--  * determining the character encoding supported by the terminal.
+--    Should this be taken from the LANG environment variable?
 --
---  * Provide independent string capabilities for all display attributes.
+--  * Providing independent string capabilities for all display
+--    attributes.
 reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output
 reserveTerminal termName outFd = liftIO $ do
     ti <- Terminfo.setupTerm termName
