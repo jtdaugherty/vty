@@ -14,7 +14,7 @@ wcswidth :: String -> Int
 wcswidth = sum . map wcwidth
 
 -- XXX: Characters with unknown widths occupy 1 column?
--- 
+--
 -- Not sure if this is actually correct.  I presume there is a replacement character that is output
 -- by the terminal instead of the character and this replacement character is 1 column wide. If this
 -- is not true for all terminals then a per-terminal replacement character width needs to be

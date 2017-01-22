@@ -93,7 +93,7 @@ data Attr = Attr
 
 instance Monoid Attr where
     mempty = Attr mempty mempty mempty
-    mappend attr0 attr1 = 
+    mappend attr0 attr1 =
         Attr ( attrStyle attr0     `mappend` attrStyle attr1 )
              ( attrForeColor attr0 `mappend` attrForeColor attr1 )
              ( attrBackColor attr0 `mappend` attrBackColor attr1 )
@@ -141,7 +141,7 @@ magenta= ISOColor 5
 cyan   = ISOColor 6
 white  = ISOColor 7
 
--- | Bright/Vivid variants of the standard 8-color ANSI 
+-- | Bright/Vivid variants of the standard 8-color ANSI
 brightBlack, brightRed, brightGreen, brightYellow :: Color
 brightBlue, brightMagenta, brightCyan, brightWhite :: Color
 brightBlack  = ISOColor 8
@@ -185,7 +185,7 @@ defaultStyleMask :: Style
 defaultStyleMask = 0x00
 
 styleMask :: Attr -> Word8
-styleMask attr 
+styleMask attr
     = case attrStyle attr of
         Default  -> 0
         KeepCurrent -> 0
@@ -224,4 +224,3 @@ instance Default Attr where
 -- set to brightMagenta.
 currentAttr :: Attr
 currentAttr = Attr KeepCurrent KeepCurrent KeepCurrent
-

@@ -22,7 +22,7 @@ verifyAllSpansHaveWidth i spans w
     = let v = map (\s -> (spanOpsEffectedColumns s /= w, s)) (Vector.toList spans)
       in case any ((== True) . fst) v of
         False -> succeeded
-        True -> failed { reason = "Not all spans contained operations defining exactly " 
+        True -> failed { reason = "Not all spans contained operations defining exactly "
                                 ++ show w
                                 ++ " columns of output - \n"
                                 ++ (concatMap ((++ "\n") . show)) v
@@ -34,4 +34,3 @@ verifyOpsEquality i_ops i_alt_ops =
         else failed { reason = "ops for alternate image " ++ show i_alt_ops
                                ++ " are not the same as " ++ show i_ops
                     }
-

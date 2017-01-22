@@ -13,7 +13,7 @@ import Graphics.Vty.PictureToSpans
 
 import Verify
 
-import qualified Data.Vector as Vector 
+import qualified Data.Vector as Vector
 
 cropOpDisplayOps :: (Int -> Image -> Image) ->
                     Int -> Image -> (DisplayOps, Image)
@@ -75,7 +75,7 @@ cropTopAndBottomRejoinedEquivalence stack = imageHeight (stackImage stack) `mod`
     in displayOpsForImage i == displayOpsForImage iAlt
 
 tests :: IO [Test]
-tests = return 
+tests = return
     [ verify "cropping from the bottom produces display operations covering the expected rows"
         cropBottomOutputRows
     , verify "cropping from the top produces display operations covering the expected rows"
@@ -90,4 +90,3 @@ tests = return
     , verify "the output of a stack is the same as that stack cropped top & bottom and joined together"
         cropTopAndBottomRejoinedEquivalence
     ]
-

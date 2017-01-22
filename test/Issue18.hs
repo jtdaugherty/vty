@@ -13,8 +13,8 @@ main = do
     play vty sx sy
 
 play :: Vty -> Int -> Int -> IO ()
-play vty sx sy = 
-    let 
+play vty sx sy =
+    let
         testScreen = pic {
             pCursor = NoCursor
           , pImage = box 10 10 }
@@ -31,6 +31,5 @@ box w h =
         vertLine = renderFill attr '|' 1 (h - 2)
         horizLine = corner <|> renderHFill attr '-' (w - 2) <|> corner
         centerArea = vertLine <|> renderFill attr 'X' (w - 2) (h - 2) <|> vertLine
-    in 
+    in
         horizLine <-> centerArea <-> horizLine
-

@@ -19,7 +19,7 @@ import Data.Monoid
 import Data.String.QQ
 import Data.Word
 
-import Foreign.Marshal.Array 
+import Foreign.Marshal.Array
 
 import qualified System.Environment as Env
 
@@ -74,12 +74,12 @@ with the test_results.list file pasted into the issue. A suitable summary is:
 |]
     waitForReturn
     results <- doTestMenu 1
-    envAttributes <- mapM ( \envName -> Control.Exception.catch ( Env.getEnv envName >>= return . (,) envName ) 
-                                                ( \ (_ :: SomeException) -> return (envName, "") ) 
-                          ) 
+    envAttributes <- mapM ( \envName -> Control.Exception.catch ( Env.getEnv envName >>= return . (,) envName )
+                                                ( \ (_ :: SomeException) -> return (envName, "") )
+                          )
                           [ "TERM", "COLORTERM", "LANG", "TERM_PROGRAM", "XTERM_VERSION" ]
     t <- standardIOConfig >>= outputForConfig
-    let resultsTxt = show envAttributes ++ "\n" 
+    let resultsTxt = show envAttributes ++ "\n"
                      ++ terminalID t ++ "\n"
                      ++ show results ++ "\n"
     releaseTerminal t
@@ -94,7 +94,7 @@ testMenu :: [(String, Test)]
 testMenu = zip (map show [1..]) allTests
 
 doTestMenu :: Int -> IO [(String, Bool)]
-doTestMenu nextID 
+doTestMenu nextID
     | nextID > length allTests = do
         putStrLn $ "Done! Please email the " ++ outputFilePath ++ " file to coreyoconnor@gmail.com"
         return []
@@ -108,26 +108,26 @@ doTestMenu nextID
         s <- getLine >>= return . filter (/= '\n')
         case s of
             "q" -> return mempty
-            "" -> do 
-                r <- runTest $ show nextID 
+            "" -> do
+                r <- runTest $ show nextID
                 rs <- doTestMenu ( nextID + 1 )
                 return $ r : rs
             i | isJust ( lookup i testMenu ) -> do
-                r <- runTest i 
+                r <- runTest i
                 rs <- doTestMenu ( read i + 1 )
                 return $ r : rs
         where
-            displayTestMenu 
+            displayTestMenu
                 = mapM_ displayTestMenu' testMenu
-            displayTestMenu' ( i, t ) 
-                = putStrLn $ ( if i == show nextID 
-                                then "> " 
+            displayTestMenu' ( i, t )
+                = putStrLn $ ( if i == show nextID
+                                then "> "
                                 else "  "
                              ) ++ i ++ ". " ++ testName t
 
 runTest :: String -> IO (String, Bool)
 runTest i = do
-    let t = fromJust $ lookup i testMenu 
+    let t = fromJust $ lookup i testMenu
     printSummary t
     waitForReturn
     testAction t
@@ -153,8 +153,8 @@ data Test = Test
     , confirmResults :: IO Bool
     }
 
-allTests 
-    = [ reserveOutputTest 
+allTests
+    = [ reserveOutputTest
       , displayBoundsTest0
       , displayBoundsTest1
       , displayBoundsTest2
@@ -185,7 +185,7 @@ allTests
       , layer1
       ]
 
-reserveOutputTest = Test 
+reserveOutputTest = Test
     { testName = "Initialize and reserve terminal output then restore previous state."
     , testID = "reserveOutputTest"
     , testAction = do
@@ -203,7 +203,7 @@ reserveOutputTest = Test
     , printSummary = do
         putStr $ [s|
 Once return is pressed:
-    0. The screen will be cleared. 
+    0. The screen will be cleared.
     1. Four lines of text should be visible.
     1. The cursor should be visible and at the start of the fifth line.
 
@@ -391,7 +391,7 @@ utf8Txt0 = [ [ 0xe2 , 0x86 , 0x91 ]
 
 iso10646Txt0 :: String
 iso10646Txt0 = map toEnum
-    [ 8593 
+    [ 8593
     , 8593
     , 8595
     , 8595
@@ -554,11 +554,11 @@ After return is pressed for the second time:
 allColors = zip [ black, red, green, yellow, blue, magenta, cyan, white ]
                 [ "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white" ]
 
-allBrightColors 
+allBrightColors
     = zip [ brightBlack, brightRed, brightGreen, brightYellow, brightBlue, brightMagenta, brightCyan, brightWhite ]
           [ "bright black", "bright red", "bright green", "bright yellow", "bright blue", "bright magenta", "bright cyan", "bright white" ]
 
-attributesTest0 = Test 
+attributesTest0 = Test
     { testName = "Character attributes: foreground colors."
     , testID = "attributesTest0"
     , testAction = do
@@ -604,7 +604,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
-attributesTest1 = Test 
+attributesTest1 = Test
     { testName = "Character attributes: background colors."
     , testID = "attributesTest1"
     , testAction = do
@@ -659,7 +659,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
-attributesTest2 = Test 
+attributesTest2 = Test
     { testName = "Character attributes: Vivid foreground colors."
     , testID = "attributesTest2"
     , testAction = do
@@ -686,23 +686,23 @@ Once return is pressed:
     1. The cursor will be hidden.
     2. 9 lines of text in three columns will be drawn:
         a. The first column will be a name of a standard color (for an 8 color
-        terminal) rendered with that color as the foreground color.  
+        terminal) rendered with that color as the foreground color.
         b. The next column will be also be the name of a standard color rendered
         with that color as the foreground color but the shade used should be
-        more vivid than the shade used in the first column.    
+        more vivid than the shade used in the first column.
         c. The final column will be the name of a color rendered with the
         default attributes.
 
 For instance, one line will be the word "magenta" and that word should be
-rendered in the magenta color. 
+rendered in the magenta color.
 
 I'm not actually sure exactly what "vivid" means in this context. For xterm the
-vivid colors are brighter.  
+vivid colors are brighter.
 
-Verify: 
+Verify:
     * The first column: The foreground color matches the named color.
     * The second column: The foreground color matches the named color but is
-    more vivid than the color used in the first column.  
+    more vivid than the color used in the first column.
     * The third column: All text is rendered with the default attributes.
     * The vertical bars used in each line to mark the border of a column are
     lined up.
@@ -718,7 +718,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
-attributesTest3 = Test 
+attributesTest3 = Test
     { testName = "Character attributes: Vivid background colors."
     , testID = "attributesTest3"
     , testAction = do
@@ -746,23 +746,23 @@ Once return is pressed:
     2. 9 lines of text in three columns will be drawn:
         a. The first column will contain be a name of a standard color for an 8
         color terminal rendered with the default foreground color with a
-        background the named color.  
+        background the named color.
         b. The first column will contain be a name of a standard color for an 8
         color terminal rendered with the default foreground color with the
-        background a vivid version of the named color. 
+        background a vivid version of the named color.
         c. The third column will be the name of a standard color rendered with
         the default attributes.
-        
+
 For instance, one line will contain be the word "magenta" and the word should
-be rendered in the default foreground color over a magenta background. 
+be rendered in the default foreground color over a magenta background.
 
 I'm not actually sure exactly what "vivid" means in this context. For xterm the
 vivid colors are brighter.
 
-Verify: 
+Verify:
     * The first column: The background color matches the named color.
     * The second column: The background color matches the named color and is
-    more vivid than the color used in the first column.  
+    more vivid than the color used in the first column.
     * The third column column: All text is rendered with the default attributes.
     * The vertical bars used in each line to mark the border of a column are
     lined up.
@@ -785,7 +785,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
-attrCombos = 
+attrCombos =
     [ ( "default", id )
     , ( "bold", flip withStyle bold )
     , ( "blink", flip withStyle blink )
@@ -796,7 +796,7 @@ attrCombos =
     , ( "bold + blink + underline", flip withStyle (bold + blink + underline) )
     ]
 
-attributesTest4 = Test 
+attributesTest4 = Test
     { testName = "Character attributes: Bold; Blink; Underline."
     , testID = "attributesTest4"
     , testAction = do
@@ -819,10 +819,10 @@ attributesTest4 = Test
 Once return is pressed:
     0. The screen will be cleared.
     1. The cursor will be hidden.
-    2. 8 rows of text in two columns. 
+    2. 8 rows of text in two columns.
     The rows will contain the following text:
         default
-        bold 
+        bold
         blink
         underline
         bold + blink
@@ -831,8 +831,8 @@ Once return is pressed:
         bold + blink + underline
     The first column will be rendered with the described attributes. The second
     column will be rendered with the default attributes.
-        
-Verify: 
+
+Verify:
     * The vertical bars used in each line to mark the border of a column are
     lined up.
     * The text in the first column is rendered as described.
@@ -848,7 +848,7 @@ Did the test output match the description?
         defaultSuccessConfirmResults
     }
 
-attributesTest5 = Test 
+attributesTest5 = Test
     { testName = "Character attributes: 240 color palette"
     , testID = "attributesTest5"
     , testAction = do
@@ -873,7 +873,7 @@ Once return is pressed:
     2. A 20 character wide and 12 row high block of color squares. This should look like a palette
     of some sort. I'm not exactly sure if all color terminals use the same palette. I doubt it...
 
-Verify: 
+Verify:
 
 After return is pressed for the second time:
     0. The screen containing the test summary should be restored.
@@ -971,7 +971,7 @@ outputPicAndWait pic = do
     releaseDisplay t
     releaseTerminal t
     return ()
-    
+
 vertCropTest0 :: Test
 vertCropTest0 = Test
     { testName = "Verify bottom cropping works as expected with single column chars"
@@ -1046,7 +1046,7 @@ horizCropTest0 = Test
     , testID = "cropTest0"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsum
-            croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage 
+            croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage
             image = baseImage <-> backgroundFill 10 2 <-> croppedImage
         outputImageAndWait image
     , printSummary = putStr $ [s|
@@ -1063,7 +1063,7 @@ horizCropTest1 = Test
     , testID = "cropTest0"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsumChinese
-            croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage 
+            croppedImage = cropRight (imageWidth baseImage `div` 2) baseImage
             image = baseImage <-> backgroundFill 10 2 <-> croppedImage
         outputImageAndWait image
     , printSummary = putStr $ [s|
@@ -1080,7 +1080,7 @@ horizCropTest2 = Test
     , testID = "cropTest0"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsum
-            croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage 
+            croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage
             image = baseImage <-> backgroundFill 10 2 <-> croppedImage
         outputImageAndWait image
     , printSummary = putStr $ [s|
@@ -1097,7 +1097,7 @@ horizCropTest3 = Test
     , testID = "cropTest0"
     , testAction = do
         let baseImage = vertCat $ map (string defAttr) lorumIpsumChinese
-            croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage 
+            croppedImage = cropLeft (imageWidth baseImage `div` 2) baseImage
             image = baseImage <-> backgroundFill 10 2 <-> croppedImage
         outputImageAndWait image
     , printSummary = putStr $ [s|

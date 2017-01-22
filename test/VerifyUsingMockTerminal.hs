@@ -49,7 +49,7 @@ singleTRow (MockWindow w h) = liftIOResult $ do
     let expected = "H" ++ "MDA" ++ replicate (fromEnum w) 'T'
                  ++ concat (replicate (fromEnum h - 1) $ "MDA" ++ replicate (fromEnum w) 'B')
     compareMockOutput mockData expected
-    
+
 manyTRows :: MockWindow -> Property
 manyTRows (MockWindow w h) = liftIOResult $ do
     (mockData, t) <- mockTerminal (w,h)

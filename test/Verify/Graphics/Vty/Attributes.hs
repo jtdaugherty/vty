@@ -40,8 +40,8 @@ allStyles =
 
 -- Limit the possible attributes to just a few for now.
 possibleAttrMods :: [ AttrOp ]
-possibleAttrMods = 
-    [ idOp 
+possibleAttrMods =
+    [ idOp
     ] ++ map setForeColorOp allColors
       ++ map setBackColorOp allColors
       ++ map setStyleOp allStyles
@@ -70,4 +70,3 @@ idOp = AttrOp "id" id
 
 applyOp :: AttrOp -> Attr -> Attr
 applyOp (AttrOp _ f) a = f a
-

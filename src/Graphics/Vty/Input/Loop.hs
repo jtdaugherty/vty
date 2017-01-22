@@ -147,7 +147,7 @@ parseEvent = do
             logMsg $ "remaining: " ++ show remaining
             unprocessedBytes .= remaining
             return e
-        _                   -> mzero 
+        _                   -> mzero
 
 dropInvalid :: InputM ()
 dropInvalid = do

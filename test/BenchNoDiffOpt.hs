@@ -16,7 +16,7 @@ import System.Environment( getArgs )
 import System.IO
 import System.Random
 
-bench0 = do 
+bench0 = do
     let fixedGen = mkStdGen 0
     setStdGen fixedGen
     vty <- mkVty def
@@ -29,7 +29,7 @@ bench0 = do
             shutdown vty
     return $ Bench images bench
 
-flipOut vty n image0 image1 = 
+flipOut vty n image0 image1 =
     let !pLeft  = picForImage image0
         !pRight = picForImage image1
         wLeft  0 = return ()

@@ -113,7 +113,7 @@
 -- Some terminfo capabilities specify millisecond delays. (Capabilities are how terminfo describes
 -- the control sequence to output red, for instance) This is to account for the slow speed of
 -- hardcopy teletype interfaces. Cause, uh, we totally still use those.
--- 
+--
 -- The output encoding of colors and attributes are also rife with issues.
 --
 -- == See also
@@ -162,7 +162,7 @@ import Data.Monoid ((<>))
 --        suspended if the output terminal cannot keep up. I presume this has little effect these
 --        days. I hope this means that output will be buffered if the terminal cannot keep up. In the
 --        old days the output might of been dropped?
--- 
+--
 -- "raw" mode is used for input.
 --
 -- * ISIG disabled

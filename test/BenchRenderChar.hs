@@ -23,7 +23,7 @@ bench0 = do
             shutdown vty
     return $ Bench testChars bench
 
-testImageUsingChar c w h 
+testImageUsingChar c w h
     = vertCat $ replicate (fromIntegral h)
               $ horizCat $ map (char defAttr) (replicate (fromIntegral w) c)
 

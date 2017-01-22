@@ -45,7 +45,7 @@ all : $(VERIF_TESTS)
 
 .PHONY: $(TESTS)
 .SECONDEXPANSION:
-$(TESTS) : 
+$(TESTS) :
 	@echo running test $@
 	@mkdir -p results/$@
 	( ghc $(GHC_PROF_ARGS) $@ \
@@ -54,7 +54,7 @@ $(TESTS) :
 	)
 
 .PHONY: interactive_terminal_test
-interactive_terminal_test : 
+interactive_terminal_test :
 	ghc $(GHC_ARGS) $@ && ./$@
 
 .PHONY: core

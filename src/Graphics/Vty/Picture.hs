@@ -11,7 +11,7 @@ import Graphics.Vty.Image
 
 import Control.DeepSeq
 
--- | The type of images to be displayed using 'update'.  
+-- | The type of images to be displayed using 'update'.
 --
 -- Can be constructed directly or using `picForImage`. Which provides an initial instance with
 -- reasonable defaults for picCursor and picBackground.
@@ -42,7 +42,7 @@ addToBottom p i = p {picLayers = picLayers p ++ [i]}
 -- | Create a picture for display for the given image. The picture will not have a displayed cursor
 -- and no background pattern (ClearBackground) will be used.
 picForImage :: Image -> Picture
-picForImage i = Picture 
+picForImage i = Picture
     { picCursor = NoCursor
     , picLayers = [i]
     , picBackground = ClearBackground
@@ -52,17 +52,17 @@ picForImage i = Picture
 --
 -- The picture will not have a displayed cursor and no background apttern (ClearBackgroun) will be
 -- used.
--- 
+--
 -- The first 'Image' is the top layer.
 picForLayers :: [Image] -> Picture
-picForLayers is = Picture 
+picForLayers is = Picture
     { picCursor = NoCursor
     , picLayers = is
     , picBackground = ClearBackground
     }
 
 -- | A picture can be configured either to not show the cursor or show the cursor at the specified
--- character position. 
+-- character position.
 --
 -- There is not a 1 to 1 map from character positions to a row and column on the screen due to
 -- characters that take more than 1 column.

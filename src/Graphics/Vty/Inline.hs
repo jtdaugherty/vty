@@ -1,5 +1,5 @@
 -- | The inline module provides a limited interface to changing the style of terminal output. The
--- intention is for this interface to be used inline with other output systems. 
+-- intention is for this interface to be used inline with other output systems.
 --
 -- The changes specified by the InlineM monad are applied to the terminals display attributes. These
 -- display attributes effect the display of all following text output to the terminal file
@@ -11,7 +11,7 @@
 -- @
 --      putStr \"Not styled. \"
 --      putAttrChange_ $ do
---          backColor red 
+--          backColor red
 --          applyStyle underline
 --      putStr \" Styled! \"
 --      putAttrChange_ $ defaultAll
@@ -74,14 +74,14 @@ applyStyle s = modify $ flip mappend ( currentAttr `withStyle` s )
 
 -- | Attempt to remove the specified 'Style' from the display of the following text.
 --
--- This will fail if applyStyle for the given style has not been previously called. 
+-- This will fail if applyStyle for the given style has not been previously called.
 removeStyle :: Style -> InlineM ()
-removeStyle sMask = modify $ \attr -> 
+removeStyle sMask = modify $ \attr ->
     let style' = case attrStyle attr of
                     Default -> error $ "Graphics.Vty.Inline: Cannot removeStyle if applyStyle never used."
                     KeepCurrent -> error $ "Graphics.Vty.Inline: Cannot removeStyle if applyStyle never used."
                     SetTo s -> s .&. complement sMask
-    in attr { attrStyle = SetTo style' } 
+    in attr { attrStyle = SetTo style' }
 
 -- | Reset the display attributes
 defaultAll :: InlineM ()

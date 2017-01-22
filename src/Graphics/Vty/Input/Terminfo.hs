@@ -113,7 +113,7 @@ specialSupportKeys =
 -- * kcbt - back tab
 --
 -- * kc1 - keypad left-down
--- 
+--
 -- * kc3 - keypad right-down
 --
 -- * kdch1 - delete
@@ -121,7 +121,7 @@ specialSupportKeys =
 -- * kcud1 - down
 --
 -- * kend - end
--- 
+--
 -- * kent - enter
 --
 -- * kf0 - kf63 - function keys

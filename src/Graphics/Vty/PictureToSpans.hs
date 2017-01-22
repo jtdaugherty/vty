@@ -200,7 +200,7 @@ buildSpans image outRegion = do
     outOps <- MVector.replicate (regionHeight outRegion) Vector.empty
     -- \todo I think building the span operations in display order would provide better performance.
     -- However, I got stuck trying to implement an algorithm that did this. This will be considered
-    -- as a possible future optimization. 
+    -- as a possible future optimization.
     --
     -- A depth first traversal of the image is performed.  ordered according to the column range
     -- defined by the image from least to greatest.  The output row ops will at least have the
@@ -208,7 +208,7 @@ buildSpans image outRegion = do
     -- all unspecified columns.
     --
     -- The images are made into span operations from left to right. It's possible that this could
-    -- easily be made to assure top to bottom output as well. 
+    -- easily be made to assure top to bottom output as well.
     when (regionHeight outRegion > 0 && regionWidth outRegion > 0) $ do
         -- The ops builder recursively descends the image and outputs span ops that would
         -- display that image. The number of columns remaining in this row before exceeding the
@@ -297,7 +297,7 @@ addMaybeClipped CropTop {croppedImage, topSkip} = do
     skipRows += topSkip
     addMaybeClipped croppedImage
 
-addMaybeClippedJoin :: forall s . String 
+addMaybeClippedJoin :: forall s . String
                        -> Lens BlitState BlitState Int Int
                        -> Lens BlitState BlitState Int Int
                        -> Lens BlitState BlitState Int Int
@@ -312,7 +312,7 @@ addMaybeClippedJoin name skip remaining offset i0Dim i0 i1 size = do
     case state^.skip of
         s -- TODO: check if clipped in other dim. if not use addUnclipped
           | s > size -> put $ state & skip -~ size
-          | s == 0    -> if state^.remaining > i0Dim 
+          | s == 0    -> if state^.remaining > i0Dim
                             then do
                                 addMaybeClipped i0
                                 put $ state & offset +~ i0Dim & remaining -~ i0Dim

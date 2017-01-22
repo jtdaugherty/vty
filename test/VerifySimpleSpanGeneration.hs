@@ -13,28 +13,28 @@ import Graphics.Vty.PictureToSpans
 
 import Verify
 
-import qualified Data.Vector as Vector 
+import qualified Data.Vector as Vector
 
 unitImageAndZeroWindow0 :: UnitImage -> EmptyWindow -> Bool
-unitImageAndZeroWindow0 (UnitImage _ i) (EmptyWindow w) = 
+unitImageAndZeroWindow0 (UnitImage _ i) (EmptyWindow w) =
     let p = picForImage i
         ops = displayOpsForPic p (regionForWindow w)
     in displayOpsColumns ops == 0 && displayOpsRows ops == 0
 
 unitImageAndZeroWindow1 :: UnitImage -> EmptyWindow -> Bool
-unitImageAndZeroWindow1 (UnitImage _ i) (EmptyWindow w) = 
+unitImageAndZeroWindow1 (UnitImage _ i) (EmptyWindow w) =
     let p = picForImage i
         ops = displayOpsForPic p (regionForWindow w)
     in ( spanOpsEffectedRows ops == 0 ) && ( allSpansHaveWidth ops 0 )
 
 horizSpanImageAndZeroWindow0 :: SingleRowSingleAttrImage -> EmptyWindow -> Bool
-horizSpanImageAndZeroWindow0 (SingleRowSingleAttrImage { rowImage = i }) (EmptyWindow w) = 
+horizSpanImageAndZeroWindow0 (SingleRowSingleAttrImage { rowImage = i }) (EmptyWindow w) =
     let p = picForImage i
         ops = displayOpsForPic p (regionForWindow w)
     in displayOpsColumns ops == 0 && displayOpsRows ops == 0
 
 horizSpanImageAndZeroWindow1 :: SingleRowSingleAttrImage -> EmptyWindow -> Bool
-horizSpanImageAndZeroWindow1 (SingleRowSingleAttrImage { rowImage = i }) (EmptyWindow w) = 
+horizSpanImageAndZeroWindow1 (SingleRowSingleAttrImage { rowImage = i }) (EmptyWindow w) =
     let p = picForImage i
         ops = displayOpsForPic p (regionForWindow w)
     in ( spanOpsEffectedRows ops == 0 ) && ( allSpansHaveWidth ops 0 )
@@ -139,7 +139,7 @@ spanOpsActuallyFillColumns (DefaultPic pic win) =
     in allSpansHaveWidth ops expectedColumnCount
 
 firstSpanOpSetsAttr :: DefaultPic -> Bool
-firstSpanOpSetsAttr DefaultPic { defaultPic = pic, defaultWin = win } = 
+firstSpanOpSetsAttr DefaultPic { defaultPic = pic, defaultWin = win } =
     let ops = displayOpsForPic pic (regionForWindow win)
     in all ( isAttrSpanOp . Vector.head ) ( Vector.toList ops )
 
@@ -158,7 +158,7 @@ imageCoverageMatchesBounds i =
     in verifyAllSpansHaveWidth i ops (imageWidth i)
 
 tests :: IO [Test]
-tests = return 
+tests = return
     [ verify "unit image is cropped when window size == (0,0) [0]" unitImageAndZeroWindow0
     , verify "unit image is cropped when window size == (0,0) [1]" unitImageAndZeroWindow1
     , verify "horiz span image is cropped when window size == (0,0) [0]" horizSpanImageAndZeroWindow0
@@ -171,7 +171,7 @@ tests = return
     , verify "a stack of single attr text spans should define content for all the columns [output region == size of stack]"
         singleAttrSingleSpanStackOpCoverage
     , verify "a single attr text span is cropped when window size < size of stack image [width]"
-        singleAttrSingleSpanStackCropped0 
+        singleAttrSingleSpanStackCropped0
     , verify "a single attr text span is cropped when window size < size of stack image [height]"
         singleAttrSingleSpanStackCropped1
     , verify "single attr text span <|> single attr text span display cropped. [width]"

@@ -19,7 +19,7 @@ data ImageOp = ImageOp ImageEndo ImageEndo
 type ImageEndo = Image -> Image
 
 debugImageOps :: [ImageOp]
-debugImageOps = 
+debugImageOps =
     [ idImageOp
     -- , renderSingleColumnCharOp
     -- , renderDoubleColumnCharOp

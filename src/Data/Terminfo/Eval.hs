@@ -83,7 +83,7 @@ writeCapOp DecOut = do
     p <- pop
     forM_ (show p) $ tell.writeWord8.toEnum.fromEnum
 writeCapOp CharOut = do
-    pop >>= tell.writeWord8.toEnum.fromEnum 
+    pop >>= tell.writeWord8.toEnum.fromEnum
 writeCapOp (PushParam pn) = do
     readParam pn >>= push
 writeCapOp (PushValue v) = do
@@ -91,7 +91,7 @@ writeCapOp (PushValue v) = do
 writeCapOp (Conditional expr parts) = do
     writeCapOps expr
     writeContitionalParts parts
-    where 
+    where
         writeContitionalParts [] = return ()
         writeContitionalParts ((trueOps, falseOps) : falseParts) = do
             -- (man 5 terminfo)
@@ -137,4 +137,3 @@ writeCapOp CompareGt = do
     v1 <- pop
     v0 <- pop
     push $ if v0 > v1 then 1 else 0
-

@@ -13,7 +13,7 @@ import Graphics.Vty.PictureToSpans
 
 import Verify
 
-import qualified Data.Vector as Vector 
+import qualified Data.Vector as Vector
 
 largerHorizSpanOcclusion :: SingleRowSingleAttrImage -> SingleRowSingleAttrImage -> Result
 largerHorizSpanOcclusion row0 row1 =
@@ -109,7 +109,7 @@ horizJoinAlternate1 =
     in verifyOpsEquality expectedOps opsLayered
 
 tests :: IO [Test]
-tests = return 
+tests = return
     [ verify "a larger horiz span occludes a smaller span on a lower layer"
         largerHorizSpanOcclusion
     , verify "two rows stack vertical equiv to first image layered on top of second with padding (0)"

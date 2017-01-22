@@ -2,7 +2,7 @@ module Graphics.Vty.Attributes.Color where
 import Data.Word
 
 -- | Abstract data type representing a color.
---  
+--
 -- Currently the foreground and background color are specified as points in either a:
 --
 --  * 16 color palette. Where the first 8 colors are equal to the 8 colors of the ISO 6429 (ANSI) 8
@@ -10,7 +10,7 @@ import Data.Word
 --
 --  * 240 color palette. This palette is a regular sampling of the full RGB colorspace for the first
 --  224 colors. The remaining 16 colors is a greyscale palette.
--- 
+--
 -- The 8 ISO 6429 (ANSI) colors are as follows:
 --
 --      0. black
@@ -36,7 +36,7 @@ import Data.Word
 --
 -- If the terminal reports <= 16 colors then the 240 color palette points are only mapped to the 8
 -- color pallete. I'm not sure of the RGB points for the "bright" colors which is why they are not
--- addressable via the 240 color palette. 
+-- addressable via the 240 color palette.
 --
 -- If the terminal reports > 16 colors then the 240 color palette points are mapped to the nearest
 -- points in a ("color count" - 16) subsampling of the 240 color palette.
@@ -48,4 +48,3 @@ import Data.Word
 -- Seriously, terminal color support is INSANE.
 data Color = ISOColor !Word8 | Color240 !Word8
     deriving ( Eq, Show, Read )
-

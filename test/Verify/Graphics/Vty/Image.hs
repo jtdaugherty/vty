@@ -26,7 +26,7 @@ instance Show UnitImage where
 data DefaultImage = DefaultImage Image
 
 instance Show DefaultImage where
-    show (DefaultImage i) 
+    show (DefaultImage i)
         = "DefaultImage (" ++ show i ++ ") " ++ show (imageWidth i, imageHeight i)
 
 instance Arbitrary DefaultImage where
@@ -34,15 +34,15 @@ instance Arbitrary DefaultImage where
         i <- return $ char defAttr 'X'
         return $ DefaultImage i
 
-data SingleRowSingleAttrImage 
-    = SingleRowSingleAttrImage 
+data SingleRowSingleAttrImage
+    = SingleRowSingleAttrImage
       { expectedAttr :: Attr
       , expectedColumns :: Int
       , rowImage :: Image
       }
 
 instance Show SingleRowSingleAttrImage where
-    show (SingleRowSingleAttrImage attr columns image) 
+    show (SingleRowSingleAttrImage attr columns image)
         = "SingleRowSingleAttrImage (" ++ show attr ++ ") " ++ show columns ++ " ( " ++ show image ++ " )"
 
 newtype WidthResize = WidthResize (Image -> (Image, Int))
@@ -84,14 +84,14 @@ instance Arbitrary ImageResize where
         , do
             ImageResize f <- arbitrary
             WidthResize g <- arbitrary
-            return $! ImageResize $! \i -> 
+            return $! ImageResize $! \i ->
                 let (i0, (_, outHeight)) = f i
                     gI = g i0
                 in (fst gI, (snd gI, outHeight))
         , do
             ImageResize f <- arbitrary
             HeightResize g <- arbitrary
-            return $! ImageResize $! \i -> 
+            return $! ImageResize $! \i ->
                 let (i0, (outWidth, _)) = f i
                     gI = g i0
                 in (fst gI, (outWidth, snd gI))
@@ -109,8 +109,8 @@ instance Arbitrary SingleRowSingleAttrImage where
             outWidth = length singleColumnRowText
         return $ SingleRowSingleAttrImage a outWidth outImage
 
-data SingleRowTwoAttrImage 
-    = SingleRowTwoAttrImage 
+data SingleRowTwoAttrImage
+    = SingleRowTwoAttrImage
     { part0 :: SingleRowSingleAttrImage
     , part1 :: SingleRowSingleAttrImage
     , joinImage :: Image
@@ -122,8 +122,8 @@ instance Arbitrary SingleRowTwoAttrImage where
         p1 <- arbitrary
         return $ SingleRowTwoAttrImage p0 p1 (rowImage p0 <|> rowImage p1)
 
-data SingleAttrSingleSpanStack = SingleAttrSingleSpanStack 
-    { stackImage :: Image 
+data SingleAttrSingleSpanStack = SingleAttrSingleSpanStack
+    { stackImage :: Image
     , stackSourceImages :: [SingleRowSingleAttrImage]
     , stackWidth :: Int
     , stackHeight :: Int
@@ -215,4 +215,3 @@ instance Arbitrary Translation where
         y <- arbitrary `suchThat` (> 0)
         let i' = translate x y i
         return $ Translation i (x,y) i'
-

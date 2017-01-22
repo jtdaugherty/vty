@@ -14,7 +14,7 @@ import System.Environment( getArgs )
 import System.IO
 import System.Random
 
-bench0 = do 
+bench0 = do
     let fixedGen = mkStdGen 0
     setStdGen fixedGen
     return $ Bench (return ()) (\() -> mkVty def >>= liftM2 (>>) run shutdown)
@@ -49,13 +49,12 @@ pad :: Int -> Image -> Image
 pad ml img = img <|> charFill defAttr ' ' (ml - imageWidth img) 1
 
 clines :: StdGen -> Int -> [Image]
-clines g maxll = map (pad maxll . horizCat . map (uncurry string)) 
+clines g maxll = map (pad maxll . horizCat . map (uncurry string))
                  $ fold (length . snd) (lengths maxll g1) (nums g2)
   where (g1,g2)  = split g
 
 benchgen :: DisplayRegion -> [Picture]
-benchgen (w,h) 
+benchgen (w,h)
     = take 2000 $ map ((\i -> picForImage i) . vertCat . take (fromEnum h))
         $ tails
         $ clines (mkStdGen 80) w
-

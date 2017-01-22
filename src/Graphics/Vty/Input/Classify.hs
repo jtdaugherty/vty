@@ -44,7 +44,7 @@ compile table = cl' where
                 -- produced.
                 -- The test verifyFullSynInputToEvent2x verifies this.
                 -- H: There will always be one match. The prefixSet contains, by definition, all
-                -- prefixes of an event. 
+                -- prefixes of an event.
                 False ->
                     let inputPrefixes = reverse $ take maxValidInputLength $ tail $ inits inputBlock
                     in case mapMaybe (\s -> (,) s `fmap` M.lookup s eventForInput) inputPrefixes of

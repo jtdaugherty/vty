@@ -32,7 +32,7 @@ import Data.List (isInfixOf)
 import Data.Maybe (catMaybes)
 import Data.Monoid ((<>))
 
--- | Initialize the display to UTF-8. 
+-- | Initialize the display to UTF-8.
 reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output
 reserveTerminal variant outFd = liftIO $ do
     let flushedPut = void . fdWrite outFd
@@ -112,4 +112,3 @@ xtermInlineHack :: Output -> IO ()
 xtermInlineHack t = do
     let writeReset = foldMap (writeWord8.toEnum.fromEnum) "\ESC[K"
     outputByteBuffer t $ writeToByteString writeReset
-

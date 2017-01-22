@@ -46,13 +46,13 @@ instance Show CapExpression where
             hexDump = foldr (\b s -> showHex b s) ""
 
 instance NFData CapExpression where
-    rnf (CapExpression ops !_bytes !str !c !pOps) 
+    rnf (CapExpression ops !_bytes !str !c !pOps)
         = rnf ops `seq` rnf str `seq` rnf c `seq` rnf pOps
 
 type CapParam = Word
 
 type CapOps = [CapOp]
-data CapOp = 
+data CapOp =
       Bytes !Int !Int -- offset count
     | DecOut | CharOut
     -- This stores a 0-based index to the parameter. However the operation that implies this op is
@@ -60,7 +60,7 @@ data CapOp =
     | PushParam !Word | PushValue !Word
     -- The conditional parts are the sequence of (%t expression, %e expression) pairs.
     -- The %e expression may be NOP
-    | Conditional 
+    | Conditional
       { conditionalExpr :: !CapOps
       , conditionalParts :: ![(CapOps, CapOps)]
       }
@@ -72,8 +72,8 @@ data CapOp =
 instance NFData CapOp where
     rnf (Bytes offset byteCount ) = rnf offset `seq` rnf byteCount
     rnf (PushParam pn) = rnf pn
-    rnf (PushValue v) = rnf v 
-    rnf (Conditional cExpr cParts) = rnf cExpr `seq` rnf cParts 
+    rnf (PushValue v) = rnf v
+    rnf (Conditional cExpr cParts) = rnf cExpr `seq` rnf cParts
     rnf BitwiseOr = ()
     rnf BitwiseXOr = ()
     rnf BitwiseAnd = ()
@@ -94,11 +94,11 @@ instance NFData ParamOp where
     rnf IncFirstTwo = ()
 
 parseCapExpression :: String -> Either ParseError CapExpression
-parseCapExpression capString = 
+parseCapExpression capString =
     let v = runParser capExpressionParser
                       initialBuildState
-                      "terminfo cap" 
-                      capString 
+                      "terminfo cap"
+                      capString
     in case v of
         Left e -> Left e
         Right buildResults -> Right $ constructCapExpression capString buildResults
@@ -113,21 +113,21 @@ constructCapExpression capString buildResults =
                 , sourceString = capString
                 , paramCount = outParamCount buildResults
                 , paramOps = outParamOps buildResults
-                } 
+                }
     in rnf expr `seq` expr
 
-type CapParser a = Parsec String BuildState a 
+type CapParser a = Parsec String BuildState a
 
 capExpressionParser :: CapParser BuildResults
 capExpressionParser = do
-    rs <- many $ paramEscapeParser <|> bytesOpParser 
+    rs <- many $ paramEscapeParser <|> bytesOpParser
     return $ mconcat rs
 
 paramEscapeParser :: CapParser BuildResults
 paramEscapeParser = do
     _ <- char '%'
     incOffset 1
-    literalPercentParser <|> paramOpParser 
+    literalPercentParser <|> paramOpParser
 
 literalPercentParser :: CapParser BuildResults
 literalPercentParser = do
@@ -138,7 +138,7 @@ literalPercentParser = do
 
 paramOpParser :: CapParser BuildResults
 paramOpParser
-    = incrementOpParser 
+    = incrementOpParser
     <|> pushOpParser
     <|> decOutParser
     <|> charOutParser
@@ -179,16 +179,16 @@ conditionalOpParser = do
     _ <- char '?'
     incOffset 1
     condPart <- manyExpr conditionalTrueParser
-    parts <- manyP 
+    parts <- manyP
              ( do
                 truePart <- manyExpr $ choice [ try $ lookAhead conditionalEndParser
-                                              , conditionalFalseParser 
+                                              , conditionalFalseParser
                                               ]
                 falsePart <- manyExpr $ choice [ try $ lookAhead conditionalEndParser
                                                , conditionalTrueParser
                                                ]
                 return ( truePart, falsePart )
-             ) 
+             )
              conditionalEndParser
 
     let trueParts = map fst parts
@@ -208,10 +208,10 @@ conditionalOpParser = do
 
     return $ BuildResults n'' [ Conditional cond condParts ] pOps
 
-    where 
-        manyP !p !end = choice 
+    where
+        manyP !p !end = choice
             [ try end >> return []
-            , do !v <- p 
+            , do !v <- p
                  !vs <- manyP p end
                  return $! v : vs
             ]
@@ -233,7 +233,7 @@ conditionalEndParser = do
     incOffset 2
 
 bitwiseOpParser :: CapParser BuildResults
-bitwiseOpParser 
+bitwiseOpParser
     =   bitwiseOrParser
     <|> bitwiseAndParser
     <|> bitwiseXorParser
@@ -257,9 +257,9 @@ bitwiseXorParser = do
     return $ BuildResults 0 [ BitwiseXOr ] [ ]
 
 arithOpParser :: CapParser BuildResults
-arithOpParser 
-    =   plusOp 
-    <|> minusOp 
+arithOpParser
+    =   plusOp
+    <|> minusOp
     where
         plusOp = do
             _ <- char '+'
@@ -282,10 +282,10 @@ literalIntOpParser = do
     return $ BuildResults 0 [ PushValue n ] [ ]
 
 compareOpParser :: CapParser BuildResults
-compareOpParser 
+compareOpParser
     =   compareEqOp
-    <|> compareLtOp 
-    <|> compareGtOp 
+    <|> compareLtOp
+    <|> compareGtOp
     where
         compareEqOp = do
             _ <- char '='
@@ -313,14 +313,14 @@ bytesOpParser = do
 charConstParser :: CapParser BuildResults
 charConstParser = do
     _ <- char '\''
-    charValue <- liftM (toEnum . fromEnum) anyChar 
+    charValue <- liftM (toEnum . fromEnum) anyChar
     _ <- char '\''
     incOffset 3
     return $ BuildResults 0 [ PushValue charValue ] [ ]
 
-data BuildState = BuildState 
+data BuildState = BuildState
     { nextOffset :: Int
-    } 
+    }
 
 incOffset :: Int -> CapParser ()
 incOffset n = do
@@ -339,10 +339,9 @@ data BuildResults = BuildResults
 
 instance Monoid BuildResults where
     mempty = BuildResults 0 [] []
-    v0 `mappend` v1 
+    v0 `mappend` v1
         = BuildResults
         { outParamCount = (outParamCount v0) `max` (outParamCount v1)
         , outCapOps = (outCapOps v0) `mappend` (outCapOps v1)
         , outParamOps = (outParamOps v0) `mappend` (outParamOps v1)
         }
-

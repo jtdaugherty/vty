@@ -254,7 +254,7 @@ rgbColor r g b
     | r <= 255 && g <= 255 && b <= 175 = Color240 213
     | r <= 255 && g <= 255 && b <= 215 = Color240 214
     | r <= 255 && g <= 255 && b <= 255 = Color240 215
-    | otherwise = error (printf "RGB color %d %d %d does not map to 240 palette." 
+    | otherwise = error (printf "RGB color %d %d %d does not map to 240 palette."
                                 (fromIntegral r :: Int)
                                 (fromIntegral g :: Int)
                                 (fromIntegral b :: Int))

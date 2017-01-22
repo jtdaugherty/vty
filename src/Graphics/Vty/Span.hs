@@ -31,7 +31,7 @@ data SpanOp =
     -- | a span of UTF-8 text occupies a specific number of screen space columns. A single UTF
     -- character does not necessarially represent 1 colunm. See Codec.Binary.UTF8.Width
     -- TextSpan [Attr] [output width in columns] [number of characters] [data]
-      TextSpan 
+      TextSpan
       { textSpanAttr :: !Attr
       , textSpanOutputWidth :: !Int
       , textSpanCharWidth :: !Int
@@ -89,7 +89,6 @@ splitOpsAt inW inOps = splitOpsAt' inW inOps
                      , Vector.cons (Skip (w - remainingColumns)) (Vector.tail ops)
                      )
             RowEnd _ -> error "cannot split ops containing a row end"
-        
 
 -- | vector of span operation vectors for display. One per row of the output region.
 type DisplayOps = Vector SpanOps
@@ -103,7 +102,7 @@ instance Show SpanOp where
 --
 -- All spans are verified to define same number of columns. See: VerifySpanOps
 displayOpsColumns :: DisplayOps -> Int
-displayOpsColumns ops 
+displayOpsColumns ops
     | Vector.length ops == 0 = 0
     | otherwise              = Vector.length $ Vector.head ops
 
@@ -117,7 +116,7 @@ effectedRegion ops = (displayOpsColumns ops, displayOpsRows ops)
 -- | The number of columns a SpanOps effects.
 spanOpsEffectedColumns :: SpanOps -> Int
 spanOpsEffectedColumns inOps = Vector.foldl' spanOpsEffectedColumns' 0 inOps
-    where 
+    where
         spanOpsEffectedColumns' t (TextSpan _ w _ _ ) = t + w
         spanOpsEffectedColumns' t (Skip w) = t + w
         spanOpsEffectedColumns' t (RowEnd w) = t + w
@@ -135,4 +134,3 @@ columnsToCharOffset cx (TextSpan _ _ _ utf8Str) =
     in wcswidth (take cx str)
 columnsToCharOffset cx (Skip _) = cx
 columnsToCharOffset cx (RowEnd _) = cx
-

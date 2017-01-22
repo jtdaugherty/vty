@@ -15,7 +15,7 @@ import Test.QuickCheck.Property
 -- not be supported were removed. Then a few more were pruned until a reasonable looking set was
 -- made.
 terminalsOfInterest :: [String]
-terminalsOfInterest = 
+terminalsOfInterest =
     [ "vt100"
     , "vt220"
     , "vt102"
@@ -58,4 +58,3 @@ compareMockOutput mockData expectedStr = do
                                       ++ expectedStr
                              }
         else return succeeded
-

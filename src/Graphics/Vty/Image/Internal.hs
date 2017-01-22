@@ -65,7 +65,7 @@ clipText txt leftSkip rightClip =
 -- * a cropped image
 --
 -- * an empty image of no size or content.
-data Image = 
+data Image =
     -- | A horizontal text span has a row height of 1.
       HorizText
       { attr :: Attr
@@ -80,7 +80,7 @@ data Image =
     -- required to be between two images of equal height. The horizJoin constructor adds background
     -- fills to the provided images that assure this is true for the HorizJoin value produced.
     | HorizJoin
-      { partLeft :: Image 
+      { partLeft :: Image
       , partRight :: Image
       , outputWidth :: Int -- ^ imageWidth partLeft == imageWidth partRight. Always > 0
       , outputHeight :: Int -- ^ imageHeight partLeft == imageHeight partRight. Always > 0
@@ -136,10 +136,10 @@ data Image =
       }
     -- | The empty image
     --
-    -- The combining operators identity constant. 
+    -- The combining operators identity constant.
     -- EmptyImage <|> a = a
     -- EmptyImage <-> a = a
-    -- 
+    --
     -- Any image of zero size equals the empty image.
     | EmptyImage
     deriving (Eq, Generic)
@@ -198,7 +198,7 @@ ppImageStructure inImg = go 0 inImg
             = "CropTop("++ show outputWidth ++ "," ++ show topSkip ++ "->" ++ show outputHeight ++ ")\n"
               ++ go (i+1) croppedImage
         pp _ EmptyImage = "EmptyImage"
-        
+
 instance NFData Image where
     rnf EmptyImage = ()
     rnf (CropRight i w h) = i `deepseq` w `seq` h `seq` ()
@@ -234,7 +234,7 @@ imageHeight CropBottom { outputHeight = h } = h
 imageHeight CropTop { outputHeight = h } = h
 imageHeight EmptyImage = 0
 
--- | Append in the Monoid instance is equivalent to <->. 
+-- | Append in the Monoid instance is equivalent to <->.
 instance Monoid Image where
     mempty = EmptyImage
     mappend = vertJoin
@@ -302,4 +302,3 @@ vertJoin i0 i1
         h1 = imageHeight i1
         h   = h0 + h1
 vertJoin _ _ = error "vertJoin applied to undefined values."
-

@@ -43,12 +43,12 @@ data Mode = Mouse
           deriving (Eq, Read, Show)
 
 data Output = Output
-    { -- | Text identifier for the output device. Used for debugging. 
+    { -- | Text identifier for the output device. Used for debugging.
       terminalID :: String
     , releaseTerminal :: forall m. MonadIO m => m ()
-    -- | Clear the display and initialize the terminal to some initial display state. 
+    -- | Clear the display and initialize the terminal to some initial display state.
     --
-    -- The expectation of a program is that the display starts in some initial state. 
+    -- The expectation of a program is that the display starts in some initial state.
     -- The initial state would consist of fixed values:
     --
     --  - cursor at top left
@@ -80,7 +80,7 @@ data Output = Output
     , getModeStatus :: forall m. MonadIO m => Mode -> m Bool
     , assumedStateRef :: IORef AssumedState
     -- | Acquire display access to the given region of the display.
-    -- Currently all regions have the upper left corner of (0,0) and the lower right corner at 
+    -- Currently all regions have the upper left corner of (0,0) and the lower right corner at
     -- (max displayWidth providedWidth, max displayHeight providedHeight)
     , mkDisplayContext :: forall m. MonadIO m => Output -> DisplayRegion -> m DisplayContext
     -- | Ring the terminal bell if supported.
@@ -102,7 +102,7 @@ initialAssumedState = AssumedState Nothing Nothing
 
 data DisplayContext = DisplayContext
     { contextDevice :: Output
-    -- | Provide the bounds of the display context. 
+    -- | Provide the bounds of the display context.
     , contextRegion :: DisplayRegion
     --  | sets the output position to the specified row and column. Where the number of bytes
     --  required for the control codes can be specified seperate from the actual byte sequence.
@@ -134,16 +134,16 @@ writeUtf8Text = writeByteString
 
 -- | Displays the given `Picture`.
 --
---      0. The image is cropped to the display size. 
+--      0. The image is cropped to the display size.
 --
 --      1. Converted into a sequence of attribute changes and text spans.
---      
+--
 --      2. The cursor is hidden.
 --
 --      3. Serialized to the display.
 --
 --      4. The cursor is then shown and positioned or kept hidden.
--- 
+--
 -- todo: specify possible IO exceptions.
 -- abstract from IO monad to a MonadIO instance.
 outputPicture :: MonadIO m => DisplayContext -> Picture -> m ()
@@ -193,7 +193,7 @@ writeOutputOps dc initialAttr diffs ops =
                                        (0, mempty, diffs)
                                        ops
     in out
-    where 
+    where
         writeOutputOps' (y, out, True : diffs') spanOps
             = let spanOut = writeSpanOps dc y initialAttr spanOps
                   out' = out `mappend` spanOut
@@ -229,7 +229,7 @@ writeSpanOp dc (RowEnd _) fattr = (writeDefaultAttr dc `mappend` writeRowEnd dc,
 -- needs to be translated to column, row positions.
 data CursorOutputMap = CursorOutputMap
     { charToOutputPos :: (Int, Int) -> (Int, Int)
-    } 
+    }
 
 cursorOutputMap :: DisplayOps -> Cursor -> CursorOutputMap
 cursorOutputMap spanOps _cursor = CursorOutputMap
@@ -239,18 +239,18 @@ cursorOutputMap spanOps _cursor = CursorOutputMap
 cursorColumnOffset :: DisplayOps -> Int -> Int -> Int
 cursorColumnOffset ops cx cy =
     let cursorRowOps = Vector.unsafeIndex ops (fromEnum cy)
-        (outOffset, _, _) 
-            = Vector.foldl' ( \(d, currentCx, done) op -> 
+        (outOffset, _, _)
+            = Vector.foldl' ( \(d, currentCx, done) op ->
                         if done then (d, currentCx, done) else case spanOpHasWidth op of
                             Nothing -> (d, currentCx, False)
                             Just (cw, ow) -> case compare cx (currentCx + cw) of
                                     GT -> ( d + ow
                                           , currentCx + cw
-                                          , False 
+                                          , False
                                           )
                                     EQ -> ( d + ow
                                           , currentCx + cw
-                                          , True 
+                                          , True
                                           )
                                     LT -> ( d + columnsToCharOffset (cx - currentCx) op
                                           , currentCx + cw
@@ -264,7 +264,7 @@ cursorColumnOffset ops cx cy =
 -- | Not all terminals support all display attributes. This filters a display attribute to what the
 -- given terminal can display.
 limitAttrForDisplay :: Output -> Attr -> Attr
-limitAttrForDisplay t attr 
+limitAttrForDisplay t attr
     = attr { attrForeColor = clampColor $ attrForeColor attr
            , attrBackColor = clampColor $ attrBackColor attr
            }
@@ -272,7 +272,7 @@ limitAttrForDisplay t attr
         clampColor Default     = Default
         clampColor KeepCurrent = KeepCurrent
         clampColor (SetTo c)   = clampColor' c
-        clampColor' (ISOColor v) 
+        clampColor' (ISOColor v)
             | contextColorCount t < 8            = Default
             | contextColorCount t < 16 && v >= 8 = SetTo $ ISOColor (v - 8)
             | otherwise                          = SetTo $ ISOColor v
@@ -281,7 +281,7 @@ limitAttrForDisplay t attr
             | contextColorCount t <  8           = Default
             | contextColorCount t <  16          = Default
             | contextColorCount t <= 256         = SetTo $ Color240 v
-            | otherwise 
-                = let p :: Double = fromIntegral v / 240.0 
+            | otherwise
+                = let p :: Double = fromIntegral v / 240.0
                       v' = floor $ p * (fromIntegral $ contextColorCount t)
                   in SetTo $ Color240 v'

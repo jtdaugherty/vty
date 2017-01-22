@@ -1,5 +1,5 @@
 -- | Input mappings for ANSI/VT100/VT50 terminals that is missing from terminfo.
--- 
+--
 -- Or that are sent regardless of terminfo by terminal emulators. EG: Terminal emulators will often
 -- use VT50 input bytes regardless of declared terminal type. This provides compatibility with
 -- programs that don't follow terminfo.
@@ -49,8 +49,8 @@ navKeys3 =
                  [KIns,KDel,KPageUp,KPageDown,KHome,KEnd]
 
 -- | encoding for shift plus function keys
--- 
--- According to 
+--
+-- According to
 --
 --  * http://aperiodic.net/phil/archives/Geekery/term-function-keys.html
 --
@@ -84,4 +84,3 @@ classifyTable =
     , functionKeys1
     , functionKeys2
     ]
-

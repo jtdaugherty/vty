@@ -5,7 +5,7 @@ import Graphics.Vty.ControlStrings
 import System.Console.Terminfo
 
 main = do
-    terminal <- setupTermFromEnv 
+    terminal <- setupTermFromEnv
     controlTable <- init_controlTable terminal
     putStrLn $ "ANSI terminal show cursor string: " ++ show cvis
     putStrLn $ "Current terminal show cursor string: " ++ show (showCursorStr controlTable)

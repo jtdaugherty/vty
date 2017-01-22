@@ -61,7 +61,7 @@ infixr 4 <->
 
 -- | An area of the picture's bacground (See Background) of w columns and h rows.
 backgroundFill :: Int -> Int -> Image
-backgroundFill w h 
+backgroundFill w h
     | w == 0    = EmptyImage
     | h == 0    = EmptyImage
     | otherwise = BGFill w h
@@ -104,21 +104,21 @@ char a c =
     in HorizText a (TL.singleton c) displayWidth 1
 
 -- | A string of characters layed out on a single row with the same display attribute. The string is
--- assumed to be a sequence of ISO-10646 characters. 
+-- assumed to be a sequence of ISO-10646 characters.
 --
 -- Note: depending on how the Haskell compiler represents string literals a string literal in a
--- UTF-8 encoded source file, for example, may be represented as a ISO-10646 string. 
+-- UTF-8 encoded source file, for example, may be represented as a ISO-10646 string.
 -- That is, I think, the case with GHC 6.10. This means, for the most part, you don't need to worry
 -- about the encoding format when outputting string literals. Just provide the string literal
 -- directly to iso10646String or string.
--- 
+--
 iso10646String :: Attr -> String -> Image
 iso10646String a str =
     let displayWidth = safeWcswidth str
     in HorizText a (TL.pack str) displayWidth (length str)
 
 -- | Alias for iso10646String. Since the usual case is that a literal string like "foo" is
--- represented internally as a list of ISO 10646 31 bit characters.  
+-- represented internally as a list of ISO 10646 31 bit characters.
 --
 -- Note: Keep in mind that GHC will compile source encoded as UTF-8 but the literal strings, while
 -- UTF-8 encoded in the source, will be transcoded to a ISO 10646 31 bit characters runtime
@@ -131,11 +131,11 @@ string = iso10646String
 utf8String :: Attr -> [Word8] -> Image
 utf8String a bytes = utf8Bytestring a (BL.pack bytes)
 
--- | Renders a UTF-8 encoded lazy bytestring. 
+-- | Renders a UTF-8 encoded lazy bytestring.
 utf8Bytestring :: Attr -> BL.ByteString -> Image
 utf8Bytestring a bs = text a (TL.decodeUtf8 bs)
 
--- | Renders a UTF-8 encoded strict bytestring. 
+-- | Renders a UTF-8 encoded strict bytestring.
 utf8Bytestring' :: Attr -> B.ByteString -> Image
 utf8Bytestring' a bs = text' a (T.decodeUtf8 bs)
 
@@ -146,14 +146,14 @@ charFill _a _c 0  _h = EmptyImage
 charFill _a _c _w 0  = EmptyImage
 charFill a c w h =
     vertCat $ replicate (fromIntegral h) $ HorizText a txt displayWidth charWidth
-    where 
+    where
         txt = TL.replicate (fromIntegral w) (TL.singleton c)
         displayWidth = safeWcwidth c * (fromIntegral w)
         charWidth = fromIntegral w
 
 -- | The empty image. Useful for fold combinators. These occupy no space nor define any display
 -- attributes.
-emptyImage :: Image 
+emptyImage :: Image
 emptyImage = EmptyImage
 
 -- | pad the given image. This adds background character fills to the left, top, right, bottom.
@@ -163,7 +163,7 @@ pad 0 0 0 0 i = i
 pad inL inT inR inB inImage
     | inL < 0 || inT < 0 || inR < 0 || inB < 0 = error "cannot pad by negative amount"
     | otherwise = go inL inT inR inB inImage
-        where 
+        where
             -- TODO: uh.
             go 0 0 0 0 i = i
             go 0 0 0 b i = VertJoin i (BGFill w b) w h
@@ -299,4 +299,3 @@ resizeHeight h i = case h `compare` imageHeight i of
     LT -> cropBottom h i
     EQ -> i
     GT -> i <-> BGFill (imageWidth i) (h - imageHeight i)
-

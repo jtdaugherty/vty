@@ -16,7 +16,7 @@ import Numeric
 
 -- If a terminal defines one of the caps then it's expected to be parsable.
 -- TODO: reduce duplication with terminfo terminal implementation.
-capsOfInterest = 
+capsOfInterest =
     [ "cup"
     , "sc"
     , "rc"
@@ -65,7 +65,7 @@ verifyParseCap capString onParse =
         Right e    -> onParse e
 
 nonParamaterizedCaps (NonParamCapString cap) = do
-    verifyParseCap cap $ \e -> 
+    verifyParseCap cap $ \e ->
         let expectedBytes = map (toEnum . fromEnum) cap
             outBytes = bytesForRange e 0 (length cap)
         in verifyBytesEqual outBytes expectedBytes
@@ -75,7 +75,7 @@ literalPercentCaps (LiteralPercentCap capString expectedBytes) = do
 
 incFirstTwoCaps (IncFirstTwoCap capString expectedBytes) = do
     verifyParseCap capString $ \e -> verifyBytesEqual (collectBytes e) expectedBytes
-    
+
 pushParamCaps (PushParamCap capString expectedParamCount expectedBytes) = do
     verifyParseCap capString $ \e ->
         let outBytes = collectBytes e
@@ -98,4 +98,3 @@ printCap ti capName = do
 printExpression ti capName = do
     let parseResult = parseCapExpression $ fromCapname ti capName
     putStrLn $ capName ++ ": " ++ show parseResult
-

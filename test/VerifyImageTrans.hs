@@ -22,7 +22,7 @@ verifyHorizContatWAttrChangeSimplifies :: SingleRowTwoAttrImage -> Bool
 verifyHorizContatWAttrChangeSimplifies ( SingleRowTwoAttrImage (SingleRowSingleAttrImage attr0 charCount0 _image0)
                                                                (SingleRowSingleAttrImage attr1 charCount1 _image1)
                                                                i
-                                             ) 
+                                             )
     | charCount0 == 0 || charCount1 == 0 || attr0 == attr1 = isHorizTextOfColumns i (charCount0 + charCount1)
     | otherwise = False == isHorizTextOfColumns i (charCount0 + charCount1)
 

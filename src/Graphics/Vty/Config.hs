@@ -14,7 +14,7 @@
 -- earlier.
 --
 -- For all directives:
--- 
+--
 -- @
 --  string := \"\\\"\" chars+ \"\\\"\"
 -- @
@@ -40,7 +40,7 @@
 --
 -- @
 --  \"map\" term string key modifier_list
---  where 
+--  where
 --      key := KEsc | KChar Char | KBS ... (same as 'Key')
 --      modifier_list := \"[\" modifier+ \"]\"
 --      modifier := MShift | MCtrl | MMeta | MAlt

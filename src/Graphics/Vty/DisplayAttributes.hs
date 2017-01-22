@@ -79,7 +79,7 @@ data DisplayColorDiff
 
 -- | Style attribute changes are transformed into a sequence of apply/removes of the individual
 -- attributes.
-data StyleStateChange 
+data StyleStateChange
     = ApplyStandout
     | RemoveStandout
     | ApplyUnderline
