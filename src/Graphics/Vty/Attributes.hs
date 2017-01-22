@@ -18,7 +18,7 @@
 -- Is the attribute that will set the foreground color to red and the background color to the
 -- default.
 --
--- This can then be used to build an image wiht a red foreground like so:
+-- This can then be used to build an image with a red foreground like so:
 --
 -- @
 --      string (defAttr `withForeColor` red) "this text will be red"
