@@ -6,8 +6,7 @@
 #defined MIN_VERSION_base(x,y,z) 1
 #endif
 
-module Graphics.Vty.DisplayAttributes
-    where
+module Graphics.Vty.DisplayAttributes where
 
 import Graphics.Vty.Attributes
 

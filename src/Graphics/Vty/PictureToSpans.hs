@@ -10,8 +10,7 @@
 #defined MIN_VERSION_base(x,y,z) 1
 #endif
 
-{- | Transforms an image into rows of operations.
- -}
+-- | Transforms an image into rows of operations.
 module Graphics.Vty.PictureToSpans where
 
 import Graphics.Vty.Prelude

@@ -1,8 +1,9 @@
 {-# LANGUAGE DisambiguateRecordFields #-}
-module Verify.Graphics.Vty.Picture ( module Verify.Graphics.Vty.Picture
-                                   , module Graphics.Vty.Picture
-                                   )
-    where
+module Verify.Graphics.Vty.Picture
+  ( module Verify.Graphics.Vty.Picture
+  , module Graphics.Vty.Picture
+  )
+where
 
 import Verify.Graphics.Vty.Prelude
 

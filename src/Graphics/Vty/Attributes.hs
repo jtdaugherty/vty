@@ -35,11 +35,12 @@
 -- output previously.
 --
 -- \todo This API is very verbose IMO. I'd like something more succinct.
-module Graphics.Vty.Attributes ( module Graphics.Vty.Attributes
-                               , module Graphics.Vty.Attributes.Color
-                               , module Graphics.Vty.Attributes.Color240
-                               )
-    where
+module Graphics.Vty.Attributes
+  ( module Graphics.Vty.Attributes
+  , module Graphics.Vty.Attributes.Color
+  , module Graphics.Vty.Attributes.Color240
+  )
+where
 
 import Data.Bits
 import Data.Default

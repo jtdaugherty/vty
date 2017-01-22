@@ -142,14 +142,15 @@
 --
 -- In my experience this cannot resolve the issues without changes to
 -- the terminal emulator and device.
-module Graphics.Vty.Input ( Key(..)
-                          , Modifier(..)
-                          , Button(..)
-                          , Event(..)
-                          , Input(..)
-                          , inputForConfig
-                          )
-    where
+module Graphics.Vty.Input
+  ( Key(..)
+  , Modifier(..)
+  , Button(..)
+  , Event(..)
+  , Input(..)
+  , inputForConfig
+  )
+where
 
 import Graphics.Vty.Config
 import Graphics.Vty.Input.Events

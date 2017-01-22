@@ -1,8 +1,9 @@
 -- | This module exports the input classification type to avoid import
 -- cycles between other modules that need this.
 module Graphics.Vty.Input.Classify.Types
-    ( KClass(..)
-    ) where
+  ( KClass(..)
+  )
+where
 
 import Graphics.Vty.Input.Events
 

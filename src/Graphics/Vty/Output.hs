@@ -22,14 +22,15 @@
 -- interface suitable for xterm-like terminals. These are the terminals
 -- where TERM == xterm. This does use terminfo for as many control codes
 -- as possible.
-module Graphics.Vty.Output ( module Graphics.Vty.Output
-                           , Output(..) -- \todo hide constructors
-                           , AssumedState(..)
-                           , DisplayContext(..) -- \todo hide constructors
-                           , outputPicture
-                           , displayContext
-                           )
-    where
+module Graphics.Vty.Output
+  ( module Graphics.Vty.Output
+  , Output(..) -- \todo hide constructors
+  , AssumedState(..)
+  , DisplayContext(..) -- \todo hide constructors
+  , outputPicture
+  , displayContext
+  )
+where
 
 import Graphics.Vty.Prelude
 

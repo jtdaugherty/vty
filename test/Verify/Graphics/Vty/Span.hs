@@ -1,8 +1,9 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Verify.Graphics.Vty.Span ( module Verify.Graphics.Vty.Span
-                                , module Graphics.Vty.Span
-                                )
-    where
+module Verify.Graphics.Vty.Span
+  ( module Verify.Graphics.Vty.Span
+  , module Graphics.Vty.Span
+  )
+where
 
 import Graphics.Vty.Debug
 import Graphics.Vty.Span

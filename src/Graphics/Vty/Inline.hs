@@ -1,3 +1,10 @@
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE BangPatterns #-}
+
+#ifndef MIN_VERSION_base
+#defined MIN_VERSION_base(x,y,z) 1
+#endif
+
 -- | The inline module provides a limited interface to changing the
 -- style of terminal output. The intention is for this interface to be
 -- used inline with other output systems.
@@ -27,17 +34,11 @@
 -- different 'Handle' than 'putAttrChange'
 --
 -- Copyright 2009-2010 Corey O'Connor
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE BangPatterns #-}
-
-#ifndef MIN_VERSION_base
-#defined MIN_VERSION_base(x,y,z) 1
-#endif
-
-module Graphics.Vty.Inline ( module Graphics.Vty.Inline
-                           , withVty
-                           )
-    where
+module Graphics.Vty.Inline
+  ( module Graphics.Vty.Inline
+  , withVty
+  )
+where
 
 import Graphics.Vty
 import Graphics.Vty.DisplayAttributes

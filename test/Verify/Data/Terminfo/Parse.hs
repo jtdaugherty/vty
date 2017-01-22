@@ -1,7 +1,8 @@
-module Verify.Data.Terminfo.Parse ( module Verify.Data.Terminfo.Parse
-                                  , module Data.Terminfo.Parse
-                                  )
-    where
+module Verify.Data.Terminfo.Parse
+  ( module Verify.Data.Terminfo.Parse
+  , module Data.Terminfo.Parse
+  )
+where
 
 import Data.Terminfo.Parse
 import Data.Terminfo.Eval

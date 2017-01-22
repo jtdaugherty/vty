@@ -7,23 +7,24 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
-module Verify ( module Verify
-              , module Control.Applicative
-              , module Control.DeepSeq
-              , module Control.Exception
-              , module Control.Monad
-              , module Test.QuickCheck
-              , module Test.QuickCheck.Modifiers
-              , module Text.Printf
-              , succeeded
-              , failed
-              , monadicIO
-              , liftIO
-              , liftBool
-              , Test(..)
-              , Prop.Result(..)
-              )
-    where
+module Verify
+  ( module Verify
+  , module Control.Applicative
+  , module Control.DeepSeq
+  , module Control.Exception
+  , module Control.Monad
+  , module Test.QuickCheck
+  , module Test.QuickCheck.Modifiers
+  , module Text.Printf
+  , succeeded
+  , failed
+  , monadicIO
+  , liftIO
+  , liftBool
+  , Test(..)
+  , Prop.Result(..)
+  )
+where
 
 import Control.Exception ( bracket, try, SomeException(..) )
 

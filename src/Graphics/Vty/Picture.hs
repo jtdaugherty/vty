@@ -3,10 +3,11 @@
 -- terminal view.
 --
 -- A 'Picture' is a background paired with a layer of 'Image's.
-module Graphics.Vty.Picture ( module Graphics.Vty.Picture
-                            , module Graphics.Vty.Image
-                            )
-    where
+module Graphics.Vty.Picture
+  ( module Graphics.Vty.Picture
+  , module Graphics.Vty.Image
+  )
+where
 
 import Graphics.Vty.Image
 

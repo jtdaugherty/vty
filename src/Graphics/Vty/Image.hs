@@ -2,48 +2,49 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
-module Graphics.Vty.Image ( DisplayText
-                          , Image
-                          , imageWidth
-                          , imageHeight
-                          , horizJoin
-                          , (<|>)
-                          , vertJoin
-                          , (<->)
-                          , horizCat
-                          , vertCat
-                          , backgroundFill
-                          , text
-                          , text'
-                          , char
-                          , string
-                          , iso10646String
-                          , utf8String
-                          , utf8Bytestring
-                          , utf8Bytestring'
-                          , charFill
-                          , emptyImage
-                          , safeWcwidth
-                          , safeWcswidth
-                          , wcwidth
-                          , wcswidth
-                          , crop
-                          , cropRight
-                          , cropLeft
-                          , cropBottom
-                          , cropTop
-                          , pad
-                          , resize
-                          , resizeWidth
-                          , resizeHeight
-                          , translate
-                          , translateX
-                          , translateY
-                          -- | The possible display attributes used in
-                          -- constructing an `Image`.
-                          , module Graphics.Vty.Attributes
-                          )
-    where
+module Graphics.Vty.Image
+  ( DisplayText
+  , Image
+  , imageWidth
+  , imageHeight
+  , horizJoin
+  , (<|>)
+  , vertJoin
+  , (<->)
+  , horizCat
+  , vertCat
+  , backgroundFill
+  , text
+  , text'
+  , char
+  , string
+  , iso10646String
+  , utf8String
+  , utf8Bytestring
+  , utf8Bytestring'
+  , charFill
+  , emptyImage
+  , safeWcwidth
+  , safeWcswidth
+  , wcwidth
+  , wcswidth
+  , crop
+  , cropRight
+  , cropLeft
+  , cropBottom
+  , cropTop
+  , pad
+  , resize
+  , resizeWidth
+  , resizeHeight
+  , translate
+  , translateX
+  , translateY
+  -- | The possible display attributes used in
+  -- constructing an `Image`.
+  , module Graphics.Vty.Attributes
+  )
+where
 
 import Graphics.Vty.Attributes
 import Graphics.Vty.Image.Internal

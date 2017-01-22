@@ -3,11 +3,12 @@
 --
 -- http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
 module Graphics.Vty.Input.Mouse
-    ( requestMouseEvents
-    , disableMouseEvents
-    , isMouseEvent
-    , classifyMouseEvent
-    ) where
+  ( requestMouseEvents
+  , disableMouseEvents
+  , isMouseEvent
+  , classifyMouseEvent
+  )
+where
 
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Classify.Types

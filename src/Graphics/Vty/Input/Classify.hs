@@ -5,9 +5,10 @@
 -- TODO: The ClassifyMap interface requires this code to always assure
 -- later entries override earlier.
 module Graphics.Vty.Input.Classify
-    ( classify
-    , KClass(..)
-    ) where
+  ( classify
+  , KClass(..)
+  )
+where
 
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Mouse

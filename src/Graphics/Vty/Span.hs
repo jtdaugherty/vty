@@ -2,20 +2,18 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE GADTs #-}
-{- | A picture is translated into a sequences of state changes and
- - character spans. State changes are currently limited to new attribute
- - values. The attribute is applied to all following spans. Including
- - spans of the next row. The nth element of the sequence represents the
- - nth row (from top to bottom) of the picture to render.
- -
- - A span op sequence will be defined for all rows and columns (and no
- - more) of the region provided with the picture to `spansForPic`.
- -
- - todo: Partition attribute changes into multiple categories according
- - to the serialized representation of the various attributes.
- -}
-module Graphics.Vty.Span
-    where
+-- | A picture is translated into a sequences of state changes and
+-- character spans. State changes are currently limited to new attribute
+-- values. The attribute is applied to all following spans. Including
+-- spans of the next row. The nth element of the sequence represents the
+-- nth row (from top to bottom) of the picture to render.
+--
+-- A span op sequence will be defined for all rows and columns (and no
+-- more) of the region provided with the picture to `spansForPic`.
+--
+-- todo: Partition attribute changes into multiple categories according
+-- to the serialized representation of the various attributes.
+module Graphics.Vty.Span where
 
 import Graphics.Vty.Prelude
 

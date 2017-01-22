@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts #-}
-
 module Main where
 
 import Graphics.Vty

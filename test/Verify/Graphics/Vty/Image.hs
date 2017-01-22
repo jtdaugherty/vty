@@ -1,10 +1,11 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
-module Verify.Graphics.Vty.Image ( module Verify.Graphics.Vty.Image
-                                 , module Graphics.Vty.Image
-                                 )
-    where
+module Verify.Graphics.Vty.Image
+  ( module Verify.Graphics.Vty.Image
+  , module Graphics.Vty.Image
+  )
+where
 
 import Verify.Graphics.Vty.Attributes
 import Graphics.Vty.Image

@@ -1,8 +1,9 @@
-module Verify.Graphics.Vty.Prelude ( module Verify.Graphics.Vty.Prelude
-                                   , module Graphics.Vty.Prelude
-                                   , MockWindow(..)
-                                   )
-    where
+module Verify.Graphics.Vty.Prelude
+  ( module Verify.Graphics.Vty.Prelude
+  , module Graphics.Vty.Prelude
+  , MockWindow(..)
+  )
+where
 
 import Graphics.Vty.Prelude
 

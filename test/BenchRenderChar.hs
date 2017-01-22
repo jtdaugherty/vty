@@ -1,7 +1,7 @@
-{- benchmarks composing images using the renderChar operation.
- - This is what Yi uses in Yi.UI.Vty.drawText. Ideally a sequence of renderChar images horizontally
- - composed should provide no worse performance than a fill render op.
- -}
+-- benchmarks composing images using the renderChar operation. This is
+-- what Yi uses in Yi.UI.Vty.drawText. Ideally a sequence of renderChar
+-- images horizontally composed should provide no worse performance than
+-- a fill render op.
 module BenchRenderChar where
 
 import Graphics.Vty

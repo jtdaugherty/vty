@@ -8,12 +8,12 @@
 #defined MIN_VERSION_base(x,y,z) 1
 #endif
 
-{- Evaluates the paramaterized terminfo string capability with the given
- - parameters.
- -
- -}
-module Data.Terminfo.Eval (writeCapExpr)
-    where
+-- | Evaluates the paramaterized terminfo string capability with the
+-- given parameters.
+module Data.Terminfo.Eval
+  ( writeCapExpr
+  )
+where
 
 import Blaze.ByteString.Builder.Word
 import Blaze.ByteString.Builder

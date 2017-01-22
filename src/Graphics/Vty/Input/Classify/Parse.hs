@@ -1,13 +1,14 @@
 -- | This module provides a simple parser for parsing input event
 -- control sequences.
 module Graphics.Vty.Input.Classify.Parse
-    ( Parser
-    , runParser
-    , failParse
-    , readInt
-    , readChar
-    , expectChar
-    ) where
+  ( Parser
+  , runParser
+  , failParse
+  , readInt
+  , readChar
+  , expectChar
+  )
+where
 
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Classify.Types

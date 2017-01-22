@@ -1,7 +1,8 @@
-module Verify.Graphics.Vty.Attributes ( module Verify.Graphics.Vty.Attributes
-                                      , module Graphics.Vty.Attributes
-                                      )
-    where
+module Verify.Graphics.Vty.Attributes
+  ( module Verify.Graphics.Vty.Attributes
+  , module Graphics.Vty.Attributes
+  )
+where
 
 import Graphics.Vty.Attributes
 import Verify

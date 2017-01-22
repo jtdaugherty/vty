@@ -4,8 +4,11 @@
 -- | This provides a mock terminal implementation that is nice for
 -- testing. This transforms the output operations to visible characters.
 -- Which is nice for some tests.
-module Graphics.Vty.Output.Mock ( MockData, mockTerminal )
-    where
+module Graphics.Vty.Output.Mock
+  ( MockData
+  , mockTerminal
+  )
+where
 
 import Graphics.Vty.Prelude
 

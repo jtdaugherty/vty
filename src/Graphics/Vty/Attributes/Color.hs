@@ -1,4 +1,5 @@
 module Graphics.Vty.Attributes.Color where
+
 import Data.Word
 
 -- | Abstract data type representing a color.

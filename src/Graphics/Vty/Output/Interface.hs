@@ -11,8 +11,7 @@
 #defined MIN_VERSION_base(x,y,z) 1
 #endif
 
-module Graphics.Vty.Output.Interface
-where
+module Graphics.Vty.Output.Interface where
 
 import Graphics.Vty.Prelude
 

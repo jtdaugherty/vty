@@ -48,16 +48,17 @@
 --  - <http://www.unixwiz.net/techtips/termios-vmin-vtime.html>
 --
 --  - <http://vt100.net/docs/vt100-ug/chapter3.html vt100 control sequences>
-module Graphics.Vty ( Vty(..)
-                    , mkVty
-                    , module Graphics.Vty.Config
-                    , module Graphics.Vty.Input
-                    , module Graphics.Vty.Output
-                    , module Graphics.Vty.Picture
-                    , DisplayRegion
-                    , Mode(..)
-                    )
-    where
+module Graphics.Vty
+  ( Vty(..)
+  , mkVty
+  , module Graphics.Vty.Config
+  , module Graphics.Vty.Input
+  , module Graphics.Vty.Output
+  , module Graphics.Vty.Picture
+  , DisplayRegion
+  , Mode(..)
+  )
+where
 
 import Graphics.Vty.Prelude
 

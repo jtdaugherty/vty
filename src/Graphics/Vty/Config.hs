@@ -77,7 +77,8 @@ module Graphics.Vty.Config
   , standardIOConfig
   , runParseConfig
   , parseConfigFile
-  ) where
+  )
+where
 
 #if __GLASGOW_HASKELL__ > 704
 import Prelude

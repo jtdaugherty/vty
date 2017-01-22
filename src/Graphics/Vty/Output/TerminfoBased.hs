@@ -15,8 +15,10 @@
 -- entirely based of the docs. Probably with some assumptions mixed in.
 --
 -- Copyright Corey O'Connor (coreyoconnor@gmail.com)
-module Graphics.Vty.Output.TerminfoBased ( reserveTerminal )
-    where
+module Graphics.Vty.Output.TerminfoBased
+  ( reserveTerminal
+  )
+where
 
 import Graphics.Vty.Prelude
 

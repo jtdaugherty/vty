@@ -1,5 +1,4 @@
-module Main
-    where
+module Main where
 
 import Graphics.Vty
 import Graphics.Vty.Debug

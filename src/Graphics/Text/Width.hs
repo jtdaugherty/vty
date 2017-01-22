@@ -1,12 +1,13 @@
 -- Copyright 2009 Corey O'Connor
 {-# OPTIONS_GHC -D_XOPEN_SOURCE #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
-module Graphics.Text.Width ( wcwidth
-                           , wcswidth
-                           , safeWcwidth
-                           , safeWcswidth
-                           )
-    where
+module Graphics.Text.Width
+  ( wcwidth
+  , wcswidth
+  , safeWcwidth
+  , safeWcswidth
+  )
+where
 
 foreign import ccall unsafe "vty_mk_wcwidth" wcwidth :: Char -> Int
 

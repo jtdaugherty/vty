@@ -5,8 +5,10 @@
 #endif
 
 -- Copyright 2009-2010 Corey O'Connor
-module Graphics.Vty.Output.XTermColor ( reserveTerminal )
-    where
+module Graphics.Vty.Output.XTermColor
+  ( reserveTerminal
+  )
+where
 
 import Graphics.Vty.Output.Interface
 import Graphics.Vty.Input.Mouse

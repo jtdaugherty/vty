@@ -1,4 +1,5 @@
 module VerifyUtf8Width where
+
 import Verify
 
 import Graphics.Text.Width

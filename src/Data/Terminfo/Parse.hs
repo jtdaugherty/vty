@@ -9,10 +9,11 @@
 #defined MIN_VERSION_base(x,y,z) 1
 #endif
 
-module Data.Terminfo.Parse ( module Data.Terminfo.Parse
-                           , Text.Parsec.ParseError
-                           )
-    where
+module Data.Terminfo.Parse
+  ( module Data.Terminfo.Parse
+  , Text.Parsec.ParseError
+  )
+where
 
 import Control.Monad ( liftM )
 import Control.DeepSeq

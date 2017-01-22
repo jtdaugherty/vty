@@ -2,10 +2,11 @@
 --
 -- http://cirw.in/blog/bracketed-paste
 module Graphics.Vty.Input.Paste
-    ( parseBracketedPaste
-    , bracketedPasteStarted
-    , bracketedPasteFinished
-    ) where
+  ( parseBracketedPaste
+  , bracketedPasteStarted
+  , bracketedPasteFinished
+  )
+where
 
 import qualified Data.ByteString.Char8 as BS8
 
