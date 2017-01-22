@@ -259,4 +259,3 @@ rgbColor r g b
                                 (fromIntegral r :: Int)
                                 (fromIntegral g :: Int)
                                 (fromIntegral b :: Int))
-
