@@ -1,11 +1,11 @@
 -- Copyright Corey O'Connor
--- General philosophy is: MonadIO is for equations exposed to clients.
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
-
+-- | This module provides an abstract interface for performing terminal
+-- output. The only user-facing part of this API is 'Output'.
 module Graphics.Vty.Output.Interface
   ( Output(..)
   , AssumedState(..)
@@ -46,55 +46,51 @@ data Mode = Mouse
           -- events on OS pastes)
           deriving (Eq, Read, Show)
 
+-- | The Vty terminal output interface.
 data Output = Output
     { -- | Text identifier for the output device. Used for debugging.
       terminalID :: String
+      -- | Release the terminal just prior to application exit and reset
+      -- it to its state prior to application startup.
     , releaseTerminal :: forall m. MonadIO m => m ()
-    -- | Clear the display and initialize the terminal to some initial
-    -- display state.
-    --
-    -- The expectation of a program is that the display starts in some
-    -- The initial state. initial state would consist of fixed values:
-    --
-    --  - cursor at top left
-    --  - UTF-8 character encoding
-    --  - drawing characteristics are the default
-    --
-    -- The abstract operation I think all these behaviors are instances
-    -- of is reserving exclusive access to a display such that:
-    --
-    --  - The previous state cannot be determined
-    --  - When exclusive access to a display is released the display
-    --    returns to the previous state.
+      -- | Clear the display and initialize the terminal to some initial
+      -- display state.
+      --
+      -- The expectation of a program is that the display starts in some
+      -- The initial state. initial state would consist of fixed values:
+      --
+      --  - cursor at top left
+      --  - UTF-8 character encoding
+      --  - drawing characteristics are the default
     , reserveDisplay :: forall m. MonadIO m => m ()
-    -- | Return the display to the state before `reserveDisplay`
-    -- If no previous state then set the display state to the initial
-    -- state.
+      -- | Return the display to the state before `reserveDisplay` If no
+      -- previous state then set the display state to the initial state.
     , releaseDisplay :: forall m. MonadIO m => m ()
-    -- | Returns the current display bounds.
+      -- | Returns the current display bounds.
     , displayBounds :: forall m. MonadIO m => m DisplayRegion
-    -- | Output the byte string to the terminal device.
+      -- | Output the bytestring to the terminal device.
     , outputByteBuffer :: BS.ByteString -> IO ()
-    -- | Maximum number of colors supported by the context.
+      -- | Specifies the maximum number of colors supported by the
+      -- context.
     , contextColorCount :: Int
-    -- | if the cursor can be shown / hidden
+      -- | Specifies whether the cursor can be shown / hidden.
     , supportsCursorVisibility :: Bool
-    -- | Indicates support for terminal modes for this output device
+      -- | Indicates support for terminal modes for this output device.
     , supportsMode :: Mode -> Bool
-    -- | Enables or disables a mode (does nothing if the mode is
-    -- unsupported)
+      -- | Enables or disables a mode (does nothing if the mode is
+      -- unsupported).
     , setMode :: forall m. MonadIO m => Mode -> Bool -> m ()
-    -- | Returns whether a mode is enabled
+      -- | Returns whether a mode is enabled.
     , getModeStatus :: forall m. MonadIO m => Mode -> m Bool
     , assumedStateRef :: IORef AssumedState
-    -- | Acquire display access to the given region of the display.
-    -- Currently all regions have the upper left corner of (0,0) and
-    -- the lower right corner at (max displayWidth providedWidth, max
-    -- displayHeight providedHeight)
+      -- | Acquire display access to the given region of the display.
+      -- Currently all regions have the upper left corner of (0,0) and
+      -- the lower right corner at (max displayWidth providedWidth, max
+      -- displayHeight providedHeight)
     , mkDisplayContext :: forall m. MonadIO m => Output -> DisplayRegion -> m DisplayContext
-    -- | Ring the terminal bell if supported.
+      -- | Ring the terminal bell if supported.
     , ringTerminalBell :: forall m. MonadIO m => m ()
-    -- | Returns whether the terminal has an audio bell feature.
+      -- | Returns whether the terminal has an audio bell feature.
     , supportsBell :: forall m. MonadIO m => m Bool
     }
 
@@ -113,16 +109,16 @@ data DisplayContext = DisplayContext
     { contextDevice :: Output
     -- | Provide the bounds of the display context.
     , contextRegion :: DisplayRegion
-    -- | sets the output position to the specified row and column.
-    -- Where the number of bytes required for the control codes can be
+    -- | Sets the output position to the specified row and column
+    -- where the number of bytes required for the control codes can be
     -- specified seperate from the actual byte sequence.
     , writeMoveCursor :: Int -> Int -> Write
     , writeShowCursor :: Write
     , writeHideCursor :: Write
-    -- | Assure the specified output attributes will be applied to
-    -- all the following text until the next output attribute change.
-    -- Where the number of bytes required for the control codes can be
-    -- specified seperate from the actual byte sequence. The required
+    -- Ensure that the specified output attributes will be applied to
+    -- all the following text until the next output attribute change
+    -- where the number of bytes required for the control codes can be
+    -- specified seperately from the actual byte sequence. The required
     -- number of bytes must be at least the maximum number of bytes
     -- required by any attribute changes. The serialization equations
     -- must provide the ptr to the next byte to be specified in the
@@ -135,7 +131,7 @@ data DisplayContext = DisplayContext
     -- required. In addition it may be possible to optimize the state
     -- changes based off the currently applied display attributes.
     , writeSetAttr :: FixedAttr -> Attr -> DisplayAttrDiff -> Write
-    -- | Reset the display attributes to the default display attributes
+    -- | Reset the display attributes to the default display attributes.
     , writeDefaultAttr :: Write
     , writeRowEnd :: Write
     -- | See `Graphics.Vty.Output.XTermColor.inlineHack`
@@ -149,15 +145,15 @@ writeUtf8Text = writeByteString
 
 -- | Displays the given `Picture`.
 --
---      0. The image is cropped to the display size.
+--      1. The image is cropped to the display size.
 --
---      1. Converted into a sequence of attribute changes and text spans.
+--      2. Converted into a sequence of attribute changes and text spans.
 --
---      2. The cursor is hidden.
+--      3. The cursor is hidden.
 --
---      3. Serialized to the display.
+--      4. Serialized to the display.
 --
---      4. The cursor is then shown and positioned or kept hidden.
+--      5. The cursor is then shown and positioned or kept hidden.
 outputPicture :: MonadIO m => DisplayContext -> Picture -> m ()
 outputPicture dc pic = liftIO $ do
     as <- readIORef (assumedStateRef $ contextDevice dc)
