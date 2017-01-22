@@ -113,7 +113,6 @@ emit event = do
 --
 -- Precondition: Under the threaded runtime. Only current use is from a
 -- forkOS thread. That case satisfies precondition.
--- TODO: When under the non-threaded runtime emulate VMIN and VTIME
 readFromDevice :: InputM String
 readFromDevice = do
     newConfig <- view configRef >>= liftIO . readIORef

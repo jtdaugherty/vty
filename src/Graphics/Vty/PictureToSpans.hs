@@ -91,9 +91,6 @@ displayOpsForImage :: Image -> DisplayOps
 displayOpsForImage i = displayOpsForPic (picForImage i) (imageWidth i, imageHeight i)
 
 -- | Produces the span ops for each layer then combines them.
---
--- TODO: a fold over a builder function. start with span ops that are a
--- bg fill of the entire region.
 combinedOpsForLayers :: Picture -> DisplayRegion -> ST s (MRowOps s)
 combinedOpsForLayers pic r
     | regionWidth r == 0 || regionHeight r == 0 = MVector.new 0
@@ -118,7 +115,6 @@ substituteSkips ClearBackground ops = do
         -- but only by the insertion of a non skip. all this combines to
         -- mean we can check the last operation and remove it if it's a
         -- skip
-        -- todo: or does it?
         let rowOps' = case Vector.last rowOps of
                         Skip w -> Vector.init rowOps `Vector.snoc` RowEnd w
                         _      -> rowOps
@@ -197,17 +193,12 @@ swapSkipsForCharSpan w c a = Vector.map f
 -- picture to the terminal.
 --
 -- Crops to the given display region.
---
--- \todo I'm pretty sure there is an algorithm that does not require a
--- mutable buffer.
 buildSpans :: Image -> DisplayRegion -> ST s (MRowOps s)
 buildSpans image outRegion = do
     -- First we create a mutable vector for each rows output operations.
     outOps <- MVector.replicate (regionHeight outRegion) Vector.empty
-    -- \todo I think building the span operations in display order
-    -- would provide better performance. However, I got stuck trying to
-    -- implement an algorithm that did this. This will be considered as
-    -- a possible future optimization.
+    -- It's possible that building the span operations in display order
+    -- would provide better performance.
     --
     -- A depth first traversal of the image is performed. ordered
     -- according to the column range defined by the image from least
@@ -255,12 +246,10 @@ isOutOfBounds i s
 -- This is a very touchy algorithm. Too touchy. For instance, the
 -- CropRight and CropBottom implementations are odd. They pass the
 -- current tests but something seems terribly wrong about all this.
---
--- \todo prove this cannot be called in an out of bounds case.
 addMaybeClipped :: forall s . Image -> BlitM s ()
 addMaybeClipped EmptyImage = return ()
 addMaybeClipped (HorizText a textStr ow _cw) = do
-    -- TODO: assumption that text spans are only 1 row high.
+    -- This assumes that text spans are only 1 row high.
     s <- use skipRows
     when (s < 1) $ do
         leftClip <- use skipColumns
@@ -323,8 +312,7 @@ addMaybeClippedJoin name skip remaining offset i0Dim i0 i1 size = do
     state <- get
     when (state^.remaining <= 0) $ fail $ name ++ " with remaining <= 0"
     case state^.skip of
-        s -- TODO: check if clipped in other dim. if not use addUnclipped
-          | s > size -> put $ state & skip -~ size
+        s | s > size -> put $ state & skip -~ size
           | s == 0    -> if state^.remaining > i0Dim
                             then do
                                 addMaybeClipped i0

@@ -153,9 +153,6 @@ writeUtf8Text = writeByteString
 --      3. Serialized to the display.
 --
 --      4. The cursor is then shown and positioned or kept hidden.
---
--- todo: specify possible IO exceptions.
--- abstract from IO monad to a MonadIO instance.
 outputPicture :: MonadIO m => DisplayContext -> Picture -> m ()
 outputPicture dc pic = liftIO $ do
     as <- readIORef (assumedStateRef $ contextDevice dc)
@@ -165,7 +162,6 @@ outputPicture dc pic = liftIO $ do
         initialAttr = FixedAttr defaultStyleMask Nothing Nothing
         -- Diff the previous output against the requested output.
         -- Differences are currently on a per-row basis.
-        -- \todo handle resizes that crop the dominate directions better.
         diffs :: [Bool] = case prevOutputOps as of
             Nothing -> replicate (fromEnum $ regionHeight $ effectedRegion ops) True
             Just previousOps -> if effectedRegion previousOps /= effectedRegion ops
@@ -288,7 +284,7 @@ limitAttrForDisplay t attr
             | contextColorCount t < 16 && v >= 8 = SetTo $ ISOColor (v - 8)
             | otherwise                          = SetTo $ ISOColor v
         clampColor' (Color240 v)
-            -- TODO: Choose closes ISO color?
+            -- Should we choose closest ISO color?
             | contextColorCount t <  8           = Default
             | contextColorCount t <  16          = Default
             | contextColorCount t <= 256         = SetTo $ Color240 v

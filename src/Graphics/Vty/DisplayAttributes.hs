@@ -57,15 +57,11 @@ instance Monoid DisplayAttrDiff where
         in DisplayAttrDiff ds fcd bcd
 
 -- | Used in the computation of a final style attribute change.
---
--- TODO(corey): not really a simplify but a monoid instance.
 simplifyStyleDiffs :: [StyleStateChange] -> [StyleStateChange] -> [StyleStateChange]
 simplifyStyleDiffs cs0 cs1 = cs0 `mappend` cs1
 
 -- | Consider two display color attributes diffs. What display color
 -- attribute diff are these equivalent to?
---
--- TODO(corey): not really a simplify but a monoid instance.
 simplifyColorDiffs :: DisplayColorDiff -> DisplayColorDiff -> DisplayColorDiff
 simplifyColorDiffs _cd             ColorToDefault = ColorToDefault
 simplifyColorDiffs cd              NoColorChange  = cd

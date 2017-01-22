@@ -10,9 +10,6 @@ module Graphics.Vty.Input.Terminfo.ANSIVT where
 import Graphics.Vty.Input.Events
 
 -- | Encoding for navigation keys.
---
--- TODO: This is not the same as the input bytes pulled from teh caps
--- table.
 navKeys0 :: ClassifyMap
 navKeys0 =
     [ k "G" KCenter
@@ -66,8 +63,6 @@ functionKeys1 =
     concat [f 1 [25,26] [MShift], f 3 [28,29] [MShift], f 5 [31..34] [MShift] ]
 
 -- | encoding for meta plus char
---
--- TODO: resolve -
 --
 -- 1. removed 'ESC' from second list due to duplication with
 -- "special_support_keys".

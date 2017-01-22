@@ -10,9 +10,6 @@
 --
 -- A span op sequence will be defined for all rows and columns (and no
 -- more) of the region provided with the picture to `spansForPic`.
---
--- todo: Partition attribute changes into multiple categories according
--- to the serialized representation of the various attributes.
 module Graphics.Vty.Span where
 
 import Graphics.Vty.Attributes (Attr)
@@ -39,13 +36,11 @@ data SpanOp =
     -- | Skips the given number of columns
     -- A skip is transparent.... maybe? I am not sure how attribute
     -- changes interact.
-    -- todo: separate from this type.
     | Skip !Int
     -- | Marks the end of a row. specifies how many columns are
     -- remaining. These columns will not be explicitly overwritten with
     -- the span ops. The terminal is require to assure the remaining
     -- columns are clear.
-    -- todo: separate from this type.
     | RowEnd !Int
     deriving Eq
 

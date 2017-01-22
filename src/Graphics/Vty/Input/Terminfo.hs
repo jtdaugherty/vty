@@ -32,9 +32,6 @@ import System.Console.Terminfo
 --
 -- Precedence is currently implicit in the 'compile' algorithm. Which is
 -- a bit odd.
---
--- \todo terminfo meta is not supported.
--- \todo no 8bit
 classifyMapForTerm :: String -> Terminal -> ClassifyMap
 classifyMapForTerm termName term =
     concat $ capsClassifyMap term keysFromCapsTable
@@ -43,7 +40,8 @@ classifyMapForTerm termName term =
 
 -- | key table applicable to all terminals.
 --
--- TODO: some probably only applicable to ANSI/VT100 terminals.
+-- Note that some of these entries are probably only applicable to
+-- ANSI/VT100 terminals.
 universalTable :: ClassifyMap
 universalTable = concat [visibleChars, ctrlChars, ctrlMetaChars, specialSupportKeys]
 
@@ -54,7 +52,8 @@ capsClassifyMap terminal table = [(x,y) | (Just x,y) <- map extractCap table]
 -- | Tables specific to a given terminal that are not derivable from
 -- terminfo.
 --
--- TODO: Adds the ANSI/VT100/VT50 tables regardless of term identifier.
+-- Note that this adds the ANSI/VT100/VT50 tables regardless of term
+-- identifier.
 termSpecificTables :: String -> [ClassifyMap]
 termSpecificTables _termName = ANSIVT.classifyTable
 
@@ -62,9 +61,6 @@ termSpecificTables _termName = ANSIVT.classifyTable
 --
 -- We limit to < 0xC1. The UTF8 sequence detector will catch all values
 -- 0xC2 and above before this classify table is reached.
---
--- TODO: resolve
--- 1. start at ' '. The earlier characters are all 'ctrlChar'
 visibleChars :: ClassifyMap
 visibleChars = [ ([x], EvKey (KChar x) [])
                | x <- [' ' .. toEnum 0xC1]
@@ -73,7 +69,7 @@ visibleChars = [ ([x], EvKey (KChar x) [])
 -- | Non visible characters in the ISO-8859-1 and UTF-8 common set
 -- translated to ctrl + char.
 --
--- \todo resolve CTRL-i is the same as tab
+-- This treats CTRL-i the same as tab.
 ctrlChars :: ClassifyMap
 ctrlChars =
     [ ([toEnum x],EvKey (KChar y) [MCtrl])

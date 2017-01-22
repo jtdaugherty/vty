@@ -33,8 +33,6 @@
 --
 -- The value 'currentAttr' will keep the attributes of whatever was
 -- output previously.
---
--- \todo This API is very verbose IMO. I'd like something more succinct.
 module Graphics.Vty.Attributes
   ( module Graphics.Vty.Attributes
   , module Graphics.Vty.Attributes.Color

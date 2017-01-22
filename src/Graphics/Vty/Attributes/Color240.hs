@@ -8,7 +8,6 @@ import Text.Printf
 -- | RGB color to 240 color palette.
 --
 -- generated from 256colres.pl which is forked from xterm 256colres.pl
--- todo: all values get clamped high.
 rgbColor :: Integral i => i -> i -> i -> Color
 rgbColor r g b
     | r < 0 && g < 0 && b < 0 = error "rgbColor with negative color component intensity"

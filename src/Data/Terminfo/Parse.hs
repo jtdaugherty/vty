@@ -110,8 +110,6 @@ constructCapExpression capString buildResults =
                 { capOps = outCapOps buildResults
                 -- The cap bytes are the lower 8 bits of the input
                 -- string's characters.
-                -- \todo Verify the input string actually contains an
-                -- 8bit byte per character.
                 , capBytes = Vector.fromList $ map (toEnum.fromEnum) capString
                 , sourceString = capString
                 , paramCount = outParamCount buildResults

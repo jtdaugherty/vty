@@ -2,8 +2,6 @@
 -- This makes a kind of tri. Has space efficiency issues with large
 -- input blocks. Likely building a parser and just applying that would
 -- be better.
--- TODO: The ClassifyMap interface requires this code to always assure
--- later entries override earlier.
 module Graphics.Vty.Input.Classify
   ( classify
   , KClass(..)
@@ -50,7 +48,6 @@ compile table = cl' where
                     in case mapMaybe (\s -> (,) s `fmap` M.lookup s eventForInput) inputPrefixes of
                         (s,e) : _ -> Valid e (drop (length s) inputBlock)
                         -- neither a prefix or a full event.
-                        -- TODO: debug log
                         [] -> Invalid
 
 classify :: ClassifyMap -> [Char] -> KClass

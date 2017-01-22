@@ -189,20 +189,16 @@ import Data.Monoid ((<>))
 -- "raw" mode is used for input.
 --
 -- * ISIG disabled
---      - enables keyboard combinations that result in signals. TODO:
---        should probably be a dynamic option.
+--      - enables keyboard combinations that result in signals.
 --
 -- * ECHO disabled
---      - input is not echod to the output. TODO: should be a
---        dynamic option.
+--      - input is not echoed to the output.
 --
 -- * ICANON disabled
---      - canonical mode (line mode) input is not used. TODO: should
---        be a dynamic option.
+--      - canonical mode (line mode) input is not used.
 --
 -- * IEXTEN disabled
---      - extended functions are disabled. TODO: I don't know what
---        those are.
+--      - extended functions are disabled.
 --
 inputForConfig :: Config -> IO Input
 inputForConfig config@Config{ termName = Just termName

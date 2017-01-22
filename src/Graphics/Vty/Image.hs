@@ -179,7 +179,6 @@ pad inL inT inR inB inImage
     | inL < 0 || inT < 0 || inR < 0 || inB < 0 = error "cannot pad by negative amount"
     | otherwise = go inL inT inR inB inImage
         where
-            -- TODO: uh.
             go 0 0 0 0 i = i
             go 0 0 0 b i = VertJoin i (BGFill w b) w h
                 where w = imageWidth  i

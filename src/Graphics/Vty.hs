@@ -93,8 +93,6 @@ import Data.Monoid
 -- This does not assure any thread safety. In theory, as long as an
 -- update action is not executed when another update action is already
 -- then it's safe to call this on multiple threads.
---
--- \todo Remove explicit `shutdown` requirement.
 data Vty = Vty
     { -- | Outputs the given Picture. Equivalent to 'outputPicture'
       -- applied to a display context implicitly managed by Vty. The

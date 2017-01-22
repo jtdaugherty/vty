@@ -99,19 +99,14 @@ sendCapToTerminal :: Output -> CapExpression -> [CapParam] -> IO ()
 sendCapToTerminal t cap capParams = do
     outputByteBuffer t $ writeToByteString $ writeCapExpr cap capParams
 
-{- | Uses terminfo for all control codes. While this should provide the
- - most compatible terminal terminfo does not support some features that
- - would increase efficiency and improve compatibility:
- -
- -  * determine the character encoding supported by the terminal. Should
- - this be taken from the LANG environment variable?
- -
- -  * Provide independent string capabilities for all display attributes.
- -
- - todo: Some display attributes like underline and bold have
- - independent string capabilities that should be used instead of the
- - generic "sgr" string capability.
- -}
+-- | Uses terminfo for all control codes. While this should provide the
+-- most compatible terminal terminfo does not support some features that
+-- would increase efficiency and improve compatibility:
+--
+--  * determine the character encoding supported by the terminal. Should
+-- this be taken from the LANG environment variable?
+--
+--  * Provide independent string capabilities for all display attributes.
 reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output
 reserveTerminal termName outFd = liftIO $ do
     ti <- Terminfo.setupTerm termName
@@ -284,13 +279,12 @@ terminfoDisplayContext tActual terminfoCaps r = return dc
 --
 -- This equation implements the above logic.
 --
--- \todo This assumes the removal of color changes in the display
--- attributes is done as expected with noColors == True. See
--- `limitAttrForDisplay`
+-- Note that this assumes the removal of color changes in the
+-- display attributes is done as expected with noColors == True. See
+-- `limitAttrForDisplay`.
 --
--- \todo This assumes that fewer state changes, followed by fewer
--- bytes, is what to optimize. I haven't measured this or even examined
--- terminal implementations. *shrug*
+-- Note that this optimizes for fewer state changes followed by fewer
+-- bytes.
 terminfoWriteSetAttr :: DisplayContext -> TerminfoCaps -> FixedAttr -> Attr -> DisplayAttrDiff -> Write
 terminfoWriteSetAttr dc terminfoCaps prevAttr reqAttr diffs = do
     case (foreColorDiff diffs == ColorToDefault) || (backColorDiff diffs == ColorToDefault) of

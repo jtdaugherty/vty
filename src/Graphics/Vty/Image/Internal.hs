@@ -23,18 +23,8 @@ import Data.Monoid
 #endif
 
 -- | A display text is a Data.Text.Lazy
---
--- TODO(corey): hm. there is an explicit equation for each type which
--- goes to a lazy text. Each application probably uses a single type.
--- Perhaps parameterize the entire vty interface by the input text type?
--- TODO: Try using a builder instead of a TL.Text instance directly.
--- That might improve performance for the usual case of appending a
--- bunch of characters with the same attribute together.
 type DisplayText = TL.Text
 
--- TODO: store a skip list in HorizText(?)
--- TODO: represent display strings containing chars that are not 1
--- column chars as a separate display string value?
 clipText :: DisplayText -> Int -> Int -> DisplayText
 clipText txt leftSkip rightClip =
     -- CPS would clarify this I think
@@ -265,14 +255,12 @@ instance Monoid Image where
 -- width. And the height will equal the largest height of the two
 -- images. The area not defined in one image due to a height missmatch
 -- will be filled with the background pattern.
---
--- TODO: the bg fill is biased towards top to bottom languages(?)
 horizJoin :: Image -> Image -> Image
 horizJoin EmptyImage i          = i
 horizJoin i          EmptyImage = i
 horizJoin i0@(HorizText a0 t0 w0 cw0) i1@(HorizText a1 t1 w1 cw1)
     | a0 == a1 = HorizText a0 (TL.append t0 t1) (w0 + w1) (cw0 + cw1)
-    -- TODO: assumes horiz text height is always 1
+    -- assumes horiz text height is always 1
     | otherwise  = HorizJoin i0 i1 (w0 + w1) 1
 horizJoin i0 i1
     -- If the images are of the same height then no padding is required
@@ -298,8 +286,6 @@ horizJoin _ _ = error "horizJoin applied to undefined values."
 -- of both images. The width will equal the largest width of the two
 -- images. The area not defined in one image due to a width missmatch
 -- will be filled with the background pattern.
---
--- TODO: the bg fill is biased towards right to left languages(?)
 vertJoin :: Image -> Image -> Image
 vertJoin EmptyImage i          = i
 vertJoin i          EmptyImage = i

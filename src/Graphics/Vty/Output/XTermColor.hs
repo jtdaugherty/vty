@@ -102,7 +102,7 @@ disableBracketedPastes = "\ESC[?2004l"
 
 -- | These sequences set xterm based terminals to UTF-8 output.
 --
--- \todo I don't know of a terminfo cap that is equivalent to this.
+-- There is no known terminfo capability equivalent to this.
 setUtf8CharSet, setDefaultCharSet :: String
 setUtf8CharSet = "\ESC%G"
 setDefaultCharSet = "\ESC%@"

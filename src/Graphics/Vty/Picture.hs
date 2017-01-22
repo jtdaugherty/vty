@@ -79,10 +79,6 @@ picForLayers is = Picture
 --
 -- There is not a 1 to 1 map from character positions to a row and
 -- column on the screen due to characters that take more than 1 column.
---
--- todo: The Cursor can be given a (character,row) offset outside of the
--- visible bounds of the output region. In this case the cursor will not
--- be shown.
 data Cursor =
       -- | Hide the cursor
       NoCursor
@@ -101,9 +97,6 @@ instance NFData Cursor where
 -- attribute. If the display attribute used previously should be used
 -- for a background fill then use `currentAttr` for the background
 -- attribute.
---
--- \todo The current attribute is always set to the default attributes
--- at the start of updating the screen to a picture.
 data Background
     = Background
     { backgroundChar :: Char
