@@ -2,8 +2,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 -- | This provides a mock terminal implementation that is nice for
--- testing. This transforms the output operations to visible characters.
--- Which is nice for some tests.
+-- testing. This transforms the output operations to visible characters
+-- which is useful for testing.
 module Graphics.Vty.Output.Mock
   ( MockData
   , mockTerminal
@@ -30,7 +30,7 @@ type MockData = IORef (UTF8.UTF8 BS.ByteString)
 -- without considering terminal specific issues.
 --
 -- The mock implementation is useful in manually determining if the
--- sequence of terminal operations matches the expected sequence. So
+-- sequence of terminal operations matche the expected sequence. The
 -- requirement of the produced representation is simplicity in parsing
 -- the text representation and determining how the picture was mapped to
 -- terminal operations.
