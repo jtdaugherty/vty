@@ -7,8 +7,8 @@ import qualified Graphics.Vty.Input.Terminfo.ANSIVT as ANSIVT
 import Control.Arrow
 import System.Console.Terminfo
 
--- | Queries the terminal for all capability based input sequences then
--- adds on a terminal dependent input sequence mapping.
+-- | Queries the terminal for all capability-based input sequences and
+-- then adds on a terminal-dependent input sequence mapping.
 --
 -- For reference see:
 --
@@ -20,25 +20,26 @@ import System.Console.Terminfo
 --
 -- * http://aperiodic.net/phil/archives/Geekery/term-function-keys.html
 --
--- This is painful. Terminfo is incomplete. The vim source implies that
--- terminfo is also incorrect. Vty assumes that the an internal terminfo
--- table added to the system provided terminfo table is correct.
+-- Terminfo is incomplete. The vim source implies that terminfo is also
+-- incorrect. Vty assumes that the internal terminfo table added to the
+-- system-provided terminfo table is correct.
 --
--- 1. build terminfo table for all caps. Missing caps are not added.
+-- The procedure used here is:
 --
--- 2. add tables for visible chars, esc, del plus ctrl and meta
+-- 1. Build terminfo table for all caps. Missing caps are not added.
 --
--- 3. add internally defined table for given terminal type.
+-- 2. Add tables for visible chars, esc, del, ctrl, and meta.
 --
--- Precedence is currently implicit in the 'compile' algorithm. Which is
--- a bit odd.
+-- 3. Add internally-defined table for given terminal type.
+--
+-- Precedence is currently implicit in the 'compile' algorithm.
 classifyMapForTerm :: String -> Terminal -> ClassifyMap
 classifyMapForTerm termName term =
     concat $ capsClassifyMap term keysFromCapsTable
            : universalTable
            : termSpecificTables termName
 
--- | key table applicable to all terminals.
+-- | The key table applicable to all terminals.
 --
 -- Note that some of these entries are probably only applicable to
 -- ANSI/VT100 terminals.
@@ -66,7 +67,7 @@ visibleChars = [ ([x], EvKey (KChar x) [])
                | x <- [' ' .. toEnum 0xC1]
                ]
 
--- | Non visible characters in the ISO-8859-1 and UTF-8 common set
+-- | Non-printable characters in the ISO-8859-1 and UTF-8 common set
 -- translated to ctrl + char.
 --
 -- This treats CTRL-i the same as tab.
@@ -82,7 +83,7 @@ ctrlChars =
 ctrlMetaChars :: ClassifyMap
 ctrlMetaChars = map (\(s,EvKey c m) -> ('\ESC':s, EvKey c (MMeta:m))) ctrlChars
 
--- | esc, meta esc, delete, meta delete, enter, meta enter
+-- | Esc, meta-esc, delete, meta-delete, enter, meta-enter.
 specialSupportKeys :: ClassifyMap
 specialSupportKeys =
     [ -- special support for ESC
@@ -95,9 +96,8 @@ specialSupportKeys =
     , ("\t", EvKey (KChar '\t') [])
     ]
 
--- | classify table directly generated from terminfo cap strings
---
--- these are:
+-- | A classification table directly generated from terminfo cap
+-- strings.  These are:
 --
 -- * ka1 - keypad up-left
 --
@@ -179,6 +179,6 @@ keysFromCapsTable =
     , ("kcuu1", EvKey KUp        [])
     ] ++ functionKeyCapsTable
 
--- | cap names for function keys
+-- | Cap names for function keys.
 functionKeyCapsTable :: ClassifyMap
 functionKeyCapsTable = flip map [0..63] $ \n -> ("kf" ++ show n, EvKey (KFun n) [])
