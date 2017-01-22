@@ -1,14 +1,9 @@
 -- Copyright Corey O'Connor<coreyoconnor@gmail.com>
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
-
-#ifndef MIN_VERSION_base
-#defined MIN_VERSION_base(x,y,z) 1
-#endif
 
 -- | Transforms an image into rows of operations.
 module Graphics.Vty.PictureToSpans where
@@ -24,22 +19,13 @@ import Lens.Micro.Mtl
 import Lens.Micro.TH
 import Control.Monad.Reader
 import Control.Monad.State.Strict hiding ( state )
-
-#if __GLASGOW_HASKELL__ < 708
-import Control.Monad.ST.Strict hiding ( unsafeIOToST )
-#else
 import Control.Monad.ST.Strict
-#endif
 
 import qualified Data.Vector as Vector hiding ( take, replicate )
 import Data.Vector.Mutable ( MVector(..))
 import qualified Data.Vector.Mutable as MVector
 
 import qualified Data.Text.Lazy as TL
-
-#if !(MIN_VERSION_base(4,8,0))
-import Data.Monoid (mappend)
-#endif
 
 type MRowOps s = MVector s SpanOps
 

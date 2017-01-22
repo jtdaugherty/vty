@@ -1,7 +1,8 @@
 [![Build Status](https://travis-ci.org/jtdaugherty/vty.png)](https://travis-ci.org/jtdaugherty/vty)
 
 `vty` is a terminal interface library. It provides a high-level
-interface for doing terminal I/O.
+interface for doing terminal I/O. Vty is supported on GHC versions
+7.10.1 and up.
 
 Install via `git` with:
 

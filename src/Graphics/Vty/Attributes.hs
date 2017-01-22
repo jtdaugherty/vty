@@ -1,11 +1,6 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
-
-#ifndef MIN_VERSION_base
-#defined MIN_VERSION_base(x,y,z) 1
-#endif
 
 -- | Display attributes
 --
@@ -46,10 +41,6 @@ import Data.Word
 
 import Graphics.Vty.Attributes.Color
 import Graphics.Vty.Attributes.Color240
-
-#if !(MIN_VERSION_base(4,8,0))
-import Data.Monoid
-#endif
 
 -- | A display attribute defines the Color and Style of all the
 -- characters rendered after the attribute is applied.

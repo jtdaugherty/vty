@@ -1,15 +1,10 @@
 -- Copyright Corey O'Connor
 -- General philosophy is: MonadIO is for equations exposed to clients.
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
-
-#ifndef MIN_VERSION_base
-#defined MIN_VERSION_base(x,y,z) 1
-#endif
 
 module Graphics.Vty.Output.Interface
   ( Output(..)
@@ -41,10 +36,6 @@ import Data.IORef
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Vector as Vector
-
-#if !(MIN_VERSION_base(4,8,0))
-import Data.Monoid (mempty, mappend)
-#endif
 
 -- | Modal terminal features that can be enabled and disabled.
 data Mode = Mouse

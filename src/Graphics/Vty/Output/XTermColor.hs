@@ -1,9 +1,3 @@
-{-# LANGUAGE CPP #-}
-
-#ifndef MIN_VERSION_base
-#defined MIN_VERSION_base(x,y,z) 1
-#endif
-
 -- Copyright 2009-2010 Corey O'Connor
 module Graphics.Vty.Output.XTermColor
   ( reserveTerminal
@@ -24,11 +18,6 @@ import Data.IORef
 import System.Posix.IO (fdWrite)
 import System.Posix.Types (Fd)
 import System.Posix.Env (getEnv)
-
-#if !(MIN_VERSION_base(4,8,0))
-import Control.Applicative
-import Data.Foldable (foldMap)
-#endif
 
 import Data.List (isInfixOf)
 import Data.Maybe (catMaybes)

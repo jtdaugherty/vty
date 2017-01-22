@@ -24,7 +24,6 @@ import Control.Applicative
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Exception (mask, try, SomeException)
-import Data.Monoid
 import Lens.Micro
 import Lens.Micro.Mtl
 import Lens.Micro.TH

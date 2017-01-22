@@ -1,9 +1,4 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
-
-#ifndef MIN_VERSION_base
-#defined MIN_VERSION_base(x,y,z) 1
-#endif
 
 -- | The inline module provides a limited interface to changing the
 -- style of terminal output. The intention is for this interface to be
@@ -52,11 +47,6 @@ import Data.Bits ( (.&.), complement )
 import Data.IORef
 
 import System.IO
-
-#if !(MIN_VERSION_base(4,8,0))
-import Control.Applicative
-import Data.Monoid ( mappend )
-#endif
 
 type InlineM v = State Attr v
 

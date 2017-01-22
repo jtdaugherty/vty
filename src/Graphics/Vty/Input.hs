@@ -1,9 +1,4 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE RecordWildCards #-}
-
-#ifndef MIN_VERSION_base
-#defined MIN_VERSION_base(x,y,z) 1
-#endif
 
 -- | The input layer for VTY. This provides methods for initializing an
 -- 'Input' structure which can then be used to read 'Event's from the
@@ -163,12 +158,7 @@ import Lens.Micro
 import qualified System.Console.Terminfo as Terminfo
 import System.Posix.Signals.Exts
 
-#if !(MIN_VERSION_base(4,8,0))
-import Data.Functor ((<$>))
-import Data.Monoid
-#else
 import Data.Monoid ((<>))
-#endif
 
 -- | Set up the terminal with file descriptor `inputFd` for input.
 -- Returns a 'Input'.

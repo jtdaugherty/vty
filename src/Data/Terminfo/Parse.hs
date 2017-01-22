@@ -1,13 +1,8 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
 {-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# OPTIONS_GHC -funbox-strict-fields -O #-}
-
-#ifndef MIN_VERSION_base
-#defined MIN_VERSION_base(x,y,z) 1
-#endif
 
 module Data.Terminfo.Parse
   ( module Data.Terminfo.Parse
@@ -24,10 +19,6 @@ import qualified Data.Vector.Unboxed as Vector
 import Numeric (showHex)
 
 import Text.Parsec
-
-#if !(MIN_VERSION_base(4,8,0))
-import Data.Monoid
-#endif
 
 data CapExpression = CapExpression
     { capOps :: !CapOps

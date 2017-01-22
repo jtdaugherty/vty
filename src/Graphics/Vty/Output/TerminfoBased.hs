@@ -1,12 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -D_XOPEN_SOURCE=500 -fno-warn-warnings-deprecations #-}
 {-# CFILES gwinsz.c #-}
-
-#ifndef MIN_VERSION_base
-#defined MIN_VERSION_base(x,y,z) 1
-#endif
 
 -- | Terminfo based terminal handling.
 --
@@ -46,11 +41,6 @@ import Foreign.Ptr (Ptr, plusPtr)
 import qualified System.Console.Terminfo as Terminfo
 import System.Posix.IO (fdWriteBuf)
 import System.Posix.Types (Fd(..))
-
-#if !(MIN_VERSION_base(4,8,0))
-import Data.Foldable (foldMap)
-import Data.Monoid
-#endif
 
 data TerminfoCaps = TerminfoCaps
     { smcup :: Maybe CapExpression

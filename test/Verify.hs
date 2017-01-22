@@ -1,7 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -85,16 +84,6 @@ instance Arbitrary DoubleColumnChar where
 
 liftIOResult :: Testable prop => IO prop -> Property
 liftIOResult = ioProperty
-
-#if __GLASGOW_HASKELL__ <= 701
-instance Random Word where
-    random g =
-        let (i :: Int, g') = random g
-        in (toEnum i, g')
-    randomR (l,h) g =
-        let (i :: Int, g') = randomR (fromEnum l,fromEnum h) g
-        in (toEnum i, g')
-#endif
 
 data Bench where
     Bench :: forall v . NFData v => IO v -> (v -> IO ()) -> Bench

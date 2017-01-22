@@ -1,16 +1,10 @@
-{-# LANGUAGE CPP #-}
 {-# OPTIONS_HADDOCK hide #-}
-
-#ifndef MIN_VERSION_base
-#defined MIN_VERSION_base(x,y,z) 1
-#endif
 
 module Graphics.Vty.Inline.Unsafe where
 
 import Graphics.Vty
 
 import Data.Default
-import Data.Monoid
 import Data.IORef
 
 import GHC.IO.Handle (hDuplicate)
@@ -20,10 +14,6 @@ import System.IO (stdin, stdout, hSetBuffering, BufferMode(NoBuffering))
 import System.IO.Unsafe
 
 import System.Posix.IO (handleToFd)
-
-#if !(MIN_VERSION_base(4,8,0))
-import Control.Applicative
-#endif
 
 globalVty :: IORef (Maybe Vty)
 {-# NOINLINE globalVty #-}

@@ -1,11 +1,6 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# OPTIONS_HADDOCK hide #-}
-
-#ifndef MIN_VERSION_base
-#defined MIN_VERSION_base(x,y,z) 1
-#endif
 
 module Graphics.Vty.Image.Internal where
 
@@ -17,10 +12,6 @@ import GHC.Generics
 import Control.DeepSeq
 
 import qualified Data.Text.Lazy as TL
-
-#if !(MIN_VERSION_base(4,8,0))
-import Data.Monoid
-#endif
 
 -- | A display text is a Data.Text.Lazy
 type DisplayText = TL.Text

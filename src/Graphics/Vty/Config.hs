@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
@@ -80,11 +79,7 @@ module Graphics.Vty.Config
   )
 where
 
-#if __GLASGOW_HASKELL__ > 704
 import Prelude
-#else
-import Prelude hiding (catch)
-#endif
 
 import Control.Applicative hiding (many)
 
@@ -115,9 +110,7 @@ data VtyConfigurationError
   deriving (Show, Eq, Typeable)
 
 instance Exception VtyConfigurationError where
-#if MIN_VERSION_base(4,8,0)
   displayException VtyMissingTermEnvVar = "TERM environment variable not set"
-#endif
 
 -- | Mappings from input bytes to event in the order specified. Later
 -- entries take precedence over earlier in the case multiple entries

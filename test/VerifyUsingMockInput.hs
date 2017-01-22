@@ -11,7 +11,6 @@ import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Loop
 import Graphics.Vty.Input.Terminfo
 
-import Control.Applicative
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Exception
