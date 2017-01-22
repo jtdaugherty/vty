@@ -12,13 +12,12 @@ description:
   be easy to use, have no confusing corner cases, and good support for
   common terminal types.
   .
-  Included in the source distribution is a program
-  test/interactive_terminal_test.hs that demonstrates the various
-  features.
+  See the @vty-examples@ package as well as the program
+  @test/interactive_terminal_test.hs@ included in the @vty@ package for
+  examples on how to use the library.
   .
-  Developers: See the "Graphics.Vty" module.
-  .
-  Users: See the "Graphics.Vty.Config" module.
+  Import the "Graphics.Vty" convenience module to get access to the core
+  parts of the library.
   .
   &#169; 2006-2007 Stefan O'Rear; BSD3 license.
   .
