@@ -8,16 +8,21 @@ homepage:            https://github.com/jtdaugherty/vty
 category:            User Interfaces
 synopsis:            Examples programs using the vty library.
 description:
-  vty is terminal GUI library in the niche of ncurses.  It is intended to be easy to use, have no
-  confusing corner cases, and good support for common terminal types.
+  vty is terminal GUI library in the niche of ncurses. It is intended to
+  be easy to use, have no confusing corner cases, and good support for
+  common terminal types.
   .
-  vty-interactive-terminal-test - interactive test. Useful for building a bug report for vtys author.
+  vty-interactive-terminal-test - interactive test. Useful for building
+  a bug report for vtys author.
   .
-  vty-event-echo - view a input event log for vty. Example of interacting with user.
+  vty-event-echo - view a input event log for vty. Example of
+  interacting with user.
   .
-  vty-rogue - A bad rogue-like game. Go from the entrance to exit. Example of layers
+  vty-rogue - A bad rogue-like game. Go from the entrance to exit.
+  Example of layers
   .
-  vty-benchmark - benchmarks vty. A series of tests that push random pictures to the terminal.
+  vty-benchmark - benchmarks vty. A series of tests that push random
+  pictures to the terminal.
   .
   &#169; Corey O'Connor; BSD3 license.
   .
