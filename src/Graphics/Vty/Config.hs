@@ -2,23 +2,12 @@
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ScopedTypeVariables #-}
--- | A 'Config' can be provided to mkVty to customize the applications
--- use of vty. A config file can be used to customize vty for a user's
--- system.
---
--- The 'Config' provided is mappend'd to 'Config's loaded from
--- @'getAppUserDataDirectory'/config@ and @$VTY_CONFIG_FILE@. The
--- @$VTY_CONFIG_FILE@ takes precedence over the @config@ file or the
--- application provided 'Config'.
+-- | Vty supports a configuration file format and associated 'Config'
+-- data type. The 'Config' can be provided to 'mkVty' to customize the
+-- application's use of Vty.
 --
 -- Lines in config files that fail to parse are ignored. Later entries
--- take precedence over earlier.
---
--- For all directives:
---
--- @
---  string := \"\\\"\" chars+ \"\\\"\"
--- @
+-- take precedence over earlier ones.
 --
 -- = Debug
 --
@@ -48,7 +37,7 @@
 --      term := "_" | string
 -- @
 --
--- EG: If the contents are
+-- E.g., if the contents are
 --
 -- @
 --  map _       \"\\ESC[B\"    KUp   []
@@ -62,11 +51,9 @@
 -- result in the KLeft event when @TERM@ is @xterm@.
 --
 -- If a debug log is requested then vty will output the current input
--- table to the log in the above format.
---
--- Set VTY_DEBUG_LOG. Run vty. Check debug log for incorrect mappings.
--- Add corrected mappings to .vty/config
---
+-- table to the log in the above format. A workflow for using this is
+-- to set @VTY_DEBUG_LOG@. Run the application. Check the debug log for
+-- incorrect mappings. Add corrected mappings to @$HOME/.vty/config@.
 module Graphics.Vty.Config
   ( InputMap
   , Config(..)
@@ -117,6 +104,7 @@ instance Exception VtyConfigurationError where
 -- have the same byte string.
 type InputMap = [(Maybe String, String, Event)]
 
+-- | A Vty configuration.
 data Config = Config
     {
     -- | The default is 1 character.
@@ -174,8 +162,8 @@ instance Monoid Config where
         , termName      = termName c1 <|> termName c0
         }
 
--- | Config from @'getAppUserDataDirectory'/config@ and
--- @$VTY_CONFIG_FILE@
+-- | Load a configuration from @'getAppUserDataDirectory'/config@ and
+-- @$VTY_CONFIG_FILE@.
 userConfig :: IO Config
 userConfig = do
     configFile <- (mappend <$> getAppUserDataDirectory "vty" <*> pure "/config") >>= parseConfigFile
@@ -188,7 +176,7 @@ overrideEnvConfig = do
     d <- getEnv "VTY_DEBUG_LOG"
     return $ defaultConfig { debugLog = d }
 
--- | Configures VTY using defaults suitable for terminals. This action
+-- | Configures VTY using defaults suitable for terminals. This function
 -- can raise 'VtyConfigurationError'.
 standardIOConfig :: IO Config
 standardIOConfig = do
@@ -221,8 +209,6 @@ runParseConfig name cfgTxt =
 
 type Parser = Parsec BS.ByteString ()
 
--- I tried to use the haskellStyle here but that was specialized
--- (without requirement?) to the String stream type.
 configLanguage :: Monad m => P.GenLanguageDef BS.ByteString () m
 configLanguage = LanguageDef
     { commentStart    = "{-"
