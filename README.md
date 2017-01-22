@@ -53,24 +53,6 @@ cabal install vty
 
 * Provides a comprehensive test suite.
 
-# Known Issues
-
-* Terminals have numerous quirks and bugs. Vty picks what works best for
-  the author in ambiguous or buggy situations.
-
-* Signal handling of STOP, TERM and INT are nonexistent.
-
-* The character encoding of the terminal is assumed to be UTF-8 if
-  unicode is used.
-
-* Terminfo is assumed to be correct unless there is an override
-  configured. Some terminals will not have correct special key support
-  (shifted F10 etc). See `Config` for customizing vty's behavior for a
-  particular terminal.
-
-* Uses the `TIOCGWINSZ` ioctl to find the current window size, which
-  appears to be limited to Linux and BSD.
-
 * Supports "normal" and "extended" (SGR) mouse modes as described at
   http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
 
@@ -87,6 +69,18 @@ handle some omissions from terminfo.
 ## Windows
 
 Unsupported (but contributions and testing here are very welcome!)
+
+# Contributing
+
+If you decide to contribute, that's great! Here are some guidelines you
+should consider to make submitting patches easier for all concerned:
+
+ - If you want to take on big things, talk to me first; let's have a
+   design/vision discussion before you start coding. Create a GitHub
+   issue and we can use that as the place to hash things out.
+ - If you make changes, make them consistent with the syntactic
+   conventions already used in the codebase.
+ - Please provide Haddock documentation for any changes you make.
 
 # Development Notes
 
@@ -120,3 +114,21 @@ rm -rf dist ; cabal configure --enable-tests --disable-library-coverage \
   --enable-library-profiling \
   --enable-executable-profiling
 ~~~
+
+# Known Issues
+
+* Terminals have numerous quirks and bugs. Vty picks what works best for
+  the author in ambiguous or buggy situations.
+
+* Signal handling of STOP, TERM and INT are nonexistent.
+
+* The character encoding of the terminal is assumed to be UTF-8 if
+  unicode is used.
+
+* Terminfo is assumed to be correct unless there is an override
+  configured. Some terminals will not have correct special key support
+  (shifted F10 etc). See `Config` for customizing vty's behavior for a
+  particular terminal.
+
+* Uses the `TIOCGWINSZ` ioctl to find the current window size, which
+  appears to be limited to Linux and BSD.
