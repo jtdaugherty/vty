@@ -29,7 +29,7 @@ cabal-version:       >= 1.18
 build-type:          Simple
 data-files:          README.md,
                      AUTHORS,
-                     CHANGELOG,
+                     CHANGELOG.md,
                      LICENSE
 tested-with:         GHC >= 7.6.2
 
