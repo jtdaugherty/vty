@@ -4,32 +4,53 @@
 
 -- | Display attributes
 --
--- Typically the values 'defAttr' or 'currentAttr' are modified to form
--- attributes:
+-- Attributes have three components: a foreground color, a background
+-- color, and a style mask. The simplest attribute is the default
+-- attribute, or 'defAttr'. Attributes can be modified with
+-- 'withForeColor', 'withBackColor', and 'withStyle', e.g.,
 --
 -- @
 --     defAttr `withForeColor` red
 -- @
 --
--- Is the attribute that will set the foreground color to red and the
--- background color to the default.
---
--- This can then be used to build an image with a red foreground like
--- so:
+-- 'Image' constructors often require an 'Attr' to indicate the
+-- attributes used in the image, e.g.,
 --
 -- @
---      string (defAttr `withForeColor` red) "this text will be red"
+--     string (defAttr `withForeColor` red) "this text will be red"
 -- @
 --
--- The default attributes set by 'defAttr' have a presentation
--- determined by the terminal. This is not something VTY can control.
--- The user is free to define the color scheme of the terminal as they
--- see fit. Up to the limits of the terminal anyways.
+-- The appearance of 'Image's using 'defAttr' is determined by the The
+-- terminal, so this is not something VTY can control. The user is free
+-- to The define the color scheme of the terminal as they see fit.
 --
 -- The value 'currentAttr' will keep the attributes of whatever was
 -- output previously.
 module Graphics.Vty.Attributes
-  ( module Graphics.Vty.Attributes
+  ( Attr(..)
+  , FixedAttr(..)
+  , MaybeDefault(..)
+  , defAttr
+  , currentAttr
+
+  -- * Styles
+  , Style
+  , withStyle
+  , standout
+  , underline
+  , reverseVideo
+  , blink
+  , dim
+  , bold
+  , defaultStyleMask
+  , styleMask
+  , hasStyle
+
+  -- * Setting attribute colors
+  , withForeColor
+  , withBackColor
+
+  -- * Colors
   , module Graphics.Vty.Attributes.Color
   , module Graphics.Vty.Attributes.Color240
   )
