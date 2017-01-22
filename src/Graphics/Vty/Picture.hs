@@ -72,8 +72,8 @@ picForLayers is = Picture
     , picBackground = ClearBackground
     }
 
--- | A picture can be configured either to not show the cursor or show
--- the cursor at the specified character position.
+-- | A picture can be configured to hide the cursor or to show the
+-- cursor at the specified character position.
 --
 -- There is not a 1:1 map from character positions to a row and column
 -- on the screen due to characters that take more than 1 column.
