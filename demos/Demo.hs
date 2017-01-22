@@ -7,7 +7,6 @@ import Control.Applicative hiding ((<|>))
 import Control.Arrow
 import Control.Monad.RWS
 
-import Data.Default (def)
 import Data.Sequence (Seq, (<|) )
 import qualified Data.Sequence as Seq
 import Data.Foldable
@@ -18,8 +17,8 @@ type App = RWST Vty () (Seq String) IO
 
 main = do
     vty <- if True -- change to false for emacs-like input processing
-            then mkVty def
-            else mkVty (def { vmin = Just 2, vtime = Just 300 } )
+            then mkVty defaultConfig
+            else mkVty (defaultConfig { vmin = Just 2, vtime = Just 300 } )
     _ <- execRWST (vtyInteract False) vty Seq.empty
     shutdown vty
 
