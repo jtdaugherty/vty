@@ -23,11 +23,11 @@ wcswidth = sum . map wcwidth
 -- width needs to be implemented.
 
 -- | Returns the display width of a character. Assumes all characters
--- with unknown widths are 0 width
+-- with unknown widths are 0 width.
 safeWcwidth :: Char -> Int
 safeWcwidth = max 0 . wcwidth
 
 -- | Returns the display width of a string. Assumes all characters with
--- unknown widths are 0 width
+-- unknown widths are 0 width.
 safeWcswidth :: String -> Int
 safeWcswidth = sum . map safeWcwidth
