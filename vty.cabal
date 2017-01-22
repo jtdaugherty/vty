@@ -131,6 +131,7 @@ library
 
 executable vty-mode-demo
   main-is:             ModeDemo.hs
+  hs-source-dirs:      demos
 
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
@@ -146,6 +147,7 @@ executable vty-mode-demo
 
 executable vty-demo
   main-is:             Demo.hs
+  hs-source-dirs:      demos
 
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables
