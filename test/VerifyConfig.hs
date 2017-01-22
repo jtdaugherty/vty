@@ -43,4 +43,3 @@ main :: IO ()
 main = defaultMain
     [ testCase "example config parses" $ exampleConfigParses
     ]
-
