@@ -3,8 +3,8 @@ version:             5.6
 license:             BSD3
 license-file:        LICENSE
 author:              AUTHORS
-maintainer:          Corey O'Connor (coreyoconnor@gmail.com)
-homepage:            https://github.com/coreyoconnor/vty
+maintainer:          Jonathan Daugherty (cygnus@foobox.com)
+homepage:            https://github.com/jtdaugherty/vty
 category:            User Interfaces
 synopsis:            Examples programs using the vty library.
 description:
@@ -12,17 +12,22 @@ description:
   confusing corner cases, and good support for common terminal types.
   .
   vty-interactive-terminal-test - interactive test. Useful for building a bug report for vtys author.
+  .
   vty-event-echo - view a input event log for vty. Example of interacting with user.
+  .
   vty-rogue - A bad rogue-like game. Go from the entrance to exit. Example of layers
+  .
   vty-benchmark - benchmarks vty. A series of tests that push random pictures to the terminal.
   .
   &#169; Corey O'Connor; BSD3 license.
+  .
+  &#169; Jonathan Daugherty; BSD3 license.
 cabal-version:        >= 1.18.0
 build-type:           Simple
 
 source-repository head
   type: git
-  location: https://github.com/coreyoconnor/vty.git
+  location: https://github.com/jtdaugherty/vty.git
 
 executable vty-interactive-terminal-test
   main-is:             interactive_terminal_test.hs
