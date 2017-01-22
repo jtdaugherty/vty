@@ -62,8 +62,6 @@ module Graphics.Vty
   )
 where
 
-import Graphics.Vty.Prelude
-
 import Graphics.Vty.Config
 import Graphics.Vty.Input
 import Graphics.Vty.Output

@@ -32,10 +32,10 @@ module Graphics.Vty.Output
   )
 where
 
-import Graphics.Vty.Prelude
+import Control.Monad (when)
 
 import Graphics.Vty.Config
-
+import Graphics.Vty.Image (regionWidth, regionHeight)
 import Graphics.Vty.Output.Interface
 import Graphics.Vty.Output.XTermColor as XTermColor
 import Graphics.Vty.Output.TerminfoBased as TerminfoBased

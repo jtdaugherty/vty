@@ -20,13 +20,13 @@ module Graphics.Vty.Output.TerminfoBased
   )
 where
 
-import Graphics.Vty.Prelude
-
+import Control.Monad (when)
 import Data.ByteString.Internal (toForeignPtr)
 import Data.Terminfo.Parse
 import Data.Terminfo.Eval
 
 import Graphics.Vty.Attributes
+import Graphics.Vty.Image (DisplayRegion)
 import Graphics.Vty.DisplayAttributes
 import Graphics.Vty.Output.Interface
 

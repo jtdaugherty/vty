@@ -4,6 +4,9 @@
 {-# LANGUAGE DisambiguateRecordFields #-}
 module Graphics.Vty.Image
   ( DisplayText
+  , DisplayRegion
+  , regionWidth
+  , regionHeight
   , Image
   , imageWidth
   , imageHeight
@@ -54,6 +57,15 @@ import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
 import Data.Word
+
+-- | Named alias for a Int pair
+type DisplayRegion = (Int,Int)
+
+regionWidth :: DisplayRegion -> Int
+regionWidth = fst
+
+regionHeight :: DisplayRegion -> Int
+regionHeight = snd
 
 infixr 5 <|>
 infixr 4 <->

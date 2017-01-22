@@ -10,8 +10,7 @@ module Graphics.Vty.Output.Mock
   )
 where
 
-import Graphics.Vty.Prelude
-
+import Graphics.Vty.Image (DisplayRegion)
 import Graphics.Vty.Output.Interface
 
 import Blaze.ByteString.Builder.Word (writeWord8)

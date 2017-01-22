@@ -5,9 +5,8 @@ module Graphics.Vty.Debug
   )
 where
 
-import Graphics.Vty.Prelude
-
 import Graphics.Vty.Attributes
+import Graphics.Vty.Image (DisplayRegion)
 import Graphics.Vty.Debug.Image
 import Graphics.Vty.Span
 

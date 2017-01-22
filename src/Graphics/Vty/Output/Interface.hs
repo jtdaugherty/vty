@@ -13,9 +13,8 @@
 
 module Graphics.Vty.Output.Interface where
 
-import Graphics.Vty.Prelude
-
 import Graphics.Vty.Attributes
+import Graphics.Vty.Image (DisplayRegion, regionHeight)
 import Graphics.Vty.Picture
 import Graphics.Vty.PictureToSpans
 import Graphics.Vty.Span

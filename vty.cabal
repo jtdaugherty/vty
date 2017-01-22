@@ -73,7 +73,6 @@ library
                        Graphics.Vty.Input
                        Graphics.Vty.Input.Events
                        Graphics.Vty.Picture
-                       Graphics.Vty.Prelude
                        Graphics.Vty.Output
                        Graphics.Text.Width
                        -- the modules below are only meant to be used by the tests.

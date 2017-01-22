@@ -15,8 +15,6 @@
 -- to the serialized representation of the various attributes.
 module Graphics.Vty.Span where
 
-import Graphics.Vty.Prelude
-
 import Graphics.Vty.Attributes (Attr)
 import Graphics.Vty.Image
 import Graphics.Vty.Image.Internal ( clipText )

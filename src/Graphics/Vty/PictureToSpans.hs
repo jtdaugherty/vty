@@ -13,8 +13,6 @@
 -- | Transforms an image into rows of operations.
 module Graphics.Vty.PictureToSpans where
 
-import Graphics.Vty.Prelude
-
 import Graphics.Vty.Attributes (Attr, currentAttr)
 import Graphics.Vty.Image
 import Graphics.Vty.Image.Internal
