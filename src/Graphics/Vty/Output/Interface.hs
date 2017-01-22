@@ -39,7 +39,11 @@ import qualified Data.Vector as Vector
 
 -- | Modal terminal features that can be enabled and disabled.
 data Mode = Mouse
+          -- ^ Mouse mode (whether the terminal is configured to provide
+          -- mouse input events)
           | BracketedPaste
+          -- ^ Paste mode (whether the terminal is configured to provide
+          -- events on OS pastes)
           deriving (Eq, Read, Show)
 
 data Output = Output
