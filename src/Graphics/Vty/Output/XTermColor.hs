@@ -1,4 +1,6 @@
 -- Copyright 2009-2010 Corey O'Connor
+-- | Xterm output driver. This uses the Terminfo driver with some
+-- extensions for Xterm.
 module Graphics.Vty.Output.XTermColor
   ( reserveTerminal
   )
@@ -23,7 +25,7 @@ import Data.List (isInfixOf)
 import Data.Maybe (catMaybes)
 import Data.Monoid ((<>))
 
--- | Initialize the display to UTF-8.
+-- | Construct an Xterm output driver. Initialize the display to UTF-8.
 reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output
 reserveTerminal variant outFd = liftIO $ do
     let flushedPut = void . fdWrite outFd
