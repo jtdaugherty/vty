@@ -4,7 +4,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              AUTHORS
 maintainer:          Jonathan Daugherty (cygnus@foobox.com)
-homepage:            https://github.com/coreyoconnor/vty
+homepage:            https://github.com/jtdaugherty/vty
 category:            User Interfaces
 synopsis:            A simple terminal UI library
 description:
@@ -20,20 +20,11 @@ description:
   .
   Users: See the "Graphics.Vty.Config" module.
   .
-  If your terminal is not behaving as expected the results of the
-  vty-interactive-terminal-test executable should be sent to the Vty
-  maintainter to aid in debugging the issue.
-  .
-  Notable infelicities: Assumes UTF-8 character encoding support by the
-  terminal; Poor signal handling; Requires terminfo.
-  .
-  This project is hosted on github.com: <https://github.com/coreyoconnor/vty>
-  .
-  > git clone git://github.com/coreyoconnor/vty.git
-  .
   &#169; 2006-2007 Stefan O'Rear; BSD3 license.
   .
   &#169; Corey O'Connor; BSD3 license.
+  .
+  &#169; Jonathan Daugherty; BSD3 license.
 cabal-version:       >= 1.18
 build-type:          Simple
 data-files:          README.md,
@@ -45,7 +36,7 @@ tested-with:         GHC >= 7.6.2
 
 source-repository head
   type: git
-  location: https://github.com/coreyoconnor/vty.git
+  location: https://github.com/jtdaugherty/vty.git
 
 library
   default-language:    Haskell2010
