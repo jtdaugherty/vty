@@ -1,21 +1,14 @@
--- | Vty supports input and output to terminal devices.
+-- | Vty provides interfaces for both terminal input and terminal
+-- output.
 --
--- - Input to the terminal is provided to the app as a sequence of
---   'Event's.
+-- - Input to the terminal is provided to the Vty application as a
+--   sequence of 'Event's.
 --
--- - The output is defined by a 'Picture'. Which is one or more layers
---   of 'Image's.
---
---      - The module "Graphics.Vty.Image" provides a number of
---        constructor equations that will build correct 'Image' values.
---        See 'string', '<|>', and '<->' for starters.
---
---      - The constructors in "Graphics.Vty.Image.Internal" should not
---        be used.
---
---  - 'Image's can be styled using 'Attr'. See "Graphics.Vty.Attributes".
---
--- See the vty-examples package for a number of examples.
+-- - Output is provided to Vty by the application in the form of a
+--   'Picture'. A 'Picture' is one or more layers of 'Image's.
+--   'Image' values can be built by the various constructors in
+--   "Graphics.Vty.Image". Output can be syled using 'Attr' (attribute)
+--   values in the "Graphics.Vty.Attributes" module.
 --
 -- @
 --  import "Graphics.Vty"
@@ -23,10 +16,8 @@
 --  main = do
 --      cfg <- 'standardIOConfig'
 --      vty <- 'mkVty' cfg
---      let line0 = 'string' ('defAttr' ` 'withForeColor' ` 'green')
---                           \"first line\"
---          line1 = 'string' ('defAttr' ` 'withBackColor' ` 'blue')
---                           \"second line\"
+--      let line0 = 'string' ('defAttr' ` 'withForeColor' ` 'green') \"first line\"
+--          line1 = 'string' ('defAttr' ` 'withBackColor' ` 'blue') \"second line\"
 --          img = line0 '<->' line1
 --          pic = 'picForImage' img
 --      'update' vty pic
@@ -34,23 +25,10 @@
 --      'shutdown' vty
 --      'print' (\"Last event was: \" '++' 'show' e)
 -- @
---
--- Good sources of documentation for terminal programming are:
---
---  - <https://github.com/b4winckler/vim/blob/master/src/term.c>
---
---  - <http://invisible-island.net/xterm/ctlseqs/ctlseqs.html>
---
---  - <http://ulisse.elettra.trieste.it/services/doc/serial/config.html>
---
---  - <http://www.leonerd.org.uk/hacks/hints/xterm-8bit.html>
---
---  - <http://www.unixwiz.net/techtips/termios-vmin-vtime.html>
---
---  - <http://vt100.net/docs/vt100-ug/chapter3.html vt100 control sequences>
 module Graphics.Vty
   ( Vty(..)
   , mkVty
+  , Mode(..)
   , module Graphics.Vty.Config
   , module Graphics.Vty.Input
   , module Graphics.Vty.Output
@@ -58,7 +36,6 @@ module Graphics.Vty
   , module Graphics.Vty.Picture
   , module Graphics.Vty.Image
   , module Graphics.Vty.Attributes
-  , Mode(..)
   )
 where
 
@@ -75,54 +52,52 @@ import Control.Concurrent.STM
 import Data.IORef
 import Data.Monoid
 
--- | The main object.  At most one should be created.
+-- | A Vty value represents a handle to the Vty library that the
+-- application must create in order to use Vty.
 --
 -- The use of Vty typically follows this process:
 --
---    0. initialize vty
+--    1. Initialize vty
 --
---    1. use the update equation of Vty to display a picture
+--    2. Use 'update' to display a picture.
 --
---    2. repeat
+--    3. Use 'nextEvent' to get the next input event.
 --
---    3. shutdown vty.
+--    4. Depending on the event, go to 2 or 5.
 --
--- An alternative to tracking the Vty instance is to use 'withVty' in
--- "Graphics.Vty.Inline.Unsafe".
+--    5. Shutdown vty.
 --
--- This does not assure any thread safety. In theory, as long as an
--- update action is not executed when another update action is already
--- then it's safe to call this on multiple threads.
+-- Operations on Vty handles are not thread-safe.
 data Vty = Vty
-    { -- | Outputs the given Picture. Equivalent to 'outputPicture'
-      -- applied to a display context implicitly managed by Vty. The
-      -- managed display context is reset on resize.
+    { -- | Outputs the given 'Picture'.
       update :: Picture -> IO ()
-      -- | Get one Event object, blocking if necessary. This will
-      -- refresh the terminal if the event is a 'EvResize'.
+      -- | Get one 'Event' object, blocking if none are available. This
+      -- will refresh the terminal if the event is a 'EvResize'.
     , nextEvent :: IO Event
-      -- | The input interface. See 'Input'
+      -- | The input interface. See 'Input'.
     , inputIface :: Input
-      -- | The output interface. See 'Output'
+      -- | The output interface. See 'Output'.
     , outputIface :: Output
       -- | Refresh the display. 'nextEvent' will refresh the display if
-      -- a resize occurs. If other programs output to the terminal and
-      -- mess up the display then the application might want to force a
-      -- refresh.
+      -- a resize occurs, but this can be used to refresh the display
+      -- explicitly. If other programs output to the terminal and mess
+      -- up the display then the application might want to force a
+      -- refresh using this function.
     , refresh :: IO ()
-      -- | Clean up after vty.
-      -- The above methods will throw an exception if executed after
-      -- this is executed.
+      -- | Clean up after vty. A call to this function is necessary to
+      -- cleanly restore the terminal state before application exit. The
+      -- above methods will throw an exception if executed after this is
+      -- executed.
     , shutdown :: IO ()
     }
 
--- | Set up the state object for using vty. At most one state object
--- should be created at a time for a given terminal device.
+-- | Create a Vty handle. At most one handle should be created at a time
+-- for a given terminal device.
 --
--- The specified config is added to the 'userConfig'. With the
--- 'userConfig' taking precedence. See "Graphics.Vty.Config"
+-- The specified configuration is added to the 'userConfig' with the
+-- 'userConfig' taking precedence. See "Graphics.Vty.Config".
 --
--- For most applications @mkVty def@ is sufficient.
+-- For most applications @mkVty defaultConfig@ is sufficient.
 mkVty :: Config -> IO Vty
 mkVty appConfig = do
     config <- (<> appConfig) <$> userConfig
