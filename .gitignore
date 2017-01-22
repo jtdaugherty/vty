@@ -4,6 +4,8 @@
 *.prof
 Setup
 dist
+dist-newstyle
+cabal.project.local
 test/benchmark
 .hpc
 .cabal-sandbox
