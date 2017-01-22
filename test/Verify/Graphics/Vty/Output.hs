@@ -4,7 +4,6 @@ import Control.Applicative ((<$>))
 
 import Graphics.Vty.Output.Mock
 
-import qualified Data.ByteString as BS
 import Data.IORef
 import qualified Data.String.UTF8 as UTF8
 
