@@ -165,8 +165,8 @@ verifyVisibleSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) -> monadic 
 
 verifyCapsSynInputToEvent :: Property IO
 verifyCapsSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) ->
-    forEachOf terminalsOfInterest $ \termName -> monadic $ do
-        term <- setupTerm termName
+    forEachOf terminalsOfInterest $ \terminalName -> monadic $ do
+        term <- setupTerm terminalName
         let table         = capsClassifyMap term keysFromCapsTable
             inputSeq      = gen table
             events        = map snd inputSeq
@@ -185,9 +185,9 @@ verifySpecialSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) -> monadic 
 
 verifyFullSynInputToEvent :: Property IO
 verifyFullSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) ->
-    forEachOf terminalsOfInterest $ \termName -> monadic $ do
-        term <- setupTerm termName
-        let table         = classifyMapForTerm termName term
+    forEachOf terminalsOfInterest $ \terminalName -> monadic $ do
+        term <- setupTerm terminalName
+        let table         = classifyMapForTerm terminalName term
             inputSeq      = gen table
             events        = map snd inputSeq
             keydowns      = map (Bytes . fst) inputSeq
@@ -196,9 +196,9 @@ verifyFullSynInputToEvent = forAll $ \(InputBlocksUsingTable gen) ->
 
 verifyFullSynInputToEvent_2x :: Property IO
 verifyFullSynInputToEvent_2x = forAll $ \(InputBlocksUsingTable gen) ->
-    forEachOf terminalsOfInterest $ \termName -> monadic $ do
-        term <- setupTerm termName
-        let table         = classifyMapForTerm termName term
+    forEachOf terminalsOfInterest $ \terminalName -> monadic $ do
+        term <- setupTerm terminalName
+        let table         = classifyMapForTerm terminalName term
             inputSeq      = gen table
             events        = concatMap ((\s -> [s,s]) . snd) inputSeq
             keydowns      = map (Bytes . (\s -> s ++ s) . fst) inputSeq
