@@ -109,8 +109,8 @@ displayOpsColumns ops
 displayOpsRows :: DisplayOps -> Int
 displayOpsRows ops = Vector.length ops
 
-effectedRegion :: DisplayOps -> DisplayRegion
-effectedRegion ops = (displayOpsColumns ops, displayOpsRows ops)
+affectedRegion :: DisplayOps -> DisplayRegion
+affectedRegion ops = (displayOpsColumns ops, displayOpsRows ops)
 
 -- | The number of columns a SpanOps effects.
 spanOpsEffectedColumns :: SpanOps -> Int

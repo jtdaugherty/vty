@@ -164,8 +164,8 @@ outputPicture dc pic = liftIO $ do
         -- Diff the previous output against the requested output.
         -- Differences are currently on a per-row basis.
         diffs :: [Bool] = case prevOutputOps as of
-            Nothing -> replicate (fromEnum $ regionHeight $ effectedRegion ops) True
-            Just previousOps -> if effectedRegion previousOps /= effectedRegion ops
+            Nothing -> replicate (fromEnum $ regionHeight $ affectedRegion ops) True
+            Just previousOps -> if affectedRegion previousOps /= affectedRegion ops
                 then replicate (displayOpsRows ops) True
                 else zipWith (/=) (Vector.toList previousOps)
                                   (Vector.toList ops)
