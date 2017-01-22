@@ -57,7 +57,6 @@ module Graphics.Vty
   , module Graphics.Vty.Picture
   , module Graphics.Vty.Image
   , module Graphics.Vty.Attributes
-  , DisplayRegion
   , Mode(..)
   )
 where
