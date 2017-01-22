@@ -43,7 +43,6 @@ library
                        blaze-builder >= 0.3.3.2 && < 0.5,
                        bytestring,
                        containers,
-                       data-default >= 0.5.3,
                        deepseq >= 1.1 && < 1.5,
                        directory,
                        filepath >= 1.0 && < 2.0,
@@ -129,7 +128,6 @@ executable vty-mode-demo
   build-depends:       vty,
                        base >= 4.6 && < 5,
                        containers,
-                       data-default >= 0.5.3,
                        microlens,
                        microlens-mtl,
                        mtl >= 1.1.1.0 && < 2.3
@@ -145,7 +143,6 @@ executable vty-demo
   build-depends:       vty,
                        base >= 4.6 && < 5,
                        containers,
-                       data-default >= 0.5.3,
                        microlens,
                        microlens-mtl,
                        mtl >= 1.1.1.0 && < 2.3
@@ -228,7 +225,6 @@ test-suite verify-terminal
                        base >= 4.6 && < 5,
                        bytestring,
                        containers,
-                       data-default >= 0.5.3,
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        terminfo >= 0.3 && < 0.5,
@@ -569,7 +565,6 @@ test-suite verify-using-mock-input
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       data-default >= 0.5.3,
                        QuickCheck >= 2.7,
                        smallcheck == 1.*,
                        quickcheck-assertions >= 0.1.1,
@@ -604,7 +599,6 @@ test-suite verify-config
 
   build-depends:       vty,
                        Cabal >= 1.20,
-                       data-default >= 0.5.3,
                        HUnit,
                        QuickCheck >= 2.7,
                        smallcheck == 1.*,

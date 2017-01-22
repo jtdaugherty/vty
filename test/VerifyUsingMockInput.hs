@@ -17,7 +17,6 @@ import Control.Exception
 import Lens.Micro ((^.))
 import Control.Monad
 
-import Data.Default
 import Data.IORef
 import Data.List (intersperse, reverse, nubBy)
 
@@ -113,11 +112,11 @@ assertEventsFromSynInput table inputSpec expectedEvents = do
     (writeFd, readFd) <- openPseudoTerminal
     (setTermAttr,_) <- attributeControl readFd
     setTermAttr
-    let testConfig = def { inputFd = Just readFd
-                         , termName = Just "dummy"
-                         , vmin = Just 1
-                         , vtime = Just 100
-                         }
+    let testConfig = defaultConfig { inputFd = Just readFd
+                                   , termName = Just "dummy"
+                                   , vmin = Just 1
+                                   , vtime = Just 100
+                                   }
     input <- initInput testConfig table
     eventsRef <- newIORef []
     let writeWaitClose = do

@@ -36,7 +36,6 @@ module Graphics.Vty.Attributes
 where
 
 import Data.Bits
-import Data.Default
 import Data.Word
 
 import Graphics.Vty.Attributes.Color
@@ -210,9 +209,6 @@ withStyle attr styleFlag = attr { attrStyle = SetTo $ styleMask attr .|. styleFl
 -- what the default background and foreground colors are.
 defAttr :: Attr
 defAttr = Attr Default Default Default
-
-instance Default Attr where
-    def = defAttr
 
 -- | Keeps the style, background color and foreground color that was
 -- previously set. Used to override some part of the previous style.

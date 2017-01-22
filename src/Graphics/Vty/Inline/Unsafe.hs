@@ -4,7 +4,6 @@ module Graphics.Vty.Inline.Unsafe where
 
 import Graphics.Vty
 
-import Data.Default
 import Data.IORef
 
 import GHC.IO.Handle (hDuplicate)
@@ -29,7 +28,7 @@ mkDupeConfig = do
     hSetBuffering stdin NoBuffering
     stdinDupe <- hDuplicate stdin >>= handleToFd
     stdoutDupe <- hDuplicate stdout >>= handleToFd
-    return $ def { inputFd = Just stdinDupe, outputFd = Just stdoutDupe }
+    return $ defaultConfig { inputFd = Just stdinDupe, outputFd = Just stdoutDupe }
 
 -- | This will create a Vty instance using 'mkVty' and execute an IO
 -- action provided that instance. The created Vty instance will be

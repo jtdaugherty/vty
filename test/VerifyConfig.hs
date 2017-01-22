@@ -4,7 +4,6 @@ module Main where
 import Graphics.Vty.Config
 import Graphics.Vty.Input.Events
 
-import Data.Default
 import Data.String.QQ
 import qualified Data.ByteString.Char8 as B
 
@@ -24,7 +23,7 @@ debugLog "/tmp/vty-debug.txt"
 |]
 
 exampleConfigConfig :: Config
-exampleConfigConfig = def
+exampleConfigConfig = defaultConfig
     { debugLog = Just "/tmp/vty-debug.txt"
     , inputMap = [ (Nothing, "\ESC[B", EvKey KUp [])
                  , (Nothing, "\ESC[1;3B", EvKey KDown [MAlt])

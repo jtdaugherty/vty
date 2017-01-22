@@ -76,6 +76,7 @@ module Graphics.Vty.Config
   , standardIOConfig
   , runParseConfig
   , parseConfigFile
+  , defaultConfig
   )
 where
 
@@ -87,7 +88,6 @@ import Control.Exception (catch, IOException, Exception(..), throwIO)
 import Control.Monad (liftM, guard, void)
 
 import qualified Data.ByteString as BS
-import Data.Default
 import Data.Monoid
 import Data.Typeable (Typeable)
 
@@ -146,8 +146,8 @@ data Config = Config
     , termName           :: Maybe String
     } deriving (Show, Eq)
 
-instance Default Config where
-    def = mempty
+defaultConfig :: Config
+defaultConfig = mempty
 
 instance Monoid Config where
     mempty = Config
@@ -179,14 +179,14 @@ instance Monoid Config where
 userConfig :: IO Config
 userConfig = do
     configFile <- (mappend <$> getAppUserDataDirectory "vty" <*> pure "/config") >>= parseConfigFile
-    overrideConfig <- maybe (return def) parseConfigFile =<< getEnv "VTY_CONFIG_FILE"
+    overrideConfig <- maybe (return defaultConfig) parseConfigFile =<< getEnv "VTY_CONFIG_FILE"
     let base = configFile <> overrideConfig
     mappend base <$> overrideEnvConfig
 
 overrideEnvConfig :: IO Config
 overrideEnvConfig = do
     d <- getEnv "VTY_DEBUG_LOG"
-    return $ def { debugLog = d }
+    return $ defaultConfig { debugLog = d }
 
 -- | Configures VTY using defaults suitable for terminals. This action
 -- can raise 'VtyConfigurationError'.
@@ -196,7 +196,7 @@ standardIOConfig = do
     case mb of
       Nothing -> throwIO VtyMissingTermEnvVar
       Just t ->
-        return def
+        return defaultConfig
           { vmin               = Just 1
           , mouseMode          = Just False
           , bracketedPasteMode = Just False
@@ -209,13 +209,13 @@ standardIOConfig = do
 parseConfigFile :: FilePath -> IO Config
 parseConfigFile path = do
     catch (runParseConfig path <$> BS.readFile path)
-          (\(_ :: IOException) -> return def)
+          (\(_ :: IOException) -> return defaultConfig)
 
 runParseConfig :: String -> BS.ByteString -> Config
 runParseConfig name cfgTxt =
   case runParser parseConfig () name cfgTxt of
     Right cfg -> cfg
-    Left{}    -> def
+    Left{}    -> defaultConfig
 
 ------------------------------------------------------------------------
 
@@ -249,13 +249,13 @@ mapDecl = do
     bytes     <- P.stringLiteral configLexer
     key       <- parseValue
     modifiers <- parseValue
-    return def { inputMap = [(termIdent, bytes, EvKey key modifiers)] }
+    return defaultConfig { inputMap = [(termIdent, bytes, EvKey key modifiers)] }
 
 debugLogDecl :: Parser Config
 debugLogDecl = do
     "debugLog" <- P.identifier configLexer
     path       <- P.stringLiteral configLexer
-    return def { debugLog = Just path }
+    return defaultConfig { debugLog = Just path }
 
 ignoreLine :: Parser ()
 ignoreLine = void $ manyTill anyChar newline
@@ -264,7 +264,7 @@ parseConfig :: Parser Config
 parseConfig = liftM mconcat $ many $ do
     P.whiteSpace configLexer
     let directives = [try mapDecl, try debugLogDecl]
-    choice directives <|> (ignoreLine >> return def)
+    choice directives <|> (ignoreLine >> return defaultConfig)
 
 class    Parse a        where parseValue :: Parser a
 instance Parse Char     where parseValue = P.charLiteral configLexer
