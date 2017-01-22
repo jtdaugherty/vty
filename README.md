@@ -133,3 +133,14 @@ rm -rf dist ; cabal configure --enable-tests --disable-library-coverage \
 
 * Uses the `TIOCGWINSZ` ioctl to find the current window size, which
   appears to be limited to Linux and BSD.
+
+# Sources
+
+Good sources of documentation for terminal programming are:
+
+* https://github.com/b4winckler/vim/blob/master/src/term.c
+* http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+* http://ulisse.elettra.trieste.it/services/doc/serial/config.html
+* http://www.leonerd.org.uk/hacks/hints/xterm-8bit.html
+* http://www.unixwiz.net/techtips/termios-vmin-vtime.html
+* http://vt100.net/docs/vt100-ug/chapter3.html
