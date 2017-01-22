@@ -94,8 +94,9 @@ data Vty = Vty
 -- | Create a Vty handle. At most one handle should be created at a time
 -- for a given terminal device.
 --
--- The specified configuration is added to the 'userConfig' with the
--- 'userConfig' taking precedence. See "Graphics.Vty.Config".
+-- The specified configuration is added to the the configuration
+-- loaded by 'userConfig' with the 'userConfig' configuration taking
+-- precedence. See "Graphics.Vty.Config".
 --
 -- For most applications @mkVty defaultConfig@ is sufficient.
 mkVty :: Config -> IO Vty
