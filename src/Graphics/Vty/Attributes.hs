@@ -126,29 +126,6 @@ instance Eq v => Monoid ( MaybeDefault v ) where
     mappend ( SetTo v ) KeepCurrent = SetTo v
     mappend ( SetTo _ ) ( SetTo v ) = SetTo v
 
--- | Standard 8-color ANSI terminal color codes.
-black, red, green, yellow, blue, magenta, cyan, white :: Color
-black  = ISOColor 0
-red    = ISOColor 1
-green  = ISOColor 2
-yellow = ISOColor 3
-blue   = ISOColor 4
-magenta= ISOColor 5
-cyan   = ISOColor 6
-white  = ISOColor 7
-
--- | Bright/Vivid variants of the standard 8-color ANSI
-brightBlack, brightRed, brightGreen, brightYellow :: Color
-brightBlue, brightMagenta, brightCyan, brightWhite :: Color
-brightBlack  = ISOColor 8
-brightRed    = ISOColor 9
-brightGreen  = ISOColor 10
-brightYellow = ISOColor 11
-brightBlue   = ISOColor 12
-brightMagenta= ISOColor 13
-brightCyan   = ISOColor 14
-brightWhite  = ISOColor 15
-
 -- | Styles are represented as an 8 bit word. Each bit in the word is 1
 -- if the style attribute assigned to that bit should be applied and 0
 -- if the style attribute should not be applied.

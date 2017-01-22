@@ -1,4 +1,23 @@
-module Graphics.Vty.Attributes.Color where
+module Graphics.Vty.Attributes.Color
+  ( Color(..)
+  , black
+  , red
+  , green
+  , yellow
+  , blue
+  , magenta
+  , cyan
+  , white
+  , brightBlack
+  , brightRed
+  , brightGreen
+  , brightYellow
+  , brightBlue
+  , brightMagenta
+  , brightCyan
+  , brightWhite
+  )
+where
 
 import Data.Word
 
@@ -56,3 +75,26 @@ import Data.Word
 -- Seriously, terminal color support is INSANE.
 data Color = ISOColor !Word8 | Color240 !Word8
     deriving ( Eq, Show, Read )
+
+-- | Standard 8-color ANSI terminal color codes.
+black, red, green, yellow, blue, magenta, cyan, white :: Color
+black  = ISOColor 0
+red    = ISOColor 1
+green  = ISOColor 2
+yellow = ISOColor 3
+blue   = ISOColor 4
+magenta= ISOColor 5
+cyan   = ISOColor 6
+white  = ISOColor 7
+
+-- | Bright/Vivid variants of the standard 8-color ANSI
+brightBlack, brightRed, brightGreen, brightYellow :: Color
+brightBlue, brightMagenta, brightCyan, brightWhite :: Color
+brightBlack  = ISOColor 8
+brightRed    = ISOColor 9
+brightGreen  = ISOColor 10
+brightYellow = ISOColor 11
+brightBlue   = ISOColor 12
+brightMagenta= ISOColor 13
+brightCyan   = ISOColor 14
+brightWhite  = ISOColor 15
