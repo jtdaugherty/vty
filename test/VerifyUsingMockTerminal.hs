@@ -4,9 +4,11 @@ import Verify.Graphics.Vty.Prelude
 
 import Verify.Graphics.Vty.Picture
 import Verify.Graphics.Vty.Image
+import Verify.Graphics.Vty.Attributes
 import Verify.Graphics.Vty.Span
 import Verify.Graphics.Vty.Output
 import Graphics.Vty.Output
+import Graphics.Vty.Output.Interface
 import Graphics.Vty.Output.Mock
 
 import Graphics.Vty.Debug

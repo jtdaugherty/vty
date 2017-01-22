@@ -4,6 +4,7 @@ module VerifyLayersSpanGeneration where
 
 import Verify.Graphics.Vty.Prelude
 
+import Verify.Graphics.Vty.Attributes
 import Verify.Graphics.Vty.Image
 import Verify.Graphics.Vty.Picture
 import Verify.Graphics.Vty.Span

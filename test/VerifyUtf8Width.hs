@@ -5,6 +5,7 @@ import Verify
 import Graphics.Text.Width
 import Graphics.Vty.Attributes
 import Graphics.Vty.Picture
+import Graphics.Vty.Image
 
 swIs1Column :: SingleColumnChar -> Bool
 swIs1Column (SingleColumnChar c) = imageWidth (char defAttr c) == 1

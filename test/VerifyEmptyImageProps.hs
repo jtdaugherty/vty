@@ -3,7 +3,7 @@ module VerifyEmptyImageProps where
 import Verify
 
 -- should be exported by Graphics.Vty.Picture
-import Graphics.Vty.Picture ( Image, emptyImage )
+import Graphics.Vty.Image ( Image, emptyImage )
 
 tests :: IO [Test]
 tests = do
