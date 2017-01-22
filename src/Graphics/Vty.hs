@@ -55,6 +55,8 @@ module Graphics.Vty
   , module Graphics.Vty.Input
   , module Graphics.Vty.Output
   , module Graphics.Vty.Picture
+  , module Graphics.Vty.Image
+  , module Graphics.Vty.Attributes
   , DisplayRegion
   , Mode(..)
   )
@@ -67,6 +69,8 @@ import Graphics.Vty.Input
 import Graphics.Vty.Output
 import Graphics.Vty.Output.Interface
 import Graphics.Vty.Picture
+import Graphics.Vty.Image
+import Graphics.Vty.Attributes
 
 import Control.Concurrent.STM
 

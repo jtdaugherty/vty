@@ -4,12 +4,20 @@
 --
 -- A 'Picture' is a background paired with a layer of 'Image's.
 module Graphics.Vty.Picture
-  ( module Graphics.Vty.Picture
-  , module Graphics.Vty.Image
+  ( Picture(..)
+  , Cursor(..)
+  , Background(..)
+  , emptyPicture
+  , addToTop
+  , addToBottom
+  , picForImage
+  , picForLayers
+  , picImage
   )
 where
 
 import Graphics.Vty.Image
+import Graphics.Vty.Attributes
 
 import Control.DeepSeq
 

@@ -40,9 +40,6 @@ module Graphics.Vty.Image
   , translate
   , translateX
   , translateY
-  -- | The possible display attributes used in
-  -- constructing an `Image`.
-  , module Graphics.Vty.Attributes
   )
 where
 
