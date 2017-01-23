@@ -1,3 +1,23 @@
+5.15
+Package changes:
+  - Discontinued support for GHC versions prior to 7.10.1.
+  - Removed instructions and configuration for Stack builds since they
+    are no longer supported.
+  - Clarified README mention of (lack of) Windows support (contributors
+    wanted, though!)
+  - Removed dependency on data-default (see below).
+
+API changes:
+  - Moved color definitions from Attributes to Color module.
+  - In lieu of data-default (Default) instances for Attr and Config, use
+    'defAttr' and the new 'defaultConfig' (or 'mempty') instead of 'def'.
+  - Graphics.Vty.Output no longer re-exports
+    Graphics.Vty.Output.Interface.
+  - Removed Graphics.Vty.Prelude module and moved DisplayRegion and its
+    accessors to Graphics.Vty.Image.
+  - Graphics.Vty.Image no longer re-exports Graphics.Vty.Attributes.
+  - Graphics.Vty.Picture no longer re-exports Graphics.Vty.Image.
+
 5.14
   - addMaybeClippedJoin: instead of raising an exception when the join
     is totally clipped, just reduce the clip amount and continue
