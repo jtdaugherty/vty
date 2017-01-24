@@ -6,7 +6,6 @@ import Verify
 import Control.Concurrent( threadDelay )
 import Control.Monad( liftM2 )
 
-import Data.Default (def)
 import Data.List
 import Data.Word
 
@@ -17,7 +16,7 @@ import System.Random
 bench0 = do
     let fixedGen = mkStdGen 0
     setStdGen fixedGen
-    return $ Bench (return ()) (\() -> mkVty def >>= liftM2 (>>) run shutdown)
+    return $ Bench (return ()) (\() -> mkVty defaultConfig >>= liftM2 (>>) run shutdown)
 
 run vt  = mapM_ (\p -> update vt p) . benchgen =<< displayBounds (outputIface vt)
 

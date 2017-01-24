@@ -2,10 +2,8 @@ module Main where
 
 import Graphics.Vty
 
-import Data.Default
-
 main = do
-    vty <- mkVty def
+    vty <- mkVty defaultConfig
     let line0 = string (def `withForeColor` green) "first line"
         line1 = string (def `withBackColor` blue) "second line"
         img = line0 <-> line1

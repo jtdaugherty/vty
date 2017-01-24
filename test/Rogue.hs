@@ -4,7 +4,6 @@ module Main where
 import Graphics.Vty
 
 import Data.Array
-import Data.Default (def)
 
 import Control.Applicative
 import Control.Monad
@@ -43,7 +42,7 @@ type Coord = (Int, Int)
 
 main :: IO ()
 main = do
-    vty <- mkVty def
+    vty <- mkVty defaultConfig
     level0 <- mkLevel 1
     let world0 = World (Player (levelStart level0)) level0
     (_finalWorld, ()) <- execRWST play vty world0

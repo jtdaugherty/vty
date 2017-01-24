@@ -12,7 +12,6 @@ import Control.Concurrent (threadDelay)
 import Control.Exception
 import Control.Monad
 
-import Data.Default (def)
 import Data.List ( lookup )
 import Data.Maybe ( isJust, fromJust )
 import Data.Monoid
@@ -938,7 +937,7 @@ cursorHideTest0 = Test
     { testName = "Verify the cursor is hid and re-shown. issue #7"
     , testID = "cursorHideTest0"
     , testAction = do
-        vty <- mkVty def
+        vty <- mkVty defaultConfig
         showCursor $ outputIface vty
         setCursorPos (outputIface vty) 5 5
         nextEvent vty
