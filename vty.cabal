@@ -26,7 +26,7 @@ description:
   &#169; Jonathan Daugherty; BSD3 license.
 cabal-version:       >= 1.18
 build-type:          Simple
-data-files:          README.md,
+extra-doc-files:     README.md,
                      AUTHORS,
                      CHANGELOG.md,
                      LICENSE
