@@ -1,3 +1,11 @@
+5.15.1
+Package changes:
+  - Documentation files are now marked accordingly (thanks Michal
+    Suchánek)
+
+Bug fixes:
+  - translateX/Y: fix negative translations
+
 5.15
 Package changes:
   - Discontinued support for GHC versions prior to 7.10.1.
