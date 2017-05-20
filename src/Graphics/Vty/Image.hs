@@ -242,6 +242,7 @@ translate x y i = translateX x (translateY y i)
 -- | Translates an image by padding or cropping its left side.
 translateX :: Int -> Image -> Image
 translateX x i
+    | x < 0 && (abs x > imageWidth i) = emptyImage
     | x < 0     = let s = abs x in CropLeft i s (imageWidth i - s) (imageHeight i)
     | x == 0    = i
     | otherwise = let h = imageHeight i in HorizJoin (BGFill x h) i (imageWidth i + x) h
@@ -249,6 +250,7 @@ translateX x i
 -- | Translates an image by padding or cropping its top.
 translateY :: Int -> Image -> Image
 translateY y i
+    | y < 0 && (abs y > imageHeight i) = emptyImage
     | y < 0     = let s = abs y in CropTop i s (imageWidth i) (imageHeight i - s)
     | y == 0    = i
     | otherwise = let w = imageWidth i in VertJoin (BGFill w y) i w (imageHeight i + y)
