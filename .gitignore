@@ -6,6 +6,7 @@ Setup
 dist
 dist-newstyle
 cabal.project.local
+.ghc.environment.*
 test/benchmark
 .hpc
 .cabal-sandbox

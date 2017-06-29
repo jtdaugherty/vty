@@ -171,6 +171,9 @@ utf8Bytestring' :: Attr -> B.ByteString -> Image
 utf8Bytestring' a bs = text' a (T.decodeUtf8 bs)
 
 -- | Make an image filling a region with the specified character.
+--
+-- If either the width or height are less than or equal to 0, then
+-- the result is the empty image.
 charFill :: Integral d
          => Attr
          -- ^ The attribute to use.
@@ -181,14 +184,17 @@ charFill :: Integral d
          -> d
          -- ^ The region height.
          -> Image
-charFill _a _c 0  _h = EmptyImage
-charFill _a _c _w 0  = EmptyImage
-charFill a c w h =
-    vertCat $ replicate (fromIntegral h) $ HorizText a txt displayWidth charWidth
-    where
-        txt = TL.replicate (fromIntegral w) (TL.singleton c)
-        displayWidth = safeWcwidth c * (fromIntegral w)
-        charWidth = fromIntegral w
+charFill a c w h
+  | w <= 0 || h <= 0 = EmptyImage
+  | otherwise        = vertCat
+                     $ replicate (fromIntegral h)
+                     $ HorizText a txt displayWidth charWidth
+  where
+    txt          = TL.replicate charWidth (TL.singleton c)
+    displayWidth = safeWcwidth c * charWidth
+
+    charWidth   :: Num a => a
+    charWidth    = fromIntegral w
 
 -- | The empty image. Useful for fold combinators. These occupy no space
 -- and do not affect display attributes.
