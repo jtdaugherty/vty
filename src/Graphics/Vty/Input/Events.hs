@@ -28,7 +28,7 @@ data Modifier = MShift | MCtrl | MMeta | MAlt
     deriving (Eq,Show,Read,Ord,Generic)
 
 -- | Mouse buttons.
-data Button = BLeft | BMiddle | BRight | BWheelUp | BWheelDown
+data Button = BLeft | BMiddle | BRight | BScrollUp | BScrollDown
     deriving (Eq,Show,Read,Ord,Generic)
 
 -- | Events.
