@@ -67,7 +67,7 @@ ctrlBit = 16
 
 -- These bits indicate the buttons involved:
 buttonMask :: Int
-buttonMask = 3
+buttonMask = 67
 
 leftButton :: Int
 leftButton = 0
@@ -77,6 +77,12 @@ middleButton = 1
 
 rightButton :: Int
 rightButton = 2
+
+wheelUp :: Int
+wheelUp = 64
+
+wheelDown :: Int
+wheelDown = 65
 
 hasBitSet :: Int -> Int -> Bool
 hasBitSet val bit = val .&. bit > 0
@@ -100,6 +106,8 @@ getSGRButton mods =
     let buttonMap = [ (leftButton,   BLeft)
                     , (middleButton, BMiddle)
                     , (rightButton,  BRight)
+                    , (wheelUp,      BWheelUp)
+                    , (wheelDown,    BWheelDown)
                     ]
     in case lookup (mods .&. buttonMask) buttonMap of
         Nothing -> failParse
