@@ -1,3 +1,13 @@
+5.16
+API changes:
+  - Added support for mouse wheel events while in mouse mode. The Button
+    type got two new constructors as a result: BScrollUp and BScrollDown.
+    Thanks to doublescale@tutanota.com for this contribution!
+
+Bug fixes:
+  - charFill now clamps negative arguments to zero (thanks Eric
+    Mertens!)
+
 5.15.1
 Package changes:
   - Documentation files are now marked accordingly (thanks Michal
