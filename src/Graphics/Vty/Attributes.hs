@@ -10,14 +10,14 @@
 -- 'withForeColor', 'withBackColor', and 'withStyle', e.g.,
 --
 -- @
---     defAttr `withForeColor` red
+--     defAttr \`withForeColor\` red
 -- @
 --
 -- 'Image' constructors often require an 'Attr' to indicate the
 -- attributes used in the image, e.g.,
 --
 -- @
---     string (defAttr `withForeColor` red) "this text will be red"
+--     string (defAttr \`withForeColor\` red) "this text will be red"
 -- @
 --
 -- The appearance of 'Image's using 'defAttr' is determined by the The
