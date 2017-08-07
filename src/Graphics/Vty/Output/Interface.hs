@@ -44,6 +44,9 @@ data Mode = Mouse
           | BracketedPaste
           -- ^ Paste mode (whether the terminal is configured to provide
           -- events on OS pastes)
+          | Focus
+          -- ^ Focus-in/focus-out events (whether the terminal is
+          -- configured to provide events on focus change)
           deriving (Eq, Read, Show)
 
 -- | The Vty terminal output interface.

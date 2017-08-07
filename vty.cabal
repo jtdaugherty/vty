@@ -85,6 +85,7 @@ library
                        Graphics.Vty.Input.Classify.Parse
                        Graphics.Vty.Input.Loop
                        Graphics.Vty.Input.Mouse
+                       Graphics.Vty.Input.Focus
                        Graphics.Vty.Input.Paste
                        Graphics.Vty.Input.Terminfo
                        Graphics.Vty.PictureToSpans

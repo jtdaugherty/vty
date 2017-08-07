@@ -10,6 +10,7 @@ where
 
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Mouse
+import Graphics.Vty.Input.Focus
 import Graphics.Vty.Input.Paste
 import Graphics.Vty.Input.Classify.Types
 
@@ -59,6 +60,7 @@ classify table =
             then parseBracketedPaste s
             else Prefix
         _ | isMouseEvent s   -> classifyMouseEvent s
+        _ | isFocusEvent s   -> classifyFocusEvent s
         c:cs | ord c >= 0xC2 -> classifyUtf8 c cs
         _                    -> standardClassifier s
 

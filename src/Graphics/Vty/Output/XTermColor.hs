@@ -8,6 +8,7 @@ where
 
 import Graphics.Vty.Output.Interface
 import Graphics.Vty.Input.Mouse
+import Graphics.Vty.Input.Focus
 import qualified Graphics.Vty.Output.TerminfoBased as TerminfoBased
 
 import Blaze.ByteString.Builder (writeToByteString)
@@ -38,12 +39,18 @@ reserveTerminal variant outFd = liftIO $ do
     t <- TerminfoBased.reserveTerminal variant' outFd
 
     mouseModeStatus <- newIORef False
+    focusModeStatus <- newIORef False
     pasteModeStatus <- newIORef False
 
     let xtermSetMode t' m newStatus = do
           curStatus <- getModeStatus t' m
           when (newStatus /= curStatus) $
               case m of
+                  Focus -> liftIO $ do
+                      case newStatus of
+                          True -> flushedPut requestFocusEvents
+                          False -> flushedPut disableFocusEvents
+                      writeIORef focusModeStatus newStatus
                   Mouse -> liftIO $ do
                       case newStatus of
                           True -> flushedPut requestMouseEvents
@@ -56,6 +63,7 @@ reserveTerminal variant outFd = liftIO $ do
                       writeIORef pasteModeStatus newStatus
 
         xtermGetMode Mouse = liftIO $ readIORef mouseModeStatus
+        xtermGetMode Focus = liftIO $ readIORef focusModeStatus
         xtermGetMode BracketedPaste = liftIO $ readIORef pasteModeStatus
 
     let t' = t
@@ -64,6 +72,7 @@ reserveTerminal variant outFd = liftIO $ do
                  when (not utf8a) $ liftIO $ flushedPut setDefaultCharSet
                  setMode t' BracketedPaste False
                  setMode t' Mouse False
+                 setMode t' Focus False
                  releaseTerminal t
              , mkDisplayContext = \tActual r -> do
                 dc <- mkDisplayContext t tActual r

@@ -56,6 +56,10 @@ data Event
     -- input (which is probably bad, so beware!) Note that the data is
     -- provided in raw form and you'll have to decode (e.g. as UTF-8) if
     -- that's what your application expects.
+    | EvLostFocus
+    -- ^ The terminal running the application lost input focus.
+    | EvGainedFocus
+    -- ^ The terminal running the application gained input focus.
     deriving (Eq,Show,Read,Ord,Generic)
 
 type ClassifyMap = [(String,Event)]
