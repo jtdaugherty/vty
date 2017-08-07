@@ -33,11 +33,11 @@ import Data.Bits ((.&.))
 -- | These sequences set xterm-based terminals to send mouse event
 -- sequences.
 requestMouseEvents :: String
-requestMouseEvents = "\ESC[?1000h\ESC[?1002h\ESC[?1006h\ESC[?1005h"
+requestMouseEvents = "\ESC[?1000h\ESC[?1002h\ESC[?1006h"
 
 -- | These sequences disable mouse events.
 disableMouseEvents :: String
-disableMouseEvents = "\ESC[?1000l\ESC[?1002l\ESC[?1006l\ESC[?1005l"
+disableMouseEvents = "\ESC[?1000l\ESC[?1002l\ESC[?1006l"
 
 -- | Does the specified string begin with a mouse event?
 isMouseEvent :: String -> Bool
