@@ -1,3 +1,15 @@
+5.17
+API changes:
+ - Add support for terminal focus events. This change adds a new mode
+   usable with setMode, Focus, that requests that the terminal send
+   events on focus lose/gain. This change also adds two new Event
+   constructors, EvLostFocus and EvGainedFocus.
+ - No longer enable UTF8 mouse event encoding. This encoding was not
+   working properly with Terminal.app, and using the other modes (SGR,
+   etc.) work.
+ - Graphics.Vty.Attributes: escape backticks in Haddock comment (fixes
+   #131)
+
 5.16
 API changes:
   - Added support for mouse wheel events while in mouse mode. The Button
