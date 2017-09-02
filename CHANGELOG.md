@@ -1,3 +1,7 @@
+5.17.1
+ - withStyle now ignores zero arguments, leaving attribute styles
+   untouched if the input style is the null style
+
 5.17
 API changes:
  - Add support for terminal focus events. This change adds a new mode
