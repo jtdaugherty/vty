@@ -200,6 +200,7 @@ withBackColor attr c = attr { attrBackColor = SetTo c }
 
 -- | Add the given style attribute
 withStyle :: Attr -> Style -> Attr
+withStyle attr 0 = attr
 withStyle attr styleFlag = attr { attrStyle = SetTo $ styleMask attr .|. styleFlag }
 
 -- | Sets the style, background color and foreground color to the
