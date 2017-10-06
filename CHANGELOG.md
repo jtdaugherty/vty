@@ -1,3 +1,9 @@
+5.18
+API changes:
+ - Added support for hyperlinking attributes (thanks Getty Ritter). This
+   change adds a new Attr field for containing the hyperlink to apply,
+   as per https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
+
 5.17.1
  - withStyle now ignores zero arguments, leaving attribute styles
    untouched if the input style is the null style
