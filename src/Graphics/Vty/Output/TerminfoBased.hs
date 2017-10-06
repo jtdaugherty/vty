@@ -235,7 +235,9 @@ terminfoDisplayContext tActual terminfoCaps r = return dc
                 Nothing -> error "this terminal does not support hide cursor"
                 Just c -> writeCapExpr c []
             , writeSetAttr = terminfoWriteSetAttr dc terminfoCaps
-            , writeDefaultAttr = writeCapExpr (setDefaultAttr terminfoCaps) []
+            , writeDefaultAttr =
+                writeCapExpr (setDefaultAttr terminfoCaps) [] `mappend`
+                writeURLEscapes EndLink
             , writeRowEnd = writeCapExpr (clearEol terminfoCaps) []
             , inlineHack = return ()
             }
