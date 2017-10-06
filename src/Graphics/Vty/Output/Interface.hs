@@ -163,7 +163,7 @@ outputPicture dc pic = liftIO $ do
     let manipCursor = supportsCursorVisibility (contextDevice dc)
         r = contextRegion dc
         ops = displayOpsForPic pic r
-        initialAttr = FixedAttr defaultStyleMask Nothing Nothing
+        initialAttr = FixedAttr defaultStyleMask Nothing Nothing Nothing
         -- Diff the previous output against the requested output.
         -- Differences are currently on a per-row basis.
         diffs :: [Bool] = case prevOutputOps as of

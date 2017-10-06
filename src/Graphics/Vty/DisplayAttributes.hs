@@ -6,6 +6,9 @@ module Graphics.Vty.DisplayAttributes where
 import Graphics.Vty.Attributes
 
 import Data.Bits ((.&.))
+import Data.ByteString (ByteString)
+import Data.Text (Text)
+import Data.Text.Encoding (encodeUtf8)
 
 -- | Given the previously applied display attributes as a FixedAttr and
 -- the current display attributes as an Attr produces a FixedAttr that
@@ -17,6 +20,7 @@ fixDisplayAttr fattr attr
     = FixedAttr (fixStyle (fixedStyle fattr)     (attrStyle attr))
                 (fixColor (fixedForeColor fattr) (attrForeColor attr))
                 (fixColor (fixedBackColor fattr) (attrBackColor attr))
+                (fixURL   (fixedURL fattr)       (attrURL attr))
     where
         fixStyle _s Default           = defaultStyleMask
         fixStyle s KeepCurrent        = s
@@ -24,6 +28,9 @@ fixDisplayAttr fattr attr
         fixColor _c Default           = Nothing
         fixColor c KeepCurrent        = c
         fixColor _c (SetTo c)         = Just c
+        fixURL c KeepCurrent          = c
+        fixURL _c (SetTo n)           = Just n
+        fixURL _c Default             = Nothing
 
 -- | difference between two display attributes. Used in the calculation
 -- of the operations required to go from one display attribute to the
@@ -36,16 +43,18 @@ data DisplayAttrDiff = DisplayAttrDiff
     { styleDiffs    :: [StyleStateChange]
     , foreColorDiff :: DisplayColorDiff
     , backColorDiff :: DisplayColorDiff
+    , urlDiff       :: URLDiff
     }
     deriving (Show)
 
 instance Monoid DisplayAttrDiff where
-    mempty = DisplayAttrDiff [] NoColorChange NoColorChange
+    mempty = DisplayAttrDiff [] NoColorChange NoColorChange NoLinkChange
     mappend d0 d1 =
         let ds  = simplifyStyleDiffs (styleDiffs d0)    (styleDiffs d1)
             fcd = simplifyColorDiffs (foreColorDiff d0) (foreColorDiff d1)
             bcd = simplifyColorDiffs (backColorDiff d0) (backColorDiff d1)
-        in DisplayAttrDiff ds fcd bcd
+            ud  = simplifyUrlDiffs (urlDiff d0) (urlDiff d1)
+        in DisplayAttrDiff ds fcd bcd ud
 
 -- | Used in the computation of a final style attribute change.
 simplifyStyleDiffs :: [StyleStateChange] -> [StyleStateChange] -> [StyleStateChange]
@@ -57,6 +66,12 @@ simplifyColorDiffs :: DisplayColorDiff -> DisplayColorDiff -> DisplayColorDiff
 simplifyColorDiffs _cd             ColorToDefault = ColorToDefault
 simplifyColorDiffs cd              NoColorChange  = cd
 simplifyColorDiffs _cd             (SetColor !c)  = SetColor c
+
+-- | Consider two URL changes, which are mostly going to be the latter
+-- unless the latter specifies no change.
+simplifyUrlDiffs :: URLDiff -> URLDiff -> URLDiff
+simplifyUrlDiffs ud NoLinkChange = ud
+simplifyUrlDiffs _ ud = ud
 
 -- | Difference between two display color attribute changes.
 data DisplayColorDiff
@@ -82,6 +97,13 @@ data StyleStateChange
     | RemoveBold
     deriving (Show, Eq)
 
+-- Setting and unsetting hyperlinks
+data URLDiff
+    = LinkTo !ByteString
+    | NoLinkChange
+    | EndLink
+    deriving (Show, Eq)
+
 -- | Determines the diff between two display&color attributes. This diff
 -- determines the operations that actually get output to the terminal.
 displayAttrDiffs :: FixedAttr -> FixedAttr -> DisplayAttrDiff
@@ -89,7 +111,13 @@ displayAttrDiffs attr attr' = DisplayAttrDiff
     { styleDiffs    = diffStyles (fixedStyle attr)      (fixedStyle attr')
     , foreColorDiff = diffColor  (fixedForeColor attr) (fixedForeColor attr')
     , backColorDiff = diffColor  (fixedBackColor attr) (fixedBackColor attr')
+    , urlDiff       = diffURL    (fixedURL attr)       (fixedURL attr')
     }
+
+diffURL :: Maybe Text -> Maybe Text -> URLDiff
+diffURL Nothing Nothing = NoLinkChange
+diffURL (Just _) Nothing = EndLink
+diffURL _ (Just url) = LinkTo (encodeUtf8 url)
 
 diffColor :: Maybe Color -> Maybe Color -> DisplayColorDiff
 diffColor Nothing  (Just c') = SetColor c'

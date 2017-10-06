@@ -94,7 +94,7 @@ putAttrChange out c = liftIO $ do
     fattr <- case mfattr of
                 Nothing -> do
                     liftIO $ outputByteBuffer out $ writeToByteString $ writeDefaultAttr dc
-                    return $ FixedAttr defaultStyleMask Nothing Nothing
+                    return $ FixedAttr defaultStyleMask Nothing Nothing Nothing
                 Just v -> return v
     let attr = execState c currentAttr
         attr' = limitAttrForDisplay out attr
