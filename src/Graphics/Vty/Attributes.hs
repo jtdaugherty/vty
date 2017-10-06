@@ -210,7 +210,13 @@ withStyle :: Attr -> Style -> Attr
 withStyle attr 0 = attr
 withStyle attr styleFlag = attr { attrStyle = SetTo $ styleMask attr .|. styleFlag }
 
--- | Add a hyperlinked URL
+-- | Add a hyperlinked URL using the proposed [escape sequences for
+-- hyperlinked
+-- URLs](https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda).
+-- These escape sequences are comparatively new and aren't widely
+-- supported in terminal emulators yet, but most terminal emulators
+-- that don't know about these sequences will ignore these
+-- sequences, and therefore this should fall back sensibly.
 withURL :: Attr -> Text -> Attr
 withURL attr url = attr { attrURL = SetTo url }
 
