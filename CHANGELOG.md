@@ -1,3 +1,7 @@
+5.18.1
+Bug fixes:
+ - Reset the hyperlink state on line endings to avoid run-on hyperlinks
+
 5.18
 API changes:
  - Added support for hyperlinking attributes (thanks Getty Ritter). This
