@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -D_XOPEN_SOURCE=500 -fno-warn-warnings-deprecations #-}
 {-# CFILES gwinsz.c #-}
 
@@ -12,6 +13,7 @@ module Graphics.Vty.Output.TerminfoBased
 where
 
 import Control.Monad (when)
+import qualified Data.ByteString as BS
 import Data.ByteString.Internal (toForeignPtr)
 import Data.Terminfo.Parse
 import Data.Terminfo.Eval
@@ -21,11 +23,12 @@ import Graphics.Vty.Image (DisplayRegion)
 import Graphics.Vty.DisplayAttributes
 import Graphics.Vty.Output.Interface
 
-import Blaze.ByteString.Builder (Write, writeToByteString)
+import Blaze.ByteString.Builder (Write, writeToByteString, writeStorable)
 
 import Control.Monad.Trans
 
 import Data.Bits ((.&.))
+import Data.Foldable (foldMap)
 import Data.IORef
 import Data.Maybe (isJust, isNothing, fromJust)
 import Data.Word
@@ -237,6 +240,20 @@ terminfoDisplayContext tActual terminfoCaps r = return dc
             , inlineHack = return ()
             }
 
+-- | Write the escape sequences that are used in some terminals to
+-- include embedded hyperlinks. As of yet, this information isn't
+-- included in termcap or terminfo, so this writes them directly
+-- instead of looking up the appropriate capabilities.
+writeURLEscapes :: URLDiff -> Write
+writeURLEscapes (LinkTo url) =
+    foldMap writeStorable (BS.unpack "\x1b]8;;") `mappend`
+    foldMap writeStorable (BS.unpack url) `mappend`
+    writeStorable (0x07 :: Word8)
+writeURLEscapes EndLink =
+    foldMap writeStorable (BS.unpack "\x1b]8;;\a")
+writeURLEscapes NoLinkChange =
+    mempty
+
 -- | Portably setting the display attributes is a giant pain in the ass.
 --
 -- If the terminal supports the sgr capability (which sets the on/off
@@ -275,7 +292,7 @@ terminfoDisplayContext tActual terminfoCaps r = return dc
 -- bytes.
 terminfoWriteSetAttr :: DisplayContext -> TerminfoCaps -> FixedAttr -> Attr -> DisplayAttrDiff -> Write
 terminfoWriteSetAttr dc terminfoCaps prevAttr reqAttr diffs = do
-    case (foreColorDiff diffs == ColorToDefault) || (backColorDiff diffs == ColorToDefault) of
+    urlAttrs `mappend` case (foreColorDiff diffs == ColorToDefault) || (backColorDiff diffs == ColorToDefault) of
         -- The only way to reset either color, portably, to the default
         -- is to use either the set state capability or the set default
         -- capability.
@@ -324,6 +341,7 @@ terminfoWriteSetAttr dc terminfoCaps prevAttr reqAttr diffs = do
                                                (sgrArgsForState state)
                                   `mappend` setColors
     where
+        urlAttrs = writeURLEscapes (urlDiff diffs)
         colorMap = case useAltColorMap terminfoCaps of
                         False -> ansiColorIndex
                         True -> altColorIndex

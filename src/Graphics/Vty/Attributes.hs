@@ -50,6 +50,9 @@ module Graphics.Vty.Attributes
   , withForeColor
   , withBackColor
 
+  -- * Setting hyperlinks
+  , withURL
+
   -- * Colors
   , module Graphics.Vty.Attributes.Color
   , module Graphics.Vty.Attributes.Color240
@@ -57,6 +60,7 @@ module Graphics.Vty.Attributes
 where
 
 import Data.Bits
+import Data.Text (Text)
 import Data.Word
 
 import Graphics.Vty.Attributes.Color
@@ -73,6 +77,7 @@ data Attr = Attr
     { attrStyle :: !(MaybeDefault Style)
     , attrForeColor :: !(MaybeDefault Color)
     , attrBackColor :: !(MaybeDefault Color)
+    , attrURL :: !(MaybeDefault Text)
     } deriving ( Eq, Show, Read )
 
 -- This could be encoded into a single 32 bit word. The 32 bit word is
@@ -107,11 +112,12 @@ data Attr = Attr
 --  Then the background color encoded into 8 bits.
 
 instance Monoid Attr where
-    mempty = Attr mempty mempty mempty
+    mempty = Attr mempty mempty mempty mempty
     mappend attr0 attr1 =
         Attr ( attrStyle attr0     `mappend` attrStyle attr1 )
              ( attrForeColor attr0 `mappend` attrForeColor attr1 )
              ( attrBackColor attr0 `mappend` attrBackColor attr1 )
+             ( attrURL attr0       `mappend` attrURL attr1 )
 
 -- | Specifies the display attributes such that the final style and
 -- color values do not depend on the previously applied display
@@ -121,6 +127,7 @@ data FixedAttr = FixedAttr
     { fixedStyle :: !Style
     , fixedForeColor :: !(Maybe Color)
     , fixedBackColor :: !(Maybe Color)
+    , fixedURL       :: !(Maybe Text)
     } deriving ( Eq, Show )
 
 -- | The style and color attributes can either be the terminal defaults.
@@ -203,11 +210,21 @@ withStyle :: Attr -> Style -> Attr
 withStyle attr 0 = attr
 withStyle attr styleFlag = attr { attrStyle = SetTo $ styleMask attr .|. styleFlag }
 
+-- | Add a hyperlinked URL using the proposed [escape sequences for
+-- hyperlinked
+-- URLs](https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda).
+-- These escape sequences are comparatively new and aren't widely
+-- supported in terminal emulators yet, but most terminal emulators
+-- that don't know about these sequences will ignore these
+-- sequences, and therefore this should fall back sensibly.
+withURL :: Attr -> Text -> Attr
+withURL attr url = attr { attrURL = SetTo url }
+
 -- | Sets the style, background color and foreground color to the
 -- default values for the terminal. There is no easy way to determine
 -- what the default background and foreground colors are.
 defAttr :: Attr
-defAttr = Attr Default Default Default
+defAttr = Attr Default Default Default Default
 
 -- | Keeps the style, background color and foreground color that was
 -- previously set. Used to override some part of the previous style.
@@ -217,4 +234,4 @@ defAttr = Attr Default Default Default
 -- Would be the currently applied style (be it underline, bold, etc) but
 -- with the foreground color set to brightMagenta.
 currentAttr :: Attr
-currentAttr = Attr KeepCurrent KeepCurrent KeepCurrent
+currentAttr = Attr KeepCurrent KeepCurrent KeepCurrent KeepCurrent
