@@ -93,6 +93,7 @@ library
                        Graphics.Vty.Output.Mock
                        Graphics.Vty.Output.Interface
                        Graphics.Vty.Output.XTermColor
+                       Graphics.Vty.Output.St
                        Graphics.Vty.Output.TerminfoBased
 
   other-modules:       Graphics.Vty.Attributes.Color

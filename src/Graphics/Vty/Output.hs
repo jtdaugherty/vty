@@ -34,6 +34,7 @@ import Graphics.Vty.Config
 import Graphics.Vty.Image (regionWidth, regionHeight)
 import Graphics.Vty.Output.Interface
 import Graphics.Vty.Output.XTermColor as XTermColor
+import Graphics.Vty.Output.St as St
 import Graphics.Vty.Output.TerminfoBased as TerminfoBased
 
 import Blaze.ByteString.Builder (writeToByteString)
@@ -56,13 +57,15 @@ import Data.Monoid ((<>))
 -- Selection of a terminal is done as follows:
 --
 --      * If TERM contains "xterm" or "screen", use XTermColor.
+--      * If TERM starts is "st" or starts with "st-", use St.
 --      * otherwise use the TerminfoBased driver.
 outputForConfig :: Config -> IO Output
 outputForConfig Config{ outputFd = Just fd, termName = Just termName, .. } = do
     t <- if "xterm" `isPrefixOf` termName || "screen" `isPrefixOf` termName
-        then XTermColor.reserveTerminal termName fd
-        -- Not an xterm-like terminal. try for generic terminfo.
-        else TerminfoBased.reserveTerminal termName fd
+         then XTermColor.reserveTerminal termName fd
+         else if termName == "st" || "st-" `isPrefixOf` termName
+              then St.reserveTerminal termName fd
+              else TerminfoBased.reserveTerminal termName fd
 
     case mouseMode of
         Just s -> setMode t Mouse s
