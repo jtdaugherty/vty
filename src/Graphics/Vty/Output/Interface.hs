@@ -52,7 +52,7 @@ data Mode = Mouse
           -- https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda).
           -- Note that this may not work gracefully in all terminal
           -- emulators so be sure to test this mode with the terminals
-          -- you intend to support.
+          -- you intend to support. It is off by default.
           deriving (Eq, Read, Show)
 
 -- | The Vty terminal output interface.
