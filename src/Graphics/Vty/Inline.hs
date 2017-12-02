@@ -48,22 +48,33 @@ import Data.IORef
 
 import System.IO
 
-type InlineM v = State Attr v
+type InlineM v = State InlineState v
+
+data InlineState =
+    InlineState { inlineAttr :: Attr
+                , inlineUrlsEnabled :: Bool
+                }
 
 -- | Set the background color to the provided 'Color'.
 backColor :: Color -> InlineM ()
-backColor c = modify $ flip mappend ( currentAttr `withBackColor` c )
+backColor c = modify $ \s ->
+    s { inlineAttr = inlineAttr s `mappend` (currentAttr `withBackColor` c)
+      }
 
 -- | Set the foreground color to the provided 'Color'.
 foreColor :: Color -> InlineM ()
-foreColor c = modify $ flip mappend ( currentAttr `withForeColor` c )
+foreColor c = modify $ \s ->
+    s { inlineAttr = inlineAttr s `mappend` (currentAttr `withForeColor` c)
+      }
 
 -- | Attempt to change the 'Style' of the following text..
 --
 -- If the terminal does not support the style change then no error is
 -- produced. The style can still be removed.
 applyStyle :: Style -> InlineM ()
-applyStyle s = modify $ flip mappend ( currentAttr `withStyle` s )
+applyStyle st = modify $ \s ->
+    s { inlineAttr = inlineAttr s `mappend` (currentAttr `withStyle` st)
+      }
 
 -- | Attempt to remove the specified 'Style' from the display of the
 -- following text.
@@ -71,16 +82,18 @@ applyStyle s = modify $ flip mappend ( currentAttr `withStyle` s )
 -- This will fail if 'applyStyle' for the given style has not been
 -- previously called.
 removeStyle :: Style -> InlineM ()
-removeStyle sMask = modify $ \attr ->
-    let style' = case attrStyle attr of
-                    Default -> error $ "Graphics.Vty.Inline: Cannot removeStyle if applyStyle never used."
-                    KeepCurrent -> error $ "Graphics.Vty.Inline: Cannot removeStyle if applyStyle never used."
-                    SetTo s -> s .&. complement sMask
-    in attr { attrStyle = SetTo style' }
+removeStyle sMask = modify $ \s ->
+    s { inlineAttr =
+          let style' = case attrStyle (inlineAttr s) of
+                Default -> error $ "Graphics.Vty.Inline: Cannot removeStyle if applyStyle never used."
+                KeepCurrent -> error $ "Graphics.Vty.Inline: Cannot removeStyle if applyStyle never used."
+                SetTo st -> st .&. complement sMask
+          in (inlineAttr s) { attrStyle = SetTo style' }
+      }
 
 -- | Reset the display attributes.
 defaultAll :: InlineM ()
-defaultAll = put defAttr
+defaultAll = modify $ \s -> s { inlineAttr = defAttr }
 
 -- | Apply the provided display attribute changes to the given terminal
 -- output device.
@@ -93,14 +106,14 @@ putAttrChange out c = liftIO $ do
     mfattr <- prevFattr <$> readIORef (assumedStateRef out)
     fattr <- case mfattr of
                 Nothing -> do
-                    liftIO $ outputByteBuffer out $ writeToByteString $ writeDefaultAttr dc
+                    liftIO $ outputByteBuffer out $ writeToByteString $ writeDefaultAttr dc False
                     return $ FixedAttr defaultStyleMask Nothing Nothing Nothing
                 Just v -> return v
-    let attr = execState c currentAttr
+    let InlineState attr urlsEnabled = execState c (InlineState currentAttr False)
         attr' = limitAttrForDisplay out attr
         fattr' = fixDisplayAttr fattr attr'
         diffs = displayAttrDiffs fattr fattr'
-    outputByteBuffer out $ writeToByteString $ writeSetAttr dc fattr attr' diffs
+    outputByteBuffer out $ writeToByteString $ writeSetAttr dc urlsEnabled fattr attr' diffs
     modifyIORef (assumedStateRef out) $ \s -> s { prevFattr = Just fattr' }
     inlineHack dc
 

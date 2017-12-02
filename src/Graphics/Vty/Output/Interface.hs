@@ -47,6 +47,12 @@ data Mode = Mouse
           | Focus
           -- ^ Focus-in/focus-out events (whether the terminal is
           -- configured to provide events on focus change)
+          | Hyperlink
+          -- ^ Hyperlink mode via the 'withURL' attribute modifier (see
+          -- https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda).
+          -- Note that this may not work gracefully in all terminal
+          -- emulators so be sure to test this mode with the terminals
+          -- you intend to support.
           deriving (Eq, Read, Show)
 
 -- | The Vty terminal output interface.
@@ -133,9 +139,9 @@ data DisplayContext = DisplayContext
     -- to support this the currently applied display attributes are
     -- required. In addition it may be possible to optimize the state
     -- changes based off the currently applied display attributes.
-    , writeSetAttr :: FixedAttr -> Attr -> DisplayAttrDiff -> Write
+    , writeSetAttr :: Bool -> FixedAttr -> Attr -> DisplayAttrDiff -> Write
     -- | Reset the display attributes to the default display attributes.
-    , writeDefaultAttr :: Write
+    , writeDefaultAttr :: Bool -> Write
     , writeRowEnd :: Write
     -- | See `Graphics.Vty.Output.XTermColor.inlineHack`
     , inlineHack :: IO ()
@@ -159,6 +165,7 @@ writeUtf8Text = writeByteString
 --      5. The cursor is then shown and positioned or kept hidden.
 outputPicture :: MonadIO m => DisplayContext -> Picture -> m ()
 outputPicture dc pic = liftIO $ do
+    urlsEnabled <- getModeStatus (contextDevice dc) Hyperlink
     as <- readIORef (assumedStateRef $ contextDevice dc)
     let manipCursor = supportsCursorVisibility (contextDevice dc)
         r = contextRegion dc
@@ -174,7 +181,7 @@ outputPicture dc pic = liftIO $ do
                                   (Vector.toList ops)
         -- build the Write corresponding to the output image
         out = (if manipCursor then writeHideCursor dc else mempty)
-              `mappend` writeOutputOps dc initialAttr diffs ops
+              `mappend` writeOutputOps urlsEnabled dc initialAttr diffs ops
               `mappend`
                 (let (w,h) = contextRegion dc
                      clampX = max 0 . min (w-1)
@@ -197,15 +204,15 @@ outputPicture dc pic = liftIO $ do
     let as' = as { prevOutputOps = Just ops }
     writeIORef (assumedStateRef $ contextDevice dc) as'
 
-writeOutputOps :: DisplayContext -> FixedAttr -> [Bool] -> DisplayOps -> Write
-writeOutputOps dc initialAttr diffs ops =
+writeOutputOps :: Bool -> DisplayContext -> FixedAttr -> [Bool] -> DisplayOps -> Write
+writeOutputOps urlsEnabled dc initialAttr diffs ops =
     let (_, out, _) = Vector.foldl' writeOutputOps'
                                        (0, mempty, diffs)
                                        ops
     in out
     where
         writeOutputOps' (y, out, True : diffs') spanOps
-            = let spanOut = writeSpanOps dc y initialAttr spanOps
+            = let spanOut = writeSpanOps urlsEnabled dc y initialAttr spanOps
                   out' = out `mappend` spanOut
               in (y+1, out', diffs')
         writeOutputOps' (y, out, False : diffs') _spanOps
@@ -213,27 +220,27 @@ writeOutputOps dc initialAttr diffs ops =
         writeOutputOps' (_y, _out, []) _spanOps
             = error "vty - output spans without a corresponding diff."
 
-writeSpanOps :: DisplayContext -> Int -> FixedAttr -> SpanOps -> Write
-writeSpanOps dc y initialAttr spanOps =
+writeSpanOps :: Bool -> DisplayContext -> Int -> FixedAttr -> SpanOps -> Write
+writeSpanOps urlsEnabled dc y initialAttr spanOps =
     -- The first operation is to set the cursor to the start of the row
-    let start = writeMoveCursor dc 0 y `mappend` writeDefaultAttr dc
+    let start = writeMoveCursor dc 0 y `mappend` writeDefaultAttr dc urlsEnabled
     -- then the span ops are serialized in the order specified
-    in fst $ Vector.foldl' (\(out, fattr) op -> case writeSpanOp dc op fattr of
+    in fst $ Vector.foldl' (\(out, fattr) op -> case writeSpanOp urlsEnabled dc op fattr of
                               (opOut, fattr') -> (out `mappend` opOut, fattr')
                            )
                            (start, initialAttr)
                            spanOps
 
-writeSpanOp :: DisplayContext -> SpanOp -> FixedAttr -> (Write, FixedAttr)
-writeSpanOp dc (TextSpan attr _ _ str) fattr =
+writeSpanOp :: Bool -> DisplayContext -> SpanOp -> FixedAttr -> (Write, FixedAttr)
+writeSpanOp urlsEnabled dc (TextSpan attr _ _ str) fattr =
     let attr' = limitAttrForDisplay (contextDevice dc) attr
         fattr' = fixDisplayAttr fattr attr'
         diffs = displayAttrDiffs fattr fattr'
-        out =  writeSetAttr dc fattr attr' diffs
+        out =  writeSetAttr dc urlsEnabled fattr attr' diffs
                `mappend` writeUtf8Text (T.encodeUtf8 $ TL.toStrict str)
     in (out, fattr')
-writeSpanOp _dc (Skip _) _fattr = error "writeSpanOp for Skip"
-writeSpanOp dc (RowEnd _) fattr = (writeDefaultAttr dc `mappend` writeRowEnd dc, fattr)
+writeSpanOp _ _ (Skip _) _fattr = error "writeSpanOp for Skip"
+writeSpanOp urlsEnabled dc (RowEnd _) fattr = (writeDefaultAttr dc urlsEnabled `mappend` writeRowEnd dc, fattr)
 
 -- | The cursor position is given in X,Y character offsets. Due to
 -- multi-column characters this needs to be translated to column, row

@@ -61,10 +61,12 @@ reserveTerminal variant outFd = liftIO $ do
                           True -> flushedPut enableBracketedPastes
                           False -> flushedPut disableBracketedPastes
                       writeIORef pasteModeStatus newStatus
+                  Hyperlink -> setMode t Hyperlink newStatus
 
         xtermGetMode Mouse = liftIO $ readIORef mouseModeStatus
         xtermGetMode Focus = liftIO $ readIORef focusModeStatus
         xtermGetMode BracketedPaste = liftIO $ readIORef pasteModeStatus
+        xtermGetMode Hyperlink = getModeStatus t Hyperlink
 
     let t' = t
              { terminalID = terminalID t ++ " (xterm-color)"

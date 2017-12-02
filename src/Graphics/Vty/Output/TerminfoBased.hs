@@ -120,6 +120,25 @@ reserveTerminal termName outFd = liftIO $ do
                     Just setb -> setb
                     Nothing -> error $ "no back color support for terminal " ++ termName
                 Just setab -> setab
+
+    hyperlinkModeStatus <- newIORef False
+    newAssumedStateRef <- newIORef initialAssumedState
+
+    let terminfoSetMode m newStatus = do
+          curStatus <- terminfoModeStatus m
+          when (newStatus /= curStatus) $
+              case m of
+                  Hyperlink -> liftIO $ do
+                      writeIORef hyperlinkModeStatus newStatus
+                      writeIORef newAssumedStateRef initialAssumedState
+                  _ -> return ()
+        terminfoModeStatus m =
+            case m of
+                Hyperlink -> liftIO $ readIORef hyperlinkModeStatus
+                _ -> return False
+        terminfoModeSupported Hyperlink = True
+        terminfoModeSupported _ = False
+
     terminfoCaps <- pure TerminfoCaps
         <*> probeCap ti "smcup"
         <*> probeCap ti "rmcup"
@@ -135,7 +154,6 @@ reserveTerminal termName outFd = liftIO $ do
         <*> requireCap ti "el"
         <*> currentDisplayAttrCaps ti
         <*> probeCap ti "bel"
-    newAssumedStateRef <- newIORef initialAssumedState
     let t = Output
             { terminalID = termName
             , releaseTerminal = liftIO $ do
@@ -171,9 +189,9 @@ reserveTerminal termName outFd = liftIO $ do
                         Just v -> toEnum v
                     True -> 1
             , supportsCursorVisibility = isJust $ civis terminfoCaps
-            , supportsMode = const False
-            , setMode = const $ const $ return ()
-            , getModeStatus = const $ return False
+            , supportsMode = terminfoModeSupported
+            , setMode = terminfoSetMode
+            , getModeStatus = terminfoModeStatus
             , assumedStateRef = newAssumedStateRef
             -- I think fix would help assure tActual is the only
             -- reference. I was having issues tho.
@@ -235,9 +253,9 @@ terminfoDisplayContext tActual terminfoCaps r = return dc
                 Nothing -> error "this terminal does not support hide cursor"
                 Just c -> writeCapExpr c []
             , writeSetAttr = terminfoWriteSetAttr dc terminfoCaps
-            , writeDefaultAttr =
+            , writeDefaultAttr = \urlsEnabled ->
                 writeCapExpr (setDefaultAttr terminfoCaps) [] `mappend`
-                writeURLEscapes EndLink
+                (if urlsEnabled then writeURLEscapes EndLink else mempty)
             , writeRowEnd = writeCapExpr (clearEol terminfoCaps) []
             , inlineHack = return ()
             }
@@ -292,9 +310,9 @@ writeURLEscapes NoLinkChange =
 --
 -- Note that this optimizes for fewer state changes followed by fewer
 -- bytes.
-terminfoWriteSetAttr :: DisplayContext -> TerminfoCaps -> FixedAttr -> Attr -> DisplayAttrDiff -> Write
-terminfoWriteSetAttr dc terminfoCaps prevAttr reqAttr diffs = do
-    urlAttrs `mappend` case (foreColorDiff diffs == ColorToDefault) || (backColorDiff diffs == ColorToDefault) of
+terminfoWriteSetAttr :: DisplayContext -> TerminfoCaps -> Bool -> FixedAttr -> Attr -> DisplayAttrDiff -> Write
+terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs = do
+    urlAttrs urlsEnabled `mappend` case (foreColorDiff diffs == ColorToDefault) || (backColorDiff diffs == ColorToDefault) of
         -- The only way to reset either color, portably, to the default
         -- is to use either the set state capability or the set default
         -- capability.
@@ -303,7 +321,7 @@ terminfoWriteSetAttr dc terminfoCaps prevAttr reqAttr diffs = do
                                      (fixedStyle attr )
                                      (styleToApplySeq $ fixedStyle attr) of
                 -- only way to reset a color to the defaults
-                EnterExitSeq caps -> writeDefaultAttr dc
+                EnterExitSeq caps -> writeDefaultAttr dc urlsEnabled
                                      `mappend`
                                      foldMap (\cap -> writeCapExpr cap []) caps
                                      `mappend`
@@ -343,7 +361,8 @@ terminfoWriteSetAttr dc terminfoCaps prevAttr reqAttr diffs = do
                                                (sgrArgsForState state)
                                   `mappend` setColors
     where
-        urlAttrs = writeURLEscapes (urlDiff diffs)
+        urlAttrs True = writeURLEscapes (urlDiff diffs)
+        urlAttrs False = mempty
         colorMap = case useAltColorMap terminfoCaps of
                         False -> ansiColorIndex
                         True -> altColorIndex

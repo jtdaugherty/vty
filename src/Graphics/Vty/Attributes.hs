@@ -215,8 +215,12 @@ withStyle attr styleFlag = attr { attrStyle = SetTo $ styleMask attr .|. styleFl
 -- URLs](https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda).
 -- These escape sequences are comparatively new and aren't widely
 -- supported in terminal emulators yet, but most terminal emulators
--- that don't know about these sequences will ignore these
--- sequences, and therefore this should fall back sensibly.
+-- that don't know about these sequences will ignore these sequences,
+-- and therefore this should fall back sensibly. In some cases they
+-- won't and this will result in garbage, so this is why hyperlinking is
+-- disabled by default, in which case this combinator has no observable
+-- effect. To enable it, enable 'Hyperlink' mode on your Vty output
+-- interface.
 withURL :: Attr -> Text -> Attr
 withURL attr url = attr { attrURL = SetTo url }
 

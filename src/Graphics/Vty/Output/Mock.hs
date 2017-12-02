@@ -72,10 +72,10 @@ mockTerminal r = liftIO $ do
                 , writeHideCursor = writeWord8 $ toEnum $ fromEnum 'H'
                 -- An attr change is always visualized as the single
                 -- character 'A'
-                , writeSetAttr = \_fattr _diffs _attr -> writeWord8 $ toEnum $ fromEnum 'A'
+                , writeSetAttr = \_ _fattr _diffs _attr -> writeWord8 $ toEnum $ fromEnum 'A'
                 -- default attr is always visualized as the single
                 -- character 'D'
-                , writeDefaultAttr = writeWord8 $ toEnum $ fromEnum 'D'
+                , writeDefaultAttr = const $ writeWord8 $ toEnum $ fromEnum 'D'
                 -- row end is always visualized as the single character
                 -- 'E'
                 , writeRowEnd = writeWord8 $ toEnum $ fromEnum 'E'
