@@ -1,3 +1,11 @@
+5.19
+API changes:
+ - URL hyperlinking (via 'withURL') is now optional and disabled by
+   default due to poor support on some common terminals. A new 'Mode'
+   constructor, 'Hyperlink', has been added to enable this feature. To
+   change the hyperlinking mode, use 'setMode' on the 'outputIface' of a
+   Vty handle.
+
 5.18.1
 Bug fixes:
  - Reset the hyperlink state on line endings to avoid run-on hyperlinks
