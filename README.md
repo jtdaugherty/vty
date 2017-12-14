@@ -7,7 +7,7 @@ interface for doing terminal I/O. Vty is supported on GHC versions
 Install via `git` with:
 
 ```
-git clone git://github.com/coreyoconnor/vty.git
+git clone git://github.com/jtdaugherty/vty.git
 ```
 
 Install via `cabal` with:
