@@ -1,3 +1,7 @@
+5.19.1
+API changes:
+ * Cursor now provides an Eq instance (thanks Jaro Reinders)
+
 5.19
 API changes:
  - URL hyperlinking (via 'withURL') is now optional and disabled by
