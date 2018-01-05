@@ -85,6 +85,7 @@ data Cursor =
     | Cursor !Int !Int
     -- | Show the cursor at the given absolute terminal column and row
     | AbsoluteCursor !Int !Int
+    deriving Eq
 
 instance NFData Cursor where
     rnf c = c `seq` ()
