@@ -232,7 +232,7 @@ imageHeight CropBottom { outputHeight = h } = h
 imageHeight CropTop { outputHeight = h } = h
 imageHeight EmptyImage = 0
 
--- | Append in the Monoid instance is equivalent to <->.
+-- | Append in the Monoid instance is equivalent to '<->'.
 instance Monoid Image where
     mempty = EmptyImage
     mappend = vertJoin
