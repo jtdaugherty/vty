@@ -194,7 +194,7 @@ outputPicture dc pic = liftIO $ do
                         writeMoveCursor dc (clampX x) (clampY y)
                     Cursor x y           ->
                         let m = cursorOutputMap ops $ picCursor pic
-                            (ox, oy) = charToOutputPos m (x,y)
+                            (ox, oy) = charToOutputPos m (clampX x, clampY y)
                         in writeShowCursor dc `mappend`
                            writeMoveCursor dc (clampX ox) (clampY oy)
                 )
