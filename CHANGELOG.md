@@ -1,3 +1,8 @@
+5.19.2
+Bug fixes:
+ * outputPicture now clamps invalid cursor positions when Cursor is used
+   (fixes segfault reported in #140)
+
 5.19.1
 API changes:
  * Cursor now provides an Eq instance (thanks Jaro Reinders)
