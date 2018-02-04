@@ -1,5 +1,6 @@
 -- Copyright 2009-2010 Corey O'Connor
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP #-}
 
 module Graphics.Vty.DisplayAttributes where
 
@@ -7,6 +8,9 @@ import Graphics.Vty.Attributes
 
 import Data.Bits ((.&.))
 import Data.ByteString (ByteString)
+#if !(MIN_VERSION_base(4,11,0))
+import Data.Semigroup (Semigroup(..))
+#endif
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
 
@@ -47,14 +51,19 @@ data DisplayAttrDiff = DisplayAttrDiff
     }
     deriving (Show)
 
-instance Monoid DisplayAttrDiff where
-    mempty = DisplayAttrDiff [] NoColorChange NoColorChange NoLinkChange
-    mappend d0 d1 =
+instance Semigroup DisplayAttrDiff where
+    d0 <> d1 =
         let ds  = simplifyStyleDiffs (styleDiffs d0)    (styleDiffs d1)
             fcd = simplifyColorDiffs (foreColorDiff d0) (foreColorDiff d1)
             bcd = simplifyColorDiffs (backColorDiff d0) (backColorDiff d1)
             ud  = simplifyUrlDiffs (urlDiff d0) (urlDiff d1)
         in DisplayAttrDiff ds fcd bcd ud
+
+instance Monoid DisplayAttrDiff where
+    mempty = DisplayAttrDiff [] NoColorChange NoColorChange NoLinkChange
+#if !(MIN_VERSION_base(4,11,0))
+    mappend = (<>)
+#endif
 
 -- | Used in the computation of a final style attribute change.
 simplifyStyleDiffs :: [StyleStateChange] -> [StyleStateChange] -> [StyleStateChange]

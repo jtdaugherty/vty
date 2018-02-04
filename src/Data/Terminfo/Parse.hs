@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP #-}
 {-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -13,6 +14,9 @@ where
 import Control.Monad ( liftM )
 import Control.DeepSeq
 
+#if !(MIN_VERSION_base(4,11,0))
+import Data.Semigroup (Semigroup(..))
+#endif
 import Data.Word
 import qualified Data.Vector.Unboxed as Vector
 
@@ -329,11 +333,16 @@ data BuildResults = BuildResults
     , outParamOps :: !ParamOps
     }
 
-instance Monoid BuildResults where
-    mempty = BuildResults 0 [] []
-    v0 `mappend` v1
+instance Semigroup BuildResults where
+    v0 <> v1
         = BuildResults
         { outParamCount = (outParamCount v0) `max` (outParamCount v1)
-        , outCapOps = (outCapOps v0) `mappend` (outCapOps v1)
-        , outParamOps = (outParamOps v0) `mappend` (outParamOps v1)
+        , outCapOps = (outCapOps v0) <> (outCapOps v1)
+        , outParamOps = (outParamOps v0) <> (outParamOps v1)
         }
+
+instance Monoid BuildResults where
+    mempty = BuildResults 0 [] []
+#if !(MIN_VERSION_base(4,11,0))
+    mappend = (<>)
+#endif

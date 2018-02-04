@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
@@ -60,6 +61,9 @@ module Graphics.Vty.Attributes
 where
 
 import Data.Bits
+#if !(MIN_VERSION_base(4,11,0))
+import Data.Semigroup
+#endif
 import Data.Text (Text)
 import Data.Word
 
@@ -111,13 +115,18 @@ data Attr = Attr
 --  Then the foreground color encoded into 8 bits.
 --  Then the background color encoded into 8 bits.
 
+instance Semigroup Attr where
+    attr0 <> attr1 =
+        Attr ( attrStyle attr0     <> attrStyle attr1 )
+             ( attrForeColor attr0 <> attrForeColor attr1 )
+             ( attrBackColor attr0 <> attrBackColor attr1 )
+             ( attrURL attr0       <> attrURL attr1 )
+
 instance Monoid Attr where
     mempty = Attr mempty mempty mempty mempty
-    mappend attr0 attr1 =
-        Attr ( attrStyle attr0     `mappend` attrStyle attr1 )
-             ( attrForeColor attr0 `mappend` attrForeColor attr1 )
-             ( attrBackColor attr0 `mappend` attrBackColor attr1 )
-             ( attrURL attr0       `mappend` attrURL attr1 )
+#if !(MIN_VERSION_base(4,11,0))
+    mappend = (<>)
+#endif
 
 -- | Specifies the display attributes such that the final style and
 -- color values do not depend on the previously applied display
@@ -142,17 +151,22 @@ deriving instance Eq v => Eq (MaybeDefault v)
 deriving instance Eq v => Show (MaybeDefault v)
 deriving instance (Eq v, Show v, Read v) => Read (MaybeDefault v)
 
+instance Eq v => Semigroup (MaybeDefault v) where
+    Default     <> Default     = Default
+    Default     <> KeepCurrent = Default
+    Default     <> SetTo v     = SetTo v
+    KeepCurrent <> Default     = Default
+    KeepCurrent <> KeepCurrent = KeepCurrent
+    KeepCurrent <> SetTo v     = SetTo v
+    SetTo _v    <> Default     = Default
+    SetTo v     <> KeepCurrent = SetTo v
+    SetTo _     <> SetTo v     = SetTo v
+
 instance Eq v => Monoid ( MaybeDefault v ) where
     mempty = KeepCurrent
-    mappend Default Default = Default
-    mappend Default KeepCurrent = Default
-    mappend Default ( SetTo v ) = SetTo v
-    mappend KeepCurrent Default = Default
-    mappend KeepCurrent KeepCurrent = KeepCurrent
-    mappend KeepCurrent ( SetTo v ) = SetTo v
-    mappend ( SetTo _v ) Default = Default
-    mappend ( SetTo v ) KeepCurrent = SetTo v
-    mappend ( SetTo _ ) ( SetTo v ) = SetTo v
+#if !(MIN_VERSION_base(4,11,0))
+    mappend = (<>)
+#endif
 
 -- | Styles are represented as an 8 bit word. Each bit in the word is 1
 -- if the style attribute assigned to that bit should be applied and 0

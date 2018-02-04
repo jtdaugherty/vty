@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 -- | Vty provides interfaces for both terminal input and terminal
 -- output.
 --
@@ -50,7 +52,9 @@ import Graphics.Vty.Attributes
 import Control.Concurrent.STM
 
 import Data.IORef
-import Data.Monoid
+#if !(MIN_VERSION_base(4,11,0))
+import Data.Semigroup ((<>))
+#endif
 
 -- | A Vty value represents a handle to the Vty library that the
 -- application must create in order to use Vty.
