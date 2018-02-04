@@ -1,3 +1,8 @@
+5.20
+API changes:
+ - Split up Monoid instances into Monoid and Semigroup for newer GHCs
+   (thanks Ryan Scott)
+
 5.19.1
 API changes:
  * Cursor now provides an Eq instance (thanks Jaro Reinders)
