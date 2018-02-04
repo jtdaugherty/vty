@@ -61,6 +61,9 @@ library
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
 
+  if !impl(ghc >= 8.0)
+    build-depends:     semigroups >= 0.16
+
   exposed-modules:     Graphics.Vty
                        Graphics.Vty.Attributes
                        Graphics.Vty.Config

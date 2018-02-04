@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# OPTIONS_HADDOCK hide #-}
@@ -11,6 +12,9 @@ import GHC.Generics
 
 import Control.DeepSeq
 
+#if !(MIN_VERSION_base(4,11,0))
+import Data.Semigroup (Semigroup(..))
+#endif
 import qualified Data.Text.Lazy as TL
 
 -- | A display text is a Data.Text.Lazy
@@ -232,10 +236,16 @@ imageHeight CropBottom { outputHeight = h } = h
 imageHeight CropTop { outputHeight = h } = h
 imageHeight EmptyImage = 0
 
--- | Append in the Monoid instance is equivalent to '<->'.
+-- | Append in the 'Semigroup' instance is equivalent to '<->'.
+instance Semigroup Image where
+    (<>) = vertJoin
+
+-- | Append in the 'Monoid' instance is equivalent to '<->'.
 instance Monoid Image where
     mempty = EmptyImage
-    mappend = vertJoin
+#if !(MIN_VERSION_base(4,11,0))
+    mappend = (<>)
+#endif
 
 -- | combines two images side by side
 --

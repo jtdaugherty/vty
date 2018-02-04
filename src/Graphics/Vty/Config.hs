@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
@@ -75,7 +76,10 @@ import Control.Exception (catch, IOException, Exception(..), throwIO)
 import Control.Monad (liftM, guard, void)
 
 import qualified Data.ByteString as BS
-import Data.Monoid
+import Data.Monoid (Monoid(..))
+#if !(MIN_VERSION_base(4,11,0))
+import Data.Semigroup (Semigroup(..))
+#endif
 import Data.Typeable (Typeable)
 
 import Graphics.Vty.Input.Events
@@ -137,6 +141,20 @@ data Config = Config
 defaultConfig :: Config
 defaultConfig = mempty
 
+instance Semigroup Config where
+    c0 <> c1 = Config
+        -- latter config takes priority for everything but inputMap
+        { vmin          = vmin c1     <|> vmin c0
+        , vtime         = vtime c1    <|> vtime c0
+        , mouseMode     = mouseMode c1
+        , bracketedPasteMode = bracketedPasteMode c1
+        , debugLog      = debugLog c1 <|> debugLog c0
+        , inputMap      = inputMap c0 <>  inputMap c1
+        , inputFd      = inputFd c1 <|> inputFd c0
+        , outputFd     = outputFd c1 <|> outputFd c0
+        , termName      = termName c1 <|> termName c0
+        }
+
 instance Monoid Config where
     mempty = Config
         { vmin         = Nothing
@@ -149,18 +167,9 @@ instance Monoid Config where
         , outputFd    = Nothing
         , termName     = Nothing
         }
-    mappend c0 c1 = Config
-        -- latter config takes priority for everything but inputMap
-        { vmin          = vmin c1     <|> vmin c0
-        , vtime         = vtime c1    <|> vtime c0
-        , mouseMode     = mouseMode c1
-        , bracketedPasteMode = bracketedPasteMode c1
-        , debugLog      = debugLog c1 <|> debugLog c0
-        , inputMap      = inputMap c0 <>  inputMap c1
-        , inputFd      = inputFd c1 <|> inputFd c0
-        , outputFd     = outputFd c1 <|> outputFd c0
-        , termName      = termName c1 <|> termName c0
-        }
+#if !(MIN_VERSION_base(4,11,0))
+    mappend = (<>)
+#endif
 
 -- | Load a configuration from @'getAppUserDataDirectory'/config@ and
 -- @$VTY_CONFIG_FILE@.
