@@ -60,6 +60,11 @@ cabal install vty
 * Supports bracketed paste mode as described at
   http://cirw.in/blog/bracketed-paste
 
+# Development Notes
+
+Vty uses threads internally, so programs made with Vty need to be
+compiled with the threaded runtime using the GHC `-threaded` option.
+
 # Platform Support
 
 ## Posix Terminals
