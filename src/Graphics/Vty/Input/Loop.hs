@@ -24,7 +24,7 @@ import Control.Applicative
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Exception (mask, try, SomeException)
-import Lens.Micro
+import Lens.Micro hiding ((<>~))
 import Lens.Micro.Mtl
 import Lens.Micro.TH
 import Control.Monad (when, mzero, forM_)
