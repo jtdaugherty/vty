@@ -1,3 +1,8 @@
+5.21
+ - Picture and Background now provide Eq instances (thanks Jaro Reinders)
+ - #145: vty builds with microlens 0.4.9 (thanks Daniel Wagner)
+ - #142: note requirement of threaded RTS
+
 5.20
 API changes:
  - Split up Monoid instances into Monoid and Semigroup for newer GHCs
