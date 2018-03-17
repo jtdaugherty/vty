@@ -31,7 +31,7 @@ data Picture = Picture
     , picBackground :: Background
     -- ^ The picture's background to be displayed in locations with no
     -- Image data.
-    }
+    } deriving Eq
 
 instance Show Picture where
     show (Picture _ layers _ ) = "Picture ?? " ++ show layers ++ " ??"
@@ -109,6 +109,7 @@ data Background
      --
      -- * End of line if there are no remaining non-skip ops.
     | ClearBackground
+    deriving Eq
 
 instance NFData Background where
     rnf (Background c a) = c `seq` a `seq` ()
