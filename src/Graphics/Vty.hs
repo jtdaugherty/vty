@@ -78,18 +78,15 @@ import Data.Semigroup ((<>))
 data Vty = Vty
     { -- | Outputs the given 'Picture'.
       update :: Picture -> IO ()
-      -- | Get one 'Event' object, blocking if none are available. This
-      -- will refresh the terminal if the event is a 'EvResize'.
+      -- | Return the next 'Event' or block until one becomes available.
     , nextEvent :: IO Event
       -- | The input interface. See 'Input'.
     , inputIface :: Input
       -- | The output interface. See 'Output'.
     , outputIface :: Output
-      -- | Refresh the display. 'nextEvent' will refresh the display if
-      -- a resize occurs, but this can be used to refresh the display
-      -- explicitly. If other programs output to the terminal and mess
-      -- up the display then the application might want to force a
-      -- refresh using this function.
+      -- | Refresh the display. If other programs output to the terminal
+      -- and mess up the display then the application might want to
+      -- force a refresh using this function.
     , refresh :: IO ()
       -- | Clean up after vty. A call to this function is necessary to
       -- cleanly restore the terminal state before application exit. The
