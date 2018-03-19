@@ -80,6 +80,8 @@ data Vty = Vty
       update :: Picture -> IO ()
       -- | Return the next 'Event' or block until one becomes available.
     , nextEvent :: IO Event
+      -- | Non-blocking version of 'nextEvent'.
+    , nextEventNonblocking :: IO (Maybe Event)
       -- | The input interface. See 'Input'.
     , inputIface :: Input
       -- | The output interface. See 'Output'.
@@ -148,14 +150,21 @@ intMkVty input out = do
             mPic <- readIORef lastPicRef
             maybe (return ()) innerUpdate mPic
 
-    let gkey = do k <- atomically $ readTChan $ _eventChannel input
-                  case k of
-                    (EvResize _ _)  -> displayBounds out
-                                       >>= return . (\(w,h)-> EvResize w h)
-                    _               -> return k
+    let mkResize = uncurry EvResize <$> displayBounds out
+        gkey = do
+            k <- atomically $ readTChan $ _eventChannel input
+            case k of
+                (EvResize _ _)  -> mkResize
+                _ -> return k
+        gkey' = do
+            k <- atomically $ tryReadTChan $ _eventChannel input
+            case k of
+                (Just (EvResize _ _))  -> Just <$> mkResize
+                _ -> return k
 
     return $ Vty { update = innerUpdate
                  , nextEvent = gkey
+                 , nextEventNonblocking = gkey'
                  , inputIface = input
                  , outputIface = out
                  , refresh = innerRefresh
