@@ -1,3 +1,8 @@
+5.22
+ - Added Graphics.Vty.Attributes.Color240.color240CodeToRGB function
+   (thanks Brent Carmer)
+ - Added nextEventNonblocking function (field) to Vty type (#87)
+
 5.21
  - Picture and Background now provide Eq instances (thanks Jaro Reinders)
  - #145: vty builds with microlens 0.4.9 (thanks Daniel Wagner)
