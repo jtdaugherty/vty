@@ -1,3 +1,11 @@
+5.23
+  - Added support for italicized output when terminfo supports it. This
+    takes the form of a new Style, "italic". Note that most terminfo
+    descriptors do not report capabilities for italics, so support for
+    this will be very spotty.
+  - Updateed text/string function documentation to indicate that escapes
+    are not permitted in their inputs.
+
 5.22
  - Added Graphics.Vty.Attributes.Color240.color240CodeToRGB function
    (thanks Brent Carmer)
