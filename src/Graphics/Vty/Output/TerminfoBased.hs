@@ -62,6 +62,8 @@ data DisplayAttrCaps = DisplayAttrCaps
     { setAttrStates :: Maybe CapExpression
     , enterStandout :: Maybe CapExpression
     , exitStandout :: Maybe CapExpression
+    , enterItalic :: Maybe CapExpression
+    , exitItalic :: Maybe CapExpression
     , enterUnderline :: Maybe CapExpression
     , exitUnderline :: Maybe CapExpression
     , enterReverseVideo :: Maybe CapExpression
@@ -227,6 +229,8 @@ currentDisplayAttrCaps ti
     <*> probeCap ti "sgr"
     <*> probeCap ti "smso"
     <*> probeCap ti "rmso"
+    <*> probeCap ti "sitm"
+    <*> probeCap ti "ritm"
     <*> probeCap ti "smul"
     <*> probeCap ti "rmul"
     <*> probeCap ti "rev"
@@ -434,6 +438,7 @@ data DisplayAttrSeq
 data DisplayAttrState = DisplayAttrState
     { applyStandout :: Bool
     , applyUnderline :: Bool
+    , applyItalic :: Bool
     , applyReverseVideo :: Bool
     , applyBlink :: Bool
     , applyDim :: Bool
@@ -444,6 +449,7 @@ sgrArgsForState :: DisplayAttrState -> [CapParam]
 sgrArgsForState attrState = map (\b -> if b then 1 else 0)
     [ applyStandout attrState
     , applyUnderline attrState
+    , applyItalic attrState
     , applyReverseVideo attrState
     , applyBlink attrState
     , applyDim attrState
@@ -470,6 +476,8 @@ reqDisplayCapSeqFor caps s diffs
         -- set state cap then just use the set state cap.
         ( True, True  ) -> SetState $ stateForStyle s
     where
+        noEnterExitCap ApplyItalic = isNothing $ enterItalic caps
+        noEnterExitCap RemoveItalic = isNothing $ exitItalic caps
         noEnterExitCap ApplyStandout = isNothing $ enterStandout caps
         noEnterExitCap RemoveStandout = isNothing $ exitStandout caps
         noEnterExitCap ApplyUnderline = isNothing $ enterUnderline caps
@@ -482,6 +490,8 @@ reqDisplayCapSeqFor caps s diffs
         noEnterExitCap RemoveDim = True
         noEnterExitCap ApplyBold = isNothing $ enterBoldMode caps
         noEnterExitCap RemoveBold = True
+        enterExitCap ApplyItalic = fromJust $ enterItalic caps
+        enterExitCap RemoveItalic = fromJust $ exitItalic caps
         enterExitCap ApplyStandout = fromJust $ enterStandout caps
         enterExitCap RemoveStandout = fromJust $ exitStandout caps
         enterExitCap ApplyUnderline = fromJust $ enterUnderline caps
@@ -495,6 +505,7 @@ stateForStyle :: Style -> DisplayAttrState
 stateForStyle s = DisplayAttrState
     { applyStandout = isStyleSet standout
     , applyUnderline = isStyleSet underline
+    , applyItalic = isStyleSet italic
     , applyReverseVideo = isStyleSet reverseVideo
     , applyBlink = isStyleSet blink
     , applyDim = isStyleSet dim
@@ -506,6 +517,7 @@ styleToApplySeq :: Style -> [StyleStateChange]
 styleToApplySeq s = concat
     [ applyIfRequired ApplyStandout standout
     , applyIfRequired ApplyUnderline underline
+    , applyIfRequired ApplyItalic italic
     , applyIfRequired ApplyReverseVideo reverseVideo
     , applyIfRequired ApplyBlink blink
     , applyIfRequired ApplyDim dim

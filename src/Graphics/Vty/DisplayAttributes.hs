@@ -94,6 +94,8 @@ data DisplayColorDiff
 data StyleStateChange
     = ApplyStandout
     | RemoveStandout
+    | ApplyItalic
+    | RemoveItalic
     | ApplyUnderline
     | RemoveUnderline
     | ApplyReverseVideo
@@ -141,6 +143,7 @@ diffStyles prev cur
     = mconcat
     [ styleDiff standout      ApplyStandout     RemoveStandout
     , styleDiff underline     ApplyUnderline    RemoveUnderline
+    , styleDiff italic        ApplyItalic       RemoveItalic
     , styleDiff reverseVideo  ApplyReverseVideo RemoveReverseVideo
     , styleDiff blink         ApplyBlink        RemoveBlink
     , styleDiff dim           ApplyDim          RemoveDim

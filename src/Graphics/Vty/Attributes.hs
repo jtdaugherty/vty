@@ -38,6 +38,7 @@ module Graphics.Vty.Attributes
   , Style
   , withStyle
   , standout
+  , italic
   , underline
   , reverseVideo
   , blink
@@ -103,14 +104,15 @@ data Attr = Attr
 --      __ - unused
 --
 --  Next is the style flags
---      SURBDO__
+--      SURBDOI_
 --      S - standout
 --      U - underline
 --      R - reverse video
 --      B - blink
 --      D - dim
 --      O - bold
---      __ - unused
+--      I - italic
+--      _ - unused
 --
 --  Then the foreground color encoded into 8 bits.
 --  Then the background color encoded into 8 bits.
@@ -187,15 +189,18 @@ type Style = Word8
 --
 --      * bold/bright
 --
+--      * italic
+--
 --  (The invisible, protect, and altcharset display attributes some
 --  terminals support are not supported via VTY.)
-standout, underline, reverseVideo, blink, dim, bold :: Style
+standout, underline, reverseVideo, blink, dim, bold, italic :: Style
 standout        = 0x01
 underline       = 0x02
 reverseVideo   = 0x04
 blink           = 0x08
 dim             = 0x10
 bold            = 0x20
+italic          = 0x40
 
 defaultStyleMask :: Style
 defaultStyleMask = 0x00
