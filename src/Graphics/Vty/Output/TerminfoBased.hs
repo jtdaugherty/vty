@@ -315,7 +315,7 @@ writeURLEscapes NoLinkChange =
 -- Note that this optimizes for fewer state changes followed by fewer
 -- bytes.
 terminfoWriteSetAttr :: DisplayContext -> TerminfoCaps -> Bool -> FixedAttr -> Attr -> DisplayAttrDiff -> Write
-terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs = do
+terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs =
     urlAttrs urlsEnabled `mappend` case (foreColorDiff diffs == ColorToDefault) || (backColorDiff diffs == ColorToDefault) of
         -- The only way to reset either color, portably, to the default
         -- is to use either the set state capability or the set default
@@ -336,8 +336,8 @@ terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs = do
                                                          $ terminfoCaps
                                                )
                                                (sgrArgsForState state)
-                                  `mappend`
-                                  setColors
+                                  `mappend` setItalics
+                                  `mappend` setColors
         -- Otherwise the display colors are not changing or changing
         -- between two non-default points.
         False -> do
@@ -363,6 +363,7 @@ terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs = do
                                                          $ displayAttrCaps terminfoCaps
                                                )
                                                (sgrArgsForState state)
+                                  `mappend` setItalics
                                   `mappend` setColors
     where
         urlAttrs True = writeURLEscapes (urlDiff diffs)
@@ -371,6 +372,15 @@ terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs = do
                         False -> ansiColorIndex
                         True -> altColorIndex
         attr = fixDisplayAttr prevAttr reqAttr
+
+        -- italics can't be set via SGR, so here we manually
+        -- apply the enter and exit sequences as needed after
+        -- changing the SGR
+        setItalics
+          | hasStyle (fixedStyle attr) italic
+          , Just sitm <- enterItalic (displayAttrCaps terminfoCaps)
+          = writeCapExpr sitm []
+          | otherwise = mempty
         setColors =
             (case fixedForeColor attr of
                 Just c -> writeCapExpr (setForeColor terminfoCaps)
@@ -449,7 +459,6 @@ sgrArgsForState :: DisplayAttrState -> [CapParam]
 sgrArgsForState attrState = map (\b -> if b then 1 else 0)
     [ applyStandout attrState
     , applyUnderline attrState
-    , applyItalic attrState
     , applyReverseVideo attrState
     , applyBlink attrState
     , applyDim attrState
@@ -521,7 +530,7 @@ styleToApplySeq s = concat
     , applyIfRequired ApplyReverseVideo reverseVideo
     , applyIfRequired ApplyBlink blink
     , applyIfRequired ApplyDim dim
-    , applyIfRequired ApplyBlink bold
+    , applyIfRequired ApplyBold bold
     ]
     where
         applyIfRequired op flag

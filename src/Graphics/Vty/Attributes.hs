@@ -175,7 +175,7 @@ instance Eq v => Monoid ( MaybeDefault v ) where
 -- if the style attribute should not be applied.
 type Style = Word8
 
--- | The 6 possible style attributes:
+-- | The 7 possible style attributes:
 --
 --      * standout
 --
@@ -196,7 +196,7 @@ type Style = Word8
 standout, underline, reverseVideo, blink, dim, bold, italic :: Style
 standout        = 0x01
 underline       = 0x02
-reverseVideo   = 0x04
+reverseVideo    = 0x04
 blink           = 0x08
 dim             = 0x10
 bold            = 0x20
