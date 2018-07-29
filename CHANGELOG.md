@@ -1,3 +1,7 @@
+5.23.1
+  - Fixed a bug where italics did not combine properly with other
+    display modes (#155, thanks Eric Mertens)
+
 5.23
   - Added support for italicized output when terminfo supports it. This
     takes the form of a new Style, "italic". Note that most terminfo
