@@ -24,13 +24,13 @@ description:
   &#169; Corey O'Connor; BSD3 license.
   .
   &#169; Jonathan Daugherty; BSD3 license.
-cabal-version:       >= 1.18
+cabal-version:       1.18
 build-type:          Simple
 extra-doc-files:     README.md,
                      AUTHORS,
                      CHANGELOG.md,
                      LICENSE
-tested-with:         GHC >= 7.6.2
+tested-with:         GHC==7.10.3, GHC==8.0.2, GHC==8.2.2, GHC==8.4.3
 
 source-repository head
   type: git
@@ -117,8 +117,6 @@ library
   ghc-options:         -O2 -funbox-strict-fields -Wall -fspec-constr -fspec-constr-count=10
 
   ghc-prof-options:    -O2 -funbox-strict-fields -caf-all -Wall -fspec-constr -fspec-constr-count=10
-
-  cc-options:          -O2
 
 executable vty-mode-demo
   main-is:             ModeDemo.hs
