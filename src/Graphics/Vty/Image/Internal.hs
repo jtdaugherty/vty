@@ -142,33 +142,7 @@ data Image =
     --
     -- Any image of zero size equals the empty image.
     | EmptyImage
-    deriving (Eq, Generic)
-
-instance Show Image where
-    show ( HorizText { attr, displayText, outputWidth, charWidth } )
-        = "HorizText " ++ show displayText
-                       ++ "@(" ++ show attr ++ ","
-                               ++ show outputWidth ++ ","
-                               ++ show charWidth ++ ")"
-    show ( BGFill { outputWidth, outputHeight } )
-        = "BGFill (" ++ show outputWidth ++ "," ++ show outputHeight ++ ")"
-    show ( HorizJoin { partLeft = l, partRight = r, outputWidth = c } )
-        = "HorizJoin " ++ show c ++ " (" ++ show l ++ " <|> " ++ show r ++ ")"
-    show ( VertJoin { partTop = t, partBottom = b, outputWidth = c, outputHeight = r } )
-        = "VertJoin [" ++ show c ++ ", " ++ show r ++ "] (" ++ show t ++ ") <-> (" ++ show b ++ ")"
-    show ( CropRight { croppedImage, outputWidth, outputHeight } )
-        = "CropRight [" ++ show outputWidth ++ "," ++ show outputHeight ++ "]"
-                     ++ " (" ++ show croppedImage ++ ")"
-    show ( CropLeft { croppedImage, leftSkip, outputWidth, outputHeight } )
-        = "CropLeft [" ++ show leftSkip ++ "," ++ show outputWidth ++ "," ++ show outputHeight ++ "]"
-                    ++ " (" ++ show croppedImage ++ ")"
-    show ( CropBottom { croppedImage, outputWidth, outputHeight } )
-        = "CropBottom [" ++ show outputWidth ++ "," ++ show outputHeight ++ "]"
-                      ++ " (" ++ show croppedImage ++ ")"
-    show ( CropTop { croppedImage, topSkip, outputWidth, outputHeight } )
-        = "CropTop [" ++ show topSkip ++ "," ++ show outputWidth ++ "," ++ show outputHeight ++ "]"
-                   ++ " (" ++ show croppedImage ++ ")"
-    show ( EmptyImage ) = "EmptyImage"
+    deriving (Eq, Generic, Show, Read)
 
 -- | pretty print just the structure of an image.
 ppImageStructure :: Image -> String
