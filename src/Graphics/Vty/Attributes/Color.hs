@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 module Graphics.Vty.Attributes.Color
   ( Color(..)
   , black
@@ -20,6 +22,8 @@ module Graphics.Vty.Attributes.Color
 where
 
 import Data.Word
+import GHC.Generics
+import Control.DeepSeq
 
 -- | Abstract data type representing a color.
 --
@@ -74,7 +78,7 @@ import Data.Word
 --
 -- Seriously, terminal color support is INSANE.
 data Color = ISOColor !Word8 | Color240 !Word8
-    deriving ( Eq, Show, Read )
+    deriving ( Eq, Show, Read, Generic, NFData )
 
 -- | Standard 8-color ANSI terminal color codes.
 black, red, green, yellow, blue, magenta, cyan, white :: Color

@@ -2,6 +2,8 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 -- | Display attributes
 --
@@ -61,12 +63,14 @@ module Graphics.Vty.Attributes
   )
 where
 
+import Control.DeepSeq
 import Data.Bits
 #if !(MIN_VERSION_base(4,11,0))
 import Data.Semigroup
 #endif
 import Data.Text (Text)
 import Data.Word
+import GHC.Generics
 
 import Graphics.Vty.Attributes.Color
 import Graphics.Vty.Attributes.Color240
@@ -83,7 +87,7 @@ data Attr = Attr
     , attrForeColor :: !(MaybeDefault Color)
     , attrBackColor :: !(MaybeDefault Color)
     , attrURL :: !(MaybeDefault Text)
-    } deriving ( Eq, Show, Read )
+    } deriving ( Eq, Show, Read, Generic, NFData )
 
 -- This could be encoded into a single 32 bit word. The 32 bit word is
 -- first divided into 4 groups of 8 bits where: The first group codes
@@ -148,6 +152,11 @@ data MaybeDefault v where
     Default :: MaybeDefault v
     KeepCurrent :: MaybeDefault v
     SetTo :: forall v . ( Eq v, Show v, Read v ) => !v -> MaybeDefault v
+
+instance (NFData v) => NFData (MaybeDefault v) where
+    rnf Default = ()
+    rnf KeepCurrent = ()
+    rnf (SetTo v) = rnf v
 
 deriving instance Eq v => Eq (MaybeDefault v)
 deriving instance Eq v => Show (MaybeDefault v)
