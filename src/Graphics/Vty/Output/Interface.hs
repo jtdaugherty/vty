@@ -177,8 +177,7 @@ outputPicture dc pic = liftIO $ do
             Nothing -> replicate (fromEnum $ regionHeight $ affectedRegion ops) True
             Just previousOps -> if affectedRegion previousOps /= affectedRegion ops
                 then replicate (displayOpsRows ops) True
-                else zipWith (/=) (Vector.toList previousOps)
-                                  (Vector.toList ops)
+                else Vector.toList $ Vector.zipWith (/=) previousOps ops
         -- build the Write corresponding to the output image
         out = (if manipCursor then writeHideCursor dc else mempty)
               `mappend` writeOutputOps urlsEnabled dc initialAttr diffs ops
