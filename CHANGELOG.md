@@ -1,3 +1,9 @@
+
+5.24
+ - Add Generic and NFData instances for some types
+ - Image: remove custom Show instance, add derived Show and Read instances
+ - Updated Travis build settings (thanks Eric Mertens)
+
 5.23.1
   - Fixed a bug where italics did not combine properly with other
     display modes (#155, thanks Eric Mertens)
