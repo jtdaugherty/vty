@@ -1,4 +1,10 @@
 
+5.25
+ - The Vty type got a new field, isShutdown, that returns whether the
+   Vty handle has had its 'shutdown' function called (thanks Ian
+   Jeffries)
+ - Vty's shutdown function is now thread-safe.
+
 5.24.1
  - The "shutdown" method of Vty handles is now idempotent (#159)
 
