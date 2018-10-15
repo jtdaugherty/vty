@@ -94,8 +94,9 @@ data Vty = Vty
       -- | Clean up after vty. A call to this function is necessary to
       -- cleanly restore the terminal state before application exit. The
       -- above methods will throw an exception if executed after this is
-      -- executed.
+      -- executed. Idempotent.
     , shutdown :: IO ()
+    , isShutdown :: IO Bool
     }
 
 -- | Create a Vty handle. At most one handle should be created at a time
@@ -124,6 +125,8 @@ intMkVty input out = do
                 shutdownInput input
                 releaseDisplay out
                 releaseTerminal out
+
+    let shutdownStatus = atomically $ readTVar shutdownVar
 
     lastPicRef <- newIORef Nothing
     lastUpdateRef <- newIORef Nothing
@@ -175,4 +178,5 @@ intMkVty input out = do
                  , outputIface = out
                  , refresh = innerRefresh
                  , shutdown = shutdownIo
+                 , isShutdown = shutdownStatus
                  }
