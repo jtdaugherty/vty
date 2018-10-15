@@ -52,6 +52,7 @@ import Graphics.Vty.Picture
 import Graphics.Vty.Image
 import Graphics.Vty.Attributes
 
+import Control.Monad (when)
 import Control.Concurrent.STM
 
 import Data.IORef
@@ -115,10 +116,16 @@ mkVty appConfig = do
 intMkVty :: Input -> Output -> IO Vty
 intMkVty input out = do
     reserveDisplay out
+
+    shutdownVar <- atomically $ newTVar False
     let shutdownIo = do
-            shutdownInput input
-            releaseDisplay out
-            releaseTerminal out
+            alreadyShutdown <- atomically $ readTVar shutdownVar
+            when (not alreadyShutdown) $ do
+                atomically $ writeTVar shutdownVar True
+                shutdownInput input
+                releaseDisplay out
+                releaseTerminal out
+
     lastPicRef <- newIORef Nothing
     lastUpdateRef <- newIORef Nothing
 
