@@ -119,9 +119,8 @@ intMkVty input out = do
 
     shutdownVar <- atomically $ newTVar False
     let shutdownIo = do
-            alreadyShutdown <- atomically $ readTVar shutdownVar
+            alreadyShutdown <- atomically $ swapTVar shutdownVar True
             when (not alreadyShutdown) $ do
-                atomically $ writeTVar shutdownVar True
                 shutdownInput input
                 releaseDisplay out
                 releaseTerminal out
