@@ -1,4 +1,7 @@
 
+5.24.1
+ - The "shutdown" method of Vty handles is now idempotent (#159)
+
 5.24
  - Add Generic and NFData instances for some types
  - Image: remove custom Show instance, add derived Show and Read instances
