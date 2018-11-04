@@ -1,4 +1,8 @@
 
+5.25.1
+ - Avoided a conflict with a Microlens 0.4.10 operator and added an
+   upper bound on Microlens of 0.4.11.
+
 5.25
  - The Vty type got a new field, isShutdown, that returns whether the
    Vty handle has had its 'shutdown' function called (thanks Ian
