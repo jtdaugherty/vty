@@ -45,7 +45,7 @@ library
                        deepseq >= 1.1 && < 1.5,
                        directory,
                        filepath >= 1.0 && < 2.0,
-                       microlens,
+                       microlens < 0.4.11,
                        microlens-mtl,
                        microlens-th,
                        -- required for nice installation with yi

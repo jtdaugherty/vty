@@ -298,11 +298,11 @@ addMaybeClippedJoin name skip remaining offset i0Dim i0 i1 size = do
     state <- get
     when (state^.remaining <= 0) $ fail $ name ++ " with remaining <= 0"
     case state^.skip of
-        s | s > size -> put $ state & skip -~ size
+        s | s > size -> put $ state & skip %~ subtract size
           | s == 0    -> if state^.remaining > i0Dim
                             then do
                                 addMaybeClipped i0
-                                put $ state & offset +~ i0Dim & remaining -~ i0Dim
+                                put $ state & offset %~ (+ i0Dim) & remaining %~ subtract i0Dim
                                 addMaybeClipped i1
                             else addMaybeClipped i0
           | s < i0Dim  ->
@@ -311,10 +311,10 @@ addMaybeClippedJoin name skip remaining offset i0Dim i0 i1 size = do
                     then addMaybeClipped i0
                     else do
                         addMaybeClipped i0
-                        put $ state & offset +~ i0Dim' & remaining -~ i0Dim' & skip .~ 0
+                        put $ state & offset %~ (+ i0Dim') & remaining %~ subtract i0Dim' & skip .~ 0
                         addMaybeClipped i1
           | s >= i0Dim -> do
-                put $ state & skip -~ i0Dim
+                put $ state & skip %~ subtract i0Dim
                 addMaybeClipped i1
         _ -> fail $ name ++ " has unhandled skip class"
 
@@ -346,9 +346,3 @@ snocOp !op !row = do
         when (spanOpsEffectedColumns ops' > regionWidth theRegion)
              $ fail $ "row " ++ show row ++ " now exceeds region width"
         MVector.write theMrowOps row ops'
-
-(-~) :: Num a => ASetter s t a a -> a -> s -> t
-l -~ n = over l (subtract n)
-
-(+~) :: Num a => ASetter s t a a -> a -> s -> t
-l +~ n = over l (n +)
