@@ -14,7 +14,7 @@ import Graphics.Vty.Image.Internal
 import Graphics.Vty.Picture
 import Graphics.Vty.Span
 
-import Lens.Micro
+import Lens.Micro hiding ( (-~), (+~) )
 import Lens.Micro.Mtl
 import Lens.Micro.TH
 import Control.Monad.Reader
