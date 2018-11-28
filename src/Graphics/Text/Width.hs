@@ -25,11 +25,9 @@ wcswidth = foldl' (\l c -> wcwidth c + l) 0
 
 wctwidth :: T.Text -> Int
 wctwidth = T.foldl' (\l c -> wcwidth c + l) 0
-{-# INLINE [1] wctwidth #-}
 
 wctlwidth :: TL.Text -> Int
 wctlwidth = TL.foldl' (\l c -> wcwidth c + l) 0
-{-# INLINE [1] wctlwidth #-}
 
 {-# RULES
 "wcswidth/unpack" forall x. wcswidth (T.unpack x) = wctwidth x
