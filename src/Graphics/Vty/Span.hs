@@ -14,6 +14,7 @@ module Graphics.Vty.Span where
 import Graphics.Vty.Attributes (Attr)
 import Graphics.Vty.Image
 import Graphics.Vty.Image.Internal ( clipText )
+import Graphics.Text.Width (wctlwidth)
 
 import qualified Data.Text.Lazy as TL
 import Data.Vector (Vector)
@@ -126,7 +127,6 @@ spanOpHasWidth (RowEnd ow) = Just (ow,ow)
 -- span op.
 columnsToCharOffset :: Int -> SpanOp -> Int
 columnsToCharOffset cx (TextSpan _ _ _ utf8Str) =
-    let str = TL.unpack utf8Str
-    in wcswidth (take cx str)
+    wctlwidth (TL.take (fromIntegral cx) utf8Str)
 columnsToCharOffset cx (Skip _) = cx
 columnsToCharOffset cx (RowEnd _) = cx

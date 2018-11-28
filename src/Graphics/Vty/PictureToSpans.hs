@@ -13,6 +13,7 @@ import Graphics.Vty.Image
 import Graphics.Vty.Image.Internal
 import Graphics.Vty.Picture
 import Graphics.Vty.Span
+import Graphics.Text.Width (wctlwidth)
 
 import Lens.Micro
 import Lens.Micro.Mtl
@@ -323,7 +324,7 @@ addUnclippedText a txt = do
     let op = TextSpan a usedDisplayColumns
                       (fromIntegral $ TL.length txt)
                       txt
-        usedDisplayColumns = wcswidth $ TL.unpack txt
+        usedDisplayColumns = wctlwidth txt
     use rowOffset >>= snocOp op
 
 addRowCompletion :: DisplayRegion -> Int -> BlitM s ()

@@ -46,8 +46,12 @@ module Graphics.Vty.Image
   -- * Character width functions
   , safeWcwidth
   , safeWcswidth
+  , safeWctwidth
+  , safeWctlwidth
   , wcwidth
   , wcswidth
+  , wctwidth
+  , wctlwidth
   -- * Display Regions
   , DisplayText
   , DisplayRegion
@@ -116,13 +120,13 @@ vertCat = foldr vertJoin EmptyImage
 -- | Make an 'Image' from a lazy text value. This function should not be
 -- given a text value containing escapes.
 text :: Attr -> TL.Text -> Image
-text a txt = let displayWidth = safeWcswidth (TL.unpack txt)
+text a txt = let displayWidth = safeWctlwidth txt
              in HorizText a txt displayWidth (fromIntegral $! TL.length txt)
 
 -- | Make an 'Image' from a text value. This function should not be
 -- given a text value containing escapes.
 text' :: Attr -> T.Text -> Image
-text' a txt = let displayWidth = safeWcswidth (T.unpack txt)
+text' a txt = let displayWidth = safeWctwidth txt
               in HorizText a (TL.fromStrict txt) displayWidth (T.length txt)
 
 -- | Make an image from a single character. This is a standard Haskell
