@@ -331,7 +331,7 @@ addRowCompletion :: DisplayRegion -> Int -> BlitM s ()
 addRowCompletion displayRegion row = do
     allRowOps <- view mrowOps
     rowOps <- lift $ lift $ MVector.read allRowOps row
-    let endX = spanOpsEffectedColumns rowOps
+    let endX = spanOpsAffectedColumns rowOps
     when (endX < regionWidth displayRegion) $ do
         let ow = regionWidth displayRegion - endX
         snocOp (Skip ow) row
@@ -344,6 +344,6 @@ snocOp !op !row = do
     lift $ lift $ do
         ops <- MVector.read theMrowOps row
         let ops' = Vector.snoc ops op
-        when (spanOpsEffectedColumns ops' > regionWidth theRegion)
+        when (spanOpsAffectedColumns ops' > regionWidth theRegion)
              $ fail $ "row " ++ show row ++ " now exceeds region width"
         MVector.write theMrowOps row ops'

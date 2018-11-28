@@ -25,7 +25,7 @@ unitImageAndZeroWindow1 :: UnitImage -> EmptyWindow -> Bool
 unitImageAndZeroWindow1 (UnitImage _ i) (EmptyWindow w) =
     let p = picForImage i
         ops = displayOpsForPic p (regionForWindow w)
-    in ( spanOpsEffectedRows ops == 0 ) && ( allSpansHaveWidth ops 0 )
+    in ( spanOpsAffectedRows ops == 0 ) && ( allSpansHaveWidth ops 0 )
 
 horizSpanImageAndZeroWindow0 :: SingleRowSingleAttrImage -> EmptyWindow -> Bool
 horizSpanImageAndZeroWindow0 (SingleRowSingleAttrImage { rowImage = i }) (EmptyWindow w) =
@@ -37,7 +37,7 @@ horizSpanImageAndZeroWindow1 :: SingleRowSingleAttrImage -> EmptyWindow -> Bool
 horizSpanImageAndZeroWindow1 (SingleRowSingleAttrImage { rowImage = i }) (EmptyWindow w) =
     let p = picForImage i
         ops = displayOpsForPic p (regionForWindow w)
-    in ( spanOpsEffectedRows ops == 0 ) && ( allSpansHaveWidth ops 0 )
+    in ( spanOpsAffectedRows ops == 0 ) && ( allSpansHaveWidth ops 0 )
 
 horizSpanImageAndEqualWindow0 :: SingleRowSingleAttrImage -> Result
 horizSpanImageAndEqualWindow0 (SingleRowSingleAttrImage { rowImage = i, expectedColumns = c }) =
@@ -51,7 +51,7 @@ horizSpanImageAndEqualWindow1 (SingleRowSingleAttrImage { rowImage = i, expected
     let p = picForImage i
         w = MockWindow c 1
         ops = displayOpsForPic p (regionForWindow w)
-    in spanOpsEffectedRows ops == 1
+    in spanOpsAffectedRows ops == 1
 
 horizSpanImageAndLesserWindow0 :: SingleRowSingleAttrImage -> Result
 horizSpanImageAndLesserWindow0 (SingleRowSingleAttrImage { rowImage = i, expectedColumns = c }) =
@@ -74,7 +74,7 @@ singleAttrSingleSpanStackCropped1 stack =
         expectedRowCount = stackHeight stack `div` 2
         w = MockWindow (stackWidth stack) expectedRowCount
         ops = displayOpsForPic p (regionForWindow w)
-        actualRowCount = spanOpsEffectedRows ops
+        actualRowCount = spanOpsAffectedRows ops
     in expectedRowCount == actualRowCount
 
 singleAttrSingleSpanStackCropped2 :: SingleAttrSingleSpanStack -> SingleAttrSingleSpanStack -> Result
@@ -90,7 +90,7 @@ singleAttrSingleSpanStackCropped3 stack0 stack1 =
         w = MockWindow (imageWidth (picImage p))  expectedRowCount
         ops = displayOpsForPic p (regionForWindow w)
         expectedRowCount = imageHeight (picImage p) `div` 2
-        actualRowCount = spanOpsEffectedRows ops
+        actualRowCount = spanOpsAffectedRows ops
     in expectedRowCount == actualRowCount
 
 singleAttrSingleSpanStackCropped4 :: SingleAttrSingleSpanStack -> SingleAttrSingleSpanStack -> Result
@@ -107,7 +107,7 @@ singleAttrSingleSpanStackCropped5 stack0 stack1 =
         w = MockWindow (imageWidth (picImage p)) (stackHeight stack0)
         ops = displayOpsForPic p (regionForWindow w)
         expectedRowCount = stackHeight stack0
-        actualRowCount = spanOpsEffectedRows ops
+        actualRowCount = spanOpsAffectedRows ops
     in expectedRowCount == actualRowCount
 
 horizSpanImageAndGreaterWindow0 :: SingleRowSingleAttrImage -> Result
@@ -123,13 +123,13 @@ arbImageIsCropped :: DefaultImage -> MockWindow -> Bool
 arbImageIsCropped (DefaultImage image) win@(MockWindow w h) =
     let pic = picForImage image
         ops = displayOpsForPic pic (regionForWindow win)
-    in ( spanOpsEffectedRows ops == h ) && ( allSpansHaveWidth ops w )
+    in ( spanOpsAffectedRows ops == h ) && ( allSpansHaveWidth ops w )
 
 spanOpsActuallyFillRows :: DefaultPic -> Bool
 spanOpsActuallyFillRows (DefaultPic pic win) =
     let ops = displayOpsForPic pic (regionForWindow win)
         expectedRowCount = regionHeight (regionForWindow win)
-        actualRowCount = spanOpsEffectedRows ops
+        actualRowCount = spanOpsAffectedRows ops
     in expectedRowCount == actualRowCount
 
 spanOpsActuallyFillColumns :: DefaultPic -> Bool

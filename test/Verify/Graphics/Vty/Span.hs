@@ -20,7 +20,7 @@ isAttrSpanOp TextSpan {} = True
 isAttrSpanOp _           = False
 
 verifyAllSpansHaveWidth i spans w
-    = let v = map (\s -> (spanOpsEffectedColumns s /= w, s)) (Vector.toList spans)
+    = let v = map (\s -> (spanOpsAffectedColumns s /= w, s)) (Vector.toList spans)
       in case any ((== True) . fst) v of
         False -> succeeded
         True -> failed { reason = "Not all spans contained operations defining exactly "
