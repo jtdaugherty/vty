@@ -21,12 +21,20 @@ foreign import ccall unsafe "vty_mk_wcwidth" wcwidth :: Char -> Int
 
 wcswidth :: String -> Int
 wcswidth = foldl' (\l c -> wcwidth c + l) 0
+{-# INLINE [1] wcswidth #-}
 
 wctwidth :: T.Text -> Int
 wctwidth = T.foldl' (\l c -> wcwidth c + l) 0
+{-# INLINE [1] wctwidth #-}
 
 wctlwidth :: TL.Text -> Int
 wctlwidth = TL.foldl' (\l c -> wcwidth c + l) 0
+{-# INLINE [1] wctlwidth #-}
+
+{-# RULES
+"wcswidth/unpack" forall x. wcswidth (T.unpack x) = wctwidth x
+"wcswidth/lazy-unpack" forall x. wcswidth (TL.unpack x) = wctlwidth x
+  #-}
 
 -- XXX: Characters with unknown widths occupy 1 column?
 --
