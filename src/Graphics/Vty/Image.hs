@@ -174,7 +174,7 @@ utf8String a bytes = utf8Bytestring a (BL.pack bytes)
 utf8Bytestring :: Attr -> BL.ByteString -> Image
 utf8Bytestring a bs = text a (TL.decodeUtf8 bs)
 
--- | Make an 'Image' from a UTF-8 encoded lazy bytestring.
+-- | Make an 'Image' from a UTF-8 encoded strict bytestring.
 utf8Bytestring' :: Attr -> B.ByteString -> Image
 utf8Bytestring' a bs = text' a (T.decodeUtf8 bs)
 
