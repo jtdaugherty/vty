@@ -13,7 +13,7 @@ import Verify.Graphics.Vty.Output
 import Control.Monad
 
 import qualified System.Console.Terminfo as Terminfo
-import System.Posix.Env
+-- import System.Posix.Env
 import System.Posix.IO
 
 tests :: IO [Test]
