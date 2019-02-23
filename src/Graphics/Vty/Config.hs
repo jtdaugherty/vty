@@ -87,7 +87,7 @@ import Graphics.Vty.Input.Events
 import GHC.Generics
 
 import System.Directory (getAppUserDataDirectory)
-import System.Posix.Env (getEnv)
+import System.Environment (lookupEnv)
 import System.Posix.IO (stdInput, stdOutput)
 import System.Posix.Types (Fd(..))
 
@@ -176,20 +176,20 @@ instance Monoid Config where
 userConfig :: IO Config
 userConfig = do
     configFile <- (mappend <$> getAppUserDataDirectory "vty" <*> pure "/config") >>= parseConfigFile
-    overrideConfig <- maybe (return defaultConfig) parseConfigFile =<< getEnv "VTY_CONFIG_FILE"
+    overrideConfig <- maybe (return defaultConfig) parseConfigFile =<< lookupEnv "VTY_CONFIG_FILE"
     let base = configFile <> overrideConfig
     mappend base <$> overrideEnvConfig
 
 overrideEnvConfig :: IO Config
 overrideEnvConfig = do
-    d <- getEnv "VTY_DEBUG_LOG"
+    d <- lookupEnv "VTY_DEBUG_LOG"
     return $ defaultConfig { debugLog = d }
 
 -- | Configures VTY using defaults suitable for terminals. This function
 -- can raise 'VtyConfigurationError'.
 standardIOConfig :: IO Config
 standardIOConfig = do
-    mb <- getEnv "TERM"
+    mb <- lookupEnv "TERM"
     case mb of
       Nothing -> throwIO VtyMissingTermEnvVar
       Just t ->
