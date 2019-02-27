@@ -54,12 +54,17 @@ library
                        parallel >= 2.2 && < 3.3,
                        parsec >= 2 && < 4,
                        stm,
-                       terminfo >= 0.3 && < 0.5,
                        transformers >= 0.3.0.0,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix,
+                   terminfo >= 0.3 && < 0.5
+
 
   if !impl(ghc >= 8.0)
     build-depends:     semigroups >= 0.16
@@ -176,10 +181,14 @@ test-suite verify-using-mock-terminal
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       terminfo >= 0.3 && < 0.5,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix,
+                   terminfo >= 0.3 && < 0.5
 
 test-suite verify-terminal
   default-language:    Haskell2010
@@ -208,11 +217,15 @@ test-suite verify-terminal
                        containers,
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
-                       terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix,
+                   terminfo >= 0.3 && < 0.5
 
 test-suite verify-display-attributes
   default-language:    Haskell2010
@@ -242,9 +255,13 @@ test-suite verify-display-attributes
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix
 
 test-suite verify-empty-image-props
   default-language:    Haskell2010
@@ -268,9 +285,13 @@ test-suite verify-empty-image-props
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix
 
 test-suite verify-eval-terminfo-caps
   default-language:    Haskell2010
@@ -295,11 +316,15 @@ test-suite verify-eval-terminfo-caps
                        containers,
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
-                       terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix,
+                   terminfo >= 0.3 && < 0.5
 
 test-suite verify-image-ops
   default-language:    Haskell2010
@@ -325,9 +350,13 @@ test-suite verify-image-ops
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix
 
 test-suite verify-image-trans
   default-language:    Haskell2010
@@ -353,9 +382,13 @@ test-suite verify-image-trans
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix
 
 test-suite verify-inline
   default-language:    Haskell2010
@@ -380,9 +413,13 @@ test-suite verify-inline
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix
 
 test-suite verify-parse-terminfo-caps
   default-language:    Haskell2010
@@ -407,11 +444,15 @@ test-suite verify-parse-terminfo-caps
                        containers,
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
-                       terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix,
+                   terminfo >= 0.3 && < 0.5
 
 test-suite verify-simple-span-generation
   default-language:    Haskell2010
@@ -440,9 +481,13 @@ test-suite verify-simple-span-generation
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix
 
 
 test-suite verify-crop-span-generation
@@ -472,9 +517,13 @@ test-suite verify-crop-span-generation
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix
 
 
 test-suite verify-layers-span-generation
@@ -504,9 +553,13 @@ test-suite verify-layers-span-generation
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix
 
 test-suite verify-utf8-width
   default-language:    Haskell2010
@@ -530,9 +583,13 @@ test-suite verify-utf8-width
                        deepseq >= 1.1 && < 1.5,
                        mtl >= 1.1.1.0 && < 2.3,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix
 
 test-suite verify-using-mock-input
   default-language:    Haskell2010
@@ -560,11 +617,15 @@ test-suite verify-using-mock-input
                        microlens-mtl,
                        mtl >= 1.1.1.0 && < 2.3,
                        stm,
-                       terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix,
+                   terminfo >= 0.3 && < 0.5
 
   ghc-options:         -threaded -Wall
 
@@ -596,10 +657,14 @@ test-suite verify-config
                        microlens-mtl,
                        mtl >= 1.1.1.0 && < 2.3,
                        string-qq,
-                       terminfo >= 0.3 && < 0.5,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix,
+                   terminfo >= 0.3 && < 0.5
 
   ghc-options:         -threaded -Wall

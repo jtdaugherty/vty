@@ -52,11 +52,15 @@ executable vty-interactive-terminal-test
                        parallel,
                        parsec,
                        string-qq,
-                       terminfo,
                        text,
-                       unix,
                        utf8-string,
                        vector
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix,
+                   terminfo
 
   other-modules:       Verify.Data.Terminfo.Parse
                        Verify
@@ -124,11 +128,15 @@ executable vty-benchmark
                        QuickCheck,
                        random,
                        string-qq,
-                       terminfo,
                        text,
-                       unix,
                        utf8-string,
                        vector
+
+  if os(windows)
+    build-depends: Win32
+  else
+    build-depends: unix,
+                   terminfo
 
   other-modules:       BenchImageFuzz
                        BenchNoDiffOpt
