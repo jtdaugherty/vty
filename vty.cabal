@@ -95,6 +95,7 @@ library
                        Graphics.Vty.Input.Mouse
                        Graphics.Vty.Input.Focus
                        Graphics.Vty.Input.Paste
+                       Graphics.Vty.Input.Interface
                        Graphics.Vty.Input.Terminfo
                        Graphics.Vty.PictureToSpans
                        Graphics.Vty.Span
