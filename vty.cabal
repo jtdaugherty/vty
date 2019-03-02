@@ -61,9 +61,32 @@ library
 
   if os(windows)
     build-depends: Win32
+    exposed-modules:
   else
     build-depends: unix,
                    terminfo >= 0.3 && < 0.5
+    -- the modules below are only meant to be used by the tests.
+    exposed-modules: Codec.Binary.UTF8.Debug
+                     Data.Terminfo.Parse
+                     Data.Terminfo.Eval
+                     Graphics.Vty.Debug
+                     Graphics.Vty.DisplayAttributes
+                     Graphics.Vty.Image.Internal
+                     Graphics.Vty.Input.Classify
+                     Graphics.Vty.Input.Classify.Types
+                     Graphics.Vty.Input.Classify.Parse
+                     Graphics.Vty.Input.Loop
+                     Graphics.Vty.Input.Mouse
+                     Graphics.Vty.Input.Focus
+                     Graphics.Vty.Input.Paste
+                     Graphics.Vty.Input.Interface
+                     Graphics.Vty.Input.Terminfo
+                     Graphics.Vty.PictureToSpans
+                     Graphics.Vty.Span
+                     Graphics.Vty.Output.Mock
+                     Graphics.Vty.Output.Interface
+                     Graphics.Vty.Output.XTermColor
+                     Graphics.Vty.Output.TerminfoBased
 
 
   if !impl(ghc >= 8.0)
@@ -81,28 +104,6 @@ library
                        Graphics.Vty.Picture
                        Graphics.Vty.Output
                        Graphics.Text.Width
-                       -- the modules below are only meant to be used by the tests.
-                       Codec.Binary.UTF8.Debug
-                       Data.Terminfo.Parse
-                       Data.Terminfo.Eval
-                       Graphics.Vty.Debug
-                       Graphics.Vty.DisplayAttributes
-                       Graphics.Vty.Image.Internal
-                       Graphics.Vty.Input.Classify
-                       Graphics.Vty.Input.Classify.Types
-                       Graphics.Vty.Input.Classify.Parse
-                       Graphics.Vty.Input.Loop
-                       Graphics.Vty.Input.Mouse
-                       Graphics.Vty.Input.Focus
-                       Graphics.Vty.Input.Paste
-                       Graphics.Vty.Input.Interface
-                       Graphics.Vty.Input.Terminfo
-                       Graphics.Vty.PictureToSpans
-                       Graphics.Vty.Span
-                       Graphics.Vty.Output.Mock
-                       Graphics.Vty.Output.Interface
-                       Graphics.Vty.Output.XTermColor
-                       Graphics.Vty.Output.TerminfoBased
 
   other-modules:       Graphics.Vty.Attributes.Color
                        Graphics.Vty.Attributes.Color240

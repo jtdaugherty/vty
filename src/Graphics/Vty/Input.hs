@@ -123,6 +123,7 @@ where
 
 import Graphics.Vty.Config
 import Graphics.Vty.Input.Events
+import Graphics.Vty.Input.Interface
 import Graphics.Vty.Input.Loop
 import Graphics.Vty.Input.Terminfo
 

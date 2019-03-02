@@ -7,6 +7,7 @@ module Main where
 import Verify.Graphics.Vty.Output
 
 import Graphics.Vty hiding (resize)
+import Graphics.Vty.Input.Interface
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Loop
 import Graphics.Vty.Input.Terminfo
