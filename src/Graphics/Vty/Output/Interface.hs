@@ -7,7 +7,8 @@
 -- | This module provides an abstract interface for performing terminal
 -- output. The only user-facing part of this API is 'Output'.
 module Graphics.Vty.Output.Interface
-  ( Output(..)
+  ( Encoding(..)
+  , Output(..)
   , AssumedState(..)
   , DisplayContext(..)
   , Mode(..)
@@ -33,6 +34,7 @@ import Control.Monad.Trans
 
 import qualified Data.ByteString as BS
 import Data.IORef
+import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Vector as Vector
@@ -54,6 +56,12 @@ data Mode = Mouse
           -- emulators so be sure to test this mode with the terminals
           -- you intend to support. It is off by default.
           deriving (Eq, Read, Show)
+
+data Encoding = UTF8
+              | UTF16Le
+              | UTF16Be
+              | UTF32Le
+              | UTF32Be
 
 -- | The Vty terminal output interface.
 data Output = Output
@@ -77,6 +85,8 @@ data Output = Output
     , releaseDisplay :: forall m. MonadIO m => m ()
       -- | Returns the current display bounds.
     , displayBounds :: forall m. MonadIO m => m DisplayRegion
+      -- | Specifies the character encoding the terminal requires. 
+    , outputEncoding :: Encoding
       -- | Output the bytestring to the terminal device.
     , outputByteBuffer :: BS.ByteString -> IO ()
       -- | Specifies the maximum number of colors supported by the
@@ -152,6 +162,20 @@ data DisplayContext = DisplayContext
 writeUtf8Text  :: BS.ByteString -> Write
 writeUtf8Text = writeByteString
 
+-- | Encode text to specified character encoding. 
+encodeText :: Encoding -> T.Text -> BS.ByteString
+encodeText UTF8 = T.encodeUtf8
+encodeText UTF16Le = T.encodeUtf16LE
+encodeText UTF16Be = T.encodeUtf16BE
+encodeText UTF32Le = T.encodeUtf32LE
+encodeText UTF32Be = T.encodeUtf32BE
+
+writeText :: Encoding -> T.Text -> Write
+writeText encoding = writeByteString . encodeText encoding 
+
+writeLazyText :: Encoding -> TL.Text -> Write
+writeLazyText encoding = writeText encoding . TL.toStrict
+
 -- | Displays the given `Picture`.
 --
 --      1. The image is cropped to the display size.
@@ -171,6 +195,7 @@ outputPicture dc pic = liftIO $ do
         r = contextRegion dc
         ops = displayOpsForPic pic r
         initialAttr = FixedAttr defaultStyleMask Nothing Nothing Nothing
+        encoding = outputEncoding (contextDevice dc)
         -- Diff the previous output against the requested output.
         -- Differences are currently on a per-row basis.
         diffs :: [Bool] = case prevOutputOps as of
@@ -180,7 +205,7 @@ outputPicture dc pic = liftIO $ do
                 else Vector.toList $ Vector.zipWith (/=) previousOps ops
         -- build the Write corresponding to the output image
         out = (if manipCursor then writeHideCursor dc else mempty)
-              `mappend` writeOutputOps urlsEnabled dc initialAttr diffs ops
+              `mappend` writeOutputOps encoding urlsEnabled dc initialAttr diffs ops
               `mappend`
                 (let (w,h) = contextRegion dc
                      clampX = max 0 . min (w-1)
@@ -203,15 +228,15 @@ outputPicture dc pic = liftIO $ do
     let as' = as { prevOutputOps = Just ops }
     writeIORef (assumedStateRef $ contextDevice dc) as'
 
-writeOutputOps :: Bool -> DisplayContext -> FixedAttr -> [Bool] -> DisplayOps -> Write
-writeOutputOps urlsEnabled dc initialAttr diffs ops =
+writeOutputOps :: Encoding -> Bool -> DisplayContext -> FixedAttr -> [Bool] -> DisplayOps -> Write
+writeOutputOps encoding urlsEnabled dc initialAttr diffs ops =
     let (_, out, _) = Vector.foldl' writeOutputOps'
                                        (0, mempty, diffs)
                                        ops
     in out
     where
         writeOutputOps' (y, out, True : diffs') spanOps
-            = let spanOut = writeSpanOps urlsEnabled dc y initialAttr spanOps
+            = let spanOut = writeSpanOps encoding urlsEnabled dc y initialAttr spanOps
                   out' = out `mappend` spanOut
               in (y+1, out', diffs')
         writeOutputOps' (y, out, False : diffs') _spanOps
@@ -219,27 +244,27 @@ writeOutputOps urlsEnabled dc initialAttr diffs ops =
         writeOutputOps' (_y, _out, []) _spanOps
             = error "vty - output spans without a corresponding diff."
 
-writeSpanOps :: Bool -> DisplayContext -> Int -> FixedAttr -> SpanOps -> Write
-writeSpanOps urlsEnabled dc y initialAttr spanOps =
+writeSpanOps :: Encoding -> Bool -> DisplayContext -> Int -> FixedAttr -> SpanOps -> Write
+writeSpanOps encoding urlsEnabled dc y initialAttr spanOps =
     -- The first operation is to set the cursor to the start of the row
     let start = writeMoveCursor dc 0 y `mappend` writeDefaultAttr dc urlsEnabled
     -- then the span ops are serialized in the order specified
-    in fst $ Vector.foldl' (\(out, fattr) op -> case writeSpanOp urlsEnabled dc op fattr of
+    in fst $ Vector.foldl' (\(out, fattr) op -> case writeSpanOp encoding urlsEnabled dc op fattr of
                               (opOut, fattr') -> (out `mappend` opOut, fattr')
                            )
                            (start, initialAttr)
                            spanOps
 
-writeSpanOp :: Bool -> DisplayContext -> SpanOp -> FixedAttr -> (Write, FixedAttr)
-writeSpanOp urlsEnabled dc (TextSpan attr _ _ str) fattr =
+writeSpanOp :: Encoding -> Bool -> DisplayContext -> SpanOp -> FixedAttr -> (Write, FixedAttr)
+writeSpanOp encoding urlsEnabled dc (TextSpan attr _ _ str) fattr =
     let attr' = limitAttrForDisplay (contextDevice dc) attr
         fattr' = fixDisplayAttr fattr attr'
         diffs = displayAttrDiffs fattr fattr'
         out =  writeSetAttr dc urlsEnabled fattr attr' diffs
-               `mappend` writeUtf8Text (T.encodeUtf8 $ TL.toStrict str)
+               `mappend` writeLazyText encoding str
     in (out, fattr')
-writeSpanOp _ _ (Skip _) _fattr = error "writeSpanOp for Skip"
-writeSpanOp urlsEnabled dc (RowEnd _) fattr = (writeDefaultAttr dc urlsEnabled `mappend` writeRowEnd dc, fattr)
+writeSpanOp _ _ _ (Skip _) _fattr = error "writeSpanOp for Skip"
+writeSpanOp _ urlsEnabled dc (RowEnd _) fattr = (writeDefaultAttr dc urlsEnabled `mappend` writeRowEnd dc, fattr)
 
 -- | The cursor position is given in X,Y character offsets. Due to
 -- multi-column characters this needs to be translated to column, row

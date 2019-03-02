@@ -49,6 +49,7 @@ mockTerminal r = liftIO $ do
             , ringTerminalBell = return ()
             , supportsBell = return False
             , displayBounds = return r
+            , outputEncoding = UTF8
             , outputByteBuffer = \bytes -> do
                 putStrLn $ "mock outputByteBuffer of " ++ show (BS.length bytes) ++ " bytes"
                 writeIORef outRef $ UTF8.fromRep bytes

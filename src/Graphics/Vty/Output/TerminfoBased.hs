@@ -177,6 +177,7 @@ reserveTerminal termName outFd = liftIO $ do
                 case rawSize of
                     (w, h)  | w < 0 || h < 0 -> fail $ "getwinsize returned < 0 : " ++ show rawSize
                             | otherwise      -> return (w,h)
+            , outputEncoding = UTF8
             , outputByteBuffer = \outBytes -> do
                 let (fptr, offset, len) = toForeignPtr outBytes
                 actualLen <- withForeignPtr fptr
