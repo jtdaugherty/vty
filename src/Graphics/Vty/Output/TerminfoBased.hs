@@ -120,12 +120,12 @@ reserveTerminal termName outFd = do
                     Nothing -> (True, True, error $ "no fore color support for terminal " ++ termName)
     msetab <- probeCap ti "setab"
     msetb <- probeCap ti "setb"
-    let set_back_cap
+    let setBackCap
             = case msetab of
+                Just setab -> setab
                 Nothing -> case msetb of
                     Just setb -> setb
                     Nothing -> error $ "no back color support for terminal " ++ termName
-                Just setab -> setab
 
     hyperlinkModeStatus <- newIORef False
     newAssumedStateRef <- newIORef initialAssumedState
@@ -154,7 +154,7 @@ reserveTerminal termName outFd = do
         <*> pure noColors
         <*> pure useAlt
         <*> pure setForeCap
-        <*> pure set_back_cap
+        <*> pure setBackCap
         <*> requireCap ti "sgr0"
         <*> requireCap ti "clear"
         <*> requireCap ti "el"
@@ -302,7 +302,7 @@ writeURLEscapes NoLinkChange =
 -- | Portably setting the display attributes is a giant pain in the ass.
 --
 -- If the terminal supports the sgr capability (which sets the on/off
--- state of each style directly ; and, for no good reason, resets the
+-- state of each style directly; and, for no good reason, resets the
 -- colors to the default) this procedure is used:
 --
 --  0. set the style attributes. This resets the fore and back color.
@@ -341,9 +341,9 @@ terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs =
         -- The only way to reset either color, portably, to the default
         -- is to use either the set state capability or the set default
         -- capability.
-        True  -> do
+        True -> do
             case reqDisplayCapSeqFor (displayAttrCaps terminfoCaps)
-                                     (fixedStyle attr )
+                                     (fixedStyle attr)
                                      (styleToApplySeq $ fixedStyle attr) of
                 -- only way to reset a color to the defaults
                 EnterExitSeq caps -> writeDefaultAttr dc urlsEnabled
