@@ -78,6 +78,10 @@ data Output = Output
       -- | Returns the current display bounds.
     , displayBounds :: forall m. MonadIO m => m DisplayRegion
       -- | Output the bytestring to the terminal device.
+    , setStatusLine :: String -> IO Bool
+      -- | Set the terminal's status line, if one is supported. Returns
+      -- True if the terminal advertises a status line feature, False
+      -- otherwise.
     , outputByteBuffer :: BS.ByteString -> IO ()
       -- | Specifies the maximum number of colors supported by the
       -- context.

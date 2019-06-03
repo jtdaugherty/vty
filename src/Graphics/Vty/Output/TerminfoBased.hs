@@ -14,6 +14,7 @@ where
 
 import Control.Monad (when)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BS8
 import Data.ByteString.Internal (toForeignPtr)
 import Data.Terminfo.Parse
 import Data.Terminfo.Eval
@@ -54,6 +55,8 @@ data TerminfoCaps = TerminfoCaps
     , setDefaultAttr :: CapExpression
     , clearScreen :: CapExpression
     , clearEol :: CapExpression
+    , beginStatusLine :: Maybe CapExpression
+    , endStatusLine :: Maybe CapExpression
     , displayAttrCaps :: DisplayAttrCaps
     , ringBellAudio :: Maybe CapExpression
     }
@@ -154,6 +157,8 @@ reserveTerminal termName outFd = liftIO $ do
         <*> requireCap ti "sgr0"
         <*> requireCap ti "clear"
         <*> requireCap ti "el"
+        <*> probeCap ti "tsl"
+        <*> probeCap ti "fsl"
         <*> currentDisplayAttrCaps ti
         <*> probeCap ti "bel"
     let t = Output
@@ -169,6 +174,14 @@ reserveTerminal termName outFd = liftIO $ do
                 -- approximate the behavior.
                 maybeSendCap smcup []
                 sendCap clearScreen []
+            , setStatusLine = \s -> do
+                case (,) <$> beginStatusLine terminfoCaps <*> endStatusLine terminfoCaps of
+                    Nothing -> return False
+                    Just (begin, end) -> do
+                        sendCapToTerminal t begin []
+                        outputByteBuffer t $ BS8.pack s
+                        sendCapToTerminal t end []
+                        return True
             , releaseDisplay = liftIO $ do
                 maybeSendCap rmcup []
                 maybeSendCap cnorm []
