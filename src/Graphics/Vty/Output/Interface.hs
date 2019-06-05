@@ -79,9 +79,6 @@ data Output = Output
     , displayBounds :: IO DisplayRegion
       -- | Output the bytestring to the terminal device.
     , outputByteBuffer :: BS.ByteString -> IO ()
-      -- | Specifies the maximum number of colors supported by the
-      -- context.
-    , contextColorCount :: Int
       -- | Specifies whether the cursor can be shown / hidden.
     , supportsCursorVisibility :: Bool
       -- | Indicates support for terminal modes for this output device.
@@ -117,6 +114,8 @@ data Output = Output
       -- be a reliable indicator of whether the feature will work as
       -- desired.
     , supportsStrikethrough :: IO Bool
+      -- | Returns how many colors the terminal supports.
+    , outputColorMode :: ColorMode
     }
 
 displayContext :: Output -> DisplayRegion -> IO DisplayContext
@@ -310,17 +309,23 @@ limitAttrForDisplay t attr
     where
         clampColor Default     = Default
         clampColor KeepCurrent = KeepCurrent
-        clampColor (SetTo c)   = clampColor' c
-        clampColor' (ISOColor v)
-            | contextColorCount t < 8            = Default
-            | contextColorCount t < 16 && v >= 8 = SetTo $ ISOColor (v - 8)
-            | otherwise                          = SetTo $ ISOColor v
-        clampColor' (Color240 v)
-            -- Should we choose closest ISO color?
-            | contextColorCount t <  8           = Default
-            | contextColorCount t <  16          = Default
-            | contextColorCount t <= 256         = SetTo $ Color240 v
-            | otherwise
-                = let p :: Double = fromIntegral v / 240.0
-                      v' = floor $ p * (fromIntegral $ contextColorCount t)
-                  in SetTo $ Color240 v'
+        clampColor (SetTo c)   = clampColor' (outputColorMode t) c
+
+        clampColor' NoColor _ = Default
+
+        clampColor' ColorMode8 (ISOColor v)
+            | v >= 8    = SetTo $ ISOColor (v - 8)
+            | otherwise = SetTo $ ISOColor v
+        clampColor' ColorMode8 _ = Default
+
+        clampColor' ColorMode16 c@(ISOColor _) = SetTo c
+        clampColor' ColorMode16 _              = Default
+
+        clampColor' (ColorMode240 _) c@(ISOColor _) = SetTo c
+        clampColor' (ColorMode240 colorCount) c@(Color240 n)
+            | n <= colorCount = SetTo c
+            | otherwise       = Default
+        clampColor' colorMode@(ColorMode240 _) (RGBColor r g b) =
+            clampColor' colorMode (color240 r g b)
+
+        clampColor' FullColor c = SetTo c

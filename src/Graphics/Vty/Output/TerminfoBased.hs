@@ -25,7 +25,7 @@ import Graphics.Vty.Image (DisplayRegion)
 import Graphics.Vty.DisplayAttributes
 import Graphics.Vty.Output.Interface
 
-import Blaze.ByteString.Builder (Write, writeToByteString, writeStorable)
+import Blaze.ByteString.Builder (Write, writeToByteString, writeStorable, writeWord8)
 
 import Data.IORef
 import Data.Maybe (isJust, isNothing, fromJust)
@@ -49,7 +49,6 @@ data TerminfoCaps = TerminfoCaps
     , cup :: CapExpression
     , cnorm :: Maybe CapExpression
     , civis :: Maybe CapExpression
-    , supportsNoColors :: Bool
     , useAltColorMap :: Bool
     , setForeColor :: CapExpression
     , setBackColor :: CapExpression
@@ -104,20 +103,20 @@ sendCapToTerminal t cap capParams = do
 --
 --  * Providing independent string capabilities for all display
 --    attributes.
-reserveTerminal :: String -> Fd -> IO Output
-reserveTerminal termName outFd = do
+reserveTerminal :: String -> Fd -> ColorMode -> IO Output
+reserveTerminal termName outFd colorMode = do
     ti <- Terminfo.setupTerm termName
     -- assumes set foreground always implies set background exists.
     -- if set foreground is not set then all color changing style
     -- attributes are filtered.
     msetaf <- probeCap ti "setaf"
     msetf <- probeCap ti "setf"
-    let (noColors, useAlt, setForeCap)
+    let (useAlt, setForeCap)
             = case msetaf of
-                Just setaf -> (False, False, setaf)
+                Just setaf -> (False, setaf)
                 Nothing -> case msetf of
-                    Just setf -> (False, True, setf)
-                    Nothing -> (True, True, error $ "no fore color support for terminal " ++ termName)
+                    Just setf -> (True, setf)
+                    Nothing -> (True, error $ "no fore color support for terminal " ++ termName)
     msetab <- probeCap ti "setab"
     msetb <- probeCap ti "setb"
     let setBackCap
@@ -151,7 +150,6 @@ reserveTerminal termName outFd = do
         <*> requireCap ti "cup"
         <*> probeCap ti "cnorm"
         <*> probeCap ti "civis"
-        <*> pure noColors
         <*> pure useAlt
         <*> pure setForeCap
         <*> pure setBackCap
@@ -194,17 +192,12 @@ reserveTerminal termName outFd = do
                 when (toEnum len /= actualLen) $ fail $ "Graphics.Vty.Output: outputByteBuffer "
                   ++ "length mismatch. " ++ show len ++ " /= " ++ show actualLen
                   ++ " Please report this bug to vty project."
-            , contextColorCount
-                = case supportsNoColors terminfoCaps of
-                    False -> case Terminfo.getCapability ti (Terminfo.tiGetNum "colors" ) of
-                        Nothing -> 8
-                        Just v -> toEnum v
-                    True -> 1
             , supportsCursorVisibility = isJust $ civis terminfoCaps
             , supportsMode = terminfoModeSupported
             , setMode = terminfoSetMode
             , getModeStatus = terminfoModeStatus
             , assumedStateRef = newAssumedStateRef
+            , outputColorMode = colorMode
             -- I think fix would help assure tActual is the only
             -- reference. I was having issues tho.
             , mkDisplayContext = (`terminfoDisplayContext` terminfoCaps)
@@ -376,9 +369,9 @@ terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs =
                 -- applied states.
                 EnterExitSeq caps -> foldMap (\cap -> writeCapExpr cap []) caps
                                      `mappend`
-                                     writeColorDiff setForeColor (foreColorDiff diffs)
+                                     writeColorDiff Foreground (foreColorDiff diffs)
                                      `mappend`
-                                     writeColorDiff setBackColor (backColorDiff diffs)
+                                     writeColorDiff Background (backColorDiff diffs)
                 -- implicitly resets the colors to the defaults
                 SetState state -> writeCapExpr (fromJust $ setAttrStates
                                                          $ displayAttrCaps terminfoCaps
@@ -410,20 +403,52 @@ terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs =
           | otherwise = mempty
         setColors =
             (case fixedForeColor attr of
-                Just c -> writeCapExpr (setForeColor terminfoCaps)
-                                       [toEnum $ colorMap c]
+                Just c -> writeColor Foreground c
                 Nothing -> mempty)
             `mappend`
             (case fixedBackColor attr of
-                Just c -> writeCapExpr (setBackColor terminfoCaps)
-                                       [toEnum $ colorMap c]
+                Just c -> writeColor Background c
                 Nothing -> mempty)
-        writeColorDiff _f NoColorChange
+        writeColorDiff _side NoColorChange
             = mempty
-        writeColorDiff _f ColorToDefault
+        writeColorDiff _side ColorToDefault
             = error "ColorToDefault is not a possible case for applyColorDiffs"
-        writeColorDiff f (SetColor c)
-            = writeCapExpr (f terminfoCaps) [toEnum $ colorMap c]
+        writeColorDiff side (SetColor c)
+            = writeColor side c
+
+        writeColor side (RGBColor r g b) =
+            case outputColorMode (contextDevice dc) of
+                FullColor ->
+                    hardcodeColor side (r, g, b)
+                _ ->
+                    error "clampColor should remove rgb colors in standard mode"
+        writeColor side c =
+            writeCapExpr (setSideColor side terminfoCaps) [toEnum $ colorMap c]
+
+-- a color can either be in the foreground or the background
+data ColorSide = Foreground | Background
+
+-- get the capability for drawing a color on a specific side
+setSideColor :: ColorSide -> TerminfoCaps -> CapExpression
+setSideColor Foreground = setForeColor
+setSideColor Background = setBackColor
+
+hardcodeColor :: ColorSide -> (Word8, Word8, Word8) -> Write
+hardcodeColor side (r, g, b) =
+    -- hardcoded color codes are formatted as "\x1b[{side};2;{r};{g};{b}m"
+    mconcat [ writeStr "\x1b[", sideCode, delimiter, writeChar '2', delimiter
+            , writeColor r, delimiter, writeColor g, delimiter, writeColor b
+            , writeChar 'm']
+    where
+        writeChar = writeWord8 . fromIntegral . fromEnum
+        writeStr = mconcat . map writeChar
+        writeColor = writeStr . show
+        delimiter = writeChar ';'
+        -- 38/48 are used to set whether we should write to the
+        -- foreground/background. I really don't want to know why.
+        sideCode = case side of
+            Foreground -> writeStr "38"
+            Background -> writeStr "48"
 
 -- | The color table used by a terminal is a 16 color set followed by a
 -- 240 color set that might not be supported by the terminal.
@@ -433,6 +458,10 @@ terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs =
 ansiColorIndex :: Color -> Int
 ansiColorIndex (ISOColor v) = fromEnum v
 ansiColorIndex (Color240 v) = 16 + fromEnum v
+ansiColorIndex (RGBColor _ _ _) =
+    error $ unlines [ "Attempted to create color index from rgb color."
+                    , "This is currently unsupported, and shouldn't ever happen"
+                    ]
 
 -- | For terminals without setaf/setab
 --
@@ -449,6 +478,10 @@ altColorIndex (ISOColor 6) = 3
 altColorIndex (ISOColor 7) = 7
 altColorIndex (ISOColor v) = fromEnum v
 altColorIndex (Color240 v) = 16 + fromEnum v
+altColorIndex (RGBColor _ _ _) =
+    error $ unlines [ "Attempted to create color index from rgb color."
+                    , "This is currently unsupported, and shouldn't ever happen"
+                    ]
 
 {- | The sequence of terminfo caps to apply a given style are determined
  - according to these rules.
