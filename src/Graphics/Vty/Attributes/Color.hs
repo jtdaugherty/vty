@@ -80,7 +80,6 @@ import Control.DeepSeq
 data Color = ISOColor !Word8 | Color240 !Word8
     deriving ( Eq, Show, Read, Generic, NFData )
 
--- | Standard 8-color ANSI terminal color codes.
 black, red, green, yellow, blue, magenta, cyan, white :: Color
 black  = ISOColor 0
 red    = ISOColor 1
@@ -91,7 +90,6 @@ magenta= ISOColor 5
 cyan   = ISOColor 6
 white  = ISOColor 7
 
--- | Bright/Vivid variants of the standard 8-color ANSI
 brightBlack, brightRed, brightGreen, brightYellow :: Color
 brightBlue, brightMagenta, brightCyan, brightWhite :: Color
 brightBlack  = ISOColor 8
