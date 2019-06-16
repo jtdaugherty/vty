@@ -1,7 +1,18 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
+
 module Graphics.Vty.Attributes.Color
   ( Color(..)
+
+  -- ** Fixed Colors
+  -- | Standard 8-color ANSI terminal color codes.
+  --
+  -- Note that these map to colors in the terminal's custom palette. For
+  -- instance, `white` maps to whatever the terminal color theme uses for
+  -- white.
+  --
+  -- Use these functions if you want to make apps that fit the terminal theme.
+  -- If you want access to more/stronger colors use `rgbColor`
   , black
   , red
   , green
@@ -10,6 +21,8 @@ module Graphics.Vty.Attributes.Color
   , magenta
   , cyan
   , white
+
+  -- | Bright/Vivid variants of the standard 8-color ANSI
   , brightBlack
   , brightRed
   , brightGreen
@@ -18,12 +31,17 @@ module Graphics.Vty.Attributes.Color
   , brightMagenta
   , brightCyan
   , brightWhite
+  -- ** Creating Colors From RGB
+  , rgbColor
+  , module Graphics.Vty.Attributes.Color240
   )
 where
 
 import Data.Word
 import GHC.Generics
 import Control.DeepSeq
+
+import Graphics.Vty.Attributes.Color240
 
 -- | Abstract data type representing a color.
 --
@@ -100,3 +118,10 @@ brightBlue   = ISOColor 12
 brightMagenta= ISOColor 13
 brightCyan   = ISOColor 14
 brightWhite  = ISOColor 15
+
+
+-- | Create a Vty 'Color' (in the 240 color set) from an RGB triple.
+-- This function is lossy in the sense that we only internally support 240 colors but the
+-- #RRGGBB format supports 16^3 colors.
+rgbColor :: Integral i => i -> i -> i -> Color
+rgbColor r g b = Color240 (make240ColorCodeFromRGB r g b)

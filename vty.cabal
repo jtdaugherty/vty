@@ -66,6 +66,7 @@ library
 
   exposed-modules:     Graphics.Vty
                        Graphics.Vty.Attributes
+                       Graphics.Vty.Attributes.Color 
                        Graphics.Vty.Config
                        Graphics.Vty.Error
                        Graphics.Vty.Image
@@ -98,8 +99,7 @@ library
                        Graphics.Vty.Output.XTermColor
                        Graphics.Vty.Output.TerminfoBased
 
-  other-modules:       Graphics.Vty.Attributes.Color
-                       Graphics.Vty.Attributes.Color240
+  other-modules:       Graphics.Vty.Attributes.Color240
                        Graphics.Vty.Debug.Image
                        Graphics.Vty.Input.Terminfo.ANSIVT
 

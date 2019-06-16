@@ -30,7 +30,9 @@
 -- The value 'currentAttr' will keep the attributes of whatever was
 -- output previously.
 module Graphics.Vty.Attributes
-  ( Attr(..)
+  ( module Graphics.Vty.Attributes.Color
+
+  , Attr(..)
   , FixedAttr(..)
   , MaybeDefault(..)
   , defAttr
@@ -56,40 +58,6 @@ module Graphics.Vty.Attributes
 
   -- * Setting hyperlinks
   , withURL
-
-  -- * Colors
-  , Color(..)
-
-  -- ** Fixed Colors
-  -- | Standard 8-color ANSI terminal color codes.
-  --
-  -- Note that these map to colors in the terminal's custom palette. For
-  -- instance, `white` maps to whatever the terminal color theme uses for
-  -- white.
-  --
-  -- Use these functions if you want to make apps that fit the terminal theme.
-  -- If you want access to more/stronger colors use
-  -- `Graphics.Vty.Attributes.Color240.rgbColor`
-  , black
-  , red
-  , green
-  , yellow
-  , blue
-  , magenta
-  , cyan
-  , white
-
-  -- | Bright/Vivid variants of the standard 8-color ANSI
-  , brightBlack
-  , brightRed
-  , brightGreen
-  , brightYellow
-  , brightBlue
-  , brightMagenta
-  , brightCyan
-  , brightWhite
-  -- ** Creating Colors From RGB
-  , module Graphics.Vty.Attributes.Color240
   )
 where
 
@@ -103,7 +71,6 @@ import Data.Word
 import GHC.Generics
 
 import Graphics.Vty.Attributes.Color
-import Graphics.Vty.Attributes.Color240
 
 -- | A display attribute defines the Color and Style of all the
 -- characters rendered after the attribute is applied.
