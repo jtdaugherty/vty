@@ -124,4 +124,4 @@ brightWhite  = ISOColor 15
 -- This function is lossy in the sense that we only internally support 240 colors but the
 -- #RRGGBB format supports 16^3 colors.
 rgbColor :: Integral i => i -> i -> i -> Color
-rgbColor r g b = Color240 (make240ColorCodeFromRGB r g b)
+rgbColor r g b = Color240 (rgbColorToColor240 r g b)
