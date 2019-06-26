@@ -30,7 +30,9 @@
 -- The value 'currentAttr' will keep the attributes of whatever was
 -- output previously.
 module Graphics.Vty.Attributes
-  ( Attr(..)
+  ( module Graphics.Vty.Attributes.Color
+
+  , Attr(..)
   , FixedAttr(..)
   , MaybeDefault(..)
   , defAttr
@@ -56,10 +58,6 @@ module Graphics.Vty.Attributes
 
   -- * Setting hyperlinks
   , withURL
-
-  -- * Colors
-  , module Graphics.Vty.Attributes.Color
-  , module Graphics.Vty.Attributes.Color240
   )
 where
 
@@ -73,7 +71,6 @@ import Data.Word
 import GHC.Generics
 
 import Graphics.Vty.Attributes.Color
-import Graphics.Vty.Attributes.Color240
 
 -- | A display attribute defines the Color and Style of all the
 -- characters rendered after the attribute is applied.
