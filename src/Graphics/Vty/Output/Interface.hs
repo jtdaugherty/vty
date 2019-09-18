@@ -29,6 +29,7 @@ import Graphics.Vty.DisplayAttributes
 import Blaze.ByteString.Builder (Write, writeToByteString)
 import Blaze.ByteString.Builder.ByteString (writeByteString)
 
+import Control.Monad.Fail (MonadFail)
 import Control.Monad.Trans
 
 import qualified Data.ByteString as BS
@@ -76,7 +77,7 @@ data Output = Output
       -- previous state then set the display state to the initial state.
     , releaseDisplay :: forall m. MonadIO m => m ()
       -- | Returns the current display bounds.
-    , displayBounds :: forall m. MonadIO m => m DisplayRegion
+    , displayBounds :: forall m. (MonadIO m, MonadFail m) => m DisplayRegion
       -- | Output the bytestring to the terminal device.
     , outputByteBuffer :: BS.ByteString -> IO ()
       -- | Specifies the maximum number of colors supported by the

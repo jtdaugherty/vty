@@ -25,6 +25,7 @@ import Graphics.Vty.Output.Interface
 
 import Blaze.ByteString.Builder (Write, writeToByteString, writeStorable)
 
+import Control.Monad.Fail (MonadFail)
 import Control.Monad.Trans
 
 import Data.Bits ((.&.))
@@ -203,25 +204,25 @@ reserveTerminal termName outFd = liftIO $ do
         maybeSendCap s = when (isJust $ s terminfoCaps) . sendCap (fromJust . s)
     return t
 
-requireCap :: (Applicative m, MonadIO m) => Terminfo.Terminal -> String -> m CapExpression
+requireCap :: (Applicative m, MonadIO m, MonadFail m) => Terminfo.Terminal -> String -> m CapExpression
 requireCap ti capName
     = case Terminfo.getCapability ti (Terminfo.tiGetStr capName) of
         Nothing     -> fail $ "Terminal does not define required capability \"" ++ capName ++ "\""
         Just capStr -> parseCap capStr
 
-probeCap :: (Applicative m, MonadIO m) => Terminfo.Terminal -> String -> m (Maybe CapExpression)
+probeCap :: (Applicative m, MonadIO m, MonadFail m) => Terminfo.Terminal -> String -> m (Maybe CapExpression)
 probeCap ti capName
     = case Terminfo.getCapability ti (Terminfo.tiGetStr capName) of
         Nothing     -> return Nothing
         Just capStr -> Just <$> parseCap capStr
 
-parseCap :: (Applicative m, MonadIO m) => String -> m CapExpression
+parseCap :: (Applicative m, MonadIO m, MonadFail m) => String -> m CapExpression
 parseCap capStr = do
     case parseCapExpression capStr of
         Left e -> fail $ show e
         Right cap -> return cap
 
-currentDisplayAttrCaps :: ( Applicative m, MonadIO m )
+currentDisplayAttrCaps :: ( Applicative m, MonadIO m, MonadFail m )
                        => Terminfo.Terminal
                        -> m DisplayAttrCaps
 currentDisplayAttrCaps ti
