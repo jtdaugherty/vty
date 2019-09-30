@@ -62,7 +62,7 @@ data Output = Output
       terminalID :: String
       -- | Release the terminal just prior to application exit and reset
       -- it to its state prior to application startup.
-    , releaseTerminal :: forall m. MonadIO m => m ()
+    , releaseTerminal :: IO ()
       -- | Clear the display and initialize the terminal to some initial
       -- display state.
       --
@@ -72,12 +72,12 @@ data Output = Output
       --  - cursor at top left
       --  - UTF-8 character encoding
       --  - drawing characteristics are the default
-    , reserveDisplay :: forall m. MonadIO m => m ()
+    , reserveDisplay :: IO ()
       -- | Return the display to the state before `reserveDisplay` If no
       -- previous state then set the display state to the initial state.
-    , releaseDisplay :: forall m. MonadIO m => m ()
+    , releaseDisplay :: IO ()
       -- | Returns the current display bounds.
-    , displayBounds :: forall m. (MonadIO m, MonadFail m) => m DisplayRegion
+    , displayBounds :: IO DisplayRegion
       -- | Output the bytestring to the terminal device.
     , outputByteBuffer :: BS.ByteString -> IO ()
       -- | Specifies the maximum number of colors supported by the
@@ -89,23 +89,23 @@ data Output = Output
     , supportsMode :: Mode -> Bool
       -- | Enables or disables a mode (does nothing if the mode is
       -- unsupported).
-    , setMode :: forall m. MonadIO m => Mode -> Bool -> m ()
+    , setMode :: Mode -> Bool -> IO ()
       -- | Returns whether a mode is enabled.
-    , getModeStatus :: forall m. MonadIO m => Mode -> m Bool
+    , getModeStatus :: Mode -> IO Bool
     , assumedStateRef :: IORef AssumedState
       -- | Acquire display access to the given region of the display.
       -- Currently all regions have the upper left corner of (0,0) and
       -- the lower right corner at (max displayWidth providedWidth, max
       -- displayHeight providedHeight)
-    , mkDisplayContext :: forall m. MonadIO m => Output -> DisplayRegion -> m DisplayContext
+    , mkDisplayContext :: Output -> DisplayRegion -> IO DisplayContext
       -- | Ring the terminal bell if supported.
-    , ringTerminalBell :: forall m. MonadIO m => m ()
+    , ringTerminalBell :: IO ()
       -- | Returns whether the terminal has an audio bell feature.
-    , supportsBell :: forall m. MonadIO m => m Bool
+    , supportsBell :: IO Bool
     }
 
-displayContext :: MonadIO m => Output -> DisplayRegion -> m DisplayContext
-displayContext t = liftIO . mkDisplayContext t t
+displayContext :: Output -> DisplayRegion -> IO DisplayContext
+displayContext t = mkDisplayContext t t
 
 data AssumedState = AssumedState
     { prevFattr :: Maybe FixedAttr
@@ -164,8 +164,8 @@ writeUtf8Text = writeByteString
 --      4. Serialized to the display.
 --
 --      5. The cursor is then shown and positioned or kept hidden.
-outputPicture :: MonadIO m => DisplayContext -> Picture -> m ()
-outputPicture dc pic = liftIO $ do
+outputPicture :: DisplayContext -> Picture -> IO ()
+outputPicture dc pic = do
     urlsEnabled <- getModeStatus (contextDevice dc) Hyperlink
     as <- readIORef (assumedStateRef $ contextDevice dc)
     let manipCursor = supportsCursorVisibility (contextDevice dc)

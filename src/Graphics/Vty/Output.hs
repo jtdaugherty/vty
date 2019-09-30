@@ -38,9 +38,6 @@ import Graphics.Vty.Output.TerminfoBased as TerminfoBased
 
 import Blaze.ByteString.Builder (writeToByteString)
 
-import Control.Monad.Fail (MonadFail)
-import Control.Monad.Trans
-
 import Data.List (isPrefixOf)
 import Data.Monoid ((<>))
 
@@ -85,23 +82,23 @@ outputForConfig config = (<> config) <$> standardIOConfig >>= outputForConfig
 -- Currently, the only way to set the cursor position to a given
 -- character coordinate is to specify the coordinate in the Picture
 -- instance provided to 'outputPicture' or 'refresh'.
-setCursorPos :: (MonadIO m, MonadFail m) => Output -> Int -> Int -> m ()
+setCursorPos :: Output -> Int -> Int -> IO ()
 setCursorPos t x y = do
     bounds <- displayBounds t
     when (x >= 0 && x < regionWidth bounds && y >= 0 && y < regionHeight bounds) $ do
         dc <- displayContext t bounds
-        liftIO $ outputByteBuffer t $ writeToByteString $ writeMoveCursor dc x y
+        outputByteBuffer t $ writeToByteString $ writeMoveCursor dc x y
 
 -- | Hides the cursor.
-hideCursor :: (MonadIO m, MonadFail m) => Output -> m ()
+hideCursor :: Output -> IO ()
 hideCursor t = do
     bounds <- displayBounds t
     dc <- displayContext t bounds
-    liftIO $ outputByteBuffer t $ writeToByteString $ writeHideCursor dc
+    outputByteBuffer t $ writeToByteString $ writeHideCursor dc
 
 -- | Shows the cursor.
-showCursor :: (MonadIO m, MonadFail m) => Output -> m ()
+showCursor :: Output -> IO ()
 showCursor t = do
     bounds <- displayBounds t
     dc <- displayContext t bounds
-    liftIO $ outputByteBuffer t $ writeToByteString $ writeShowCursor dc
+    outputByteBuffer t $ writeToByteString $ writeShowCursor dc

@@ -25,9 +25,6 @@ import Graphics.Vty.Output.Interface
 
 import Blaze.ByteString.Builder (Write, writeToByteString, writeStorable)
 
-import Control.Monad.Fail (MonadFail)
-import Control.Monad.Trans
-
 import Data.Bits ((.&.))
 import Data.Foldable (foldMap)
 import Data.IORef
@@ -101,8 +98,8 @@ sendCapToTerminal t cap capParams = do
 --
 --  * Providing independent string capabilities for all display
 --    attributes.
-reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output
-reserveTerminal termName outFd = liftIO $ do
+reserveTerminal :: String -> Fd -> IO Output
+reserveTerminal termName outFd = do
     ti <- Terminfo.setupTerm termName
     -- assumes set foreground always implies set background exists.
     -- if set foreground is not set then all color changing style
@@ -131,13 +128,13 @@ reserveTerminal termName outFd = liftIO $ do
           curStatus <- terminfoModeStatus m
           when (newStatus /= curStatus) $
               case m of
-                  Hyperlink -> liftIO $ do
+                  Hyperlink -> do
                       writeIORef hyperlinkModeStatus newStatus
                       writeIORef newAssumedStateRef initialAssumedState
                   _ -> return ()
         terminfoModeStatus m =
             case m of
-                Hyperlink -> liftIO $ readIORef hyperlinkModeStatus
+                Hyperlink -> readIORef hyperlinkModeStatus
                 _ -> return False
         terminfoModeSupported Hyperlink = True
         terminfoModeSupported _ = False
@@ -159,22 +156,22 @@ reserveTerminal termName outFd = liftIO $ do
         <*> probeCap ti "bel"
     let t = Output
             { terminalID = termName
-            , releaseTerminal = liftIO $ do
+            , releaseTerminal = do
                 sendCap setDefaultAttr []
                 maybeSendCap cnorm []
             , supportsBell = return $ isJust $ ringBellAudio terminfoCaps
-            , ringTerminalBell = liftIO $ maybeSendCap ringBellAudio []
-            , reserveDisplay = liftIO $ do
+            , ringTerminalBell = maybeSendCap ringBellAudio []
+            , reserveDisplay = do
                 -- If there is no support for smcup: Clear the screen
                 -- and then move the mouse to the home position to
                 -- approximate the behavior.
                 maybeSendCap smcup []
                 sendCap clearScreen []
-            , releaseDisplay = liftIO $ do
+            , releaseDisplay = do
                 maybeSendCap rmcup []
                 maybeSendCap cnorm []
             , displayBounds = do
-                rawSize <- liftIO $ getWindowSize outFd
+                rawSize <- getWindowSize outFd
                 case rawSize of
                     (w, h)  | w < 0 || h < 0 -> fail $ "getwinsize returned < 0 : " ++ show rawSize
                             | otherwise      -> return (w,h)
@@ -198,33 +195,31 @@ reserveTerminal termName outFd = liftIO $ do
             , assumedStateRef = newAssumedStateRef
             -- I think fix would help assure tActual is the only
             -- reference. I was having issues tho.
-            , mkDisplayContext = \tActual -> liftIO . terminfoDisplayContext tActual terminfoCaps
+            , mkDisplayContext = \tActual -> terminfoDisplayContext tActual terminfoCaps
             }
         sendCap s = sendCapToTerminal t (s terminfoCaps)
         maybeSendCap s = when (isJust $ s terminfoCaps) . sendCap (fromJust . s)
     return t
 
-requireCap :: (Applicative m, MonadIO m, MonadFail m) => Terminfo.Terminal -> String -> m CapExpression
+requireCap :: Terminfo.Terminal -> String -> IO CapExpression
 requireCap ti capName
     = case Terminfo.getCapability ti (Terminfo.tiGetStr capName) of
         Nothing     -> fail $ "Terminal does not define required capability \"" ++ capName ++ "\""
         Just capStr -> parseCap capStr
 
-probeCap :: (Applicative m, MonadIO m, MonadFail m) => Terminfo.Terminal -> String -> m (Maybe CapExpression)
+probeCap :: Terminfo.Terminal -> String -> IO (Maybe CapExpression)
 probeCap ti capName
     = case Terminfo.getCapability ti (Terminfo.tiGetStr capName) of
         Nothing     -> return Nothing
         Just capStr -> Just <$> parseCap capStr
 
-parseCap :: (Applicative m, MonadIO m, MonadFail m) => String -> m CapExpression
+parseCap :: String -> IO CapExpression
 parseCap capStr = do
     case parseCapExpression capStr of
         Left e -> fail $ show e
         Right cap -> return cap
 
-currentDisplayAttrCaps :: ( Applicative m, MonadIO m, MonadFail m )
-                       => Terminfo.Terminal
-                       -> m DisplayAttrCaps
+currentDisplayAttrCaps :: Terminfo.Terminal -> IO DisplayAttrCaps
 currentDisplayAttrCaps ti
     =   pure DisplayAttrCaps
     <*> probeCap ti "sgr"
