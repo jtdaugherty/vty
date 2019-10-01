@@ -29,9 +29,6 @@ import Graphics.Vty.DisplayAttributes
 import Blaze.ByteString.Builder (Write, writeToByteString)
 import Blaze.ByteString.Builder.ByteString (writeByteString)
 
-import Control.Monad.Fail (MonadFail)
-import Control.Monad.Trans
-
 import qualified Data.ByteString as BS
 import Data.IORef
 import qualified Data.Text.Encoding as T
