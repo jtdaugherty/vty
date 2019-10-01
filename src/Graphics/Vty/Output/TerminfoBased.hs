@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -D_XOPEN_SOURCE=500 -fno-warn-warnings-deprecations #-}
 {-# CFILES gwinsz.c #-}
 
@@ -29,10 +30,13 @@ import Control.Monad.Fail (MonadFail)
 import Control.Monad.Trans
 
 import Data.Bits ((.&.))
-import Data.Foldable (foldMap)
 import Data.IORef
 import Data.Maybe (isJust, isNothing, fromJust)
 import Data.Word
+
+#if !MIN_VERSION_base(4,8,0)
+import Data.Foldable (foldMap)
+#endif
 
 import Foreign.C.Types ( CInt(..), CLong(..) )
 import Foreign.ForeignPtr (withForeignPtr)

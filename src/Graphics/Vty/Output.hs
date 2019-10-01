@@ -1,5 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RecordWildCards, NamedFieldPuns, CPP #-}
 -- | This module provides functions for accessing the current terminal
 -- or a specific terminal device.
 --
@@ -42,7 +41,10 @@ import Control.Monad.Fail (MonadFail)
 import Control.Monad.Trans
 
 import Data.List (isPrefixOf)
+
+#if !MIN_VERSION_base(4,11,0)
 import Data.Monoid ((<>))
+#endif
 
 -- | Returns an `Output` for the terminal specified in `Config`.
 --

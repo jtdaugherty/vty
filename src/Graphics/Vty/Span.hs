@@ -14,7 +14,6 @@ module Graphics.Vty.Span where
 import Graphics.Vty.Attributes (Attr)
 import Graphics.Vty.Image
 import Graphics.Vty.Image.Internal ( clipText )
-import Graphics.Text.Width (wctlwidth)
 
 import qualified Data.Text.Lazy as TL
 import Data.Vector (Vector)
