@@ -1,4 +1,23 @@
 
+5.26
+ - Resolved various import warnings (thanks @glguy)
+ - Removed the MonadIO constraint from the Output type's fields and
+   removed MonadFail uses (PR #177, thanks @glguy)
+ - Clarified documentation for ANSI colors (thanks Colby Jenn)
+ - Graphics.Vty.Attributes no longer re-exports
+   Graphics.Vty.Attributes.Color
+ - The Graphics.Vty.Attributes.Color module is now exposed (thanks Colby
+   Jenn)
+ - Raised upper bound for microlens to 0.4.12 (thanks Artyom Kazak)
+ - Changed from using System.Posix.Env.getEnv to
+   System.Environment.lookupEnv (thanks Jonathan Osser)
+ - Added Graphics.Vty.Image functions for dealing with character width
+   computations on Text values instead of Strings:
+   - safeWctwidth
+   - safeWctlwidth
+   - wctwidth
+   - wctlwidth
+
 5.25.1
  - Avoided a conflict with a Microlens 0.4.10 operator and added an
    upper bound on Microlens of 0.4.11.
