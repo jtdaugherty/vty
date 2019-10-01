@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards, CPP #-}
 
 -- | This module provides the input layer for Vty, including methods
 -- for initializing an 'Input' structure and reading 'Event's from the
@@ -132,7 +132,9 @@ import Lens.Micro
 import qualified System.Console.Terminfo as Terminfo
 import System.Posix.Signals.Exts
 
+#if !MIN_VERSION_base(4,11,0)
 import Data.Monoid ((<>))
+#endif
 
 -- | Set up the terminal with file descriptor `inputFd` for input.
 -- Returns an 'Input'.

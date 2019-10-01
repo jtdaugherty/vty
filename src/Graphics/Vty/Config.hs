@@ -76,7 +76,9 @@ import Control.Exception (catch, IOException, Exception(..), throwIO)
 import Control.Monad (liftM, guard, void)
 
 import qualified Data.ByteString as BS
+#if !(MIN_VERSION_base(4,8,0))
 import Data.Monoid (Monoid(..))
+#endif
 #if !(MIN_VERSION_base(4,11,0))
 import Data.Semigroup (Semigroup(..))
 #endif

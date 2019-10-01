@@ -1,3 +1,4 @@
+{-# Language CPP #-}
 -- Copyright 2009-2010 Corey O'Connor
 -- | Xterm output driver. This uses the Terminfo driver with some
 -- extensions for Xterm.
@@ -24,7 +25,10 @@ import System.Posix.Env (getEnv)
 
 import Data.List (isInfixOf)
 import Data.Maybe (catMaybes)
+
+#if !MIN_VERSION_base(4,11,0)
 import Data.Monoid ((<>))
+#endif
 
 -- | Construct an Xterm output driver. Initialize the display to UTF-8.
 reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output

@@ -13,7 +13,6 @@ import Graphics.Vty.Image
 import Graphics.Vty.Image.Internal
 import Graphics.Vty.Picture
 import Graphics.Vty.Span
-import Graphics.Text.Width (wctlwidth)
 
 import Lens.Micro
 import Lens.Micro.Mtl
