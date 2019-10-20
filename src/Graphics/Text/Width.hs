@@ -14,10 +14,14 @@ module Graphics.Text.Width
 where
 
 import Data.List (foldl')
+import Foreign.C.Types (CInt(CInt), CWchar(CWchar))
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 
-foreign import ccall unsafe "vty_mk_wcwidth" wcwidth :: Char -> Int
+foreign import ccall unsafe "wcwidth" wcwidth_ :: CWchar -> CInt
+
+wcwidth :: Char -> Int
+wcwidth = fromIntegral . wcwidth_ . CWchar . fromIntegral . fromEnum
 
 wcswidth :: String -> Int
 wcswidth = foldl' (\l c -> wcwidth c + l) 0

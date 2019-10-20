@@ -106,9 +106,18 @@ library
 
   c-sources:           cbits/gwinsz.c
                        cbits/set_term_timing.c
-                       cbits/mk_wcwidth.c
+                       cbits/wcwidth.c
 
   include-dirs:        cbits
+                       unicode_tools
+  includes:            wide.h
+                       nonspacing.h
+                       emoji.h
+                       extended_pictographic.h
+  install-includes:    wide.h
+                       nonspacing.h
+                       emoji.h
+                       extended_pictographic.h
 
   hs-source-dirs:      src
 
