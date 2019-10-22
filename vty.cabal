@@ -171,6 +171,24 @@ executable vty-emoji-demo
                        containers,
                        mtl >= 1.1.1.0 && < 2.3
 
+executable vty-wcwidth-tester
+  main-is:             WcwidthTester.hs
+  hs-source-dirs:      unicode_tools
+  c-sources:           unicode_tools/emoji.c
+  include-dirs:        unicode_tools
+  includes:            emoji.h
+                       extended_pictographic.h
+  install-includes:    emoji.h
+                       extended_pictographic.h
+
+  default-language:    Haskell2010
+  default-extensions:  ScopedTypeVariables
+  ghc-options:         -threaded
+
+  build-depends:       vty,
+                       base >= 4.8 && < 5,
+                       ansi-terminal
+
 test-suite verify-using-mock-terminal
   default-language:    Haskell2010
   default-extensions:  ScopedTypeVariables

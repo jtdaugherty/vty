@@ -27,5 +27,5 @@ clean:
 	rm -f *.o \
 		gen_wide wide.h \
 		gen_nonspacing nonspacing.h \
-		gen_emoji emoji.h \
-		gen_extended_pictographic extended_pictographic.h
+		gen_emoji \
+		gen_extended_pictographic
