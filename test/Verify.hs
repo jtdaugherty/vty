@@ -38,6 +38,7 @@ import qualified Test.QuickCheck.Property as Prop
 import Test.QuickCheck.Monadic ( monadicIO )
 
 import Text.Printf
+import Data.Char ( generalCategory, GeneralCategory(NotAssigned) )
 
 import qualified Codec.Binary.UTF8.String as UTF8
 
@@ -79,8 +80,17 @@ instance Show DoubleColumnChar where
 
 instance Arbitrary DoubleColumnChar where
     arbitrary = elements $ map DoubleColumnChar $
-           [ toEnum 0x3040 .. toEnum 0x3098 ]
-        ++ [ toEnum 0x309B .. toEnum 0xA4CF ]
+        filter (\c -> generalCategory c /= NotAssigned) $
+           -- See https://www.unicode.org/Public/12.0.0/ucd/EastAsianWidth.txt
+           -- Start from: CJK RADICAL REPEAT
+              [ toEnum 0x2E80 .. toEnum 0x303E ]
+           -- Skip narrow: 303F IDEOGRAPHIC HALF FILL SPACE
+           ++ [ toEnum 0x3040 .. toEnum 0x3247 ]
+           -- Avoid ambiguous: 3248..324F CIRCLED NUMBER TEN ON BLACK SQUARE
+           ++ [ toEnum 0x3250 .. toEnum 0x4DBF ]
+           -- Skip narrow: 4DC0..4DFF HEXAGRAM FOR THE CREATIVE HEAVEN
+           ++ [ toEnum 0x4E00 .. toEnum 0xA4C6 ]
+           -- End at: YI RADICAL KE
 
 liftIOResult :: Testable prop => IO prop -> Property
 liftIOResult = ioProperty
