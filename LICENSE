@@ -29,3 +29,14 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+----------------------------------------------------------------------
+
+The original C code for wcwidth and the Unicode table generation in
+unicode_tools/*.c is from musl[1][2] Copyright © 2005-2019 Rich Felker,
+et al. Musl is licensed under a standard BSD license[3]. The code has
+been adapted and extended for use in vty.
+
+1. https://www.musl-libc.org/
+2. https://github.com/richfelker/musl-chartable-tools
+3. http://git.musl-libc.org/cgit/musl/plain/COPYRIGHT?id=9b2921bea1d5017832e1b45d1fd64220047a9802
+
