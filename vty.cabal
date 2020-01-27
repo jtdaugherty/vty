@@ -109,6 +109,8 @@ library
                        cbits/mk_wcwidth.c
 
   include-dirs:        cbits
+  
+  pkgconfig-depends:   tinfo
 
   hs-source-dirs:      src
 
