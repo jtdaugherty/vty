@@ -60,7 +60,8 @@ library
                        unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7,
-                       binary
+                       binary,
+                       ansi-terminal >= 0.10.3
 
   if !impl(ghc >= 8.0)
     build-depends:     semigroups >= 0.16,
@@ -102,6 +103,7 @@ library
                        Graphics.Vty.Output.TerminfoBased
                        Graphics.Vty.UnicodeWidthTable.Types
                        Graphics.Vty.UnicodeWidthTable.IO
+                       Graphics.Vty.UnicodeWidthTable.Query
 
   other-modules:       Graphics.Vty.Attributes.Color240
                        Graphics.Vty.Debug.Image
