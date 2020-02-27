@@ -1,4 +1,10 @@
 
+5.27
+ - Added Graphics.Vty.Config.getTtyEraseChar to support querying the
+   kernel for the current terminal's settings to obtain the character
+   assigned by the "stty erase" command. That can then be added to the
+   Vty configuration's input map to map to KBS (backspace) if desired.
+
 5.26
  - Resolved various import warnings (thanks @glguy)
  - Removed the MonadIO constraint from the Output type's fields and
