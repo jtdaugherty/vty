@@ -99,6 +99,7 @@ library
                        Graphics.Vty.Output.Interface
                        Graphics.Vty.Output.XTermColor
                        Graphics.Vty.Output.TerminfoBased
+                       Graphics.Vty.UnicodeWidthTable.Types
 
   other-modules:       Graphics.Vty.Attributes.Color240
                        Graphics.Vty.Debug.Image
