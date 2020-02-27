@@ -65,6 +65,7 @@ module Graphics.Vty.Config
   , runParseConfig
   , parseConfigFile
   , defaultConfig
+  , getTtyEraseChar
   )
 where
 
@@ -92,6 +93,7 @@ import System.Directory (getAppUserDataDirectory)
 import System.Environment (lookupEnv)
 import System.Posix.IO (stdInput, stdOutput)
 import System.Posix.Types (Fd(..))
+import Foreign.C.Types (CInt(..), CChar(..))
 
 import Text.Parsec hiding ((<|>))
 import Text.Parsec.Token ( GenLanguageDef(..) )
@@ -306,3 +308,24 @@ instance (GParseAlts f, GParseAlts g) => GParseAlts (f :+: g) where
   gparseAlts con = L1 <$> gparseAlts con <|> R1 <$> gparseAlts con
 
 instance GParseAlts V1 where gparseAlts _ = fail "GParse: V1"
+
+foreign import ccall "vty_get_tty_erase" cGetTtyErase :: Fd -> IO CChar
+
+-- | Get the "erase" character for the terminal attached to the
+-- specified file descriptor. This is the character configured by 'stty
+-- erase'. If the call to 'tcgetattr' fails, this will return 'Nothing'.
+-- Otherwise it will return the character that has been configured to
+-- indicate the canonical mode ERASE behavior. That character can then
+-- be added to the table of strings that we interpret to mean Backspace.
+--
+-- For more details, see:
+--
+-- * https://www.gnu.org/software/libc/manual/html_node/Canonical-or-Not.html
+-- * https://www.gsp.com/cgi-bin/man.cgi?section=1&topic=stty
+-- * https://github.com/matterhorn-chat/matterhorn/issues/565
+getTtyEraseChar :: Fd -> IO (Maybe Char)
+getTtyEraseChar fd = do
+    c <- cGetTtyErase fd
+    if c /= 0
+       then return $ Just $ toEnum $ fromEnum c
+       else return Nothing

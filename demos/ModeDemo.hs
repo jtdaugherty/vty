@@ -2,6 +2,8 @@ module Main where
 
 import Control.Applicative
 import Data.Monoid
+import Foreign.C.Types (CInt(..), CChar(..))
+import System.Posix.Types (Fd(..))
 
 import Graphics.Vty
 
