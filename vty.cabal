@@ -123,6 +123,16 @@ library
 
   ghc-prof-options:    -O2 -funbox-strict-fields -caf-all -Wall -fspec-constr -fspec-constr-count=10
 
+executable vty-build-table
+  main-is:             BuildUnicodeTable.hs
+  hs-source-dirs:      tools
+
+  default-language:    Haskell2010
+  ghc-options:         -threaded
+
+  build-depends:       vty,
+                       base >= 4.8 && < 5
+
 executable vty-mode-demo
   main-is:             ModeDemo.hs
   hs-source-dirs:      demos
