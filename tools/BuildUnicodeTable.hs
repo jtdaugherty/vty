@@ -4,6 +4,7 @@ import System.Exit (exitFailure)
 
 import Graphics.Vty.UnicodeWidthTable.Types
 import Graphics.Vty.UnicodeWidthTable.IO
+import Graphics.Vty.UnicodeWidthTable.Query
 
 main :: IO ()
 main = do
@@ -24,3 +25,6 @@ main = do
             print t
             putStrLn "New table:"
             print t2
+
+    builtTable <- buildUnicodeWidthTable
+    print builtTable
