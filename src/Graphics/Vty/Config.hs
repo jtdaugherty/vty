@@ -66,6 +66,10 @@ module Graphics.Vty.Config
   , parseConfigFile
   , defaultConfig
   , getTtyEraseChar
+
+  , widthTableFilename
+  , vtyDataDirectory
+  , terminalWidthTablePath
   )
 where
 
@@ -91,6 +95,7 @@ import GHC.Generics
 
 import System.Directory (getAppUserDataDirectory)
 import System.Environment (lookupEnv)
+import System.FilePath ((</>))
 import System.Posix.IO (stdInput, stdOutput)
 import System.Posix.Types (Fd(..))
 import Foreign.C.Types (CInt(..), CChar(..))
@@ -175,14 +180,29 @@ instance Monoid Config where
     mappend = (<>)
 #endif
 
+vtyDataDirectory :: IO FilePath
+vtyDataDirectory = getAppUserDataDirectory "vty"
+
 -- | Load a configuration from @'getAppUserDataDirectory'/config@ and
 -- @$VTY_CONFIG_FILE@.
 userConfig :: IO Config
 userConfig = do
-    configFile <- (mappend <$> getAppUserDataDirectory "vty" <*> pure "/config") >>= parseConfigFile
+    configFile <- (mappend <$> vtyDataDirectory <*> pure "/config") >>= parseConfigFile
     overrideConfig <- maybe (return defaultConfig) parseConfigFile =<< lookupEnv "VTY_CONFIG_FILE"
     let base = configFile <> overrideConfig
     mappend base <$> overrideEnvConfig
+
+widthTableFilename :: String -> String
+widthTableFilename term = "width_table_" <> term <> ".dat"
+
+terminalWidthTablePath :: IO (Maybe FilePath)
+terminalWidthTablePath = do
+    dataDir <- vtyDataDirectory
+    result <- lookupEnv "TERM"
+    case result of
+        Nothing -> return Nothing
+        Just term -> do
+            return $ Just $ dataDir </> widthTableFilename term
 
 overrideEnvConfig :: IO Config
 overrideEnvConfig = do
