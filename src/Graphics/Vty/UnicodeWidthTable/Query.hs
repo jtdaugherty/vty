@@ -31,14 +31,18 @@ mkRanges :: [(Char, Int)] -> [WidthTableRange]
 mkRanges pairs =
     let convertedPairs = convert <$> pairs
         convert (c, i) = (fromIntegral $ fromEnum c, fromIntegral i)
+
         go Nothing finishedRanges [] = finishedRanges
         go (Just r) finishedRanges [] = r:finishedRanges
+
         go Nothing finishedRanges ((c, width):rest) =
             go (Just $ WidthTableRange c 1 width) finishedRanges rest
+
         go (Just r@(WidthTableRange prevCh sz prevWidth)) finishedRanges ((c, width):rest) =
             if c == prevCh + sz && prevWidth == width
             then go (Just (WidthTableRange prevCh (sz + 1) prevWidth)) finishedRanges rest
             else go (Just (WidthTableRange c 1 width)) (r:finishedRanges) rest
+
     in go Nothing [] convertedPairs
 
 -- | Construct a unicode character width table by querying the terminal
