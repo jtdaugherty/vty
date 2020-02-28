@@ -53,6 +53,12 @@ mkRanges pairs =
 -- system performance.
 buildUnicodeWidthTable :: IO UnicodeWidthTable
 buildUnicodeWidthTable = do
+    -- NB: this only covers some of the possible Unicode range and is
+    -- sure to become stale eventually. Granted, at the time of this
+    -- writing, even the latest version of Unicode (13) totals 143,859
+    -- characters and that only gets us to code point 0x231f3 or so. But
+    -- it's only a matter of time before the bound in this loop is too
+    -- low.
     pairs <- fmap catMaybes $ forM ['\0'..'\x2FFFF'] $ \i ->
         if shouldConsider i
         then (Just . (i,)) <$> charWidth i
