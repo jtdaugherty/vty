@@ -28,3 +28,4 @@ main = do
 
     builtTable <- buildUnicodeWidthTable
     print builtTable
+    writeUnicodeWidthTable "terminal_widths.dat" builtTable
