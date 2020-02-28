@@ -45,6 +45,17 @@ mkRanges pairs =
 
     in go Nothing [] convertedPairs
 
+-- The uppermost code point to consider when building Unicode width
+-- tables.
+--
+-- This only covers some of the possible Unicode range and is sure to
+-- become stale eventually. Granted, at the time of this writing, even
+-- the latest version of Unicode (13) totals 143,859 characters and that
+-- only gets us to code point 0x231f3 or so. But it's only a matter of
+-- time before this bound is too low.
+unicodeTableUpperBound :: Char
+unicodeTableUpperBound = '\x2FFFF'
+
 -- | Construct a unicode character width table by querying the terminal
 -- connected to stdout. This works by emitting characters to stdout
 -- and then querying the terminal to determine the resulting cursor
@@ -53,13 +64,7 @@ mkRanges pairs =
 -- system performance.
 buildUnicodeWidthTable :: IO UnicodeWidthTable
 buildUnicodeWidthTable = do
-    -- NB: this only covers some of the possible Unicode range and is
-    -- sure to become stale eventually. Granted, at the time of this
-    -- writing, even the latest version of Unicode (13) totals 143,859
-    -- characters and that only gets us to code point 0x231f3 or so. But
-    -- it's only a matter of time before the bound in this loop is too
-    -- low.
-    pairs <- fmap catMaybes $ forM ['\0'..'\x2FFFF'] $ \i ->
+    pairs <- fmap catMaybes $ forM ['\0'..unicodeTableUpperBound] $ \i ->
         if shouldConsider i
         then (Just . (i,)) <$> charWidth i
         else return Nothing
