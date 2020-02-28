@@ -41,6 +41,12 @@ mkRanges pairs =
             else go (Just (WidthTableRange c 1 width)) (r:finishedRanges) rest
     in go Nothing [] convertedPairs
 
+-- | Construct a unicode character width table by querying the terminal
+-- connected to stdout. This works by emitting characters to stdout
+-- and then querying the terminal to determine the resulting cursor
+-- position in order to measure character widths. Consequently this will
+-- generate a lot of output and may take a while, depending on your
+-- system performance.
 buildUnicodeWidthTable :: IO UnicodeWidthTable
 buildUnicodeWidthTable = do
     pairs <- fmap catMaybes $ forM ['\0'..'\x2FFFF'] $ \i ->
