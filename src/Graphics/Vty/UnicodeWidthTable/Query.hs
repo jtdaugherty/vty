@@ -6,7 +6,6 @@ where
 
 import Control.Monad (forM)
 import Data.Char (generalCategory, GeneralCategory(..))
-import Data.Maybe (catMaybes)
 import System.Console.ANSI (getCursorPosition)
 import Text.Printf (printf)
 
@@ -64,10 +63,8 @@ unicodeTableUpperBound = '\x2FFFF'
 -- system performance.
 buildUnicodeWidthTable :: IO UnicodeWidthTable
 buildUnicodeWidthTable = do
-    pairs <- fmap catMaybes $ forM ['\0'..unicodeTableUpperBound] $ \i ->
-        if shouldConsider i
-        then (Just . (i,)) <$> charWidth i
-        else return Nothing
+    pairs <- forM (filter shouldConsider ['\0'..unicodeTableUpperBound]) $ \i ->
+        (i,) <$> charWidth i
 
     return UnicodeWidthTable { unicodeWidthTableRanges = reverse $ mkRanges pairs
                              }
