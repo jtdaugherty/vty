@@ -146,6 +146,8 @@ data Config = Config
     -- | The terminal name used to look up terminfo capabilities.
     -- The default is the value of the TERM environment variable.
     , termName           :: Maybe String
+    -- | Terminal width map files.
+    , termWidthMaps :: [(String, FilePath)]
     } deriving (Show, Eq)
 
 defaultConfig :: Config
@@ -163,6 +165,7 @@ instance Semigroup Config where
         , inputFd      = inputFd c1 <|> inputFd c0
         , outputFd     = outputFd c1 <|> outputFd c0
         , termName      = termName c1 <|> termName c0
+        , termWidthMaps = termWidthMaps c1 <|> termWidthMaps c0
         }
 
 instance Monoid Config where
@@ -176,6 +179,7 @@ instance Monoid Config where
         , inputFd     = Nothing
         , outputFd    = Nothing
         , termName     = Nothing
+        , termWidthMaps = []
         }
 #if !(MIN_VERSION_base(4,11,0))
     mappend = (<>)
@@ -283,13 +287,20 @@ debugLogDecl = do
     path       <- P.stringLiteral configLexer
     return defaultConfig { debugLog = Just path }
 
+widthMapDecl :: Parser Config
+widthMapDecl = do
+    "widthMap" <- P.identifier configLexer
+    tName <- P.stringLiteral configLexer
+    path <- P.stringLiteral configLexer
+    return defaultConfig { termWidthMaps = [(tName, path)] }
+
 ignoreLine :: Parser ()
 ignoreLine = void $ manyTill anyChar newline
 
 parseConfig :: Parser Config
 parseConfig = liftM mconcat $ many $ do
     P.whiteSpace configLexer
-    let directives = [try mapDecl, try debugLogDecl]
+    let directives = [try mapDecl, try debugLogDecl, try widthMapDecl]
     choice directives <|> (ignoreLine >> return defaultConfig)
 
 class    Parse a        where parseValue :: Parser a
