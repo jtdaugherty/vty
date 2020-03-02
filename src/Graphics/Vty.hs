@@ -51,7 +51,10 @@ import Graphics.Vty.Output.Interface
 import Graphics.Vty.Picture
 import Graphics.Vty.Image
 import Graphics.Vty.Attributes
+import Graphics.Vty.UnicodeWidthTable.IO
+import Graphics.Vty.UnicodeWidthTable.Install
 
+import qualified Control.Exception as E
 import Control.Monad (when)
 import Control.Concurrent.STM
 
@@ -110,9 +113,42 @@ data Vty = Vty
 mkVty :: Config -> IO Vty
 mkVty appConfig = do
     config <- (<> appConfig) <$> userConfig
+    installWidthTable config
     input  <- inputForConfig config
     out    <- outputForConfig config
     intMkVty input out
+
+installWidthTable :: Config -> IO ()
+installWidthTable c = do
+    let doLog s = case debugLog c of
+            Nothing -> return ()
+            Just path -> appendFile path $ "installWidthTable: " <> s <> "\n"
+
+    customInstalled <- isCustomTableReady
+    when (not customInstalled) $ do
+        mTerm <- currentTerminalName
+        case mTerm of
+            Nothing ->
+                doLog "No current terminal name available"
+            Just currentTerm ->
+                case lookup currentTerm (termWidthMaps c) of
+                    Nothing ->
+                        doLog "Current terminal not found in custom character width mapping list"
+                    Just path -> do
+                        tableResult <- readUnicodeWidthTable path
+                        case tableResult of
+                            Left msg ->
+                                doLog $ "Error reading custom character width table " <>
+                                        "at " <> show path <> ": " <> msg
+                            Right table -> do
+                                installResult <- E.try $ installUnicodeWidthTable table
+                                case installResult of
+                                    Left (e::E.SomeException) ->
+                                        doLog $ "Error installing unicode table (" <>
+                                                show path <> ": " <> show e
+                                    Right () ->
+                                        doLog $ "Successfully installed Unicode width table " <>
+                                                " from " <> show path
 
 intMkVty :: Input -> Output -> IO Vty
 intMkVty input out = do
