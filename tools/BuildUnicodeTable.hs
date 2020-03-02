@@ -6,7 +6,7 @@ import System.Environment (getArgs, getProgName)
 import System.Exit (exitFailure)
 import System.Console.GetOpt
 
-import Graphics.Vty.Config (terminalWidthTablePath)
+import Graphics.Vty.Config (terminalWidthTablePath, currentTerminalName)
 import Graphics.Vty.UnicodeWidthTable.IO
 import Graphics.Vty.UnicodeWidthTable.Query
 
@@ -77,3 +77,11 @@ main = do
     builtTable <- buildUnicodeWidthTable
     writeUnicodeWidthTable outputPath builtTable
     putStrLn $ "\nOutput table written to " <> outputPath
+
+    Just tName <- currentTerminalName
+    putStrLn ""
+    putStrLn "To configure your Vty-based applications to use this map, add"
+    putStrLn "the following line to ~/.vty/config:"
+    putStrLn ""
+    putStrLn $ "  widthMap " <> show tName <> " " <> show outputPath
+    putStrLn ""
