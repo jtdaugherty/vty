@@ -46,13 +46,11 @@ usage = do
 
     putStrLn $ usageInfo pn (options config)
 
-configFromArgs :: [Arg] -> Config -> Config
-configFromArgs [] c =
+updateConfigFromArg :: Arg -> Config -> Config
+updateConfigFromArg Help c =
     c
-configFromArgs (Help:as) c =
-    configFromArgs as c
-configFromArgs (OutputPath p:as) c =
-    configFromArgs as (c { configOutputPath = Just p })
+updateConfigFromArg (OutputPath p) c =
+    c { configOutputPath = Just p }
 
 main :: IO ()
 main = do
@@ -68,7 +66,7 @@ main = do
         usage
         exitFailure
 
-    let config = configFromArgs args defConfig
+    let config = foldr updateConfigFromArg defConfig args
 
     outputPath <- case configOutputPath config of
         Nothing -> do
