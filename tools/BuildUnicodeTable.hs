@@ -7,7 +7,6 @@ import System.Exit (exitFailure)
 import System.Console.GetOpt
 
 import Graphics.Vty.Config (terminalWidthTablePath)
-import Graphics.Vty.UnicodeWidthTable.Types
 import Graphics.Vty.UnicodeWidthTable.IO
 import Graphics.Vty.UnicodeWidthTable.Query
 
