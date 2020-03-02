@@ -66,6 +66,7 @@ module Graphics.Vty.Config
   , parseConfigFile
   , defaultConfig
   , getTtyEraseChar
+  , currentTerminalName
 
   , widthTableFilename
   , vtyDataDirectory
@@ -195,10 +196,16 @@ userConfig = do
 widthTableFilename :: String -> String
 widthTableFilename term = "width_table_" <> term <> ".dat"
 
+termVariable :: String
+termVariable = "TERM"
+
+currentTerminalName :: IO (Maybe String)
+currentTerminalName = lookupEnv termVariable
+
 terminalWidthTablePath :: IO (Maybe FilePath)
 terminalWidthTablePath = do
     dataDir <- vtyDataDirectory
-    result <- lookupEnv "TERM"
+    result <- lookupEnv termVariable
     case result of
         Nothing -> return Nothing
         Just term -> do
@@ -213,7 +220,7 @@ overrideEnvConfig = do
 -- can raise 'VtyConfigurationError'.
 standardIOConfig :: IO Config
 standardIOConfig = do
-    mb <- lookupEnv "TERM"
+    mb <- lookupEnv termVariable
     case mb of
       Nothing -> throwIO VtyMissingTermEnvVar
       Just t ->
