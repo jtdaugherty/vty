@@ -20,10 +20,13 @@ foreign import ccall unsafe "vty_set_custom_table_range"
 foreign import ccall unsafe "vty_activate_custom_table"
     activateCustomTable :: IO Int
 
--- | Returns 1 if and only if a custom table has been allocated and
--- marked as ready for use. Returns 0 otherwise.
 foreign import ccall unsafe "vty_custom_table_ready"
-    isCustomTableReady :: IO Int
+    c_isCustomTableReady :: IO Int
+
+-- | Returns True if and only if a custom table has been allocated and
+-- marked as ready for use. Returns False otherwise.
+isCustomTableReady :: IO Bool
+isCustomTableReady = (== 1) <$> c_isCustomTableReady
 
 -- This is the size of the allocated custom character width table, in
 -- character slots. It's important that this be large enough to hold all
