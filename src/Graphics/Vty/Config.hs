@@ -149,7 +149,7 @@ data Config =
            -- The default is the value of the TERM environment variable.
            , termWidthMaps :: [(String, FilePath)]
            -- ^ Terminal width map files.
-           , allowCustomUnicodeWithTables :: Maybe Bool
+           , allowCustomUnicodeWidthTables :: Maybe Bool
            -- ^ Whether to permit custom Unicode width table loading.
            -- 'Just False' indicates that table loading should not be
            -- performed. Other values permit table loading.
@@ -172,8 +172,8 @@ instance Semigroup Config where
                , outputFd = outputFd c1 <|> outputFd c0
                , termName = termName c1 <|> termName c0
                , termWidthMaps = termWidthMaps c1 <|> termWidthMaps c0
-               , allowCustomUnicodeWithTables =
-                   allowCustomUnicodeWithTables c1 <|> allowCustomUnicodeWithTables c0
+               , allowCustomUnicodeWidthTables =
+                   allowCustomUnicodeWidthTables c1 <|> allowCustomUnicodeWidthTables c0
                }
 
 instance Monoid Config where
@@ -188,7 +188,7 @@ instance Monoid Config where
                , outputFd = Nothing
                , termName = Nothing
                , termWidthMaps = []
-               , allowCustomUnicodeWithTables = Nothing
+               , allowCustomUnicodeWidthTables = Nothing
                }
 #if !(MIN_VERSION_base(4,11,0))
     mappend = (<>)

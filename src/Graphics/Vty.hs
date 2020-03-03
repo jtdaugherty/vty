@@ -114,7 +114,7 @@ mkVty :: Config -> IO Vty
 mkVty appConfig = do
     config <- (<> appConfig) <$> userConfig
 
-    when (allowCustomUnicodeWithTables config /= Just False) $
+    when (allowCustomUnicodeWidthTables config /= Just False) $
         installWidthTable config
 
     input  <- inputForConfig config
