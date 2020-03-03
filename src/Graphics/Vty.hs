@@ -79,28 +79,29 @@ import Data.Semigroup ((<>))
 --    5. Shutdown vty.
 --
 -- Operations on Vty handles are not thread-safe.
-data Vty = Vty
-    { -- | Outputs the given 'Picture'.
-      update :: Picture -> IO ()
-      -- | Return the next 'Event' or block until one becomes available.
-    , nextEvent :: IO Event
-      -- | Non-blocking version of 'nextEvent'.
-    , nextEventNonblocking :: IO (Maybe Event)
-      -- | The input interface. See 'Input'.
-    , inputIface :: Input
-      -- | The output interface. See 'Output'.
-    , outputIface :: Output
-      -- | Refresh the display. If other programs output to the terminal
-      -- and mess up the display then the application might want to
-      -- force a refresh using this function.
-    , refresh :: IO ()
-      -- | Clean up after vty. A call to this function is necessary to
-      -- cleanly restore the terminal state before application exit. The
-      -- above methods will throw an exception if executed after this is
-      -- executed. Idempotent.
-    , shutdown :: IO ()
-    , isShutdown :: IO Bool
-    }
+data Vty =
+    Vty { update :: Picture -> IO ()
+        -- ^ Outputs the given 'Picture'.
+        , nextEvent :: IO Event
+        -- ^ Return the next 'Event' or block until one becomes
+        -- available.
+        , nextEventNonblocking :: IO (Maybe Event)
+        -- ^ Non-blocking version of 'nextEvent'.
+        , inputIface :: Input
+        -- ^ The input interface. See 'Input'.
+        , outputIface :: Output
+        -- ^ The output interface. See 'Output'.
+        , refresh :: IO ()
+        -- ^ Refresh the display. If other programs output to the
+        -- terminal and mess up the display then the application might
+        -- want to force a refresh using this function.
+        , shutdown :: IO ()
+        -- ^ Clean up after vty. A call to this function is necessary to
+        -- cleanly restore the terminal state before application exit.
+        -- The above methods will throw an exception if executed after
+        -- this is executed. Idempotent.
+        , isShutdown :: IO Bool
+        }
 
 -- | Create a Vty handle. At most one handle should be created at a time
 -- for a given terminal device.
