@@ -11,8 +11,9 @@ data WidthTableRange =
     WidthTableRange { rangeStart :: Word32
                     -- ^ The range's starting code point.
                     , rangeSize :: Word32
-                    -- ^ The number of code points in the range,
-                    -- including the starting code point.
+                    -- ^ The number of code points in the contiguous
+                    -- range, beginning with the starting code point
+                    -- ('rangeStart').
                     , rangeColumns :: Word8
                     -- ^ The terminal width, in columns, of all of the
                     -- characters corresponding to the code points in
@@ -20,7 +21,7 @@ data WidthTableRange =
                     }
     deriving (Eq, Show)
 
--- | A table of Unicode character widths.
+-- | A run-length-encoded table of Unicode character widths.
 data UnicodeWidthTable =
     UnicodeWidthTable { unicodeWidthTableRanges :: [WidthTableRange]
                       -- ^ The ranges in the table.
