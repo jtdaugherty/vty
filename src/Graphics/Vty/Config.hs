@@ -120,38 +120,39 @@ instance Exception VtyConfigurationError where
 type InputMap = [(Maybe String, String, Event)]
 
 -- | A Vty configuration.
-data Config = Config
-    {
-    -- | The default is 1 character.
-      vmin  :: Maybe Int
-    -- | The default is 100 milliseconds, 0.1 seconds.
-    , vtime :: Maybe Int
-    -- | The default is False.
-    , mouseMode :: Maybe Bool
-    -- | The default is False.
-    , bracketedPasteMode :: Maybe Bool
-    -- | Debug information is appended to this file if not Nothing.
-    , debugLog           :: Maybe FilePath
-    -- | The (input byte, output event) pairs extend the internal input
-    -- table of VTY and the table from terminfo.
-    --
-    -- See "Graphics.Vty.Config" module documentation for documentation
-    -- of the @map@ directive.
-    , inputMap           :: InputMap
-    -- | The input file descriptor to use. The default is
-    -- 'System.Posix.IO.stdInput'
-    , inputFd           :: Maybe Fd
-    -- | The output file descriptor to use. The default is
-    -- 'System.Posix.IO.stdOutput'
-    , outputFd          :: Maybe Fd
-    -- | The terminal name used to look up terminfo capabilities.
-    -- The default is the value of the TERM environment variable.
-    , termName           :: Maybe String
-    -- | Terminal width map files.
-    , termWidthMaps :: [(String, FilePath)]
-    -- | Whether to permit custom Unicode width table loading.
-    , allowCustomUnicodeWithTables :: Bool
-    } deriving (Show, Eq)
+data Config =
+    Config { vmin  :: Maybe Int
+           -- ^ The default is 1 character.
+           , vtime :: Maybe Int
+           -- ^ The default is 100 milliseconds, 0.1 seconds.
+           , mouseMode :: Maybe Bool
+           -- ^ The default is False.
+           , bracketedPasteMode :: Maybe Bool
+           -- ^ The default is False.
+           , debugLog :: Maybe FilePath
+           -- ^ Debug information is appended to this file if not
+           -- Nothing.
+           , inputMap :: InputMap
+           -- ^ The (input byte, output event) pairs extend the internal
+           -- input table of VTY and the table from terminfo.
+           --
+           -- See "Graphics.Vty.Config" module documentation for
+           -- documentation of the @map@ directive.
+           , inputFd :: Maybe Fd
+           -- ^ The input file descriptor to use. The default is
+           -- 'System.Posix.IO.stdInput'
+           , outputFd :: Maybe Fd
+           -- ^ The output file descriptor to use. The default is
+           -- 'System.Posix.IO.stdOutput'
+           , termName :: Maybe String
+           -- ^ The terminal name used to look up terminfo capabilities.
+           -- The default is the value of the TERM environment variable.
+           , termWidthMaps :: [(String, FilePath)]
+           -- ^ Terminal width map files.
+           , allowCustomUnicodeWithTables :: Bool
+           -- ^ Whether to permit custom Unicode width table loading.
+           }
+           deriving (Show, Eq)
 
 defaultConfig :: Config
 defaultConfig = mempty
