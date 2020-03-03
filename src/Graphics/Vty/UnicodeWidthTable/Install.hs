@@ -35,7 +35,10 @@ isCustomTableReady = (== 1) <$> c_isCustomTableReady
 tableSize :: Int
 tableSize = 0x110000
 
--- | Install a custom unicode character width table.
+-- | Install a custom unicode character width
+-- table. Such tables are obtained with
+-- 'Graphics.Vty.UnicodeWidthTable.Query.buildUnicodeWidthTable' and
+-- 'Graphics.Vty.UnicodeWidthTable.IO.readUnicodeWidthTable'.
 --
 -- This affects the behavior of the 'Graphics.Vty.Image.wcwidth'
 -- function and functions that call it. It does so by
