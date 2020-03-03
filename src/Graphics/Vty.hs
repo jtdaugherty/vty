@@ -117,7 +117,8 @@ data Vty = Vty
 -- load a custom unicode character width table if one has not already
 -- been loaded in this process. If the load is attempted and fails,
 -- information about the failure will be logged to the debug log if the
--- configuration specifies one.
+-- configuration specifies one. If no custom table is loaded (or if a
+-- load fails), the built-in character width table will be used.
 mkVty :: Config -> IO Vty
 mkVty appConfig = do
     config <- (<> appConfig) <$> userConfig
