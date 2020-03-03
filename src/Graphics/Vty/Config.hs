@@ -173,19 +173,19 @@ instance Semigroup Config where
         }
 
 instance Monoid Config where
-    mempty = Config
-        { vmin         = Nothing
-        , vtime        = Nothing
-        , mouseMode    = Nothing
-        , bracketedPasteMode = Nothing
-        , debugLog     = mempty
-        , inputMap     = mempty
-        , inputFd     = Nothing
-        , outputFd    = Nothing
-        , termName     = Nothing
-        , termWidthMaps = []
-        , allowCustomUnicodeWithTables = True
-        }
+    mempty =
+        Config { vmin = Nothing
+               , vtime = Nothing
+               , mouseMode = Nothing
+               , bracketedPasteMode = Nothing
+               , debugLog = mempty
+               , inputMap = mempty
+               , inputFd = Nothing
+               , outputFd = Nothing
+               , termName = Nothing
+               , termWidthMaps = []
+               , allowCustomUnicodeWithTables = True
+               }
 #if !(MIN_VERSION_base(4,11,0))
     mappend = (<>)
 #endif
