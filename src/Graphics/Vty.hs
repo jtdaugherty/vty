@@ -13,7 +13,7 @@
 --   values in the "Graphics.Vty.Attributes" module.
 --
 -- Vty uses threads internally, so programs made with Vty need to be
--- compiled with the threaded runtime using the GHC `-threaded` option.
+-- compiled with the threaded runtime using the GHC @-threaded@ option.
 --
 -- @
 --  import "Graphics.Vty"
