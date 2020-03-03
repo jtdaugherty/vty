@@ -148,6 +148,8 @@ data Config = Config
     , termName           :: Maybe String
     -- | Terminal width map files.
     , termWidthMaps :: [(String, FilePath)]
+    -- | Whether to permit custom Unicode width table loading.
+    , allowCustomUnicodeWithTables :: Bool
     } deriving (Show, Eq)
 
 defaultConfig :: Config
@@ -166,6 +168,7 @@ instance Semigroup Config where
         , outputFd     = outputFd c1 <|> outputFd c0
         , termName      = termName c1 <|> termName c0
         , termWidthMaps = termWidthMaps c1 <|> termWidthMaps c0
+        , allowCustomUnicodeWithTables = allowCustomUnicodeWithTables c1
         }
 
 instance Monoid Config where
@@ -180,6 +183,7 @@ instance Monoid Config where
         , outputFd    = Nothing
         , termName     = Nothing
         , termWidthMaps = []
+        , allowCustomUnicodeWithTables = True
         }
 #if !(MIN_VERSION_base(4,11,0))
     mappend = (<>)

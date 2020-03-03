@@ -113,7 +113,10 @@ data Vty = Vty
 mkVty :: Config -> IO Vty
 mkVty appConfig = do
     config <- (<> appConfig) <$> userConfig
-    installWidthTable config
+
+    when (allowCustomUnicodeWithTables config) $
+        installWidthTable config
+
     input  <- inputForConfig config
     out    <- outputForConfig config
     intMkVty input out
