@@ -168,7 +168,8 @@ instance Semigroup Config where
         , outputFd     = outputFd c1 <|> outputFd c0
         , termName      = termName c1 <|> termName c0
         , termWidthMaps = termWidthMaps c1 <|> termWidthMaps c0
-        , allowCustomUnicodeWithTables = allowCustomUnicodeWithTables c1
+        , allowCustomUnicodeWithTables =
+            allowCustomUnicodeWithTables c0 || allowCustomUnicodeWithTables c1
         }
 
 instance Monoid Config where
