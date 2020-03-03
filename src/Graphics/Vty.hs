@@ -149,12 +149,15 @@ installWidthTable c = do
                     Nothing ->
                         doLog "Current terminal not found in custom character width mapping list"
                     Just path -> do
-                        tableResult <- readUnicodeWidthTable path
+                        tableResult <- E.try $ readUnicodeWidthTable path
                         case tableResult of
-                            Left msg ->
+                            Left (e::E.SomeException) ->
+                                doLog $ "Error reading custom character width table " <>
+                                        "at " <> show path <> ": " <> show e
+                            Right (Left msg) ->
                                 doLog $ "Error reading custom character width table " <>
                                         "at " <> show path <> ": " <> msg
-                            Right table -> do
+                            Right (Right table) -> do
                                 installResult <- E.try $ installUnicodeWidthTable table
                                 case installResult of
                                     Left (e::E.SomeException) ->
