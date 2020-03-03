@@ -68,7 +68,7 @@ import Data.Semigroup ((<>))
 --
 -- The use of Vty typically follows this process:
 --
---    1. Initialize vty
+--    1. Initialize vty with 'mkVty' (this takes control of the terminal).
 --
 --    2. Use 'update' to display a picture.
 --
@@ -76,7 +76,8 @@ import Data.Semigroup ((<>))
 --
 --    4. Depending on the event, go to 2 or 5.
 --
---    5. Shutdown vty.
+--    5. Shutdown vty and restore the terminal state with 'shutdown'. At
+--    this point the 'Vty' handle cannot be used again.
 --
 -- Operations on Vty handles are not thread-safe.
 data Vty =
