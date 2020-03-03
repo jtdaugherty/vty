@@ -156,21 +156,21 @@ defaultConfig :: Config
 defaultConfig = mempty
 
 instance Semigroup Config where
-    c0 <> c1 = Config
+    c0 <> c1 =
         -- latter config takes priority for everything but inputMap
-        { vmin          = vmin c1     <|> vmin c0
-        , vtime         = vtime c1    <|> vtime c0
-        , mouseMode     = mouseMode c1
-        , bracketedPasteMode = bracketedPasteMode c1
-        , debugLog      = debugLog c1 <|> debugLog c0
-        , inputMap      = inputMap c0 <>  inputMap c1
-        , inputFd      = inputFd c1 <|> inputFd c0
-        , outputFd     = outputFd c1 <|> outputFd c0
-        , termName      = termName c1 <|> termName c0
-        , termWidthMaps = termWidthMaps c1 <|> termWidthMaps c0
-        , allowCustomUnicodeWithTables =
-            allowCustomUnicodeWithTables c0 || allowCustomUnicodeWithTables c1
-        }
+        Config { vmin = vmin c1 <|> vmin c0
+               , vtime = vtime c1 <|> vtime c0
+               , mouseMode = mouseMode c1
+               , bracketedPasteMode = bracketedPasteMode c1
+               , debugLog = debugLog c1 <|> debugLog c0
+               , inputMap = inputMap c0 <> inputMap c1
+               , inputFd = inputFd c1 <|> inputFd c0
+               , outputFd = outputFd c1 <|> outputFd c0
+               , termName = termName c1 <|> termName c0
+               , termWidthMaps = termWidthMaps c1 <|> termWidthMaps c0
+               , allowCustomUnicodeWithTables =
+                   allowCustomUnicodeWithTables c0 || allowCustomUnicodeWithTables c1
+               }
 
 instance Monoid Config where
     mempty =
