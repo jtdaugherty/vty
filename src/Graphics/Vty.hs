@@ -129,7 +129,7 @@ mkVty appConfig = do
 
     input <- inputForConfig config
     out <- outputForConfig config
-    intMkVty input out
+    internalMkVty input out
 
 installWidthTable :: Config -> IO ()
 installWidthTable c = do
@@ -163,8 +163,8 @@ installWidthTable c = do
                                         doLog $ "Successfully installed Unicode width table " <>
                                                 " from " <> show path
 
-intMkVty :: Input -> Output -> IO Vty
-intMkVty input out = do
+internalMkVty :: Input -> Output -> IO Vty
+internalMkVty input out = do
     reserveDisplay out
 
     shutdownVar <- atomically $ newTVar False
