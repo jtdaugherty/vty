@@ -37,15 +37,26 @@ tableSize = 0x110000
 
 -- | Install a custom unicode character width table.
 --
--- This affects the behavior of the 'wcwidth' function and functions
--- that call it. It does so by changing global state available to the C
--- implementation of 'wcwidth'. To ensure that your program gets consistent
--- results from evaluating calls to 'wcwidth', the installation of a
--- custom table should be performed before you call 'wcwidth' in your
--- program. This is best done at Vty startup. It's also important to
--- note that once a custom table has been installed, it is permanent for
--- the life of the process. No new table can be installed, and the new
--- custom table cannot be removed.
+-- This affects the behavior of the 'Graphics.Vty.Image.wcwidth'
+-- function and functions that call it. It does so by
+-- changing global state available to the C implementation
+-- of 'Graphics.Vty.Image.wcwidth'. To ensure that your
+-- program gets consistent results from evaluating calls to
+-- 'Graphics.Vty.Image.wcwidth', the installation of a custom table
+-- should be performed before you call 'Graphics.Vty.Image.wcwidth' in
+-- your program.
+--
+-- This is best done at Vty startup, and if you use
+-- 'Graphics.Vty.mkVty', that function calls this automatically based on
+-- the Vty configuration's declared width tables. It is exposed as part
+-- of the public API so that applications can call this as needed if
+-- they don't want to control the terminal with 'mkVty' but do want to
+-- make calls to 'Graphics.Vty.Image.wcwidth'.
+--
+-- It's also important to note that once a
+-- custom table has been installed, it is permanent for the life of the
+-- process. No new table can be installed, and the new custom table
+-- cannot be removed.
 --
 -- If this function fails for any reason -- if the table cannot be
 -- installed or is invalid, or if a custom table already exists -- this
