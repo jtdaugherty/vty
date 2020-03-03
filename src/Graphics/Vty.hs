@@ -110,6 +110,14 @@ data Vty = Vty
 -- precedence. See "Graphics.Vty.Config".
 --
 -- For most applications @mkVty defaultConfig@ is sufficient.
+--
+-- If the configuration's 'allowCustomUnicodeWidthTables' is set
+-- to 'Nothing' or 'Just True', this will use the current value of
+-- 'TERM' and the configuation's width table settings to attempt to
+-- load a custom unicode character width table if one has not already
+-- been loaded in this process. If the load is attempted and fails,
+-- information about the failure will be logged to the debug log if the
+-- configuration specifies one.
 mkVty :: Config -> IO Vty
 mkVty appConfig = do
     config <- (<> appConfig) <$> userConfig
