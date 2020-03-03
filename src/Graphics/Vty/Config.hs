@@ -106,12 +106,13 @@ import Text.Parsec.Token ( GenLanguageDef(..) )
 import qualified Text.Parsec.Token as P
 
 -- | Type of errors that can be thrown when configuring VTY
-data VtyConfigurationError
-  = VtyMissingTermEnvVar -- ^ TERM environment variable not set
-  deriving (Show, Eq, Typeable)
+data VtyConfigurationError =
+    VtyMissingTermEnvVar
+    -- ^ TERM environment variable not set
+    deriving (Show, Eq, Typeable)
 
 instance Exception VtyConfigurationError where
-  displayException VtyMissingTermEnvVar = "TERM environment variable not set"
+    displayException VtyMissingTermEnvVar = "TERM environment variable not set"
 
 -- | Mappings from input bytes to event in the order specified. Later
 -- entries take precedence over earlier in the case multiple entries
