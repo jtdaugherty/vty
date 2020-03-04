@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module Graphics.Vty.UnicodeWidthTable.IO
   ( readUnicodeWidthTable
   , writeUnicodeWidthTable
@@ -9,6 +10,9 @@ import Data.Binary
 import Data.Binary.Get
 import Data.Binary.Put
 import qualified Data.ByteString.Lazy as BSL
+#if !(MIN_VERSION_base(4,11,0))
+import Data.Semigroup ((<>))
+#endif
 
 import Graphics.Vty.UnicodeWidthTable.Types
 

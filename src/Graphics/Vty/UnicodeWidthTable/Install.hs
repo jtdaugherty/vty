@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 module Graphics.Vty.UnicodeWidthTable.Install
   ( installUnicodeWidthTable
@@ -8,6 +9,9 @@ where
 
 import Control.Monad (when, forM_)
 import Data.Word (Word8, Word32)
+#if !(MIN_VERSION_base(4,11,0))
+import Data.Semigroup ((<>))
+#endif
 
 import Graphics.Vty.UnicodeWidthTable.Types
 
