@@ -23,7 +23,8 @@ options config =
     [ Option "h" ["help"] (NoArg Help)
       "This help output"
     , Option "p" ["path"] (ReqArg OutputPath "PATH")
-      ("The output path to write to (default: " <> fromMaybe "<none>" (configOutputPath config) <> ")")
+      ("The output path to write to (default: " <>
+       fromMaybe "<none>" (configOutputPath config) <> ")")
     ]
 
 data Config =
