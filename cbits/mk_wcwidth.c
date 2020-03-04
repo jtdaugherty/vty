@@ -316,3 +316,18 @@ int vty_custom_table_ready()
 {
     return ((custom_table != NULL) && custom_table_ready);
 }
+
+// Deallocate the custom width table.
+//
+// This does nothing if there is no allocated custom width table, or if
+// there is one but it is in use (marked ready). This is only useful if
+// an initial allocation succeeds, but range population fails, after
+// which point the application may want to deallocate the table to avoid
+// leaving it in an intermediate state.
+void vty_deallocate_custom_table()
+{
+    if ((custom_table != NULL) && (!custom_table_ready)) {
+        free(custom_table);
+        custom_table = NULL;
+    }
+}

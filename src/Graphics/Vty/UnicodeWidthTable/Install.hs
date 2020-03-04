@@ -27,6 +27,9 @@ foreign import ccall unsafe "vty_activate_custom_table"
 foreign import ccall unsafe "vty_custom_table_ready"
     c_isCustomTableReady :: IO Int
 
+foreign import ccall unsafe "vty_deallocate_custom_table"
+    deallocateCustomTable :: IO ()
+
 -- | Returns True if and only if a custom table has been allocated and
 -- marked as ready for use. Returns False otherwise.
 isCustomTableReady :: IO Bool
@@ -80,7 +83,8 @@ installUnicodeWidthTable table = do
                                       (rangeSize r)
                                       (rangeColumns r)
 
-        when (result /= 0) $
+        when (result /= 0) $ do
+            deallocateCustomTable
             error $ "installUnicodeWidthTable: error installing range " <>
                     show r <> ", status " <> show result
 
