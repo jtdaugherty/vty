@@ -1,7 +1,11 @@
+{-# LANGUAGE CPP #-}
 module Main where
 
 import Control.Monad (when)
 import Data.Maybe (fromMaybe)
+#if !(MIN_VERSION_base(4,11,0))
+import Data.Semigroup ((<>))
+#endif
 import System.Environment (getArgs, getProgName)
 import System.Exit (exitFailure)
 import System.Console.GetOpt
