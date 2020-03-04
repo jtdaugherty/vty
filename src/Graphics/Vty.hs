@@ -126,14 +126,14 @@ mkVty appConfig = do
     config <- (<> appConfig) <$> userConfig
 
     when (allowCustomUnicodeWidthTables config /= Just False) $
-        installWidthTable config
+        installCustomWidthTable config
 
     input <- inputForConfig config
     out <- outputForConfig config
     internalMkVty input out
 
-installWidthTable :: Config -> IO ()
-installWidthTable c = do
+installCustomWidthTable :: Config -> IO ()
+installCustomWidthTable c = do
     let doLog s = case debugLog c of
             Nothing -> return ()
             Just path -> appendFile path $ "installWidthTable: " <> s <> "\n"
