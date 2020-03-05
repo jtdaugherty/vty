@@ -14,21 +14,6 @@ import Data.Semigroup ((<>))
 
 import Graphics.Vty.UnicodeWidthTable.Types
 
-foreign import ccall unsafe "vty_init_custom_table"
-    initCustomTable :: Int -> IO Int
-
-foreign import ccall unsafe "vty_set_custom_table_range"
-    setCustomTableRange :: Word32 -> Word32 -> Word8 -> IO Int
-
-foreign import ccall unsafe "vty_activate_custom_table"
-    activateCustomTable :: IO Int
-
-foreign import ccall unsafe "vty_custom_table_ready"
-    c_isCustomTableReady :: IO Int
-
-foreign import ccall unsafe "vty_deallocate_custom_table"
-    deallocateCustomTable :: IO ()
-
 -- | Returns True if and only if a custom table has been allocated and
 -- marked as ready for use. Returns False otherwise.
 isCustomTableReady :: IO Bool
@@ -91,3 +76,21 @@ installUnicodeWidthTable table = do
     when (actResult /= 0) $
         error $ "installUnicodeWidthTable: error activating custom " <>
                 "table, status " <> show actResult
+
+------------------------------------------------------------------------
+-- C imports
+
+foreign import ccall unsafe "vty_init_custom_table"
+    initCustomTable :: Int -> IO Int
+
+foreign import ccall unsafe "vty_set_custom_table_range"
+    setCustomTableRange :: Word32 -> Word32 -> Word8 -> IO Int
+
+foreign import ccall unsafe "vty_activate_custom_table"
+    activateCustomTable :: IO Int
+
+foreign import ccall unsafe "vty_custom_table_ready"
+    c_isCustomTableReady :: IO Int
+
+foreign import ccall unsafe "vty_deallocate_custom_table"
+    deallocateCustomTable :: IO ()
