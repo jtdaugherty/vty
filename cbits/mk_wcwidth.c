@@ -286,11 +286,13 @@ int vty_init_custom_table(int size)
 int vty_set_custom_table_range(uint32_t start, uint32_t size, uint8_t width)
 {
     if ((custom_table == NULL) ||
-        ((start + size - 1) >= custom_table_size) ||
+        (size >= custom_table_size) ||
+        (start >= custom_table_size) ||
+        ((start + 1) >= (custom_table_size - size)) ||
         custom_table_ready) {
         return 1;
     } else {
-        memset(custom_table + start, (uint8_t) width, size);
+        memset(custom_table + start, width, size);
         return 0;
     }
 }
