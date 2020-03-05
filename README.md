@@ -115,7 +115,8 @@ can also be generated programmatically by using the API in
 Saved width tables can then be loaded in one of two ways:
 
 * Via the library API in `Graphics.Vty.UnicodeWidthTable.IO`
-* By adding a `widthMap` directive to your Vty configuration file
+* By adding a `widthMap` directive to your Vty configuration file and
+  then invoking `mkVty` to initialize Vty
 
 The Vty configuration file supports the `widthMap` directive to allow
 users to specify which custom width table should be loaded for a given
