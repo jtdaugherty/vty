@@ -67,8 +67,9 @@
 // number of possible characters as dictated by the compiler.
 #define MAX_CUSTOM_TABLE_SIZE (HS_CHAR_MAX + 1)
 
-// The pointer to the start of the custom character width table, if any.
-// If this is NULL, the built-in tree search logic is used.
+// The pointer to the start of the custom character width table, if
+// any. If this is NULL or this is set but the ready flag is false, the
+// built-in tree search logic is used.
 static uint8_t* custom_table = NULL;
 
 // The size of the custom table. This should only be set if custom_table
