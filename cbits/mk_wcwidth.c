@@ -233,7 +233,7 @@ static HsInt builtin_wcwidth(HsChar ucs)
 // present, the built-in width table will be used.
 HsInt vty_mk_wcwidth(HsChar ch)
 {
-    if (custom_table != NULL) {
+    if (custom_table_ready) {
         if ((ch >= 0) && (ch < custom_table_size)) {
             return custom_table[ch];
         } else {
