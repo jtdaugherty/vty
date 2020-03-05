@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 module Graphics.Vty.UnicodeWidthTable.IO
   ( readUnicodeWidthTable
+  , parseUnicodeWidthTable
   , writeUnicodeWidthTable
   )
 where
@@ -21,20 +22,23 @@ import Graphics.Vty.UnicodeWidthTable.Types
 -- This either returns a successfully parsed table or a table parsing
 -- error message. This does not handle I/O exceptions.
 readUnicodeWidthTable :: FilePath -> IO (Either String UnicodeWidthTable)
-readUnicodeWidthTable path = do
-    body <- BSL.readFile path
-    case runGetOrFail tableParser body of
+readUnicodeWidthTable path = parseUnicodeWidthTable <$> BSL.readFile path
+
+-- | Parse a binary unicode width table.
+parseUnicodeWidthTable :: BSL.ByteString -> Either String UnicodeWidthTable
+parseUnicodeWidthTable bs =
+    case runGetOrFail tableParser bs of
         Left (_, _, msg) ->
-            return $ Left msg
+            Left msg
 
         -- Even if we parsed a table, leftover bytes indicate something
         -- could be wrong.
         Right (remainingBytes, _, _) | not (BSL.null remainingBytes) ->
-            return $ Left $ "Error: " <> show (BSL.length remainingBytes) <>
-                            " byte(s) left unconsumed"
+            Left $ "Error: " <> show (BSL.length remainingBytes) <>
+                   " byte(s) left unconsumed"
 
         Right (_, _, table) ->
-            return $ Right table
+            Right table
 
 -- | Write the unicode width table to the specified path.
 --
