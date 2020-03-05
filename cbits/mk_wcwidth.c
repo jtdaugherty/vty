@@ -281,11 +281,9 @@ int vty_init_custom_table(int size)
 // are not in bounds for the table.
 int vty_set_custom_table_range(uint32_t start, uint32_t size, uint8_t width)
 {
-    if (custom_table == NULL) {
-        return 1;
-    } else if ((start + size - 1) >= custom_table_size) {
-        return 1;
-    } else if (custom_table_ready) {
+    if ((custom_table == NULL) ||
+        ((start + size - 1) >= custom_table_size) ||
+        custom_table_ready) {
         return 1;
     } else {
         memset(custom_table + start, (uint8_t) width, size);
