@@ -33,6 +33,12 @@ tableSize = 0x110000
 -- 'Graphics.Vty.UnicodeWidthTable.Query.buildUnicodeWidthTable' and
 -- 'Graphics.Vty.UnicodeWidthTable.IO.readUnicodeWidthTable'.
 --
+-- ALERT! This function is probably not what you want to use because
+-- it is automatically called by 'Graphics.Vty.mkVty'. You will only
+-- ever need to call this function if you want to use functions
+-- in 'Graphics.Text.Width' without controlling the terminal with
+-- 'Graphics.Vty.mkVty'.
+--
 -- This affects the behavior of the 'Graphics.Vty.Image.wcwidth'
 -- function and functions that call it. It does so by
 -- changing global state available to the C implementation
