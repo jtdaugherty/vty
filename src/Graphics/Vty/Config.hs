@@ -178,9 +178,16 @@ data Config =
            , termWidthMaps :: [(String, FilePath)]
            -- ^ Terminal width map files.
            , allowCustomUnicodeWidthTables :: Maybe Bool
-           -- ^ Whether to permit custom Unicode width table loading.
-           -- 'Just False' indicates that table loading should not be
-           -- performed. Other values permit table loading.
+           -- ^ Whether to permit custom Unicode width table loading by
+           -- 'Graphics.Vty.mkVty'. @'Just' 'False'@ indicates that
+           -- table loading should not be performed. Other values permit
+           -- table loading.
+           --
+           -- If a table load is attempted and fails, information
+           -- about the failure will be logged to the debug log if the
+           -- configuration specifies one. If no custom table is loaded
+           -- (or if a load fails), the built-in character width table
+           -- will be used.
            }
            deriving (Show, Eq)
 
