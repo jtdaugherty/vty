@@ -1,6 +1,15 @@
 -- Copyright 2009 Corey O'Connor
 {-# OPTIONS_GHC -D_XOPEN_SOURCE #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+-- | This module provides functions to measure the terminal column width
+-- of characters and strings.
+--
+-- The functions provided in this module all ultimately make calls to
+-- the C implementation in @cbits/mk_wcwidth.c@. That code manages some
+-- global state that carries a table of Unicode character widths. For
+-- more details, see 'Graphics.Vty.UnicodeWidthTable.Install', the C
+-- code, and the "Multi-Column Character Support" section of the project
+-- @README@.
 module Graphics.Text.Width
   ( wcwidth
   , wcswidth
