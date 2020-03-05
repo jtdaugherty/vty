@@ -97,14 +97,12 @@ will exhibit rendering problems. Those rendering problems arise from Vty
 and the terminal emulator coming to different conclusions about how wide
 some characters are.
 
-Vty has a built-in Unicode character width table. Unless configured to
-do otherwise, by default, Vty will use this built-in table. But since
-the built-in table is likely to eventually disagree with your terminal,
-Vty provides a feature called custom Unicode character width table
-support. This feature allows Vty to query your terminal to build a width
-table based solely on your terminal emulator's logic. That table is then
-saved to disk and loaded by Vty-based applications to ensure that Vty's
-width calculations are correct for that particular terminal.
+To address this, Vty supports loading custom character width tables
+that are based on the terminal's behavior in order to eliminate these
+disagreements. By default, though, Vty will use its built-in Unicode
+character width table. Since the built-in table is likely to eventually
+disagree with your terminal, Vty provides an API and a command-line tool
+to generate and install custom tables.
 
 Custom Unicode width tables based on your terminal emulator can be
 built by running Vty's built-in tool, `vty-build-width-table`. The tool
