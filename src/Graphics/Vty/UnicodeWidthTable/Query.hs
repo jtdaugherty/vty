@@ -1,6 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 module Graphics.Vty.UnicodeWidthTable.Query
   ( buildUnicodeWidthTable
+  , defaultUnicodeTableUpperBound
   )
 where
 
@@ -53,8 +54,8 @@ mkRanges pairs =
 
 -- The uppermost code point to consider when building Unicode width
 -- tables.
-unicodeTableUpperBound :: Char
-unicodeTableUpperBound = '\xe0000'
+defaultUnicodeTableUpperBound :: Char
+defaultUnicodeTableUpperBound = '\xe0000'
 
 -- | Construct a unicode character width table by querying the terminal
 -- connected to stdout. This works by emitting characters to stdout
@@ -65,9 +66,9 @@ unicodeTableUpperBound = '\xe0000'
 -- controlled by Vty.
 --
 -- This does not handle exceptions.
-buildUnicodeWidthTable :: IO UnicodeWidthTable
-buildUnicodeWidthTable = do
-    pairs <- forM (filter shouldConsider ['\0'..unicodeTableUpperBound]) $ \i ->
+buildUnicodeWidthTable :: Char -> IO UnicodeWidthTable
+buildUnicodeWidthTable tableUpperBound = do
+    pairs <- forM (filter shouldConsider ['\0'..tableUpperBound]) $ \i ->
         (i,) <$> charWidth i
 
     return UnicodeWidthTable { unicodeWidthTableRanges = reverse $ mkRanges pairs

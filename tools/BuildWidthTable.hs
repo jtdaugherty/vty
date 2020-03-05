@@ -9,6 +9,7 @@ import Data.Semigroup ((<>))
 import System.Environment (getArgs, getProgName)
 import System.Exit (exitFailure)
 import System.Console.GetOpt
+import Text.Read (readMaybe)
 
 import Graphics.Vty.Config (terminalWidthTablePath, currentTerminalName, vtyConfigPath)
 import Graphics.Vty.UnicodeWidthTable.IO
@@ -16,12 +17,16 @@ import Graphics.Vty.UnicodeWidthTable.Query
 
 data Arg = Help
          | OutputPath String
+         | TableUpperBound String
          deriving (Eq, Show)
 
 options :: Config -> [OptDescr Arg]
 options config =
     [ Option "h" ["help"] (NoArg Help)
       "This help output"
+    , Option "b" ["bound"] (ReqArg TableUpperBound "MAX_CHAR")
+      ("The maximum Unicode code point to test when building the table " <>
+       "(default: " <> (show $ fromEnum $ configBound config) <> ")")
     , Option "p" ["path"] (ReqArg OutputPath "PATH")
       ("The output path to write to (default: " <>
        fromMaybe "<none>" (configOutputPath config) <> ")")
@@ -29,12 +34,14 @@ options config =
 
 data Config =
     Config { configOutputPath :: Maybe FilePath
+           , configBound :: Char
            }
            deriving (Show)
 
 mkDefaultConfig :: IO Config
 mkDefaultConfig = do
     Config <$> terminalWidthTablePath
+           <*> pure defaultUnicodeTableUpperBound
 
 usage :: IO ()
 usage = do
@@ -53,6 +60,10 @@ usage = do
 updateConfigFromArg :: Arg -> Config -> Config
 updateConfigFromArg Help c =
     c
+updateConfigFromArg (TableUpperBound s) c =
+    case readMaybe s of
+        Nothing -> error $ "Invalid table upper bound: " <> show s
+        Just v  -> c { configBound = toEnum v }
 updateConfigFromArg (OutputPath p) c =
     c { configOutputPath = Just p }
 
@@ -79,7 +90,7 @@ main = do
         Just path -> return path
 
     putStrLn "Querying terminal:"
-    builtTable <- buildUnicodeWidthTable
+    builtTable <- buildUnicodeWidthTable $ configBound config
     writeUnicodeWidthTable outputPath builtTable
     putStrLn $ "\nOutput table written to " <> outputPath
 
