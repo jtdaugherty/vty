@@ -67,7 +67,8 @@ unicodeTableUpperBound = '\x2FFFF'
 -- and then querying the terminal to determine the resulting cursor
 -- position in order to measure character widths. Consequently this will
 -- generate a lot of output and may take a while, depending on your
--- system performance.
+-- system performance. This should not be run in a terminal while it is
+-- controlled by Vty.
 buildUnicodeWidthTable :: IO UnicodeWidthTable
 buildUnicodeWidthTable = do
     pairs <- forM (filter shouldConsider ['\0'..unicodeTableUpperBound]) $ \i ->
