@@ -15,7 +15,9 @@ import Data.Semigroup ((<>))
 import Graphics.Vty.UnicodeWidthTable.Types
 
 -- | Returns True if and only if a custom table has been allocated and
--- marked as ready for use. Returns False otherwise.
+-- marked as ready for use.
+--
+-- This function is not thread-safe.
 isCustomTableReady :: IO Bool
 isCustomTableReady = (== 1) <$> c_isCustomTableReady
 
@@ -47,14 +49,15 @@ tableSize = 0x110000
 -- they don't want to control the terminal with 'mkVty' but do want to
 -- make calls to 'Graphics.Vty.Image.wcwidth'.
 --
--- It's also important to note that once a
--- custom table has been installed, it is permanent for the life of the
--- process. No new table can be installed, and the new custom table
--- cannot be removed.
+-- It's also important to note that once a custom table has been
+-- installed, it is permanent for the life of the process. No new table
+-- can be installed, and the new custom table cannot be removed.
 --
 -- If this function fails for any reason -- if the table cannot be
 -- installed or is invalid, or if a custom table already exists -- this
 -- will raise an exception by calling 'error'.
+--
+-- This function is not thread-safe.
 installUnicodeWidthTable :: UnicodeWidthTable -> IO ()
 installUnicodeWidthTable table = do
     initResult <- initCustomTable tableSize
