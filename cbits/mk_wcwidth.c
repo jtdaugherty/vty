@@ -318,7 +318,7 @@ int vty_activate_custom_table()
 // Returns whether a custom character width table has been marked ready.
 int vty_custom_table_ready()
 {
-    return ((custom_table != NULL) && custom_table_ready);
+    return custom_table_ready;
 }
 
 // Deallocate the custom width table.
