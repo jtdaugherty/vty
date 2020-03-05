@@ -333,5 +333,6 @@ void vty_deallocate_custom_table()
     if ((custom_table != NULL) && (!custom_table_ready)) {
         free(custom_table);
         custom_table = NULL;
+        custom_table_size = 0;
     }
 }
