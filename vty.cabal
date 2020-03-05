@@ -118,7 +118,6 @@ library
   hs-source-dirs:      src
 
   default-extensions:  ScopedTypeVariables
-                       ForeignFunctionInterface
 
   ghc-options:         -O2 -funbox-strict-fields -Wall -fspec-constr -fspec-constr-count=10
 
