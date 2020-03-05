@@ -18,24 +18,21 @@ cabal install vty
 
 # Features
 
-* Supports a large number of terminals. vt100, ansi, hurd, linux,
-  screen, etc., or anything with a sufficient terminfo entry.
+* Supports a large number of terminals, i.e., vt100, ansi, hurd, linux,
+  `screen`, etc., or anything with a sufficient terminfo entry.
 
-* Automatic handling of window resizes.
+* Automatically handles window resizes.
 
-* Unicode output on terminals with UTF-8 support.
+* Supports Unicode output on terminals with UTF-8 support.
 
-* Handles multi-column glyphs. (Requires user to properly configure
-  terminal.)
-
-* Efficient output. Output buffering and terminal state changes are
-  minimized.
+* Provides an efficient output algorithm. Output buffering and terminal
+  state changes are minimized.
 
 * Minimizes repaint area, which virtually eliminates the flicker
   problems that plague ncurses programs.
 
-* A pure, compositional interface for efficiently constructing display
-  images.
+* Provides a pure, compositional interface for efficiently constructing
+  display images.
 
 * Automatically decodes keyboard keys into (key,[modifier]) tuples.
 
@@ -44,7 +41,7 @@ cabal install vty
 * Supports a keypress timeout after for lone ESC. The timeout is
   customizable.
 
-* The interface is designed for easy extension.
+* Provides extensible input and output interfaces.
 
 * Supports ANSI graphics modes (SGR as defined in `console_codes(4)`)
   with a type-safe interface and graceful fallback for terminals
@@ -75,12 +72,12 @@ compiled with the threaded runtime using the GHC `-threaded` option.
 
 ## Posix Terminals
 
-Uses terminfo to determine terminal protocol. With some special rules to
-handle some omissions from terminfo.
+For the most part, Vty uses `terminfo` to determine terminal protocol
+with some special rules to handle some omissions from `terminfo`.
 
 ## Windows
 
-Unsupported (but contributions and testing here are very welcome!)
+Windows is not supported.
 
 # Contributing
 
@@ -96,21 +93,8 @@ should consider to make submitting patches easier for all concerned:
 
 # Development Notes
 
-## Under NixOS
-
-### Using cabal
-
-After installing `ncurses` to the user environment:
-
-~~~
-LIBRARY_PATH=$HOME/.nix-profile/lib/ cabal configure --enable-tests --extra-lib-dirs=$HOME/.nix-profile/lib
-LIBRARY_PATH=$HOME/.nix-profile/lib/ cabal build
-LIBRARY_PATH=$HOME/.nix-profile/lib/ cabal test
-~~~
-
 ## Code Coverage
 
-As of last testing, profiling causes issues with coverage when enabled.
 To evaluate coverage, configure as follows:
 
 ~~~
@@ -129,10 +113,11 @@ rm -rf dist ; cabal configure --enable-tests --disable-library-coverage \
 
 # Known Issues
 
-* Terminals have numerous quirks and bugs. Vty picks what works best for
-  the author in ambiguous or buggy situations.
+* Terminals have numerous quirks and bugs, so mileage may vary. Please
+  report issues as you encounter them and provide details on your
+  terminal emulator, operating system, etc.
 
-* Signal handling of STOP, TERM and INT are nonexistent.
+* STOP, TERM and INT signals are not handled.
 
 * The character encoding of the terminal is assumed to be UTF-8 if
   unicode is used.
@@ -142,10 +127,10 @@ rm -rf dist ; cabal configure --enable-tests --disable-library-coverage \
   (shifted F10 etc). See `Config` for customizing vty's behavior for a
   particular terminal.
 
-* Uses the `TIOCGWINSZ` ioctl to find the current window size, which
+* Vty uses the `TIOCGWINSZ` ioctl to find the current window size, which
   appears to be limited to Linux and BSD.
 
-# Sources
+# Further Reading
 
 Good sources of documentation for terminal programming are:
 
