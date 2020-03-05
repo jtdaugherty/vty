@@ -91,26 +91,6 @@ should consider to make submitting patches easier for all concerned:
    conventions already used in the codebase.
  - Please provide Haddock documentation for any changes you make.
 
-# Development Notes
-
-## Code Coverage
-
-To evaluate coverage, configure as follows:
-
-~~~
-rm -rf dist ; cabal configure --enable-tests --enable-library-coverage \
-  --disable-library-profiling \
-  --disable-executable-profiling
-~~~
-
-## Profiling
-
-~~~
-rm -rf dist ; cabal configure --enable-tests --disable-library-coverage \
-  --enable-library-profiling \
-  --enable-executable-profiling
-~~~
-
 # Known Issues
 
 * Terminals have numerous quirks and bugs, so mileage may vary. Please
