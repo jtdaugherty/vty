@@ -2,7 +2,6 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 module Graphics.Vty.UnicodeWidthTable.Install
   ( installUnicodeWidthTable
-
   , isCustomTableReady
   )
 where
