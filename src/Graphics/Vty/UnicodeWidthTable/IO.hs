@@ -48,30 +48,14 @@ writeUnicodeWidthTable path table = do
 widthTableMagic :: Word32
 widthTableMagic = 0xc1a9f7e0
 
--- NB: This parsing code uses explicit types for parsing each value to
--- catch situations where someone changes the types of the fields of
--- WidthTableRange or other values and in doing so would silently break
--- the parser. If the parser used a style like
---
--- WidthTableRange <$> get <*> get <*> get
---
--- then that would result in valid Haskell code that would fail to read
--- files that it would have previously parsed. We want those errors
--- caught by GHc. At the time of this writing, the library data types
--- *happen* to match the binary layout of the version 1 format, but that
--- could definitely change in later formats. In those cases we should
--- deal with the difference by doing the appropriate conversions.
-
 tableParser :: Get UnicodeWidthTable
 tableParser = do
-    magic :: Word32
-          <- getWord32le
+    magic <- getWord32le
 
     when (magic /= widthTableMagic) $
         fail "Table magic number invalid"
 
-    version :: Word8
-            <- get
+    version <- getWord8
 
     case version of
         1 -> tableV1Parser
@@ -79,16 +63,12 @@ tableParser = do
 
 tableV1Parser :: Get UnicodeWidthTable
 tableV1Parser = do
-    numRanges :: Word32
-              <- getWord32le
+    numRanges <- getWord32le
 
     let parseRange = do
-            start :: Word32
-                  <- getWord32le
-            size :: Word32
-                 <- getWord32le
-            cols :: Word8
-                 <- get
+            start <- getWord32le
+            size <- getWord32le
+            cols <- getWord8
             return WidthTableRange { rangeStart = start
                                    , rangeSize = size
                                    , rangeColumns = cols
