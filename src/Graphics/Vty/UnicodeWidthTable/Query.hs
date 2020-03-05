@@ -65,6 +65,10 @@ defaultUnicodeTableUpperBound = '\xe0000'
 -- system performance. This should not be run in a terminal while it is
 -- controlled by Vty.
 --
+-- The argument specifies the upper bound code point to test when
+-- building the table. This allows callers to decide how much of the
+-- Unicode code point space to scan when building the table.
+--
 -- This does not handle exceptions.
 buildUnicodeWidthTable :: Char -> IO UnicodeWidthTable
 buildUnicodeWidthTable tableUpperBound = do
