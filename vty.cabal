@@ -126,8 +126,8 @@ library
 
   ghc-prof-options:    -O2 -funbox-strict-fields -caf-all -Wall -fspec-constr -fspec-constr-count=10
 
-executable vty-build-table
-  main-is:             BuildUnicodeTable.hs
+executable vty-build-width-table
+  main-is:             BuildWidthTable.hs
   hs-source-dirs:      tools
 
   default-language:    Haskell2010
