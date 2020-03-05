@@ -72,8 +72,9 @@
 // built-in tree search logic is used.
 static uint8_t* custom_table = NULL;
 
-// The size of the custom table. This should only be set if custom_table
-// is not NULL. Its value should be the size of the custom_table array.
+// The size of the custom table, in entries. This should only be set
+// if custom_table is not NULL. Its value should be the size of the
+// custom_table array.
 static uint32_t custom_table_size = 0;
 
 // A flag indicating whether the custom table is ready for use. This
