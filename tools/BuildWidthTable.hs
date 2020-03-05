@@ -84,9 +84,10 @@ main = do
     putStrLn $ "\nOutput table written to " <> outputPath
 
     Just tName <- currentTerminalName
+    configPath <- vtyConfigPath
     putStrLn ""
     putStrLn "To configure your Vty-based applications to use this map, add"
-    putStrLn "the following line to ~/.vty/config:"
+    putStrLn "the following line to " <> configPath <> ":"
     putStrLn ""
     putStrLn $ "  widthMap " <> show tName <> " " <> show outputPath
     putStrLn ""

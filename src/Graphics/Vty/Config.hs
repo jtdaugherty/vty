@@ -68,9 +68,11 @@ module Graphics.Vty.Config
   , getTtyEraseChar
   , currentTerminalName
 
+  , vtyConfigPath
   , widthTableFilename
   , vtyDataDirectory
   , terminalWidthTablePath
+  , vtyConfigFileEnvName
   )
 where
 
@@ -197,12 +199,20 @@ instance Monoid Config where
 vtyDataDirectory :: IO FilePath
 vtyDataDirectory = getAppUserDataDirectory "vty"
 
--- | Load a configuration from @'getAppUserDataDirectory'/config@ and
--- @$VTY_CONFIG_FILE@.
+vtyConfigPath :: IO FilePath
+vtyConfigPath = do
+    dir <- vtyDataDirectory
+    return $ dir </> "config"
+
+vtyConfigFileEnvName :: String
+vtyConfigFileEnvName = "VTY_CONFIG_FILE"
+
+-- | Load a configuration from 'vtyConfigPath' and @$VTY_CONFIG_FILE@.
 userConfig :: IO Config
 userConfig = do
-    configFile <- (mappend <$> vtyDataDirectory <*> pure "/config") >>= parseConfigFile
-    overrideConfig <- maybe (return defaultConfig) parseConfigFile =<< lookupEnv "VTY_CONFIG_FILE"
+    configFile <- vtyConfigPath >>= parseConfigFile
+    overrideConfig <- maybe (return defaultConfig) parseConfigFile =<<
+        lookupEnv vtyConfigFileEnvName
     let base = configFile <> overrideConfig
     mappend base <$> overrideEnvConfig
 
