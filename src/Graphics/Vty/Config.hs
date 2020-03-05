@@ -55,6 +55,32 @@
 -- table to the log in the above format. A workflow for using this is
 -- to set @VTY_DEBUG_LOG@. Run the application. Check the debug log for
 -- incorrect mappings. Add corrected mappings to @$HOME/.vty/config@.
+--
+-- = Unicode Character Width Maps
+--
+-- == @widthMap@
+--
+-- Format:
+--
+-- @
+--  \"widthMap\" string string
+-- @
+--
+-- E.g.,
+--
+-- @
+--   widthMap \"xterm\" \"\/home\/user\/.vty\/xterm\_map.dat\"
+-- @
+--
+-- This directive specifies the path to a Unicode character width
+-- map (the second argument) that should be loaded and used when
+-- the value of TERM matches the first argument. Unicode character
+-- width maps can be produced either by running the provided binary
+-- @vty-build-width-table@ or by calling the library routine
+-- 'Graphics.Vty.UnicodeWidthTable.Query.buildUnicodeWidthTable'. The
+-- 'Graphics.Vty.mkVty' function will use these configuration settings
+-- to attempt to load and install the specified width map. See the
+-- documentation for 'Graphics.Vty.mkVty' for details.
 module Graphics.Vty.Config
   ( InputMap
   , Config(..)
