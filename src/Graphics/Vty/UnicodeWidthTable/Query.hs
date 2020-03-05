@@ -30,6 +30,9 @@ charWidth c = do
 -- run-length encoded ranges. This function assumes the pairs come
 -- sorted by character ordinal value. It does not require that the
 -- character range is fully covered by the sequence.
+--
+-- The result of this function is a list of ranges in reverse order
+-- relative to the input sequence.
 mkRanges :: [(Char, Int)] -> [WidthTableRange]
 mkRanges pairs =
     let convertedPairs = convert <$> pairs
