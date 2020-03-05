@@ -48,7 +48,6 @@ library
                        microlens < 0.4.12,
                        microlens-mtl,
                        microlens-th,
-                       -- required for nice installation with yi
                        hashable >= 1.2,
                        mtl >= 1.1.1.0 && < 2.3,
                        parallel >= 2.2 && < 3.3,
@@ -80,7 +79,6 @@ library
                        Graphics.Vty.Picture
                        Graphics.Vty.Output
                        Graphics.Text.Width
-                       -- the modules below are only meant to be used by the tests.
                        Codec.Binary.UTF8.Debug
                        Data.Terminfo.Parse
                        Data.Terminfo.Eval
