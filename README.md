@@ -60,6 +60,12 @@ cabal install vty
 * Supports bracketed paste mode as described at
   http://cirw.in/blog/bracketed-paste
 
+* Supports multi-column Unicode characters such as emoji characters. In
+  cases where Vty and your terminal emulator disagree on character
+  widths, Vty provides a tool `vty-build-width-table` and library
+  functionality to build a width table that will work for your terminal
+  and load it on application startup.
+
 # Development Notes
 
 Vty uses threads internally, so programs made with Vty need to be
