@@ -77,8 +77,10 @@ static uint8_t* custom_table = NULL;
 // custom_table array.
 static uint32_t custom_table_size = 0;
 
-// A flag indicating whether the custom table is ready for use. This
-// should only be set once the table has been allocated and initialized.
+// A flag indicating whether the custom table is ready for
+// use. This should only be set once the table has been
+// allocated with vty_init_custom_table and initialized with
+// vty_set_custom_table_range.
 static uint8_t custom_table_ready = 0;
 
 struct interval {
