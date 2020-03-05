@@ -53,14 +53,8 @@ mkRanges pairs =
 
 -- The uppermost code point to consider when building Unicode width
 -- tables.
---
--- This only covers some of the possible Unicode range and is sure to
--- become stale eventually. Granted, at the time of this writing, even
--- the latest version of Unicode (13) totals 143,859 characters and that
--- only gets us to code point 0x231f3 or so. But it's only a matter of
--- time before this bound is too low.
 unicodeTableUpperBound :: Char
-unicodeTableUpperBound = '\x2FFFF'
+unicodeTableUpperBound = '\xe0000'
 
 -- | Construct a unicode character width table by querying the terminal
 -- connected to stdout. This works by emitting characters to stdout
