@@ -143,6 +143,20 @@ custom table. Only one custom table load can be performed in a Vty
 program. Once a custom table has been loaded, it cannot be replaced or
 removed.
 
+Without using a custom width table, users of Vty-based applications
+are likely to eventually experience rendering problems with with wide
+characters. We recommend that developers of Vty-based applications either:
+
+* Provide the `vty-build-width-table` tool and documentation for running
+  it and updating the Vty configuration, or
+* Have the application invoke the Vty library's table-building
+  functionality and load the table at startup without using the Vty
+  configuration.
+
+The best option will depend on a number of factors: the user audience,
+the amount of risk posed by wide character rendering, the terminal
+emulators in use, etc.
+
 # Contributing
 
 If you decide to contribute, that's great! Here are some guidelines you
