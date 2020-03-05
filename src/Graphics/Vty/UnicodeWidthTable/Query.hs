@@ -26,6 +26,10 @@ charWidth c = do
     Just (_, col) <- getCursorPosition
     return col
 
+-- | Convert a sequence of character/width pairs into a list of
+-- run-length encoded ranges. This function assumes the pairs come
+-- sorted by character ordinal value. It does not require that the
+-- character range is fully covered by the sequence.
 mkRanges :: [(Char, Int)] -> [WidthTableRange]
 mkRanges pairs =
     let convertedPairs = convert <$> pairs
