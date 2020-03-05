@@ -63,6 +63,8 @@ unicodeTableUpperBound = '\xe0000'
 -- generate a lot of output and may take a while, depending on your
 -- system performance. This should not be run in a terminal while it is
 -- controlled by Vty.
+--
+-- This does not handle exceptions.
 buildUnicodeWidthTable :: IO UnicodeWidthTable
 buildUnicodeWidthTable = do
     pairs <- forM (filter shouldConsider ['\0'..unicodeTableUpperBound]) $ \i ->
