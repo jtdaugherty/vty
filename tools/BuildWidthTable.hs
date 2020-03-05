@@ -10,7 +10,7 @@ import System.Environment (getArgs, getProgName)
 import System.Exit (exitFailure)
 import System.Console.GetOpt
 
-import Graphics.Vty.Config (terminalWidthTablePath, currentTerminalName)
+import Graphics.Vty.Config (terminalWidthTablePath, currentTerminalName, vtyConfigPath)
 import Graphics.Vty.UnicodeWidthTable.IO
 import Graphics.Vty.UnicodeWidthTable.Query
 
@@ -87,7 +87,7 @@ main = do
     configPath <- vtyConfigPath
     putStrLn ""
     putStrLn "To configure your Vty-based applications to use this map, add"
-    putStrLn "the following line to " <> configPath <> ":"
+    putStrLn $ "the following line to " <> configPath <> ":"
     putStrLn ""
     putStrLn $ "  widthMap " <> show tName <> " " <> show outputPath
     putStrLn ""
