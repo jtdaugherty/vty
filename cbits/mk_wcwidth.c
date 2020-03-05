@@ -249,7 +249,7 @@ HsInt vty_mk_wcwidth(HsChar ch)
 // This allocates a new character width table of the specified size
 // (in characters). If a custom table has already been allocated, this
 // returns 1. Otherwise it allocates a new table, initializes all of its
-// entries to zero, and returns zero.
+// entries to 1, and returns zero.
 //
 // Note that this does *not* mark the table as ready for use. Until the
 // table is marked ready, it will not be used by vty_mk_wcwidth. To mark
@@ -261,7 +261,7 @@ int vty_init_custom_table(int size)
         if (size > 0 && size <= MAX_CUSTOM_TABLE_SIZE) {
             custom_table_ready = 0;
             custom_table = malloc(size);
-            bzero(custom_table, size);
+            memset(custom_table, 1, size);
             custom_table_size = size;
             return 0;
         } else {
