@@ -230,7 +230,7 @@ HsInt builtin_wcwidth(HsChar ucs)
 HsInt vty_mk_wcwidth(HsChar ch)
 {
     if (custom_table != NULL) {
-        if (ch >= 0 && ch < custom_table_size) {
+        if ((ch >= 0) && (ch < custom_table_size)) {
             return custom_table[ch];
         } else {
             return 0;
