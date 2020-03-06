@@ -6,7 +6,9 @@ import Data.Maybe (fromMaybe)
 #if !(MIN_VERSION_base(4,11,0))
 import Data.Semigroup ((<>))
 #endif
+import System.Directory (createDirectoryIfMissing)
 import System.Environment (getArgs, getProgName)
+import System.FilePath (takeDirectory)
 import System.Exit (exitFailure)
 import System.Console.GetOpt
 import Text.Read (readMaybe)
@@ -88,6 +90,9 @@ main = do
             putStrLn "Error: could not obtain terminal width table path"
             exitFailure
         Just path -> return path
+
+    let dir = takeDirectory outputPath
+    createDirectoryIfMissing True dir
 
     putStrLn "Querying terminal:"
     builtTable <- buildUnicodeWidthTable $ configBound config
