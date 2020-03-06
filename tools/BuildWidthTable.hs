@@ -1,6 +1,8 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE CPP #-}
 module Main where
 
+import qualified Control.Exception as E
 import Control.Monad (when)
 import Data.Maybe (fromMaybe)
 #if !(MIN_VERSION_base(4,11,0))
@@ -13,13 +15,17 @@ import System.Exit (exitFailure)
 import System.Console.GetOpt
 import Text.Read (readMaybe)
 
-import Graphics.Vty.Config (terminalWidthTablePath, currentTerminalName, vtyConfigPath)
+import Graphics.Vty.Config ( terminalWidthTablePath, currentTerminalName
+                           , vtyConfigPath, addConfigWidthMap
+                           , ConfigUpdateResult(..)
+                           )
 import Graphics.Vty.UnicodeWidthTable.IO
 import Graphics.Vty.UnicodeWidthTable.Query
 
 data Arg = Help
          | OutputPath String
          | TableUpperBound String
+         | UpdateConfig
          deriving (Eq, Show)
 
 options :: Config -> [OptDescr Arg]
@@ -32,11 +38,14 @@ options config =
     , Option "p" ["path"] (ReqArg OutputPath "PATH")
       ("The output path to write to (default: " <>
        fromMaybe "<none>" (configOutputPath config) <> ")")
+    , Option "u" ["update-config"] (NoArg UpdateConfig)
+      "Create or update the Vty configuration file to use the new map (default: no)"
     ]
 
 data Config =
     Config { configOutputPath :: Maybe FilePath
            , configBound :: Char
+           , configUpdate :: Bool
            }
            deriving (Show)
 
@@ -44,6 +53,7 @@ mkDefaultConfig :: IO Config
 mkDefaultConfig = do
     Config <$> terminalWidthTablePath
            <*> pure defaultUnicodeTableUpperBound
+           <*> pure False
 
 usage :: IO ()
 usage = do
@@ -62,6 +72,8 @@ usage = do
 updateConfigFromArg :: Arg -> Config -> Config
 updateConfigFromArg Help c =
     c
+updateConfigFromArg UpdateConfig c =
+    c { configUpdate = True }
 updateConfigFromArg (TableUpperBound s) c =
     case readMaybe s of
         Nothing -> error $ "Invalid table upper bound: " <> show s
@@ -99,11 +111,22 @@ main = do
     writeUnicodeWidthTable outputPath builtTable
     putStrLn $ "\nOutput table written to " <> outputPath
 
-    Just tName <- currentTerminalName
-    configPath <- vtyConfigPath
-    putStrLn ""
-    putStrLn "To configure your Vty-based applications to use this map, add"
-    putStrLn $ "the following line to " <> configPath <> ":"
-    putStrLn ""
-    putStrLn $ "  widthMap " <> show tName <> " " <> show outputPath
-    putStrLn ""
+    when (configUpdate config) $ do
+        Just tName <- currentTerminalName
+        configPath <- vtyConfigPath
+
+        result <- E.try $ addConfigWidthMap configPath tName outputPath
+
+        putStrLn ""
+        case result of
+            Left (e::E.SomeException) -> do
+                putStrLn $ "Error updating Vty configuration at " <> configPath <> ": " <> show e
+                exitFailure
+            Right ConfigurationCreated -> do
+                putStrLn $ "Configuration file created: " <> configPath
+            Right ConfigurationModified -> do
+                putStrLn $ "Configuration file updated: " <> configPath
+            Right (ConfigurationConflict other) -> do
+                putStrLn $ "Configuration file not updated: uses a different map for terminal type " <> tName <> ": " <> other
+            Right ConfigurationRedundant -> do
+                putStrLn $ "Configuration file not updated: configuration already contains map " <> outputPath <> " for TERM=" <> tName

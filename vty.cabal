@@ -131,6 +131,8 @@ executable vty-build-width-table
   ghc-options:         -threaded -Wall
 
   build-depends:       vty,
+                       directory,
+                       filepath,
                        base >= 4.8 && < 5
 
 executable vty-mode-demo
