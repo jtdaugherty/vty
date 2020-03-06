@@ -126,7 +126,6 @@ main = do
 
         result <- E.try $ addConfigWidthMap cPath tName outputPath
 
-        putStrLn ""
         case result of
             Left (e::E.SomeException) -> do
                 putStrLn $ "Error updating Vty configuration at " <> cPath <> ": " <>
