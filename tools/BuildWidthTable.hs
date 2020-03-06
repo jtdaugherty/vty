@@ -111,12 +111,13 @@ main = do
             exitFailure
         Just path -> return path
 
-    let dir = takeDirectory outputPath
-    createDirectoryIfMissing True dir
-
     putStrLn "Querying terminal:"
     builtTable <- buildUnicodeWidthTable $ configBound config
+
+    let dir = takeDirectory outputPath
+    createDirectoryIfMissing True dir
     writeUnicodeWidthTable outputPath builtTable
+
     putStrLn $ "\nOutput table written to " <> outputPath
 
     when (configUpdate config) $ do
