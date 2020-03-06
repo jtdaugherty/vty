@@ -120,20 +120,25 @@ main = do
     putStrLn $ "\nOutput table written to " <> outputPath
 
     when (configUpdate config) $ do
+        let cPath = configPath config
         Just tName <- currentTerminalName
 
-        result <- E.try $ addConfigWidthMap (configPath config) tName outputPath
+        result <- E.try $ addConfigWidthMap cPath tName outputPath
 
         putStrLn ""
         case result of
             Left (e::E.SomeException) -> do
-                putStrLn $ "Error updating Vty configuration at " <> (configPath config) <> ": " <> show e
+                putStrLn $ "Error updating Vty configuration at " <> cPath <> ": " <>
+                           show e
                 exitFailure
             Right ConfigurationCreated -> do
-                putStrLn $ "Configuration file created: " <> (configPath config)
+                putStrLn $ "Configuration file created: " <> cPath
             Right ConfigurationModified -> do
-                putStrLn $ "Configuration file updated: " <> (configPath config)
+                putStrLn $ "Configuration file updated: " <> cPath
             Right (ConfigurationConflict other) -> do
-                putStrLn $ "Configuration file not updated: uses a different map for terminal type " <> tName <> ": " <> other
+                putStrLn $ "Configuration file not updated: uses a different map " <>
+                           "for terminal type " <> tName <> ": " <> other
             Right ConfigurationRedundant -> do
-                putStrLn $ "Configuration file not updated: configuration " <> (configPath config) <> " already contains map " <> outputPath <> " for TERM=" <> tName
+                putStrLn $ "Configuration file not updated: configuration " <>
+                           cPath <> " already contains map " <> outputPath <>
+                           " for TERM=" <> tName
