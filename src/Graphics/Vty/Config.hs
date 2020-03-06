@@ -99,6 +99,9 @@ module Graphics.Vty.Config
   , vtyDataDirectory
   , terminalWidthTablePath
   , vtyConfigFileEnvName
+
+  , ConfigUpdateResult(..)
+  , addConfigWidthMap
   )
 where
 
@@ -122,9 +125,11 @@ import Graphics.Vty.Input.Events
 
 import GHC.Generics
 
-import System.Directory (getAppUserDataDirectory)
+import System.Directory ( getAppUserDataDirectory, doesFileExist
+                        , createDirectoryIfMissing
+                        )
 import System.Environment (lookupEnv)
-import System.FilePath ((</>))
+import System.FilePath ((</>), takeDirectory)
 import System.Posix.IO (stdInput, stdOutput)
 import System.Posix.Types (Fd(..))
 import Foreign.C.Types (CInt(..), CChar(..))
@@ -419,3 +424,56 @@ getTtyEraseChar fd = do
     if c /= 0
        then return $ Just $ toEnum $ fromEnum c
        else return Nothing
+
+data ConfigUpdateResult =
+    ConfigurationCreated
+    | ConfigurationModified
+    | ConfigurationConflict String
+    | ConfigurationRedundant
+    deriving (Eq, Show)
+
+-- | Add a @widthMap@ directive to the Vty configuration file at the
+-- specified path.
+--
+-- If the configuration path refers to a configuration that already
+-- contains the directive for the specified map and terminal type, the
+-- configuration file will not be modified. If the file does not contain
+-- the directive, it will be appended to the file.
+--
+-- If the configuration path does not exist, a new configuration file
+-- will be created and any directories in the path will also be created.
+--
+-- This returns @True@ if the configuration was created or modified and
+-- @False@ otherwise. This does not handle exceptions raised by file or
+-- directory permissions issues.
+addConfigWidthMap :: FilePath
+                  -- ^ The configuration file path of the configuration
+                  -- to modify or create.
+                  -> String
+                  -- ^ The @TERM@ value for the @widthMap@ directive.
+                  -> FilePath
+                  -- ^ The width table file path for the directive.
+                  -> IO ConfigUpdateResult
+addConfigWidthMap configPath term tablePath = do
+    configEx <- doesFileExist configPath
+    if configEx
+       then updateConfig
+       else createConfig >> return ConfigurationCreated
+
+    where
+        directive = "widthMap " <> show term <> " " <> show tablePath <> "\n"
+
+        createConfig = do
+            let dir = takeDirectory configPath
+            createDirectoryIfMissing True dir
+            writeFile configPath directive
+
+        updateConfig = do
+            config <- parseConfigFile configPath
+            if (term, tablePath) `elem` termWidthMaps config
+               then return ConfigurationRedundant
+               else case lookup term (termWidthMaps config) of
+                   Just other -> return $ ConfigurationConflict other
+                   Nothing -> do
+                       appendFile configPath directive
+                       return ConfigurationModified
