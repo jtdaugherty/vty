@@ -26,6 +26,7 @@ data Arg = Help
          | OutputPath String
          | TableUpperBound String
          | UpdateConfig
+         | VtyConfigPath String
          deriving (Eq, Show)
 
 options :: Config -> [OptDescr Arg]
@@ -40,12 +41,16 @@ options config =
        fromMaybe "<none>" (configOutputPath config) <> ")")
     , Option "u" ["update-config"] (NoArg UpdateConfig)
       "Create or update the Vty configuration file to use the new map (default: no)"
+    , Option "c" ["config-path"] (ReqArg VtyConfigPath "PATH")
+      ("Update the specified Vty configuration file path when -u is set (default: " <>
+       configPath config <> ")")
     ]
 
 data Config =
     Config { configOutputPath :: Maybe FilePath
            , configBound :: Char
            , configUpdate :: Bool
+           , configPath :: FilePath
            }
            deriving (Show)
 
@@ -54,6 +59,7 @@ mkDefaultConfig = do
     Config <$> terminalWidthTablePath
            <*> pure defaultUnicodeTableUpperBound
            <*> pure False
+           <*> vtyConfigPath
 
 usage :: IO ()
 usage = do
@@ -74,6 +80,8 @@ updateConfigFromArg Help c =
     c
 updateConfigFromArg UpdateConfig c =
     c { configUpdate = True }
+updateConfigFromArg (VtyConfigPath p) c =
+    c { configPath = p }
 updateConfigFromArg (TableUpperBound s) c =
     case readMaybe s of
         Nothing -> error $ "Invalid table upper bound: " <> show s
@@ -113,20 +121,19 @@ main = do
 
     when (configUpdate config) $ do
         Just tName <- currentTerminalName
-        configPath <- vtyConfigPath
 
-        result <- E.try $ addConfigWidthMap configPath tName outputPath
+        result <- E.try $ addConfigWidthMap (configPath config) tName outputPath
 
         putStrLn ""
         case result of
             Left (e::E.SomeException) -> do
-                putStrLn $ "Error updating Vty configuration at " <> configPath <> ": " <> show e
+                putStrLn $ "Error updating Vty configuration at " <> (configPath config) <> ": " <> show e
                 exitFailure
             Right ConfigurationCreated -> do
-                putStrLn $ "Configuration file created: " <> configPath
+                putStrLn $ "Configuration file created: " <> (configPath config)
             Right ConfigurationModified -> do
-                putStrLn $ "Configuration file updated: " <> configPath
+                putStrLn $ "Configuration file updated: " <> (configPath config)
             Right (ConfigurationConflict other) -> do
                 putStrLn $ "Configuration file not updated: uses a different map for terminal type " <> tName <> ": " <> other
             Right ConfigurationRedundant -> do
-                putStrLn $ "Configuration file not updated: configuration already contains map " <> outputPath <> " for TERM=" <> tName
+                putStrLn $ "Configuration file not updated: configuration " <> (configPath config) <> " already contains map " <> outputPath <> " for TERM=" <> tName
