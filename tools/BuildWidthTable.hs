@@ -40,7 +40,7 @@ options config =
       ("The output path to write to (default: " <>
        fromMaybe "<none>" (configOutputPath config) <> ")")
     , Option "u" ["update-config"] (NoArg UpdateConfig)
-      "Create or update the Vty configuration file to use the new map (default: no)"
+      "Create or update the Vty configuration file to use the new table (default: no)"
     , Option "c" ["config-path"] (ReqArg VtyConfigPath "PATH")
       ("Update the specified Vty configuration file path when -u is set (default: " <>
        configPath config <> ")")
@@ -137,9 +137,9 @@ main = do
             Right ConfigurationModified -> do
                 putStrLn $ "Configuration file updated: " <> cPath
             Right (ConfigurationConflict other) -> do
-                putStrLn $ "Configuration file not updated: uses a different map " <>
-                           "for terminal type " <> tName <> ": " <> other
+                putStrLn $ "Configuration file not updated: uses a different table " <>
+                           "for TERM=" <> tName <> ": " <> other
             Right ConfigurationRedundant -> do
                 putStrLn $ "Configuration file not updated: configuration " <>
-                           cPath <> " already contains map " <> outputPath <>
+                           cPath <> " already uses table " <> outputPath <>
                            " for TERM=" <> tName
