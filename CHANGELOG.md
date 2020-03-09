@@ -1,4 +1,10 @@
 
+5.28.1
+------
+
+Bug fixes:
+ * `installUnicodeWidthTable`: use `throwIO`, not `throw`
+
 5.28
 ----
 
