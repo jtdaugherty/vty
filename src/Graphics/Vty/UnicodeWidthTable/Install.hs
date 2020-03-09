@@ -1,12 +1,14 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 module Graphics.Vty.UnicodeWidthTable.Install
-  ( installUnicodeWidthTable
+  ( TableInstallException(..)
+  , installUnicodeWidthTable
   , isCustomTableReady
   )
 where
 
 import Control.Monad (when, forM_)
+import qualified Control.Exception as E
 import Data.Word (Word8, Word32)
 #if !(MIN_VERSION_base(4,11,0))
 import Data.Semigroup ((<>))
@@ -27,6 +29,20 @@ isCustomTableReady = (== 1) <$> c_isCustomTableReady
 -- valid Unicode range is 0 - 0x10ffff, hence this value.
 tableSize :: Int
 tableSize = 0x110000
+
+-- | Exception type raised by 'installUnicodeWidthTable'.
+data TableInstallException =
+    TableInitFailure Int Int
+    -- ^ The width table could not be initialized. Args: failure status,
+    -- requested table size.
+    | TableRangeFailure Int WidthTableRange
+    -- ^ A code point range could not be configured. Args: failure
+    -- status, offending range.
+    | TableActivationFailure Int
+    -- ^ The table could not be activated. Args: failure status.
+    deriving (Eq, Show)
+
+instance E.Exception TableInstallException
 
 -- | Install a custom unicode character width
 -- table. Such tables are obtained with
@@ -61,15 +77,14 @@ tableSize = 0x110000
 --
 -- If this function fails for any reason -- if the table cannot be
 -- installed or is invalid, or if a custom table already exists -- this
--- will raise an exception by calling 'error'.
+-- will raise a 'TableInstallException' exception.
 --
 -- This function is not thread-safe.
 installUnicodeWidthTable :: UnicodeWidthTable -> IO ()
 installUnicodeWidthTable table = do
     initResult <- initCustomTable tableSize
     when (initResult /= 0) $
-        error $ "installUnicodeWidthTable: error initializing " <>
-                "custom table, status " <> show initResult
+        E.throw $ TableInitFailure initResult tableSize
 
     forM_ (unicodeWidthTableRanges table) $ \r -> do
         result <- setCustomTableRange (rangeStart r)
@@ -78,13 +93,11 @@ installUnicodeWidthTable table = do
 
         when (result /= 0) $ do
             deallocateCustomTable
-            error $ "installUnicodeWidthTable: error installing range " <>
-                    show r <> ", status " <> show result
+            E.throw $ TableRangeFailure result r
 
     actResult <- activateCustomTable
     when (actResult /= 0) $
-        error $ "installUnicodeWidthTable: error activating custom " <>
-                "table, status " <> show actResult
+        E.throw $ TableActivationFailure actResult
 
 ------------------------------------------------------------------------
 -- C imports
