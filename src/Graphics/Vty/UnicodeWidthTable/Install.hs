@@ -9,7 +9,8 @@ where
 
 import Control.Monad (when, forM_)
 import qualified Control.Exception as E
-import Control.Concurrent.MVar (MVar, newMVar, takeMVar, putMVar)
+import GHC.Conc.Sync (withMVar)
+import Control.Concurrent.MVar (MVar, newMVar)
 import Data.Word (Word8, Word32)
 #if !(MIN_VERSION_base(4,11,0))
 import Data.Semigroup ((<>))
@@ -31,14 +32,7 @@ isCustomTableReady :: IO Bool
 isCustomTableReady = withInstallLock $ (== 1) <$> c_isCustomTableReady
 
 withInstallLock :: IO a -> IO a
-withInstallLock act =
-    E.bracket takeInstallLock (const releaseInstallLock) $ const act
-
-takeInstallLock :: IO ()
-takeInstallLock = takeMVar installLock
-
-releaseInstallLock :: IO ()
-releaseInstallLock = putMVar installLock ()
+withInstallLock act = withMVar installLock $ const act
 
 -- This is the size of the allocated custom character width table, in
 -- character slots. It's important that this be large enough to hold all
