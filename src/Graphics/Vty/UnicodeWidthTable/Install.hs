@@ -28,9 +28,11 @@ installLock = unsafePerformIO $ newMVar ()
 --
 -- This function is thread-safe.
 isCustomTableReady :: IO Bool
-isCustomTableReady =
-    E.bracket takeInstallLock (const releaseInstallLock) $
-    const $ (== 1) <$> c_isCustomTableReady
+isCustomTableReady = withInstallLock $ (== 1) <$> c_isCustomTableReady
+
+withInstallLock :: IO a -> IO a
+withInstallLock act =
+    E.bracket takeInstallLock (const releaseInstallLock) $ const act
 
 takeInstallLock :: IO ()
 takeInstallLock = takeMVar installLock
@@ -96,24 +98,23 @@ instance E.Exception TableInstallException
 --
 -- This function is thread-safe.
 installUnicodeWidthTable :: UnicodeWidthTable -> IO ()
-installUnicodeWidthTable table =
-    E.bracket takeInstallLock (const releaseInstallLock) $ const $ do
-        initResult <- initCustomTable tableSize
-        when (initResult /= 0) $
-            E.throw $ TableInitFailure initResult tableSize
+installUnicodeWidthTable table = withInstallLock $ do
+    initResult <- initCustomTable tableSize
+    when (initResult /= 0) $
+        E.throw $ TableInitFailure initResult tableSize
 
-        forM_ (unicodeWidthTableRanges table) $ \r -> do
-            result <- setCustomTableRange (rangeStart r)
-                                          (rangeSize r)
-                                          (rangeColumns r)
+    forM_ (unicodeWidthTableRanges table) $ \r -> do
+        result <- setCustomTableRange (rangeStart r)
+                                      (rangeSize r)
+                                      (rangeColumns r)
 
-            when (result /= 0) $ do
-                deallocateCustomTable
-                E.throw $ TableRangeFailure result r
+        when (result /= 0) $ do
+            deallocateCustomTable
+            E.throw $ TableRangeFailure result r
 
-        actResult <- activateCustomTable
-        when (actResult /= 0) $
-            E.throw $ TableActivationFailure actResult
+    actResult <- activateCustomTable
+    when (actResult /= 0) $
+        E.throw $ TableActivationFailure actResult
 
 ------------------------------------------------------------------------
 -- C imports
