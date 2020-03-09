@@ -9,19 +9,34 @@ where
 
 import Control.Monad (when, forM_)
 import qualified Control.Exception as E
+import Control.Concurrent.MVar (MVar, newMVar, takeMVar, putMVar)
 import Data.Word (Word8, Word32)
 #if !(MIN_VERSION_base(4,11,0))
 import Data.Semigroup ((<>))
 #endif
+import System.IO.Unsafe (unsafePerformIO)
 
 import Graphics.Vty.UnicodeWidthTable.Types
+
+-- | The lock used to make functions in this module thread-safe.
+installLock :: MVar ()
+{-# NOINLINE installLock #-}
+installLock = unsafePerformIO $ newMVar ()
 
 -- | Returns True if and only if a custom table has been allocated and
 -- marked as ready for use.
 --
--- This function is not thread-safe.
+-- This function is thread-safe.
 isCustomTableReady :: IO Bool
-isCustomTableReady = (== 1) <$> c_isCustomTableReady
+isCustomTableReady =
+    E.bracket takeInstallLock (const releaseInstallLock) $
+    const $ (== 1) <$> c_isCustomTableReady
+
+takeInstallLock :: IO ()
+takeInstallLock = takeMVar installLock
+
+releaseInstallLock :: IO ()
+releaseInstallLock = putMVar installLock ()
 
 -- This is the size of the allocated custom character width table, in
 -- character slots. It's important that this be large enough to hold all
@@ -79,25 +94,26 @@ instance E.Exception TableInstallException
 -- installed or is invalid, or if a custom table already exists -- this
 -- will raise a 'TableInstallException' exception.
 --
--- This function is not thread-safe.
+-- This function is thread-safe.
 installUnicodeWidthTable :: UnicodeWidthTable -> IO ()
-installUnicodeWidthTable table = do
-    initResult <- initCustomTable tableSize
-    when (initResult /= 0) $
-        E.throw $ TableInitFailure initResult tableSize
+installUnicodeWidthTable table =
+    E.bracket takeInstallLock (const releaseInstallLock) $ const $ do
+        initResult <- initCustomTable tableSize
+        when (initResult /= 0) $
+            E.throw $ TableInitFailure initResult tableSize
 
-    forM_ (unicodeWidthTableRanges table) $ \r -> do
-        result <- setCustomTableRange (rangeStart r)
-                                      (rangeSize r)
-                                      (rangeColumns r)
+        forM_ (unicodeWidthTableRanges table) $ \r -> do
+            result <- setCustomTableRange (rangeStart r)
+                                          (rangeSize r)
+                                          (rangeColumns r)
 
-        when (result /= 0) $ do
-            deallocateCustomTable
-            E.throw $ TableRangeFailure result r
+            when (result /= 0) $ do
+                deallocateCustomTable
+                E.throw $ TableRangeFailure result r
 
-    actResult <- activateCustomTable
-    when (actResult /= 0) $
-        E.throw $ TableActivationFailure actResult
+        actResult <- activateCustomTable
+        when (actResult /= 0) $
+            E.throw $ TableActivationFailure actResult
 
 ------------------------------------------------------------------------
 -- C imports
