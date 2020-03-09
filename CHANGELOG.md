@@ -1,4 +1,44 @@
 
+5.28
+----
+
+This release improves Vty's support for multi-column Unicode characters
+and provides greater compatibility with a wider array of terminal
+emulators. The following sections summarize the relevant changes, but an
+overview of the new functionality is motivated and detailed in the new
+"Multi-Column Character Support" README section. For
+historical context, please also consider reading over
+[#175](https://github.com/jtdaugherty/vty/issues/175).
+
+API changes:
+ * New modules were added:
+   * `Graphics.Vty.UnicodeWidthTable.Types`
+   * `Graphics.Vty.UnicodeWidthTable.IO`
+   * `Graphics.Vty.UnicodeWidthTable.Query`
+   * `Graphics.Vty.UnicodeWidthTable.Install`
+ * The `Config` type got a new field, `allowCustomUnicodeWidthTables`,
+   that controls whether `mkVty` will attempt to load a Unicode width
+   table if specified in the configuration.
+
+Configuration file changes:
+ * A new syntax was added to support specifying Unicode width tables on
+   a per-`TERM` basis. The syntax is `widthMap <TERM> <PATH>`. See the
+   documentation for `Graphics.Vty.Config` for details. Since prior
+   versions of this library will silently ignore any configuration file
+   lines they cannot parse, this change to user configuration files is
+   at least non-breaking for older versions of Vty.
+
+Other changes:
+ * The `mkVty` function now automatically attempts to load a custom
+   Unicode width table if one is specified in the configuration,
+   provided `allowCustomUnicodeWidthTables` is not set to `Just False`.
+   See the documentation for `Graphics.Vty.mkVty` for details.
+ * Vty now includes a command line tool, `vty-build-width-table`, that
+   queries the terminal emulator to construct a custom Unicode width
+   table and optionally update the Vty configuration file to use it.
+   Programs that want to use that tool's functionality may also do so
+   via the API exposed in the various modules listed above.
+
 5.27
 ----
 
