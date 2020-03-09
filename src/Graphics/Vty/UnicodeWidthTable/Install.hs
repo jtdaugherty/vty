@@ -101,7 +101,7 @@ installUnicodeWidthTable :: UnicodeWidthTable -> IO ()
 installUnicodeWidthTable table = withInstallLock $ do
     initResult <- initCustomTable tableSize
     when (initResult /= 0) $
-        E.throw $ TableInitFailure initResult tableSize
+        E.throwIO $ TableInitFailure initResult tableSize
 
     forM_ (unicodeWidthTableRanges table) $ \r -> do
         result <- setCustomTableRange (rangeStart r)
@@ -110,11 +110,11 @@ installUnicodeWidthTable table = withInstallLock $ do
 
         when (result /= 0) $ do
             deallocateCustomTable
-            E.throw $ TableRangeFailure result r
+            E.throwIO $ TableRangeFailure result r
 
     actResult <- activateCustomTable
     when (actResult /= 0) $
-        E.throw $ TableActivationFailure actResult
+        E.throwIO $ TableActivationFailure actResult
 
 ------------------------------------------------------------------------
 -- C imports
