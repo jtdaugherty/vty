@@ -1,4 +1,11 @@
 
+5.28.2
+------
+
+Bug fixes:
+ * Added a package dependency on `semigroups` for the
+   `vty-build-width-table` tool on older GHCs (#185)
+
 5.28.1
 ------
 
