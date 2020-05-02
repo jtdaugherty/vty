@@ -117,14 +117,16 @@ horizCat = foldr horizJoin EmptyImage
 vertCat :: [Image] -> Image
 vertCat = foldr vertJoin EmptyImage
 
--- | Make an 'Image' from a lazy text value. This function should not be
--- given a text value containing escapes.
+-- | Make an 'Image' from a lazy text value. The text value should be
+-- sanitized of escape sequences (ASCII 27) and carriage returns;
+-- otherwise layout and attribute problems may result.
 text :: Attr -> TL.Text -> Image
 text a txt = let displayWidth = safeWctlwidth txt
              in HorizText a txt displayWidth (fromIntegral $! TL.length txt)
 
--- | Make an 'Image' from a text value. This function should not be
--- given a text value containing escapes.
+-- | Make an 'Image' from a text value. The text value should be
+-- sanitized of escape sequences (ASCII 27) and carriage returns;
+-- otherwise layout and attribute problems may result.
 text' :: Attr -> T.Text -> Image
 text' a txt = let displayWidth = safeWctwidth txt
               in HorizText a (TL.fromStrict txt) displayWidth (T.length txt)
@@ -138,8 +140,9 @@ char a c =
 
 -- | Make an image from a string of characters layed out on a single
 -- row with the same display attribute. The string is assumed to be a
--- sequence of ISO-10646 characters. This function should not be given a
--- string containing escapes.
+-- sequence of ISO-10646 characters. The input string should be
+-- sanitized of escape sequences (ASCII 27) and carriage returns;
+-- otherwise layout and attribute problems may result.
 --
 -- Note: depending on how the Haskell compiler represents string
 -- literals, a string literal in a UTF-8 encoded source file, for
@@ -156,8 +159,7 @@ iso10646String a str =
 --
 -- This is an alias for iso10646String since the usual case is that a
 -- literal string like "foo" is represented internally as a list of ISO
--- 10646 31 bit characters. This function should not be given a string
--- containing escapes.
+-- 10646 31 bit characters.
 --
 -- Note: Keep in mind that GHC will compile source encoded as UTF-8
 -- but the literal strings, while UTF-8 encoded in the source, will be
