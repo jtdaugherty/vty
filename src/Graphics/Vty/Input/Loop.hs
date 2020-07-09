@@ -193,7 +193,7 @@ runInputProcessorLoop classifyTable input = do
 --
 -- * IEXTEN (extended functions are disabled)
 --
--- The configuration actual also explicitly sets these flags:
+-- The configuration action also explicitly sets these flags:
 --
 -- * ICRNL (input carriage returns are mapped to newlines)
 attributeControl :: Fd -> IO (IO (), IO ())
