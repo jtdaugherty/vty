@@ -171,6 +171,31 @@ runInputProcessorLoop classifyTable input = do
                             <*> pure (classify classifyTable)
         runReaderT (evalStateT loopInputProcessor s0) input
 
+-- | Construct two IO actions: one to configure the terminal for Vty and
+-- one to restore the terminal mode flags to the values they had at the
+-- time this function was called.
+--
+-- This function constructs a configuration action to clear the
+-- following terminal mode flags:
+--
+-- * IXON disabled: disables software flow control on outgoing data.
+-- This stops the process from being suspended if the output terminal
+-- cannot keep up.
+--
+-- * Raw mode is used for input.
+--
+-- * ISIG (enables keyboard combinations that result in
+-- signals)
+--
+-- * ECHO (input is not echoed to the output)
+--
+-- * ICANON (canonical mode (line mode) input is not used)
+--
+-- * IEXTEN (extended functions are disabled)
+--
+-- The configuration actual also explicitly sets these flags:
+--
+-- * ICRNL (input carriage returns are mapped to newlines)
 attributeControl :: Fd -> IO (IO (), IO ())
 attributeControl fd = do
     original <- getTerminalAttributes fd

@@ -143,22 +143,8 @@ import Data.Monoid ((<>))
 -- bytes comes from 'classifyMapForTerm' which is then overridden by
 -- the the applicable entries from the configuration's 'inputMap'.
 --
--- The terminal device is configured with the attributes:
---
--- * IXON disabled: disables software flow control on outgoing data.
--- This stops the process from being suspended if the output terminal
--- cannot keep up.
---
--- * Raw mode is used for input.
---
--- * ISIG disabled (enables keyboard combinations that result in
--- signals)
---
--- * ECHO disabled (input is not echoed to the output)
---
--- * ICANON disabled (canonical mode (line mode) input is not used)
---
--- * IEXTEN disabled (extended functions are disabled)
+-- The terminal device's mode flags are configured by the
+-- 'attributeControl' function.
 inputForConfig :: Config -> IO Input
 inputForConfig config@Config{ termName = Just termName
                             , inputFd = Just termFd
