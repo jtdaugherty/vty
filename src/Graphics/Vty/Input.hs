@@ -143,22 +143,8 @@ import Data.Monoid ((<>))
 -- bytes comes from 'classifyMapForTerm' which is then overridden by
 -- the the applicable entries from the configuration's 'inputMap'.
 --
--- The terminal device is configured with the attributes:
---
--- * IXON disabled: disables software flow control on outgoing data.
--- This stops the process from being suspended if the output terminal
--- cannot keep up.
---
--- * Raw mode is used for input.
---
--- * ISIG disabled (enables keyboard combinations that result in
--- signals)
---
--- * ECHO disabled (input is not echoed to the output)
---
--- * ICANON disabled (canonical mode (line mode) input is not used)
---
--- * IEXTEN disabled (extended functions are disabled)
+-- The terminal device's mode flags are configured by the
+-- 'attributeControl' function.
 inputForConfig :: Config -> IO Input
 inputForConfig config@Config{ termName = Just termName
                             , inputFd = Just termFd
@@ -168,7 +154,7 @@ inputForConfig config@Config{ termName = Just termName
     terminal <- Terminfo.setupTerm termName
     let inputOverrides = [(s,e) | (t,s,e) <- inputMap, t == Nothing || t == Just termName]
         activeInputMap = classifyMapForTerm termName terminal `mappend` inputOverrides
-    (setAttrs,unsetAttrs) <- attributeControl termFd
+    (setAttrs, unsetAttrs) <- attributeControl termFd
     setAttrs
     input <- initInput config activeInputMap
     let pokeIO = Catch $ do
@@ -177,11 +163,15 @@ inputForConfig config@Config{ termName = Just termName
             atomically $ writeTChan (input^.eventChannel) (EvResize e e)
     _ <- installHandler windowChange pokeIO Nothing
     _ <- installHandler continueProcess pokeIO Nothing
+
+    let restore = unsetAttrs
+
     return $ input
         { shutdownInput = do
             shutdownInput input
             _ <- installHandler windowChange Ignore Nothing
             _ <- installHandler continueProcess Ignore Nothing
-            unsetAttrs
+            restore
+        , restoreInputState = restoreInputState input >> restore
         }
 inputForConfig config = (<> config) <$> standardIOConfig >>= inputForConfig
