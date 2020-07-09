@@ -1,4 +1,23 @@
 
+5.29
+----
+
+API changes:
+ * The Input type got a new field, 'restoreInputState'. This field
+   allows the end user to have direct access to the logic needed to
+   restore the terminal's input state flags. Prior to having this field,
+   this state restoration logic could only be invoked as part of calling
+   'shutdownInput', but since that function does other things (like
+   killing threads) it is not advisable to call it repeatedly (which is
+   necessary in the use case this change is intended to support). This
+   can be called directly to restore the input state flags as needed,
+   although this is not required if 'shutdown' (or 'shutdownInput') is
+   called.
+
+Other changes:
+ * attributeControl: explicitly enable the ICRNL terminal mode flag (see
+   #187 and c572ad).
+
 5.28.2
 ------
 
