@@ -154,7 +154,7 @@ inputForConfig config@Config{ termName = Just termName
     terminal <- Terminfo.setupTerm termName
     let inputOverrides = [(s,e) | (t,s,e) <- inputMap, t == Nothing || t == Just termName]
         activeInputMap = classifyMapForTerm termName terminal `mappend` inputOverrides
-    (setAttrs,unsetAttrs) <- attributeControl termFd
+    (setAttrs, unsetAttrs) <- attributeControl termFd
     setAttrs
     input <- initInput config activeInputMap
     let pokeIO = Catch $ do

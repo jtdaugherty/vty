@@ -211,7 +211,7 @@ attributeControl fd = do
                        ]
     let setAttrs = setTerminalAttributes fd vtyMode Immediately
         unsetAttrs = setTerminalAttributes fd original Immediately
-    return (setAttrs,unsetAttrs)
+    return (setAttrs, unsetAttrs)
 
 logInitialInputState :: Input -> ClassifyMap -> IO()
 logInitialInputState input classifyTable = case _inputDebug input of
