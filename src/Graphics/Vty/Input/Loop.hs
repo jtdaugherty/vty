@@ -201,10 +201,13 @@ attributeControl fd = do
     original <- getTerminalAttributes fd
     let vtyMode = foldl withMode clearedFlags flagsToSet
         clearedFlags = foldl withoutMode original flagsToUnset
-        flagsToSet = [ MapCRtoLF
+        flagsToSet = [ MapCRtoLF -- ICRNL
                      ]
-        flagsToUnset = [ StartStopOutput, KeyboardInterrupts
-                       , EnableEcho, ProcessInput, ExtendedFunctions
+        flagsToUnset = [ StartStopOutput -- IXON
+                       , KeyboardInterrupts -- ISIG
+                       , EnableEcho -- ECHO
+                       , ProcessInput -- ICANON
+                       , ExtendedFunctions -- IEXTEN
                        ]
     let setAttrs = setTerminalAttributes fd vtyMode Immediately
         unsetAttrs = setTerminalAttributes fd original Immediately
