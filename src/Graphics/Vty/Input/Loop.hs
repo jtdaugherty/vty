@@ -174,9 +174,13 @@ runInputProcessorLoop classifyTable input = do
 attributeControl :: Fd -> IO (IO (), IO ())
 attributeControl fd = do
     original <- getTerminalAttributes fd
-    let vtyMode = foldl withoutMode original [ StartStopOutput, KeyboardInterrupts
-                                             , EnableEcho, ProcessInput, ExtendedFunctions
-                                             ]
+    let vtyMode = foldl withMode clearedFlags flagsToSet
+        clearedFlags = foldl withoutMode original flagsToUnset
+        flagsToSet = [ MapCRtoLF
+                     ]
+        flagsToUnset = [ StartStopOutput, KeyboardInterrupts
+                       , EnableEcho, ProcessInput, ExtendedFunctions
+                       ]
     let setAttrs = setTerminalAttributes fd vtyMode Immediately
         unsetAttrs = setTerminalAttributes fd original Immediately
     return (setAttrs,unsetAttrs)
