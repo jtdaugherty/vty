@@ -163,11 +163,15 @@ inputForConfig config@Config{ termName = Just termName
             atomically $ writeTChan (input^.eventChannel) (EvResize e e)
     _ <- installHandler windowChange pokeIO Nothing
     _ <- installHandler continueProcess pokeIO Nothing
+
+    let restore = unsetAttrs
+
     return $ input
         { shutdownInput = do
             shutdownInput input
             _ <- installHandler windowChange Ignore Nothing
             _ <- installHandler continueProcess Ignore Nothing
-            unsetAttrs
+            restore
+        , restoreInputState = restoreInputState input >> restore
         }
 inputForConfig config = (<> config) <$> standardIOConfig >>= inputForConfig

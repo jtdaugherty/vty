@@ -52,9 +52,14 @@ data Input = Input
       -- 'nextEvent' this will not refresh the display if the next event
       -- is an 'EvResize'.
       _eventChannel  :: TChan Event
-      -- | Shuts down the input processing. This should return the
-      -- terminal input state to before he input initialized.
+      -- | Shuts down the input processing. As part of shutting down the
+      -- input, this should also restore the input state.
     , shutdownInput :: IO ()
+      -- | Restore the terminal's input state to what it was prior
+      -- to configuring input for Vty. This should be done as part of
+      -- 'shutdownInput' but is exposed in case you need to access it
+      -- directly.
+    , restoreInputState :: IO ()
       -- | Changes to this value are reflected after the next event.
     , _configRef :: IORef Config
       -- | input debug log
@@ -235,6 +240,7 @@ initInput config classifyTable = do
     applyConfig fd config
     stopSync <- newEmptyMVar
     input <- Input <$> atomically newTChan
+                   <*> pure (return ())
                    <*> pure (return ())
                    <*> newIORef config
                    <*> maybe (return Nothing)
