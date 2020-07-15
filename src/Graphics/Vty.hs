@@ -33,6 +33,7 @@
 module Graphics.Vty
   ( Vty(..)
   , mkVty
+  , setWindowTitle
   , Mode(..)
   , module Graphics.Vty.Config
   , module Graphics.Vty.Input
@@ -53,6 +54,9 @@ import Graphics.Vty.Image
 import Graphics.Vty.Attributes
 import Graphics.Vty.UnicodeWidthTable.IO
 import Graphics.Vty.UnicodeWidthTable.Install
+
+import Data.Char (isPrint, showLitChar)
+import qualified Data.ByteString.Char8 as BS8
 
 import qualified Control.Exception as E
 import Control.Monad (when)
@@ -224,3 +228,24 @@ internalMkVty input out = do
                  , shutdown = shutdownIo
                  , isShutdown = shutdownStatus
                  }
+
+-- | Set the terminal window title string.
+--
+-- This function emits an Xterm-compatible escape sequence that we
+-- anticipate will work for essentially all modern terminal emulators.
+-- Ideally we'd use a terminal capability for this, but there does not
+-- seem to exist a termcap for setting window titles. If you find that
+-- this function does not work for a given terminal emulator, please
+-- report the issue.
+--
+-- For details, see:
+--
+-- https://tldp.org/HOWTO/Xterm-Title-3.html
+setWindowTitle :: Vty -> String -> IO ()
+setWindowTitle vty title = do
+    let sanitize :: String -> String
+        sanitize = concatMap sanitizeChar
+        sanitizeChar c | not (isPrint c) = showLitChar c ""
+                       | otherwise = [c]
+    let buf = BS8.pack $ "\ESC]2;" <> sanitize title <> "\007"
+    outputByteBuffer (outputIface vty) buf
