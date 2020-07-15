@@ -1,4 +1,13 @@
 
+5.30
+----
+
+New features:
+ * Added `Graphics.Vty.setWindowTitle` to emit an escape
+   sequence to set the window title, provide the terminal emulator
+   accepts Xterm-style title sequences. For details, see:
+   https://tldp.org/HOWTO/Xterm-Title-3.html
+
 5.29
 ----
 
