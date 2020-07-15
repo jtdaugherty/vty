@@ -73,6 +73,8 @@ data Output = Output
       -- | Return the display to the state before `reserveDisplay` If no
       -- previous state then set the display state to the initial state.
     , releaseDisplay :: IO ()
+      -- | Sets the current display bounds (width, height).
+    , setDisplayBounds :: (Int, Int) -> IO ()
       -- | Returns the current display bounds.
     , displayBounds :: IO DisplayRegion
       -- | Output the bytestring to the terminal device.

@@ -10,10 +10,12 @@
 -- Copyright Corey O'Connor (coreyoconnor@gmail.com)
 module Graphics.Vty.Output.TerminfoBased
   ( reserveTerminal
+  , setWindowSize
   )
 where
 
 import Control.Monad (when)
+import Data.Bits (shiftL)
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal (toForeignPtr)
 import Data.Terminfo.Parse
@@ -174,6 +176,8 @@ reserveTerminal termName outFd = do
             , releaseDisplay = do
                 maybeSendCap rmcup []
                 maybeSendCap cnorm []
+            , setDisplayBounds = \(w, h) ->
+                setWindowSize outFd (w, h)
             , displayBounds = do
                 rawSize <- getWindowSize outFd
                 case rawSize of
@@ -243,6 +247,13 @@ getWindowSize :: Fd -> IO (Int,Int)
 getWindowSize fd = do
     (a,b) <- (`divMod` 65536) `fmap` c_getWindowSize fd
     return (fromIntegral b, fromIntegral a)
+
+foreign import ccall "gwinsz.h vty_c_set_window_size" c_setWindowSize :: Fd -> CLong -> IO ()
+
+setWindowSize :: Fd -> (Int, Int) -> IO ()
+setWindowSize fd (w, h) = do
+    let val = (h `shiftL` 16) + w
+    c_setWindowSize fd $ fromIntegral val
 
 terminfoDisplayContext :: Output -> TerminfoCaps -> DisplayRegion -> IO DisplayContext
 terminfoDisplayContext tActual terminfoCaps r = return dc
