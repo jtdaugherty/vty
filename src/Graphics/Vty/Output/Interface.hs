@@ -101,6 +101,10 @@ data Output = Output
     , ringTerminalBell :: IO ()
       -- | Returns whether the terminal has an audio bell feature.
     , supportsBell :: IO Bool
+      -- | Returns whether the terminal supports italicized text.
+    , supportsItalics :: IO Bool
+      -- | Returns whether the terminal supports strikethrough text.
+    , supportsStrikethrough :: IO Bool
     }
 
 displayContext :: Output -> DisplayRegion -> IO DisplayContext

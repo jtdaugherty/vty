@@ -168,6 +168,10 @@ reserveTerminal termName outFd = do
                 sendCap setDefaultAttr []
                 maybeSendCap cnorm []
             , supportsBell = return $ isJust $ ringBellAudio terminfoCaps
+            , supportsItalics = return $ (isJust $ enterItalic (displayAttrCaps terminfoCaps)) &&
+                                         (isJust $ exitItalic (displayAttrCaps terminfoCaps))
+            , supportsStrikethrough = return $ (isJust $ enterStrikethrough (displayAttrCaps terminfoCaps)) &&
+                                               (isJust $ exitStrikethrough (displayAttrCaps terminfoCaps))
             , ringTerminalBell = maybeSendCap ringBellAudio []
             , reserveDisplay = do
                 -- If there is no support for smcup: Clear the screen
