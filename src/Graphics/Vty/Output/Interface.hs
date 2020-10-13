@@ -102,8 +102,20 @@ data Output = Output
       -- | Returns whether the terminal has an audio bell feature.
     , supportsBell :: IO Bool
       -- | Returns whether the terminal supports italicized text.
+      --
+      -- This is terminal-dependent and should make a best effort to
+      -- determine whether this feature is supported, but even if the
+      -- terminal advertises support (e.g. via terminfo) that might not
+      -- be a reliable indicator of whether the feature will work as
+      -- desired.
     , supportsItalics :: IO Bool
       -- | Returns whether the terminal supports strikethrough text.
+      --
+      -- This is terminal-dependent and should make a best effort to
+      -- determine whether this feature is supported, but even if the
+      -- terminal advertises support (e.g. via terminfo) that might not
+      -- be a reliable indicator of whether the feature will work as
+      -- desired.
     , supportsStrikethrough :: IO Bool
     }
 
