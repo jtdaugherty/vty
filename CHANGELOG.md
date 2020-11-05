@@ -1,4 +1,48 @@
 
+5.31
+----
+
+New features and API changes:
+ * Added support for strikethrough mode. This change adds a new
+   `strikethrough` `Style` value and uses the `smxx` and `rmxx`
+   Terminfo capabilities to activate and deactivate strikethrough mode,
+   respectively. If the terminfo does not report those capabilities,
+   this style is ignored.
+ * `Output`: added the `setDisplayBounds` field to set the output
+   dimensions of the output handle; added an implementation of this for
+   the `TerminfoBased` backend.
+
+Other changes:
+ * The C prototype for `vty_c_get_window_size` in `gwinsz.h` was fixed.
+
+5.30
+----
+
+New features:
+ * Added `Graphics.Vty.setWindowTitle` to emit an escape
+   sequence to set the window title, provide the terminal emulator
+   accepts Xterm-style title sequences. For details, see:
+   https://tldp.org/HOWTO/Xterm-Title-3.html
+
+5.29
+----
+
+API changes:
+ * The Input type got a new field, 'restoreInputState'. This field
+   allows the end user to have direct access to the logic needed to
+   restore the terminal's input state flags. Prior to having this field,
+   this state restoration logic could only be invoked as part of calling
+   'shutdownInput', but since that function does other things (like
+   killing threads) it is not advisable to call it repeatedly (which is
+   necessary in the use case this change is intended to support). This
+   can be called directly to restore the input state flags as needed,
+   although this is not required if 'shutdown' (or 'shutdownInput') is
+   called.
+
+Other changes:
+ * attributeControl: explicitly enable the ICRNL terminal mode flag (see
+   #187 and c572ad).
+
 5.28.2
 ------
 

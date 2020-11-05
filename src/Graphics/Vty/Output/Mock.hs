@@ -48,6 +48,9 @@ mockTerminal r = liftIO $ do
             , releaseDisplay = return ()
             , ringTerminalBell = return ()
             , supportsBell = return False
+            , supportsItalics = return False
+            , supportsStrikethrough = return False
+            , setDisplayBounds = const $ return ()
             , displayBounds = return r
             , outputByteBuffer = \bytes -> do
                 putStrLn $ "mock outputByteBuffer of " ++ show (BS.length bytes) ++ " bytes"

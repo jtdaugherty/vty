@@ -113,9 +113,6 @@ setUtf8CharSet, setDefaultCharSet :: String
 setUtf8CharSet = "\ESC%G"
 setDefaultCharSet = "\ESC%@"
 
--- | I think xterm is broken: Reseting the background color as the first
--- bytes serialized on a new line does not effect the background color
--- xterm uses to clear the line. Which is used *after* the next newline.
 xtermInlineHack :: Output -> IO ()
 xtermInlineHack t = do
     let writeReset = foldMap (writeWord8.toEnum.fromEnum) "\ESC[K"

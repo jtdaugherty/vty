@@ -52,9 +52,14 @@ data Input = Input
       -- 'nextEvent' this will not refresh the display if the next event
       -- is an 'EvResize'.
       _eventChannel  :: TChan Event
-      -- | Shuts down the input processing. This should return the
-      -- terminal input state to before he input initialized.
+      -- | Shuts down the input processing. As part of shutting down the
+      -- input, this should also restore the input state.
     , shutdownInput :: IO ()
+      -- | Restore the terminal's input state to what it was prior
+      -- to configuring input for Vty. This should be done as part of
+      -- 'shutdownInput' but is exposed in case you need to access it
+      -- directly.
+    , restoreInputState :: IO ()
       -- | Changes to this value are reflected after the next event.
     , _configRef :: IORef Config
       -- | input debug log
@@ -171,15 +176,47 @@ runInputProcessorLoop classifyTable input = do
                             <*> pure (classify classifyTable)
         runReaderT (evalStateT loopInputProcessor s0) input
 
+-- | Construct two IO actions: one to configure the terminal for Vty and
+-- one to restore the terminal mode flags to the values they had at the
+-- time this function was called.
+--
+-- This function constructs a configuration action to clear the
+-- following terminal mode flags:
+--
+-- * IXON disabled: disables software flow control on outgoing data.
+-- This stops the process from being suspended if the output terminal
+-- cannot keep up.
+--
+-- * Raw mode is used for input.
+--
+-- * ISIG (enables keyboard combinations that result in
+-- signals)
+--
+-- * ECHO (input is not echoed to the output)
+--
+-- * ICANON (canonical mode (line mode) input is not used)
+--
+-- * IEXTEN (extended functions are disabled)
+--
+-- The configuration action also explicitly sets these flags:
+--
+-- * ICRNL (input carriage returns are mapped to newlines)
 attributeControl :: Fd -> IO (IO (), IO ())
 attributeControl fd = do
     original <- getTerminalAttributes fd
-    let vtyMode = foldl withoutMode original [ StartStopOutput, KeyboardInterrupts
-                                             , EnableEcho, ProcessInput, ExtendedFunctions
-                                             ]
+    let vtyMode = foldl withMode clearedFlags flagsToSet
+        clearedFlags = foldl withoutMode original flagsToUnset
+        flagsToSet = [ MapCRtoLF -- ICRNL
+                     ]
+        flagsToUnset = [ StartStopOutput -- IXON
+                       , KeyboardInterrupts -- ISIG
+                       , EnableEcho -- ECHO
+                       , ProcessInput -- ICANON
+                       , ExtendedFunctions -- IEXTEN
+                       ]
     let setAttrs = setTerminalAttributes fd vtyMode Immediately
         unsetAttrs = setTerminalAttributes fd original Immediately
-    return (setAttrs,unsetAttrs)
+    return (setAttrs, unsetAttrs)
 
 logInitialInputState :: Input -> ClassifyMap -> IO()
 logInitialInputState input classifyTable = case _inputDebug input of
@@ -203,6 +240,7 @@ initInput config classifyTable = do
     applyConfig fd config
     stopSync <- newEmptyMVar
     input <- Input <$> atomically newTChan
+                   <*> pure (return ())
                    <*> pure (return ())
                    <*> newIORef config
                    <*> maybe (return Nothing)

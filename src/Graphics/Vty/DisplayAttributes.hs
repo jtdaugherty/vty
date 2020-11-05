@@ -96,6 +96,8 @@ data StyleStateChange
     | RemoveStandout
     | ApplyItalic
     | RemoveItalic
+    | ApplyStrikethrough
+    | RemoveStrikethrough
     | ApplyUnderline
     | RemoveUnderline
     | ApplyReverseVideo
@@ -144,6 +146,7 @@ diffStyles prev cur
     [ styleDiff standout      ApplyStandout     RemoveStandout
     , styleDiff underline     ApplyUnderline    RemoveUnderline
     , styleDiff italic        ApplyItalic       RemoveItalic
+    , styleDiff strikethrough ApplyStrikethrough RemoveStrikethrough
     , styleDiff reverseVideo  ApplyReverseVideo RemoveReverseVideo
     , styleDiff blink         ApplyBlink        RemoveBlink
     , styleDiff dim           ApplyDim          RemoveDim

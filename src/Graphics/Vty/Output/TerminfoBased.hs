@@ -10,10 +10,12 @@
 -- Copyright Corey O'Connor (coreyoconnor@gmail.com)
 module Graphics.Vty.Output.TerminfoBased
   ( reserveTerminal
+  , setWindowSize
   )
 where
 
 import Control.Monad (when)
+import Data.Bits (shiftL)
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal (toForeignPtr)
 import Data.Terminfo.Parse
@@ -66,6 +68,8 @@ data DisplayAttrCaps = DisplayAttrCaps
     , exitStandout :: Maybe CapExpression
     , enterItalic :: Maybe CapExpression
     , exitItalic :: Maybe CapExpression
+    , enterStrikethrough :: Maybe CapExpression
+    , exitStrikethrough :: Maybe CapExpression
     , enterUnderline :: Maybe CapExpression
     , exitUnderline :: Maybe CapExpression
     , enterReverseVideo :: Maybe CapExpression
@@ -164,6 +168,10 @@ reserveTerminal termName outFd = do
                 sendCap setDefaultAttr []
                 maybeSendCap cnorm []
             , supportsBell = return $ isJust $ ringBellAudio terminfoCaps
+            , supportsItalics = return $ (isJust $ enterItalic (displayAttrCaps terminfoCaps)) &&
+                                         (isJust $ exitItalic (displayAttrCaps terminfoCaps))
+            , supportsStrikethrough = return $ (isJust $ enterStrikethrough (displayAttrCaps terminfoCaps)) &&
+                                               (isJust $ exitStrikethrough (displayAttrCaps terminfoCaps))
             , ringTerminalBell = maybeSendCap ringBellAudio []
             , reserveDisplay = do
                 -- If there is no support for smcup: Clear the screen
@@ -174,6 +182,8 @@ reserveTerminal termName outFd = do
             , releaseDisplay = do
                 maybeSendCap rmcup []
                 maybeSendCap cnorm []
+            , setDisplayBounds = \(w, h) ->
+                setWindowSize outFd (w, h)
             , displayBounds = do
                 rawSize <- getWindowSize outFd
                 case rawSize of
@@ -231,6 +241,8 @@ currentDisplayAttrCaps ti
     <*> probeCap ti "rmso"
     <*> probeCap ti "sitm"
     <*> probeCap ti "ritm"
+    <*> probeCap ti "smxx"
+    <*> probeCap ti "rmxx"
     <*> probeCap ti "smul"
     <*> probeCap ti "rmul"
     <*> probeCap ti "rev"
@@ -243,6 +255,13 @@ getWindowSize :: Fd -> IO (Int,Int)
 getWindowSize fd = do
     (a,b) <- (`divMod` 65536) `fmap` c_getWindowSize fd
     return (fromIntegral b, fromIntegral a)
+
+foreign import ccall "gwinsz.h vty_c_set_window_size" c_setWindowSize :: Fd -> CLong -> IO ()
+
+setWindowSize :: Fd -> (Int, Int) -> IO ()
+setWindowSize fd (w, h) = do
+    let val = (h `shiftL` 16) + w
+    c_setWindowSize fd $ fromIntegral val
 
 terminfoDisplayContext :: Output -> TerminfoCaps -> DisplayRegion -> IO DisplayContext
 terminfoDisplayContext tActual terminfoCaps r = return dc
@@ -259,7 +278,11 @@ terminfoDisplayContext tActual terminfoCaps r = return dc
             , writeSetAttr = terminfoWriteSetAttr dc terminfoCaps
             , writeDefaultAttr = \urlsEnabled ->
                 writeCapExpr (setDefaultAttr terminfoCaps) [] `mappend`
-                (if urlsEnabled then writeURLEscapes EndLink else mempty)
+                (if urlsEnabled then writeURLEscapes EndLink else mempty) `mappend`
+                (case exitStrikethrough $ displayAttrCaps terminfoCaps of
+                    Just cap -> writeCapExpr cap []
+                    Nothing -> mempty
+                )
             , writeRowEnd = writeCapExpr (clearEol terminfoCaps) []
             , inlineHack = return ()
             }
@@ -337,6 +360,7 @@ terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs =
                                                )
                                                (sgrArgsForState state)
                                   `mappend` setItalics
+                                  `mappend` setStrikethrough
                                   `mappend` setColors
         -- Otherwise the display colors are not changing or changing
         -- between two non-default points.
@@ -364,6 +388,7 @@ terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs =
                                                )
                                                (sgrArgsForState state)
                                   `mappend` setItalics
+                                  `mappend` setStrikethrough
                                   `mappend` setColors
     where
         urlAttrs True = writeURLEscapes (urlDiff diffs)
@@ -380,6 +405,11 @@ terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs =
           | hasStyle (fixedStyle attr) italic
           , Just sitm <- enterItalic (displayAttrCaps terminfoCaps)
           = writeCapExpr sitm []
+          | otherwise = mempty
+        setStrikethrough
+          | hasStyle (fixedStyle attr) strikethrough
+          , Just smxx <- enterStrikethrough (displayAttrCaps terminfoCaps)
+          = writeCapExpr smxx []
           | otherwise = mempty
         setColors =
             (case fixedForeColor attr of
@@ -449,6 +479,7 @@ data DisplayAttrState = DisplayAttrState
     { applyStandout :: Bool
     , applyUnderline :: Bool
     , applyItalic :: Bool
+    , applyStrikethrough :: Bool
     , applyReverseVideo :: Bool
     , applyBlink :: Bool
     , applyDim :: Bool
@@ -485,6 +516,8 @@ reqDisplayCapSeqFor caps s diffs
         -- set state cap then just use the set state cap.
         ( True, True  ) -> SetState $ stateForStyle s
     where
+        noEnterExitCap ApplyStrikethrough = isNothing $ enterStrikethrough caps
+        noEnterExitCap RemoveStrikethrough = isNothing $ exitStrikethrough caps
         noEnterExitCap ApplyItalic = isNothing $ enterItalic caps
         noEnterExitCap RemoveItalic = isNothing $ exitItalic caps
         noEnterExitCap ApplyStandout = isNothing $ enterStandout caps
@@ -499,6 +532,8 @@ reqDisplayCapSeqFor caps s diffs
         noEnterExitCap RemoveDim = True
         noEnterExitCap ApplyBold = isNothing $ enterBoldMode caps
         noEnterExitCap RemoveBold = True
+        enterExitCap ApplyStrikethrough = fromJust $ enterStrikethrough caps
+        enterExitCap RemoveStrikethrough = fromJust $ exitStrikethrough caps
         enterExitCap ApplyItalic = fromJust $ enterItalic caps
         enterExitCap RemoveItalic = fromJust $ exitItalic caps
         enterExitCap ApplyStandout = fromJust $ enterStandout caps
@@ -515,6 +550,7 @@ stateForStyle s = DisplayAttrState
     { applyStandout = isStyleSet standout
     , applyUnderline = isStyleSet underline
     , applyItalic = isStyleSet italic
+    , applyStrikethrough = isStyleSet strikethrough
     , applyReverseVideo = isStyleSet reverseVideo
     , applyBlink = isStyleSet blink
     , applyDim = isStyleSet dim
@@ -527,6 +563,7 @@ styleToApplySeq s = concat
     [ applyIfRequired ApplyStandout standout
     , applyIfRequired ApplyUnderline underline
     , applyIfRequired ApplyItalic italic
+    , applyIfRequired ApplyStrikethrough strikethrough
     , applyIfRequired ApplyReverseVideo reverseVideo
     , applyIfRequired ApplyBlink blink
     , applyIfRequired ApplyDim dim
