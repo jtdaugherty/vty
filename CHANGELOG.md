@@ -1,4 +1,16 @@
 
+5.32
+----
+
+New features:
+ * Meta-PageUp and Meta-PageDown are now supported (#193)
+ * Added `supportsItalics` and `supportsStrikethrough` functions to
+   check for feature support in terminfo
+
+Bug fixes:
+ * Detect utf-8 mode in `LANG` regardless of case (thanks Emeka
+   Nkurumeh)
+
 5.31
 ----
 
