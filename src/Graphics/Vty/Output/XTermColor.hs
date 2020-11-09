@@ -17,6 +17,7 @@ import Blaze.ByteString.Builder.Word (writeWord8)
 
 import Control.Monad (void, when)
 import Control.Monad.Trans
+import Data.Char (toLower)
 import Data.IORef
 
 import System.Posix.IO (fdWrite)
