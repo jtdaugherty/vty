@@ -92,9 +92,9 @@ reserveTerminal variant outFd = liftIO $ do
 utf8Active :: IO Bool
 utf8Active = do
     let vars = ["LC_ALL", "LANG", "LC_CTYPE"]
-    results <- catMaybes <$> mapM getEnv vars
-    let matches = filter ("UTF8" `isInfixOf`) results <>
-                  filter ("UTF-8" `isInfixOf`) results
+    results <- map (toLower <$>) . catMaybes <$> mapM getEnv vars
+    let matches = filter ("utf8" `isInfixOf`) results <>
+                  filter ("utf-8" `isInfixOf`) results
     return $ not $ null matches
 
 -- | Enable bracketed paste mode:
