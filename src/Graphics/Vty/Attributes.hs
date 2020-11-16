@@ -1,7 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
@@ -146,19 +143,13 @@ data FixedAttr = FixedAttr
 -- | The style and color attributes can either be the terminal defaults.
 -- Or be equivalent to the previously applied style. Or be a specific
 -- value.
-data MaybeDefault v where
-    Default :: MaybeDefault v
-    KeepCurrent :: MaybeDefault v
-    SetTo :: forall v . ( Eq v, Show v, Read v ) => !v -> MaybeDefault v
+data MaybeDefault v = Default | KeepCurrent | SetTo !v
+  deriving (Eq, Read, Show)
 
 instance (NFData v) => NFData (MaybeDefault v) where
     rnf Default = ()
     rnf KeepCurrent = ()
     rnf (SetTo v) = rnf v
-
-deriving instance Eq v => Eq (MaybeDefault v)
-deriving instance Eq v => Show (MaybeDefault v)
-deriving instance (Eq v, Show v, Read v) => Read (MaybeDefault v)
 
 instance Eq v => Semigroup (MaybeDefault v) where
     Default     <> Default     = Default
