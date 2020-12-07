@@ -207,6 +207,12 @@ outputPicture dc pic = do
                     AbsoluteCursor x y ->
                         writeShowCursor dc `mappend`
                         writeMoveCursor dc (clampX x) (clampY y)
+                    PositionOnly isAbs x y ->
+                        if isAbs
+                           then writeMoveCursor dc (clampX x) (clampY y)
+                           else let (ox, oy) = charToOutputPos m (clampX x, clampY y)
+                                    m = cursorOutputMap ops $ picCursor pic
+                                in writeMoveCursor dc (clampX ox) (clampY oy)
                     Cursor x y           ->
                         let m = cursorOutputMap ops $ picCursor pic
                             (ox, oy) = charToOutputPos m (clampX x, clampY y)
