@@ -127,6 +127,7 @@ import Graphics.Vty.Input.Loop
 import Graphics.Vty.Input.Terminfo
 
 import Control.Concurrent.STM
+import Data.Maybe(isNothing)
 import Lens.Micro
 
 import qualified System.Console.Terminfo as Terminfo
@@ -152,7 +153,7 @@ inputForConfig config@Config{ termName = Just termName
                             , vtime = Just _
                             , .. } = do
     terminal <- Terminfo.setupTerm termName
-    let inputOverrides = [(s,e) | (t,s,e) <- inputMap, t == Nothing || t == Just termName]
+    let inputOverrides = [(s,e) | (t,s,e) <- inputMap, isNothing t || t == Just termName]
         activeInputMap = classifyMapForTerm termName terminal `mappend` inputOverrides
     (setAttrs, unsetAttrs) <- attributeControl termFd
     setAttrs

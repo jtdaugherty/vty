@@ -59,7 +59,7 @@ import Data.Char (isPrint, showLitChar)
 import qualified Data.ByteString.Char8 as BS8
 
 import qualified Control.Exception as E
-import Control.Monad (when)
+import Control.Monad (unless, when)
 import Control.Concurrent.STM
 
 import Data.IORef
@@ -134,7 +134,7 @@ installCustomWidthTable c = do
             Just path -> appendFile path $ "installWidthTable: " <> s <> "\n"
 
     customInstalled <- isCustomTableReady
-    when (not customInstalled) $ do
+    unless customInstalled $ do
         mTerm <- currentTerminalName
         case mTerm of
             Nothing ->
@@ -169,30 +169,27 @@ internalMkVty input out = do
     shutdownVar <- atomically $ newTVar False
     let shutdownIo = do
             alreadyShutdown <- atomically $ swapTVar shutdownVar True
-            when (not alreadyShutdown) $ do
+            unless alreadyShutdown $ do
                 shutdownInput input
                 releaseDisplay out
                 releaseTerminal out
 
-    let shutdownStatus = atomically $ readTVar shutdownVar
+    let shutdownStatus = readTVarIO shutdownVar
 
     lastPicRef <- newIORef Nothing
     lastUpdateRef <- newIORef Nothing
 
+    let exportImage b inPic = do
+            dc <- displayContext out b
+            outputPicture dc inPic
+            return (b, dc)
     let innerUpdate inPic = do
             b <- displayBounds out
             mlastUpdate <- readIORef lastUpdateRef
             updateData <- case mlastUpdate of
-                Nothing -> do
-                    dc <- displayContext out b
-                    outputPicture dc inPic
-                    return (b, dc)
-                Just (lastBounds, lastContext) -> do
-                    if b /= lastBounds
-                        then do
-                            dc <- displayContext out b
-                            outputPicture dc inPic
-                            return (b, dc)
+                Nothing -> exportImage b inPic
+                Just (lastBounds, lastContext) -> if b /= lastBounds
+                        then exportImage b inPic
                         else do
                             outputPicture lastContext inPic
                             return (b, lastContext)

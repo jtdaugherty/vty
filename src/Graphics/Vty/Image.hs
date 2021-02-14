@@ -1,5 +1,4 @@
 -- Copyright 2009-2010 Corey O'Connor
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
 -- | A Vty program makes 'Picture's from 'Image's. This module provides
@@ -297,7 +296,7 @@ cropBottom h inI
     | otherwise = go inI
         where
             go EmptyImage = EmptyImage
-            go i@(CropBottom {croppedImage, outputWidth, outputHeight})
+            go i@CropBottom {croppedImage, outputWidth, outputHeight}
                 | outputHeight <= h = i
                 | otherwise          = CropBottom croppedImage outputWidth h
             go i
@@ -314,7 +313,7 @@ cropRight w inI
     | otherwise = go inI
         where
             go EmptyImage = EmptyImage
-            go i@(CropRight {croppedImage, outputWidth, outputHeight})
+            go i@CropRight {croppedImage, outputWidth, outputHeight}
                 | outputWidth <= w = i
                 | otherwise         = CropRight croppedImage w outputHeight
             go i
@@ -331,7 +330,7 @@ cropLeft w inI
     | otherwise = go inI
         where
             go EmptyImage = EmptyImage
-            go i@(CropLeft {croppedImage, leftSkip, outputWidth, outputHeight})
+            go i@CropLeft {croppedImage, leftSkip, outputWidth, outputHeight}
                 | outputWidth <= w = i
                 | otherwise         =
                     let leftSkip' = leftSkip + outputWidth - w
@@ -350,7 +349,7 @@ cropTop h inI
     | otherwise = go inI
         where
             go EmptyImage = EmptyImage
-            go i@(CropTop {croppedImage, topSkip, outputWidth, outputHeight})
+            go i@CropTop {croppedImage, topSkip, outputWidth, outputHeight}
                 | outputHeight <= h = i
                 | otherwise         =
                     let topSkip' = topSkip + outputHeight - h

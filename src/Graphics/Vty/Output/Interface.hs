@@ -1,5 +1,4 @@
 -- Copyright Corey O'Connor
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
@@ -244,7 +243,7 @@ writeSpanOp urlsEnabled dc (RowEnd _) fattr = (writeDefaultAttr dc urlsEnabled `
 -- | The cursor position is given in X,Y character offsets. Due to
 -- multi-column characters this needs to be translated to column, row
 -- positions.
-data CursorOutputMap = CursorOutputMap
+newtype CursorOutputMap = CursorOutputMap
     { charToOutputPos :: (Int, Int) -> (Int, Int)
     }
 
@@ -300,5 +299,5 @@ limitAttrForDisplay t attr
             | contextColorCount t <= 256         = SetTo $ Color240 v
             | otherwise
                 = let p :: Double = fromIntegral v / 240.0
-                      v' = floor $ p * (fromIntegral $ contextColorCount t)
+                      v' = floor $ p * fromIntegral (contextColorCount t)
                   in SetTo $ Color240 v'

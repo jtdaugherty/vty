@@ -90,7 +90,7 @@ hasBitSet val bit = val .&. bit > 0
 -- | Attempt to lassify an input string as a mouse event.
 classifyMouseEvent :: String -> KClass
 classifyMouseEvent s = runParser s $ do
-    when (not $ isMouseEvent s) failParse
+    unless (isMouseEvent s) failParse
 
     expectChar '\ESC'
     expectChar '['
@@ -135,11 +135,12 @@ classifyNormalMouseEvent = do
         modifiers = getModifiers status
 
     let press = status .&. buttonMask /= 3
-    case press of
-            True -> do
-                button <- getSGRButton status
-                return $ EvMouseDown (xCoord-1) (yCoord-1) button modifiers
-            False -> return $ EvMouseUp (xCoord-1) (yCoord-1) Nothing
+    if press
+    then do
+        button <- getSGRButton status
+        return $ EvMouseDown (xCoord-1) (yCoord-1) button modifiers
+    else
+        return $ EvMouseUp (xCoord-1) (yCoord-1) Nothing
 
 -- Attempt to classify a control sequence as an SGR mouse event. To
 -- get here we should have already read "\ESC[<" so that will not be

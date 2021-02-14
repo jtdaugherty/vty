@@ -2,6 +2,7 @@
 {-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE CPP #-}
 -- | The input layer used to be a single function that correctly
 -- accounted for the non-threaded runtime by emulating the terminal
@@ -27,7 +28,7 @@ import Control.Exception (mask, try, SomeException)
 import Lens.Micro hiding ((<>~))
 import Lens.Micro.Mtl
 import Lens.Micro.TH
-import Control.Monad (when, mzero, forM_)
+import Control.Monad (unless, when, mzero, forM_)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.State (StateT(..), evalStateT)
 import Control.Monad.State.Class (MonadState, modify)
@@ -137,13 +138,13 @@ readFromDevice = do
         threadWaitRead fd
         bytesRead <- fdReadBuf fd bufferPtr (fromIntegral maxBytes)
         if bytesRead > 0
-        then fmap (map $ chr . fromIntegral) $ peekArray (fromIntegral bytesRead) bufferPtr
+        then map (chr . fromIntegral) <$> peekArray (fromIntegral bytesRead) bufferPtr
         else return []
-    when (not $ null stringRep) $ logMsg $ "input bytes: " ++ show stringRep
+    unless (null stringRep) $ logMsg $ "input bytes: " ++ show stringRep
     return stringRep
 
 applyConfig :: Fd -> Config -> IO ()
-applyConfig fd (Config{ vmin = Just theVmin, vtime = Just theVtime })
+applyConfig fd Config{ vmin = Just theVmin, vtime = Just theVtime }
     = setTermTiming fd theVmin (theVtime `div` 100)
 applyConfig _ _ = fail "(vty) applyConfig was not provided a complete configuration"
 
@@ -224,9 +225,9 @@ logInitialInputState input classifyTable = case _inputDebug input of
     Just h  -> do
         Config{ vmin = Just theVmin
               , vtime = Just theVtime
-              , termName = Just theTerm, .. } <- readIORef $ _configRef input
+              , termName = Just theTerm } <- readIORef $ _configRef input
         _ <- hPrintf h "initial (vmin,vtime): %s\n" (show (theVmin, theVtime))
-        forM_ classifyTable $ \i -> case i of
+        forM_ classifyTable $ \case
             (inBytes, EvKey k mods) -> hPrintf h "map %s %s %s %s\n" (show theTerm)
                                                                      (show inBytes)
                                                                      (show k)

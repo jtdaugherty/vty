@@ -37,6 +37,7 @@ import Graphics.Vty.Output.TerminfoBased as TerminfoBased
 
 import Blaze.ByteString.Builder (writeToByteString)
 
+import Data.Foldable(forM_)
 import Data.List (isPrefixOf)
 
 #if !MIN_VERSION_base(4,11,0)
@@ -64,14 +65,8 @@ outputForConfig Config{ outputFd = Just fd, termName = Just termName, .. } = do
         -- Not an xterm-like terminal. try for generic terminfo.
         else TerminfoBased.reserveTerminal termName fd
 
-    case mouseMode of
-        Just s -> setMode t Mouse s
-        Nothing -> return ()
-
-    case bracketedPasteMode of
-        Just s -> setMode t BracketedPaste s
-        Nothing -> return ()
-
+    forM_ mouseMode (setMode t Mouse)
+    forM_ bracketedPasteMode (setMode t BracketedPaste)
     return t
 outputForConfig config = (<> config) <$> standardIOConfig >>= outputForConfig
 

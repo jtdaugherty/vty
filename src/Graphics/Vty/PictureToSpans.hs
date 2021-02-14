@@ -81,7 +81,7 @@ combinedOpsForLayers :: Picture -> DisplayRegion -> ST s (MRowOps s)
 combinedOpsForLayers pic r
     | regionWidth r == 0 || regionHeight r == 0 = MVector.new 0
     | otherwise = do
-        layerOps <- mapM (\layer -> buildSpans layer r) (picLayers pic)
+        layerOps <- mapM (`buildSpans` r) (picLayers pic)
         case layerOps of
             []    -> fail "empty picture"
             [ops] -> substituteSkips (picBackground pic) ops
@@ -109,17 +109,17 @@ substituteSkips ClearBackground ops = do
         let rowOps'' = swapSkipsForSingleColumnCharSpan ' ' currentAttr rowOps'
         MVector.write ops row rowOps''
     return ops
-substituteSkips (Background {backgroundChar, backgroundAttr}) ops = do
+substituteSkips Background {backgroundChar, backgroundAttr} ops = do
     -- At this point we decide if the background character is single
     -- column or not. obviously, single column is easier.
     case safeWcwidth backgroundChar of
         w | w == 0 -> fail $ "invalid background character " ++ show backgroundChar
-          | w == 1 -> do
+          | w == 1 ->
                 forM_ [0 .. MVector.length ops - 1] $ \row -> do
                     rowOps <- MVector.read ops row
                     let rowOps' = swapSkipsForSingleColumnCharSpan backgroundChar backgroundAttr rowOps
                     MVector.write ops row rowOps'
-          | otherwise -> do
+          | otherwise ->
                 forM_ [0 .. MVector.length ops - 1] $ \row -> do
                     rowOps <- MVector.read ops row
                     let rowOps' = swapSkipsForCharSpan w backgroundChar backgroundAttr rowOps
@@ -136,8 +136,8 @@ mergeUnder upper lower = do
     return upper
 
 mergeRowUnder :: SpanOps -> SpanOps -> SpanOps
-mergeRowUnder upperRowOps lowerRowOps =
-    onUpperOp Vector.empty (Vector.head upperRowOps) (Vector.tail upperRowOps) lowerRowOps
+mergeRowUnder upperRowOps =
+    onUpperOp Vector.empty (Vector.head upperRowOps) (Vector.tail upperRowOps)
     where
         -- H: it will never be the case that we are out of upper ops
         -- before lower ops.
@@ -216,7 +216,7 @@ buildSpans image outRegion = do
 startImageBuild :: Image -> BlitM s ()
 startImageBuild image = do
     outOfBounds <- isOutOfBounds image <$> get
-    when (not outOfBounds) $ addMaybeClipped image
+    unless outOfBounds (addMaybeClipped image)
 
 isOutOfBounds :: Image -> BlitState -> Bool
 isOutOfBounds i s
@@ -246,14 +246,14 @@ addMaybeClipped (HorizText a textStr ow _cw) = do
             then let textStr' = clipText textStr leftClip rightClip
                  in addUnclippedText a textStr'
             else addUnclippedText a textStr
-addMaybeClipped (VertJoin topImage bottomImage _ow oh) = do
+addMaybeClipped (VertJoin topImage bottomImage _ow oh) =
     when (imageHeight topImage + imageHeight bottomImage > 0) $
         addMaybeClippedJoin "vert_join" skipRows remainingRows rowOffset
                             (imageHeight topImage)
                             topImage
                             bottomImage
                             oh
-addMaybeClipped (HorizJoin leftImage rightImage ow _oh) = do
+addMaybeClipped (HorizJoin leftImage rightImage ow _oh) =
     when (imageWidth leftImage + imageWidth rightImage > 0) $
         addMaybeClippedJoin "horiz_join" skipColumns remainingColumns columnOffset
                             (imageWidth leftImage)

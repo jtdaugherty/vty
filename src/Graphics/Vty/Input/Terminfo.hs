@@ -74,7 +74,7 @@ visibleChars = [ ([x], EvKey (KChar x) [])
 ctrlChars :: ClassifyMap
 ctrlChars =
     [ ([toEnum x],EvKey (KChar y) [MCtrl])
-    | (x,y) <- zip ([0..31]) ('@':['a'..'z']++['['..'_'])
+    | (x,y) <- zip [0..31] ('@':['a'..'z']++['['..'_'])
     , y /= 'i'  -- Resolve issue #3 where CTRL-i hides TAB.
     , y /= 'h'  -- CTRL-h should not hide BS
     ]

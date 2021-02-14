@@ -55,4 +55,4 @@ readChar = do
 expectChar :: Char -> Parser ()
 expectChar c = do
     c' <- readChar
-    if c' == c then return () else failParse
+    unless (c' == c) failParse

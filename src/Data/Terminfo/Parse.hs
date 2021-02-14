@@ -11,7 +11,6 @@ module Data.Terminfo.Parse
   )
 where
 
-import Control.Monad ( liftM )
 import Control.DeepSeq
 
 #if !(MIN_VERSION_base(4,11,0))
@@ -39,7 +38,7 @@ instance Show CapExpression where
         ++ " <= " ++ show (sourceString c)
         where
             hexDump :: [Word8] -> String
-            hexDump = foldr (\b s -> showHex b s) ""
+            hexDump = foldr showHex ""
 
 instance NFData CapExpression where
     rnf (CapExpression ops !_bytes !str !c !pOps)
@@ -99,7 +98,7 @@ parseCapExpression capString =
         Left e -> Left e
         Right buildResults -> Right $ constructCapExpression capString buildResults
 
-constructCapExpression :: [Char] -> BuildResults -> CapExpression
+constructCapExpression :: String -> BuildResults -> CapExpression
 constructCapExpression capString buildResults =
     let expr = CapExpression
                 { capOps = outCapOps buildResults
@@ -128,7 +127,7 @@ paramEscapeParser = do
 literalPercentParser :: CapParser BuildResults
 literalPercentParser = do
     _ <- char '%'
-    startOffset <- getState >>= return . nextOffset
+    startOffset <- nextOffset <$> getState
     incOffset 1
     return $ BuildResults 0 [Bytes startOffset 1] []
 
@@ -154,7 +153,7 @@ incrementOpParser = do
 pushOpParser :: CapParser BuildResults
 pushOpParser = do
     _ <- char 'p'
-    paramN <- digit >>= return . (\d -> read [d])
+    paramN <- read . pure <$> digit
     incOffset 2
     return $ BuildResults (fromEnum paramN) [PushParam $ paramN - 1] []
 
@@ -211,7 +210,7 @@ conditionalOpParser = do
                  !vs <- manyP p end
                  return $! v : vs
             ]
-        manyExpr end = liftM mconcat $ manyP ( paramEscapeParser <|> bytesOpParser ) end
+        manyExpr end = mconcat <$> manyP ( paramEscapeParser <|> bytesOpParser ) end
 
 conditionalTrueParser :: CapParser ()
 conditionalTrueParser = do
@@ -299,7 +298,7 @@ compareOpParser
 bytesOpParser :: CapParser BuildResults
 bytesOpParser = do
     bytes <- many1 $ satisfy (/= '%')
-    startOffset <- getState >>= return . nextOffset
+    startOffset <- nextOffset <$> getState
     let !c = length bytes
     !s <- getState
     let s' = s { nextOffset = startOffset + c }
@@ -309,12 +308,12 @@ bytesOpParser = do
 charConstParser :: CapParser BuildResults
 charConstParser = do
     _ <- char '\''
-    charValue <- liftM (toEnum . fromEnum) anyChar
+    charValue <- toEnum . fromEnum <$> anyChar
     _ <- char '\''
     incOffset 3
     return $ BuildResults 0 [ PushValue charValue ] [ ]
 
-data BuildState = BuildState
+newtype BuildState = BuildState
     { nextOffset :: Int
     }
 
@@ -336,9 +335,9 @@ data BuildResults = BuildResults
 instance Semigroup BuildResults where
     v0 <> v1
         = BuildResults
-        { outParamCount = (outParamCount v0) `max` (outParamCount v1)
-        , outCapOps = (outCapOps v0) <> (outCapOps v1)
-        , outParamOps = (outParamOps v0) <> (outParamOps v1)
+        { outParamCount = outParamCount v0 `max` outParamCount v1
+        , outCapOps = outCapOps v0 <> outCapOps v1
+        , outParamOps = outParamOps v0 <> outParamOps v1
         }
 
 instance Monoid BuildResults where

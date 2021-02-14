@@ -15,7 +15,7 @@ import qualified Graphics.Vty.Output.TerminfoBased as TerminfoBased
 import Blaze.ByteString.Builder (writeToByteString)
 import Blaze.ByteString.Builder.Word (writeWord8)
 
-import Control.Monad (void, when)
+import Control.Monad (void, unless, when)
 import Control.Monad.Trans
 import Data.IORef
 
@@ -39,7 +39,7 @@ reserveTerminal variant outFd = liftIO $ do
     let variant' = if variant == "xterm-color" then "xterm" else variant
 
     utf8a <- utf8Active
-    when (not utf8a) $ flushedPut setUtf8CharSet
+    unless utf8a $ flushedPut setUtf8CharSet
     t <- TerminfoBased.reserveTerminal variant' outFd
 
     mouseModeStatus <- newIORef False
@@ -51,19 +51,16 @@ reserveTerminal variant outFd = liftIO $ do
           when (newStatus /= curStatus) $
               case m of
                   Focus -> liftIO $ do
-                      case newStatus of
-                          True -> flushedPut requestFocusEvents
-                          False -> flushedPut disableFocusEvents
+                      if newStatus then flushedPut requestFocusEvents else flushedPut disableFocusEvents
                       writeIORef focusModeStatus newStatus
                   Mouse -> liftIO $ do
-                      case newStatus of
-                          True -> flushedPut requestMouseEvents
-                          False -> flushedPut disableMouseEvents
+                      if newStatus then flushedPut requestMouseEvents else flushedPut disableMouseEvents
                       writeIORef mouseModeStatus newStatus
                   BracketedPaste -> liftIO $ do
-                      case newStatus of
-                          True -> flushedPut enableBracketedPastes
-                          False -> flushedPut disableBracketedPastes
+                      if newStatus then
+                          flushedPut enableBracketedPastes
+                      else
+                          flushedPut disableBracketedPastes
                       writeIORef pasteModeStatus newStatus
                   Hyperlink -> setMode t Hyperlink newStatus
 
@@ -75,7 +72,7 @@ reserveTerminal variant outFd = liftIO $ do
     let t' = t
              { terminalID = terminalID t ++ " (xterm-color)"
              , releaseTerminal = do
-                 when (not utf8a) $ liftIO $ flushedPut setDefaultCharSet
+                 unless utf8a $ liftIO $ flushedPut setDefaultCharSet
                  setMode t' BracketedPaste False
                  setMode t' Mouse False
                  setMode t' Focus False

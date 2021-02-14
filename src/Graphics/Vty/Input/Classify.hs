@@ -24,10 +24,10 @@ import qualified Data.Set as S( fromList, member )
 import Data.Char
 import Data.Word
 
-compile :: ClassifyMap -> [Char] -> KClass
+compile :: ClassifyMap -> String -> KClass
 compile table = cl' where
     -- take all prefixes and create a set of these
-    prefixSet = S.fromList $ concatMap (init . inits . fst) $ table
+    prefixSet = S.fromList $ concatMap (init . inits . fst) table
     maxValidInputLength = maximum (map (length . fst) table)
     eventForInput = M.fromList table
     cl' [] = Prefix
@@ -35,8 +35,7 @@ compile table = cl' where
             -- if the inputBlock is exactly what is expected for an
             -- event then consume the whole block and return the event
             Just e -> Valid e []
-            Nothing -> case S.member inputBlock prefixSet of
-                True -> Prefix
+            Nothing -> if S.member inputBlock prefixSet then Prefix else
                 -- look up progressively smaller tails of the input
                 -- block until an event is found The assumption is that
                 -- the event that consumes the most input bytes should
@@ -44,14 +43,13 @@ compile table = cl' where
                 -- The test verifyFullSynInputToEvent2x verifies this.
                 -- H: There will always be one match. The prefixSet
                 -- contains, by definition, all prefixes of an event.
-                False ->
                     let inputPrefixes = reverse $ take maxValidInputLength $ tail $ inits inputBlock
                     in case mapMaybe (\s -> (,) s `fmap` M.lookup s eventForInput) inputPrefixes of
                         (s,e) : _ -> Valid e (drop (length s) inputBlock)
                         -- neither a prefix or a full event.
                         [] -> Invalid
 
-classify :: ClassifyMap -> [Char] -> KClass
+classify :: ClassifyMap -> String -> KClass
 classify table =
     let standardClassifier = compile table
     in \s -> case s of
@@ -64,7 +62,7 @@ classify table =
         c:cs | ord c >= 0xC2 -> classifyUtf8 c cs
         _                    -> standardClassifier s
 
-classifyUtf8 :: Char -> [Char] -> KClass
+classifyUtf8 :: Char -> String -> KClass
 classifyUtf8 c cs =
   let n = utf8Length (ord c)
       (codepoint,rest) = splitAt n (c:cs)

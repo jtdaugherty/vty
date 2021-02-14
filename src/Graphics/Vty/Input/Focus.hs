@@ -36,7 +36,7 @@ focusOut = "\ESC[O"
 -- | Attempt to classify an input string as a focus event.
 classifyFocusEvent :: String -> KClass
 classifyFocusEvent s = runParser s $ do
-    when (not $ isFocusEvent s) failParse
+    unless (isFocusEvent s) failParse
 
     expectChar '\ESC'
     expectChar '['

@@ -1,5 +1,4 @@
 -- Copyright Corey O'Connor
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE GADTs #-}
 -- | A picture is translated into a sequences of state changes and
@@ -52,11 +51,11 @@ dropOps :: Int -> SpanOps -> SpanOps
 dropOps w = snd . splitOpsAt w
 
 splitOpsAt :: Int -> SpanOps -> (SpanOps, SpanOps)
-splitOpsAt inW inOps = splitOpsAt' inW inOps
+splitOpsAt = splitOpsAt'
     where
         splitOpsAt' 0 ops = (Vector.empty, ops)
         splitOpsAt' remainingColumns ops = case Vector.head ops of
-            t@(TextSpan {}) -> if remainingColumns >= textSpanOutputWidth t
+            t@TextSpan {} -> if remainingColumns >= textSpanOutputWidth t
                 then let (pre,post) = splitOpsAt' (remainingColumns - textSpanOutputWidth t)
                                                   (Vector.tail ops)
                      in (Vector.cons t pre, post)
@@ -103,14 +102,14 @@ displayOpsColumns ops
 
 -- | The number of rows the DisplayOps are defined for.
 displayOpsRows :: DisplayOps -> Int
-displayOpsRows ops = Vector.length ops
+displayOpsRows = Vector.length
 
 affectedRegion :: DisplayOps -> DisplayRegion
 affectedRegion ops = (displayOpsColumns ops, displayOpsRows ops)
 
 -- | The number of columns a SpanOps affects.
 spanOpsAffectedColumns :: SpanOps -> Int
-spanOpsAffectedColumns inOps = Vector.foldl' spanOpsAffectedColumns' 0 inOps
+spanOpsAffectedColumns = Vector.foldl' spanOpsAffectedColumns' 0
     where
         spanOpsAffectedColumns' t (TextSpan _ w _ _ ) = t + w
         spanOpsAffectedColumns' t (Skip w) = t + w

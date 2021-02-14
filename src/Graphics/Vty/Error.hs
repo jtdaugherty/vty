@@ -4,5 +4,5 @@ module Graphics.Vty.Error where
 --
 -- These have fully qualified names by default since, IMO, exception
 -- handling requires this.
-data VtyException
+newtype VtyException
     =  VtyFailure String -- ^ Uncategorized failure specific to vty.

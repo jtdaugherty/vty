@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE CPP #-}
@@ -15,7 +14,7 @@ module Graphics.Vty.Output.TerminfoBased
 where
 
 import Control.Monad (when)
-import Data.Bits (shiftL)
+import Data.Bits (shiftL, (.&.))
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal (toForeignPtr)
 import Data.Terminfo.Parse
@@ -28,9 +27,8 @@ import Graphics.Vty.Output.Interface
 
 import Blaze.ByteString.Builder (Write, writeToByteString, writeStorable)
 
-import Data.Bits ((.&.))
 import Data.IORef
-import Data.Maybe (isJust, isNothing, fromJust)
+import Data.Maybe (isJust, isNothing, fromJust, fromMaybe)
 import Data.Word
 
 #if !MIN_VERSION_base(4,8,0)
@@ -91,7 +89,7 @@ fdWriteAll outFd ptr len count
         fdWriteAll outFd ptr' len' count'
 
 sendCapToTerminal :: Output -> CapExpression -> [CapParam] -> IO ()
-sendCapToTerminal t cap capParams = do
+sendCapToTerminal t cap capParams =
     outputByteBuffer t $ writeToByteString $ writeCapExpr cap capParams
 
 -- | Constructs an output driver that uses terminfo for all control
@@ -120,12 +118,7 @@ reserveTerminal termName outFd = do
                     Nothing -> (True, True, error $ "no fore color support for terminal " ++ termName)
     msetab <- probeCap ti "setab"
     msetb <- probeCap ti "setb"
-    let set_back_cap
-            = case msetab of
-                Nothing -> case msetb of
-                    Just setb -> setb
-                    Nothing -> error $ "no back color support for terminal " ++ termName
-                Just setab -> setab
+    let set_back_cap = fromMaybe (fromMaybe (error ("no back color support for terminal " ++ termName)) msetb) msetab
 
     hyperlinkModeStatus <- newIORef False
     newAssumedStateRef <- newIORef initialAssumedState
@@ -191,11 +184,10 @@ reserveTerminal termName outFd = do
                   ++ "length mismatch. " ++ show len ++ " /= " ++ show actualLen
                   ++ " Please report this bug to vty project."
             , contextColorCount
-                = case supportsNoColors terminfoCaps of
-                    False -> case Terminfo.getCapability ti (Terminfo.tiGetNum "colors" ) of
-                        Nothing -> 8
-                        Just v -> toEnum v
-                    True -> 1
+                = if supportsNoColors terminfoCaps then 1 else
+                      case Terminfo.getCapability ti (Terminfo.tiGetNum "colors" ) of
+                          Nothing -> 8
+                          Just v -> toEnum v
             , supportsCursorVisibility = isJust $ civis terminfoCaps
             , supportsMode = terminfoModeSupported
             , setMode = terminfoSetMode
@@ -203,7 +195,7 @@ reserveTerminal termName outFd = do
             , assumedStateRef = newAssumedStateRef
             -- I think fix would help assure tActual is the only
             -- reference. I was having issues tho.
-            , mkDisplayContext = \tActual -> terminfoDisplayContext tActual terminfoCaps
+            , mkDisplayContext = (`terminfoDisplayContext` terminfoCaps)
             }
         sendCap s = sendCapToTerminal t (s terminfoCaps)
         maybeSendCap s = when (isJust $ s terminfoCaps) . sendCap (fromJust . s)
@@ -222,7 +214,7 @@ probeCap ti capName
         Just capStr -> Just <$> parseCap capStr
 
 parseCap :: String -> IO CapExpression
-parseCap capStr = do
+parseCap capStr =
     case parseCapExpression capStr of
         Left e -> fail $ show e
         Right cap -> return cap
@@ -327,11 +319,10 @@ writeURLEscapes NoLinkChange =
 -- bytes.
 terminfoWriteSetAttr :: DisplayContext -> TerminfoCaps -> Bool -> FixedAttr -> Attr -> DisplayAttrDiff -> Write
 terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs =
-    urlAttrs urlsEnabled `mappend` case (foreColorDiff diffs == ColorToDefault) || (backColorDiff diffs == ColorToDefault) of
+    urlAttrs urlsEnabled `mappend` if (foreColorDiff diffs == ColorToDefault) || (backColorDiff diffs == ColorToDefault) then
         -- The only way to reset either color, portably, to the default
         -- is to use either the set state capability or the set default
         -- capability.
-        True  -> do
             case reqDisplayCapSeqFor (displayAttrCaps terminfoCaps)
                                      (fixedStyle attr )
                                      (styleToApplySeq $ fixedStyle attr) of
@@ -343,15 +334,14 @@ terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs =
                                      setColors
                 -- implicitly resets the colors to the defaults
                 SetState state -> writeCapExpr (fromJust $ setAttrStates
-                                                         $ displayAttrCaps
-                                                         $ terminfoCaps
+                                                         $ displayAttrCaps terminfoCaps
                                                )
                                                (sgrArgsForState state)
                                   `mappend` setItalics
                                   `mappend` setColors
         -- Otherwise the display colors are not changing or changing
         -- between two non-default points.
-        False -> do
+        else
             -- Still, it could be the case that the change in display
             -- attributes requires the colors to be reset because the
             -- required capability was not available.
@@ -379,9 +369,7 @@ terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs =
     where
         urlAttrs True = writeURLEscapes (urlDiff diffs)
         urlAttrs False = mempty
-        colorMap = case useAltColorMap terminfoCaps of
-                        False -> ansiColorIndex
-                        True -> altColorIndex
+        colorMap = if useAltColorMap terminfoCaps then altColorIndex else ansiColorIndex
         attr = fixDisplayAttr prevAttr reqAttr
 
         -- italics can't be set via SGR, so here we manually

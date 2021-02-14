@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 -- A 'Picture' is a background paired with a set of 'Image' layers. The
 -- 'Picture' data structure is representative of the final terminal
 -- view.

@@ -7,7 +7,7 @@ import Data.Sequence
 import Control.Parallel.Strategies
 
 instance NFData a => NFData (Seq a) where
-    rnf = \v -> rnf' (viewl v)
+    rnf = rnf' .viewl
         where
             rnf' EmptyL = ()
             rnf' (a :< r) = rnf a >| rnf' (viewl r)
