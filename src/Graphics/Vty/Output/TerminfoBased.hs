@@ -544,7 +544,4 @@ styleToApplySeq s = concat
     , applyIfRequired ApplyBold bold
     ]
     where
-        applyIfRequired op flag
-            = if 0 == (flag .&. s)
-                then []
-                else [op]
+        applyIfRequired op flag = [op | 0 != (flag .&. s)]
