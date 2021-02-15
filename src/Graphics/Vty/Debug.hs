@@ -25,7 +25,7 @@ spanOpsAffectedRows ops
     = toEnum $ length (filter (not . null . Vector.toList) (Vector.toList ops))
 
 type SpanConstructLog = [SpanConstructEvent]
-data SpanConstructEvent = SpanSetAttr Attr
+newtype SpanConstructEvent = SpanSetAttr Attr
 
 isSetAttr :: Attr -> SpanConstructEvent -> Bool
 isSetAttr expectedAttr (SpanSetAttr inAttr)

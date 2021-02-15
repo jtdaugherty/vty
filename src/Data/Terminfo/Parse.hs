@@ -314,7 +314,7 @@ charConstParser = do
     incOffset 3
     return $ BuildResults 0 [ PushValue charValue ] [ ]
 
-data BuildState = BuildState
+newtype BuildState = BuildState
     { nextOffset :: Int
     }
 

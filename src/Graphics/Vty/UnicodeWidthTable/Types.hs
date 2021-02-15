@@ -22,7 +22,7 @@ data WidthTableRange =
     deriving (Eq, Show)
 
 -- | A run-length-encoded table of Unicode character widths.
-data UnicodeWidthTable =
+newtype UnicodeWidthTable =
     UnicodeWidthTable { unicodeWidthTableRanges :: [WidthTableRange]
                       -- ^ The ranges in the table.
                       }

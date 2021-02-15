@@ -244,7 +244,7 @@ writeSpanOp urlsEnabled dc (RowEnd _) fattr = (writeDefaultAttr dc urlsEnabled `
 -- | The cursor position is given in X,Y character offsets. Due to
 -- multi-column characters this needs to be translated to column, row
 -- positions.
-data CursorOutputMap = CursorOutputMap
+newtype CursorOutputMap = CursorOutputMap
     { charToOutputPos :: (Int, Int) -> (Int, Int)
     }
 
