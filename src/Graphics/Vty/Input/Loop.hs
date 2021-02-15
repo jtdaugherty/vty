@@ -139,7 +139,7 @@ readFromDevice = do
         if bytesRead > 0
         then fmap (map $ chr . fromIntegral) $ peekArray (fromIntegral bytesRead) bufferPtr
         else return []
-    when (not $ null stringRep) $ logMsg $ "input bytes: " ++ show stringRep
+    unless (null stringRep) $ logMsg $ "input bytes: " ++ show stringRep
     return stringRep
 
 applyConfig :: Fd -> Config -> IO ()

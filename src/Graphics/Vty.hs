@@ -134,7 +134,7 @@ installCustomWidthTable c = do
             Just path -> appendFile path $ "installWidthTable: " <> s <> "\n"
 
     customInstalled <- isCustomTableReady
-    when (not customInstalled) $ do
+    unless customInstalled $ do
         mTerm <- currentTerminalName
         case mTerm of
             Nothing ->
@@ -169,7 +169,7 @@ internalMkVty input out = do
     shutdownVar <- atomically $ newTVar False
     let shutdownIo = do
             alreadyShutdown <- atomically $ swapTVar shutdownVar True
-            when (not alreadyShutdown) $ do
+            unless alreadyShutdown $ do
                 shutdownInput input
                 releaseDisplay out
                 releaseTerminal out

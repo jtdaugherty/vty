@@ -39,7 +39,7 @@ reserveTerminal variant outFd = liftIO $ do
     let variant' = if variant == "xterm-color" then "xterm" else variant
 
     utf8a <- utf8Active
-    when (not utf8a) $ flushedPut setUtf8CharSet
+    unless utf8a $ flushedPut setUtf8CharSet
     t <- TerminfoBased.reserveTerminal variant' outFd
 
     mouseModeStatus <- newIORef False
@@ -75,7 +75,7 @@ reserveTerminal variant outFd = liftIO $ do
     let t' = t
              { terminalID = terminalID t ++ " (xterm-color)"
              , releaseTerminal = do
-                 when (not utf8a) $ liftIO $ flushedPut setDefaultCharSet
+                 unless utf8a $ liftIO $ flushedPut setDefaultCharSet
                  setMode t' BracketedPaste False
                  setMode t' Mouse False
                  setMode t' Focus False

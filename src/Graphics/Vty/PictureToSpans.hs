@@ -216,7 +216,7 @@ buildSpans image outRegion = do
 startImageBuild :: Image -> BlitM s ()
 startImageBuild image = do
     outOfBounds <- isOutOfBounds image <$> get
-    when (not outOfBounds) $ addMaybeClipped image
+    unless outOfBounds $ addMaybeClipped image
 
 isOutOfBounds :: Image -> BlitState -> Bool
 isOutOfBounds i s

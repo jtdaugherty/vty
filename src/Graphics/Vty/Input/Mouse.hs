@@ -90,7 +90,7 @@ hasBitSet val bit = val .&. bit > 0
 -- | Attempt to lassify an input string as a mouse event.
 classifyMouseEvent :: String -> KClass
 classifyMouseEvent s = runParser s $ do
-    when (not $ isMouseEvent s) failParse
+    unless (isMouseEvent s) failParse
 
     expectChar '\ESC'
     expectChar '['
