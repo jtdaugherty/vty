@@ -146,7 +146,7 @@ data Image =
 
 -- | pretty print just the structure of an image.
 ppImageStructure :: Image -> String
-ppImageStructure inImg = go 0 inImg
+ppImageStructure = go 0
     where
         go indent img = tab indent ++ pp indent img
         tab indent = concat $ replicate indent "  "
