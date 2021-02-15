@@ -128,7 +128,7 @@ paramEscapeParser = do
 literalPercentParser :: CapParser BuildResults
 literalPercentParser = do
     _ <- char '%'
-    startOffset <- getState >>= return . nextOffset
+    startOffset <- nextOffset <$> getState
     incOffset 1
     return $ BuildResults 0 [Bytes startOffset 1] []
 
@@ -154,7 +154,7 @@ incrementOpParser = do
 pushOpParser :: CapParser BuildResults
 pushOpParser = do
     _ <- char 'p'
-    paramN <- digit >>= return . (\d -> read [d])
+    paramN <- read . pure <$> digit
     incOffset 2
     return $ BuildResults (fromEnum paramN) [PushParam $ paramN - 1] []
 
@@ -299,7 +299,7 @@ compareOpParser
 bytesOpParser :: CapParser BuildResults
 bytesOpParser = do
     bytes <- many1 $ satisfy (/= '%')
-    startOffset <- getState >>= return . nextOffset
+    startOffset <- nextOffset <$> getState
     let !c = length bytes
     !s <- getState
     let s' = s { nextOffset = startOffset + c }

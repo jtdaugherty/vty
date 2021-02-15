@@ -42,7 +42,7 @@ pop = do
 
 readParam :: Word -> Eval CapParam
 readParam pn = do
-    !params <- get >>= return . evalParams
+    !params <- evalParams <$> get
     return $! genericIndex params pn
 
 push :: CapParam -> Eval ()
@@ -68,7 +68,7 @@ writeCapOps ops = mapM_ writeCapOp ops
 
 writeCapOp :: CapOp -> Eval ()
 writeCapOp (Bytes !offset !count) = do
-    !cap <- get >>= return . evalExpression
+    !cap <- evalExpression <$> get
     let bytes = Vector.take count $ Vector.drop offset (capBytes cap)
     Vector.forM_ bytes $ tell.writeWord8
 writeCapOp DecOut = do
