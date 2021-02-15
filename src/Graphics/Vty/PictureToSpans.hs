@@ -109,7 +109,7 @@ substituteSkips ClearBackground ops = do
         let rowOps'' = swapSkipsForSingleColumnCharSpan ' ' currentAttr rowOps'
         MVector.write ops row rowOps''
     return ops
-substituteSkips Background {backgroundChar, backgroundAttr} ops = do
+substituteSkips (Background {backgroundChar, backgroundAttr}) ops = do
     -- At this point we decide if the background character is single
     -- column or not. obviously, single column is easier.
     case safeWcwidth backgroundChar of

@@ -143,7 +143,7 @@ readFromDevice = do
     return stringRep
 
 applyConfig :: Fd -> Config -> IO ()
-applyConfig fd Config{ vmin = Just theVmin, vtime = Just theVtime }
+applyConfig fd (Config{ vmin = Just theVmin, vtime = Just theVtime })
     = setTermTiming fd theVmin (theVtime `div` 100)
 applyConfig _ _ = fail "(vty) applyConfig was not provided a complete configuration"
 
