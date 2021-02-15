@@ -81,7 +81,7 @@ combinedOpsForLayers :: Picture -> DisplayRegion -> ST s (MRowOps s)
 combinedOpsForLayers pic r
     | regionWidth r == 0 || regionHeight r == 0 = MVector.new 0
     | otherwise = do
-        layerOps <- mapM (\layer -> buildSpans layer r) (picLayers pic)
+        layerOps <- mapM (`buildSpans` layer) (picLayers pic)
         case layerOps of
             []    -> fail "empty picture"
             [ops] -> substituteSkips (picBackground pic) ops
