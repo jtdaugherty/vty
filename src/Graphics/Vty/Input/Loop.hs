@@ -224,7 +224,7 @@ logInitialInputState input classifyTable = case _inputDebug input of
     Just h  -> do
         Config{ vmin = Just theVmin
               , vtime = Just theVtime
-              , termName = Just theTerm, .. } <- readIORef $ _configRef input
+              , termName = Just theTerm } <- readIORef $ _configRef input
         _ <- hPrintf h "initial (vmin,vtime): %s\n" (show (theVmin, theVtime))
         forM_ classifyTable $ \i -> case i of
             (inBytes, EvKey k mods) -> hPrintf h "map %s %s %s %s\n" (show theTerm)
