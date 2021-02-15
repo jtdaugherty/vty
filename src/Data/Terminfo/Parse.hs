@@ -336,9 +336,9 @@ data BuildResults = BuildResults
 instance Semigroup BuildResults where
     v0 <> v1
         = BuildResults
-        { outParamCount = (outParamCount v0) `max` (outParamCount v1)
-        , outCapOps = (outCapOps v0) <> (outCapOps v1)
-        , outParamOps = (outParamOps v0) <> (outParamOps v1)
+        { outParamCount = outParamCount v0 `max` outParamCount v1
+        , outCapOps = outCapOps v0 <> outCapOps v1
+        , outParamOps = outParamOps v0 <> outParamOps v1
         }
 
 instance Monoid BuildResults where

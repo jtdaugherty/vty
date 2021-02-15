@@ -56,7 +56,7 @@ splitOpsAt inW inOps = splitOpsAt' inW inOps
     where
         splitOpsAt' 0 ops = (Vector.empty, ops)
         splitOpsAt' remainingColumns ops = case Vector.head ops of
-            t@(TextSpan {}) -> if remainingColumns >= textSpanOutputWidth t
+            t@TextSpan {} -> if remainingColumns >= textSpanOutputWidth t
                 then let (pre,post) = splitOpsAt' (remainingColumns - textSpanOutputWidth t)
                                                   (Vector.tail ops)
                      in (Vector.cons t pre, post)

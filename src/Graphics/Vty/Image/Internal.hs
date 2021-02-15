@@ -150,25 +150,25 @@ ppImageStructure inImg = go 0 inImg
     where
         go indent img = tab indent ++ pp indent img
         tab indent = concat $ replicate indent "  "
-        pp _ (HorizText {outputWidth}) = "HorizText(" ++ show outputWidth ++ ")"
-        pp _ (BGFill {outputWidth, outputHeight})
+        pp _ HorizText {outputWidth} = "HorizText(" ++ show outputWidth ++ ")"
+        pp _ BGFill {outputWidth, outputHeight}
             = "BGFill(" ++ show outputWidth ++ "," ++ show outputHeight ++ ")"
-        pp i (HorizJoin {partLeft = l, partRight = r, outputWidth = c})
+        pp i HorizJoin {partLeft = l, partRight = r, outputWidth = c}
             = "HorizJoin(" ++ show c ++ ")\n" ++ go (i+1) l ++ "\n" ++ go (i+1) r
-        pp i (VertJoin {partTop = t, partBottom = b, outputWidth = c, outputHeight = r})
+        pp i VertJoin {partTop = t, partBottom = b, outputWidth = c, outputHeight = r}
             = "VertJoin(" ++ show c ++ ", " ++ show r ++ ")\n"
               ++ go (i+1) t ++ "\n"
               ++ go (i+1) b
-        pp i (CropRight {croppedImage, outputWidth, outputHeight})
+        pp i CropRight {croppedImage, outputWidth, outputHeight}
             = "CropRight(" ++ show outputWidth ++ "," ++ show outputHeight ++ ")\n"
               ++ go (i+1) croppedImage
-        pp i (CropLeft {croppedImage, leftSkip, outputWidth, outputHeight})
+        pp i CropLeft {croppedImage, leftSkip, outputWidth, outputHeight}
             = "CropLeft(" ++ show leftSkip ++ "->" ++ show outputWidth ++ "," ++ show outputHeight ++ ")\n"
               ++ go (i+1) croppedImage
-        pp i (CropBottom {croppedImage, outputWidth, outputHeight})
+        pp i CropBottom {croppedImage, outputWidth, outputHeight}
             = "CropBottom(" ++ show outputWidth ++ "," ++ show outputHeight ++ ")\n"
               ++ go (i+1) croppedImage
-        pp i (CropTop {croppedImage, topSkip, outputWidth, outputHeight})
+        pp i CropTop {croppedImage, topSkip, outputWidth, outputHeight}
             = "CropTop("++ show outputWidth ++ "," ++ show topSkip ++ "->" ++ show outputHeight ++ ")\n"
               ++ go (i+1) croppedImage
         pp _ EmptyImage = "EmptyImage"
