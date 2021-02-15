@@ -209,7 +209,7 @@ reserveTerminal termName outFd = do
             , assumedStateRef = newAssumedStateRef
             -- I think fix would help assure tActual is the only
             -- reference. I was having issues tho.
-            , mkDisplayContext = \tActual -> terminfoDisplayContext tActual terminfoCaps
+            , mkDisplayContext = (`terminfoDisplayContext` terminfoCaps)
             }
         sendCap s = sendCapToTerminal t (s terminfoCaps)
         maybeSendCap s = when (isJust $ s terminfoCaps) . sendCap (fromJust . s)

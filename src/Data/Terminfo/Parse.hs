@@ -39,7 +39,7 @@ instance Show CapExpression where
         ++ " <= " ++ show (sourceString c)
         where
             hexDump :: [Word8] -> String
-            hexDump = foldr (\b s -> showHex b s) ""
+            hexDump = foldr showHex ""
 
 instance NFData CapExpression where
     rnf (CapExpression ops !_bytes !str !c !pOps)
