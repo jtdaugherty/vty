@@ -99,7 +99,7 @@ parseCapExpression capString =
         Left e -> Left e
         Right buildResults -> Right $ constructCapExpression capString buildResults
 
-constructCapExpression :: [Char] -> BuildResults -> CapExpression
+constructCapExpression :: String -> BuildResults -> CapExpression
 constructCapExpression capString buildResults =
     let expr = CapExpression
                 { capOps = outCapOps buildResults

@@ -24,7 +24,7 @@ import qualified Data.Set as S( fromList, member )
 import Data.Char
 import Data.Word
 
-compile :: ClassifyMap -> [Char] -> KClass
+compile :: ClassifyMap -> String -> KClass
 compile table = cl' where
     -- take all prefixes and create a set of these
     prefixSet = S.fromList $ concatMap (init . inits . fst) $ table
@@ -51,7 +51,7 @@ compile table = cl' where
                         -- neither a prefix or a full event.
                         [] -> Invalid
 
-classify :: ClassifyMap -> [Char] -> KClass
+classify :: ClassifyMap -> String -> KClass
 classify table =
     let standardClassifier = compile table
     in \s -> case s of
@@ -64,7 +64,7 @@ classify table =
         c:cs | ord c >= 0xC2 -> classifyUtf8 c cs
         _                    -> standardClassifier s
 
-classifyUtf8 :: Char -> [Char] -> KClass
+classifyUtf8 :: Char -> String -> KClass
 classifyUtf8 c cs =
   let n = utf8Length (ord c)
       (codepoint,rest) = splitAt n (c:cs)
