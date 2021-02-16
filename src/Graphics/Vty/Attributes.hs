@@ -1,7 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
@@ -43,6 +40,7 @@ module Graphics.Vty.Attributes
   , withStyle
   , standout
   , italic
+  , strikethrough
   , underline
   , reverseVideo
   , blink
@@ -145,19 +143,13 @@ data FixedAttr = FixedAttr
 -- | The style and color attributes can either be the terminal defaults.
 -- Or be equivalent to the previously applied style. Or be a specific
 -- value.
-data MaybeDefault v where
-    Default :: MaybeDefault v
-    KeepCurrent :: MaybeDefault v
-    SetTo :: forall v . ( Eq v, Show v, Read v ) => !v -> MaybeDefault v
+data MaybeDefault v = Default | KeepCurrent | SetTo !v
+  deriving (Eq, Read, Show)
 
 instance (NFData v) => NFData (MaybeDefault v) where
     rnf Default = ()
     rnf KeepCurrent = ()
     rnf (SetTo v) = rnf v
-
-deriving instance Eq v => Eq (MaybeDefault v)
-deriving instance Eq v => Show (MaybeDefault v)
-deriving instance (Eq v, Show v, Read v) => Read (MaybeDefault v)
 
 instance Eq v => Semigroup (MaybeDefault v) where
     Default     <> Default     = Default
@@ -181,7 +173,7 @@ instance Eq v => Monoid ( MaybeDefault v ) where
 -- if the style attribute should not be applied.
 type Style = Word8
 
--- | The 7 possible style attributes:
+-- | Valid style attributes include:
 --
 --      * standout
 --
@@ -197,9 +189,11 @@ type Style = Word8
 --
 --      * italic
 --
+--      * strikethrough (via the smxx/rmxx terminfo capabilities)
+--
 --  (The invisible, protect, and altcharset display attributes some
 --  terminals support are not supported via VTY.)
-standout, underline, reverseVideo, blink, dim, bold, italic :: Style
+standout, underline, reverseVideo, blink, dim, bold, italic, strikethrough :: Style
 standout        = 0x01
 underline       = 0x02
 reverseVideo    = 0x04
@@ -207,6 +201,7 @@ blink           = 0x08
 dim             = 0x10
 bold            = 0x20
 italic          = 0x40
+strikethrough   = 0x80
 
 defaultStyleMask :: Style
 defaultStyleMask = 0x00

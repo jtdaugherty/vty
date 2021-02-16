@@ -74,7 +74,7 @@ visibleChars = [ ([x], EvKey (KChar x) [])
 ctrlChars :: ClassifyMap
 ctrlChars =
     [ ([toEnum x],EvKey (KChar y) [MCtrl])
-    | (x,y) <- zip ([0..31]) ('@':['a'..'z']++['['..'_'])
+    | (x,y) <- zip [0..31] ('@':['a'..'z']++['['..'_'])
     , y /= 'i'  -- Resolve issue #3 where CTRL-i hides TAB.
     , y /= 'h'  -- CTRL-h should not hide BS
     ]
@@ -86,8 +86,10 @@ ctrlMetaChars = map (\(s,EvKey c m) -> ('\ESC':s, EvKey c (MMeta:m))) ctrlChars
 -- | Esc, meta-esc, delete, meta-delete, enter, meta-enter.
 specialSupportKeys :: ClassifyMap
 specialSupportKeys =
-    [ -- special support for ESC
-      ("\ESC",EvKey KEsc []), ("\ESC\ESC",EvKey KEsc [MMeta])
+    [ ("\ESC\ESC[5~",EvKey KPageUp [MMeta])
+    , ("\ESC\ESC[6~",EvKey KPageDown [MMeta])
+    -- special support for ESC
+    , ("\ESC",EvKey KEsc []), ("\ESC\ESC",EvKey KEsc [MMeta])
     -- Special support for backspace
     , ("\DEL",EvKey KBS []), ("\ESC\DEL",EvKey KBS [MMeta])
     -- Special support for Enter

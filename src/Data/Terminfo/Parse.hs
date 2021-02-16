@@ -39,7 +39,7 @@ instance Show CapExpression where
         ++ " <= " ++ show (sourceString c)
         where
             hexDump :: [Word8] -> String
-            hexDump = foldr (\b s -> showHex b s) ""
+            hexDump = foldr showHex ""
 
 instance NFData CapExpression where
     rnf (CapExpression ops !_bytes !str !c !pOps)
@@ -99,7 +99,7 @@ parseCapExpression capString =
         Left e -> Left e
         Right buildResults -> Right $ constructCapExpression capString buildResults
 
-constructCapExpression :: [Char] -> BuildResults -> CapExpression
+constructCapExpression :: String -> BuildResults -> CapExpression
 constructCapExpression capString buildResults =
     let expr = CapExpression
                 { capOps = outCapOps buildResults
@@ -336,9 +336,9 @@ data BuildResults = BuildResults
 instance Semigroup BuildResults where
     v0 <> v1
         = BuildResults
-        { outParamCount = (outParamCount v0) `max` (outParamCount v1)
-        , outCapOps = (outCapOps v0) <> (outCapOps v1)
-        , outParamOps = (outParamOps v0) <> (outParamOps v1)
+        { outParamCount = outParamCount v0 `max` outParamCount v1
+        , outCapOps = outCapOps v0 <> outCapOps v1
+        , outParamOps = outParamOps v0 <> outParamOps v1
         }
 
 instance Monoid BuildResults where

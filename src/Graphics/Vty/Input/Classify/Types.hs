@@ -8,7 +8,7 @@ where
 import Graphics.Vty.Input.Events
 
 data KClass
-    = Valid Event [Char]
+    = Valid Event String
     -- ^ A valid event was parsed. Any unused characters from the input
     -- stream are also provided.
     | Invalid

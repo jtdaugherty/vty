@@ -82,6 +82,14 @@ data Cursor =
     NoCursor
     -- | Show the cursor at the given logical column accounting for
     -- character width in the presence of multi-column characters.
+    | PositionOnly !Bool !Int !Int
+    -- | Set the terminal's cursor position without displaying a cursor
+    -- character. This is important for accessibility with screen
+    -- readers where a cursor position needs to be reported but we may
+    -- not want to show a block cursor in that location for cosmetic
+    -- reasons. The boolean argument indicates whether the positioning
+    -- should be absolute as with 'AbsoluteCursor' ('True') or logical
+    -- as with 'Cursor' ('False').
     | Cursor !Int !Int
     -- | Show the cursor at the given absolute terminal column and row
     | AbsoluteCursor !Int !Int

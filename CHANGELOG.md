@@ -1,4 +1,32 @@
 
+5.32
+----
+
+New features:
+ * Meta-PageUp and Meta-PageDown are now supported (#193)
+ * Added `supportsItalics` and `supportsStrikethrough` functions to
+   check for feature support in terminfo
+
+Bug fixes:
+ * Detect utf-8 mode in `LANG` regardless of case (thanks Emeka
+   Nkurumeh)
+
+5.31
+----
+
+New features and API changes:
+ * Added support for strikethrough mode. This change adds a new
+   `strikethrough` `Style` value and uses the `smxx` and `rmxx`
+   Terminfo capabilities to activate and deactivate strikethrough mode,
+   respectively. If the terminfo does not report those capabilities,
+   this style is ignored.
+ * `Output`: added the `setDisplayBounds` field to set the output
+   dimensions of the output handle; added an implementation of this for
+   the `TerminfoBased` backend.
+
+Other changes:
+ * The C prototype for `vty_c_get_window_size` in `gwinsz.h` was fixed.
+
 5.30
 ----
 
