@@ -69,6 +69,7 @@ library
   exposed-modules:     Graphics.Vty
                        Graphics.Vty.Attributes
                        Graphics.Vty.Attributes.Color 
+                       Graphics.Vty.Attributes.Color240
                        Graphics.Vty.Config
                        Graphics.Vty.Error
                        Graphics.Vty.Image
@@ -104,8 +105,7 @@ library
                        Graphics.Vty.UnicodeWidthTable.Query
                        Graphics.Vty.UnicodeWidthTable.Install
 
-  other-modules:       Graphics.Vty.Attributes.Color240
-                       Graphics.Vty.Debug.Image
+  other-modules:       Graphics.Vty.Debug.Image
                        Graphics.Vty.Input.Terminfo.ANSIVT
 
   c-sources:           cbits/gwinsz.c
@@ -527,6 +527,33 @@ test-suite verify-layers-span-generation
                        unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
+test-suite verify-color-mapping
+  default-language:    Haskell2010
+  default-extensions:  ScopedTypeVariables
+
+  type:                detailed-0.9
+
+  hs-source-dirs:      test
+
+  test-module:         VerifyColor240
+
+  other-modules:       Verify
+
+  build-depends:       vty,
+                       Cabal >= 1.20,
+                       QuickCheck >= 2.7,
+                       random >= 1.0 && < 1.2,
+                       base >= 4.8 && < 5,
+                       bytestring,
+                       containers,
+                       deepseq >= 1.1 && < 1.5,
+                       mtl >= 1.1.1.0 && < 2.3,
+                       text >= 0.11.3,
+                       unix,
+                       utf8-string >= 0.3 && < 1.1,
+                       vector >= 0.7
+
 
 test-suite verify-utf8-width
   default-language:    Haskell2010
