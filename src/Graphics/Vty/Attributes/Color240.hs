@@ -49,7 +49,7 @@ simpleColor_ :: Integral i => Word8 -> i -> Word8
 simpleColor_ e c
     | c <= 0 = 0
     | c <= 95 = 1
-    | c <= 255 = fromIntegral ((c-15) `div` 40)
+    | c <= 255 = fromIntegral ((c-16) `div` 40)
     | otherwise = e
 
 -- | Create a RGB triple from a value in the Color240 set.
