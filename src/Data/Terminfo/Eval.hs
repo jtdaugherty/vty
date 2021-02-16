@@ -64,7 +64,7 @@ writeCapExpr cap params =
     in snd $ runWriter (runStateT (writeCapOps (capOps cap)) s0)
 
 writeCapOps :: CapOps -> Eval ()
-writeCapOps ops = mapM_ writeCapOp ops
+writeCapOps = mapM_ writeCapOp
 
 writeCapOp :: CapOp -> Eval ()
 writeCapOp (Bytes !offset !count) = do

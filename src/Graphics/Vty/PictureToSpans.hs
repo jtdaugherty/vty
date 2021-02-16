@@ -136,8 +136,8 @@ mergeUnder upper lower = do
     return upper
 
 mergeRowUnder :: SpanOps -> SpanOps -> SpanOps
-mergeRowUnder upperRowOps lowerRowOps =
-    onUpperOp Vector.empty (Vector.head upperRowOps) (Vector.tail upperRowOps) lowerRowOps
+mergeRowUnder upperRowOps =
+    onUpperOp Vector.empty (Vector.head upperRowOps) (Vector.tail upperRowOps)
     where
         -- H: it will never be the case that we are out of upper ops
         -- before lower ops.
