@@ -59,7 +59,7 @@ navKeys3 =
 -- This encoding depends on the terminal.
 functionKeys1 :: ClassifyMap
 functionKeys1 =
-    let f ff nrs m = [ ("\ESC["++show n++"~",EvKey (KFun $ n-(nrs!!0)+ff) m) | n <- nrs ] in
+    let f ff nrs m = [ ("\ESC["++show n++"~",EvKey (KFun $ n-head nrs+ff) m) | n <- nrs ] in
     concat [f 1 [25,26] [MShift], f 3 [28,29] [MShift], f 5 [31..34] [MShift] ]
 
 -- | encoding for meta plus char
