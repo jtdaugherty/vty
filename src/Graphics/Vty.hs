@@ -166,7 +166,7 @@ internalMkVty :: Input -> Output -> IO Vty
 internalMkVty input out = do
     reserveDisplay out
 
-    shutdownVar <- atomically $ newTVar False
+    shutdownVar <- newTVarIO False
     let shutdownIo = do
             alreadyShutdown <- atomically $ swapTVar shutdownVar True
             when (not alreadyShutdown) $ do
@@ -174,7 +174,7 @@ internalMkVty input out = do
                 releaseDisplay out
                 releaseTerminal out
 
-    let shutdownStatus = atomically $ readTVar shutdownVar
+    let shutdownStatus = readTVarIO shutdownVar
 
     lastPicRef <- newIORef Nothing
     lastUpdateRef <- newIORef Nothing

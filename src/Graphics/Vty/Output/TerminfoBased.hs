@@ -15,7 +15,7 @@ module Graphics.Vty.Output.TerminfoBased
 where
 
 import Control.Monad (when)
-import Data.Bits (shiftL)
+import Data.Bits ((.&.), shiftL)
 import qualified Data.ByteString as BS
 import Data.ByteString.Internal (toForeignPtr)
 import Data.Terminfo.Parse
@@ -28,7 +28,6 @@ import Graphics.Vty.Output.Interface
 
 import Blaze.ByteString.Builder (Write, writeToByteString, writeStorable)
 
-import Data.Bits ((.&.))
 import Data.IORef
 import Data.Maybe (isJust, isNothing, fromJust)
 import Data.Word
