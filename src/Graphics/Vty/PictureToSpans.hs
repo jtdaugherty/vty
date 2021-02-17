@@ -81,7 +81,7 @@ combinedOpsForLayers :: Picture -> DisplayRegion -> ST s (MRowOps s)
 combinedOpsForLayers pic r
     | regionWidth r == 0 || regionHeight r == 0 = MVector.new 0
     | otherwise = do
-        layerOps <- mapM (`buildSpans` layer) (picLayers pic)
+        layerOps <- mapM (`buildSpans` r) (picLayers pic)
         case layerOps of
             []    -> fail "empty picture"
             [ops] -> substituteSkips (picBackground pic) ops
@@ -136,8 +136,8 @@ mergeUnder upper lower = do
     return upper
 
 mergeRowUnder :: SpanOps -> SpanOps -> SpanOps
-mergeRowUnder upperRowOps lowerRowOps =
-    onUpperOp Vector.empty (Vector.head upperRowOps) (Vector.tail upperRowOps) lowerRowOps
+mergeRowUnder upperRowOps =
+    onUpperOp Vector.empty (Vector.head upperRowOps) (Vector.tail upperRowOps)
     where
         -- H: it will never be the case that we are out of upper ops
         -- before lower ops.

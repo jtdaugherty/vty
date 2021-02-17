@@ -14,5 +14,4 @@ utf8FromIso :: [Int] -> [Word8]
 utf8FromIso = encode . map toEnum
 
 ppUtf8 :: [Int] -> IO ()
-ppUtf8 = print . map (\f -> f "") . map showHex . utf8FromIso
-
+ppUtf8 = print . map (`showHex` "") . utf8FromIso

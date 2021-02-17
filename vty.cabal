@@ -69,6 +69,7 @@ library
   exposed-modules:     Graphics.Vty
                        Graphics.Vty.Attributes
                        Graphics.Vty.Attributes.Color 
+                       Graphics.Vty.Attributes.Color240
                        Graphics.Vty.Config
                        Graphics.Vty.Error
                        Graphics.Vty.Image
@@ -104,8 +105,7 @@ library
                        Graphics.Vty.UnicodeWidthTable.Query
                        Graphics.Vty.UnicodeWidthTable.Install
 
-  other-modules:       Graphics.Vty.Attributes.Color240
-                       Graphics.Vty.Debug.Image
+  other-modules:       Graphics.Vty.Debug.Image
                        Graphics.Vty.Input.Terminfo.ANSIVT
 
   c-sources:           cbits/gwinsz.c
@@ -189,7 +189,7 @@ test-suite verify-using-mock-terminal
   build-depends:       vty,
                        Cabal >= 1.20,
                        QuickCheck >= 2.7,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        bytestring,
                        containers,
@@ -222,7 +222,7 @@ test-suite verify-terminal
   build-depends:       vty,
                        Cabal >= 1.20,
                        QuickCheck >= 2.7,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        bytestring,
                        containers,
@@ -255,7 +255,7 @@ test-suite verify-display-attributes
   build-depends:       vty,
                        Cabal >= 1.20,
                        QuickCheck >= 2.7,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        bytestring,
                        containers,
@@ -281,7 +281,7 @@ test-suite verify-empty-image-props
   build-depends:       vty,
                        Cabal >= 1.20,
                        QuickCheck >= 2.7,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        bytestring,
                        containers,
@@ -308,7 +308,7 @@ test-suite verify-eval-terminfo-caps
   build-depends:       vty,
                        Cabal >= 1.20,
                        QuickCheck >= 2.7,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        blaze-builder >= 0.3.3.2 && < 0.5,
                        bytestring,
@@ -338,7 +338,7 @@ test-suite verify-image-ops
   build-depends:       vty,
                        Cabal >= 1.20,
                        QuickCheck >= 2.7,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        bytestring,
                        containers,
@@ -366,7 +366,7 @@ test-suite verify-image-trans
   build-depends:       vty,
                        Cabal >= 1.20,
                        QuickCheck >= 2.7,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        bytestring,
                        containers,
@@ -393,7 +393,7 @@ test-suite verify-inline
   build-depends:       vty,
                        Cabal >= 1.20,
                        QuickCheck >= 2.7,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        bytestring,
                        containers,
@@ -421,7 +421,7 @@ test-suite verify-parse-terminfo-caps
   build-depends:       vty,
                        Cabal >= 1.20,
                        QuickCheck >= 2.7,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        bytestring,
                        containers,
@@ -453,7 +453,7 @@ test-suite verify-simple-span-generation
   build-depends:       vty,
                        Cabal >= 1.20,
                        QuickCheck >= 2.7,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        bytestring,
                        containers,
@@ -485,7 +485,7 @@ test-suite verify-crop-span-generation
   build-depends:       vty,
                        Cabal >= 1.20,
                        QuickCheck >= 2.7,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        bytestring,
                        containers,
@@ -517,6 +517,32 @@ test-suite verify-layers-span-generation
   build-depends:       vty,
                        Cabal >= 1.20,
                        QuickCheck >= 2.7,
+                       random >= 1.0 && < 1.3,
+                       base >= 4.8 && < 5,
+                       bytestring,
+                       containers,
+                       deepseq >= 1.1 && < 1.5,
+                       mtl >= 1.1.1.0 && < 2.3,
+                       text >= 0.11.3,
+                       unix,
+                       utf8-string >= 0.3 && < 1.1,
+                       vector >= 0.7
+
+test-suite verify-color-mapping
+  default-language:    Haskell2010
+  default-extensions:  ScopedTypeVariables
+
+  type:                detailed-0.9
+
+  hs-source-dirs:      test
+
+  test-module:         VerifyColor240
+
+  other-modules:       Verify
+
+  build-depends:       vty,
+                       Cabal >= 1.20,
+                       QuickCheck >= 2.7,
                        random >= 1.0 && < 1.2,
                        base >= 4.8 && < 5,
                        bytestring,
@@ -527,6 +553,7 @@ test-suite verify-layers-span-generation
                        unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
+
 
 test-suite verify-utf8-width
   default-language:    Haskell2010
@@ -543,7 +570,7 @@ test-suite verify-utf8-width
   build-depends:       vty,
                        Cabal >= 1.20,
                        QuickCheck >= 2.7,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        bytestring,
                        containers,
@@ -571,7 +598,7 @@ test-suite verify-using-mock-input
                        quickcheck-assertions >= 0.1.1,
                        test-framework == 0.8.*,
                        test-framework-smallcheck == 0.2.*,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        bytestring,
                        containers,
@@ -607,7 +634,7 @@ test-suite verify-config
                        test-framework == 0.8.*,
                        test-framework-smallcheck == 0.2.*,
                        test-framework-hunit,
-                       random >= 1.0 && < 1.2,
+                       random >= 1.0 && < 1.3,
                        base >= 4.8 && < 5,
                        bytestring,
                        containers,

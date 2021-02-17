@@ -52,7 +52,7 @@ dropOps :: Int -> SpanOps -> SpanOps
 dropOps w = snd . splitOpsAt w
 
 splitOpsAt :: Int -> SpanOps -> (SpanOps, SpanOps)
-splitOpsAt inW inOps = splitOpsAt' inW inOps
+splitOpsAt = splitOpsAt'
     where
         splitOpsAt' 0 ops = (Vector.empty, ops)
         splitOpsAt' remainingColumns ops = case Vector.head ops of
@@ -103,7 +103,7 @@ displayOpsColumns ops
 
 -- | The number of rows the DisplayOps are defined for.
 displayOpsRows :: DisplayOps -> Int
-displayOpsRows ops = Vector.length ops
+displayOpsRows = Vector.length
 
 affectedRegion :: DisplayOps -> DisplayRegion
 affectedRegion ops = (displayOpsColumns ops, displayOpsRows ops)
