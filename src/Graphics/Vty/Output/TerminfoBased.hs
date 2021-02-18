@@ -355,8 +355,7 @@ terminfoWriteSetAttr dc terminfoCaps urlsEnabled prevAttr reqAttr diffs =
                                      setColors
                 -- implicitly resets the colors to the defaults
                 SetState state -> writeCapExpr (fromJust $ setAttrStates
-                                                         $ displayAttrCaps
-                                                         $ terminfoCaps
+                                                         $ displayAttrCaps terminfoCaps
                                                )
                                                (sgrArgsForState state)
                                   `mappend` setItalics
