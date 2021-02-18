@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards, NamedFieldPuns, CPP #-}
+{-# LANGUAGE RecordWildCards, CPP #-}
 -- | This module provides functions for accessing the current terminal
 -- or a specific terminal device.
 --

@@ -1,6 +1,4 @@
 -- Copyright Corey O'Connor
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE GADTs #-}
 -- | A picture is translated into a sequences of state changes and
 -- character spans. The attribute is applied to all following spans,
