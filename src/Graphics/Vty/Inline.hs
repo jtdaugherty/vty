@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 -- | The inline module provides a limited interface to changing the
 -- style of terminal output. The intention is for this interface to be
 -- used inline with other output systems.

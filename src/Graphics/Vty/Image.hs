@@ -1,5 +1,4 @@
 -- Copyright 2009-2010 Corey O'Connor
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DisambiguateRecordFields #-}
 -- | A Vty program makes 'Picture's from 'Image's. This module provides
