@@ -85,8 +85,8 @@ removeStyle :: Style -> InlineM ()
 removeStyle sMask = modify $ \s ->
     s { inlineAttr =
           let style' = case attrStyle (inlineAttr s) of
-                Default -> error $ "Graphics.Vty.Inline: Cannot removeStyle if applyStyle never used."
-                KeepCurrent -> error $ "Graphics.Vty.Inline: Cannot removeStyle if applyStyle never used."
+                Default -> error "Graphics.Vty.Inline: Cannot removeStyle if applyStyle never used."
+                KeepCurrent -> error "Graphics.Vty.Inline: Cannot removeStyle if applyStyle never used."
                 SetTo st -> st .&. complement sMask
           in (inlineAttr s) { attrStyle = SetTo style' }
       }

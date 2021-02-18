@@ -27,7 +27,7 @@ import Data.Word
 compile :: ClassifyMap -> String -> KClass
 compile table = cl' where
     -- take all prefixes and create a set of these
-    prefixSet = S.fromList $ concatMap (init . inits . fst) $ table
+    prefixSet = S.fromList $ concatMap (init . inits . fst) table
     maxValidInputLength = maximum (map (length . fst) table)
     eventForInput = M.fromList table
     cl' [] = Prefix
