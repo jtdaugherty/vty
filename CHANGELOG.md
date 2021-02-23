@@ -1,4 +1,20 @@
 
+5.33
+----
+
+API changes:
+* The `Cursor` type got a new `PositionOnly` constructor for cursor
+  placement without visibility.
+
+Package changes:
+* Relaxed upper bound for `random`
+* Updated `microlens` bounds to allow 0.4.12
+
+Other improvements:
+* Various hlint-driven improvements (thanks Willem Van Onsem)
+* The implementation of `color240` was improved (thanks (Willem Van
+  Onsem)
+
 5.32
 ----
 
