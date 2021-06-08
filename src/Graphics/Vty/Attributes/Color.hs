@@ -1,5 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveAnyClass, DeriveGeneric, PatternSynonyms #-}
 
 module Graphics.Vty.Attributes.Color
   ( Color(..)
@@ -21,6 +20,14 @@ module Graphics.Vty.Attributes.Color
   , magenta
   , cyan
   , white
+  , pattern Black
+  , pattern Red
+  , pattern Green
+  , pattern Yellow
+  , pattern Blue
+  , pattern Magenta
+  , pattern Cyan
+  , pattern White
 
   -- | Bright/Vivid variants of the standard 8-color ANSI
   , brightBlack
@@ -31,6 +38,14 @@ module Graphics.Vty.Attributes.Color
   , brightMagenta
   , brightCyan
   , brightWhite
+  , pattern BrightBlack
+  , pattern BrightRed
+  , pattern BrightGreen
+  , pattern BrightYellow
+  , pattern BrightBlue
+  , pattern BrightMagenta
+  , pattern BrightCyan
+  , pattern BrightWhite
   -- ** Creating Colors From RGB
   , rgbColor
   , module Graphics.Vty.Attributes.Color240
@@ -98,27 +113,50 @@ import Graphics.Vty.Attributes.Color240
 data Color = ISOColor !Word8 | Color240 !Word8
     deriving ( Eq, Show, Read, Generic, NFData )
 
-black, red, green, yellow, blue, magenta, cyan, white :: Color
-black  = ISOColor 0
-red    = ISOColor 1
-green  = ISOColor 2
-yellow = ISOColor 3
-blue   = ISOColor 4
-magenta= ISOColor 5
-cyan   = ISOColor 6
-white  = ISOColor 7
+pattern Black, Red, Green, Yellow, Blue, Magenta, Cyan, White :: Color
+pattern Black  = ISOColor 0
+pattern Red    = ISOColor 1
+pattern Green  = ISOColor 2
+pattern Yellow = ISOColor 3
+pattern Blue   = ISOColor 4
+pattern Magenta= ISOColor 5
+pattern Cyan   = ISOColor 6
+pattern White  = ISOColor 7
 
+{-# DEPRECATED black, red, green, yellow, blue, magenta, cyan, white "Use the pattern synonyms instead" #-}
+black, red, green, yellow, blue, magenta, cyan, white :: Color
+black   = Black
+red     = Red
+green   = Green
+yellow  = Yellow
+blue    = Blue
+magenta = Magenta
+cyan    = Cyan
+white   = White
+
+
+pattern BrightBlack, BrightRed, BrightGreen, BrightYellow :: Color
+pattern BrightBlue, BrightMagenta, BrightCyan, BrightWhite :: Color
+pattern BrightBlack  = ISOColor 8
+pattern BrightRed    = ISOColor 9
+pattern BrightGreen  = ISOColor 10
+pattern BrightYellow = ISOColor 11
+pattern BrightBlue   = ISOColor 12
+pattern BrightMagenta= ISOColor 13
+pattern BrightCyan   = ISOColor 14
+pattern BrightWhite  = ISOColor 15
+
+{-# DEPRECATED brightBlack, brightRed, brightGreen, brightYellow, brightBlue, brightMagenta, brightCyan, brightWhite "Use the pattern synonyms instead" #-}
 brightBlack, brightRed, brightGreen, brightYellow :: Color
 brightBlue, brightMagenta, brightCyan, brightWhite :: Color
-brightBlack  = ISOColor 8
-brightRed    = ISOColor 9
-brightGreen  = ISOColor 10
-brightYellow = ISOColor 11
-brightBlue   = ISOColor 12
-brightMagenta= ISOColor 13
-brightCyan   = ISOColor 14
-brightWhite  = ISOColor 15
-
+brightBlack  = BrightBlack
+brightRed    = BrightRed
+brightGreen  = BrightGreen
+brightYellow = BrightYellow
+brightBlue   = BrightBlue
+brightMagenta= BrightMagenta
+brightCyan   = BrightCyan
+brightWhite  = BrightWhite
 
 -- | Create a Vty 'Color' (in the 240 color set) from an RGB triple.
 -- This function is lossy in the sense that we only internally support 240 colors but the
