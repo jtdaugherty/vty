@@ -554,6 +554,32 @@ test-suite verify-color-mapping
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7
 
+test-suite verify-semigroup-maybedefault
+  default-language:    Haskell2010
+  default-extensions:  ScopedTypeVariables
+
+  type:                detailed-0.9
+
+  hs-source-dirs:      test
+
+  test-module:         VerifyAttributes
+
+  other-modules:       Verify
+
+  build-depends:       vty,
+                       Cabal >= 1.20,
+                       QuickCheck >= 2.7,
+                       random >= 1.0 && < 1.3,
+                       base >= 4.8 && < 5,
+                       bytestring,
+                       containers,
+                       deepseq >= 1.1 && < 1.5,
+                       mtl >= 1.1.1.0 && < 2.3,
+                       text >= 0.11.3,
+                       unix,
+                       utf8-string >= 0.3 && < 1.1,
+                       vector >= 0.7
+
 
 test-suite verify-utf8-width
   default-language:    Haskell2010
