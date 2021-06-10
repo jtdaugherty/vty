@@ -154,7 +154,7 @@ instance (NFData v) => NFData (MaybeDefault v) where
 instance Eq v => Semigroup (MaybeDefault v) where
     _        <> v@(SetTo _) = v
     x        <> KeepCurrent = x
-    _        <> Default     = Default
+    _        <> ~Default    = Default
 
 instance Eq v => Monoid ( MaybeDefault v ) where
     mempty = KeepCurrent
