@@ -2,6 +2,8 @@ module VerifyAttributes where
 
 import Verify
 
+import Data.Semigroup((<>))
+
 import Graphics.Vty.Attributes(MaybeDefault(Default, KeepCurrent, SetTo))
 
 instance Arbitrary a => Arbitrary (MaybeDefault a) where
