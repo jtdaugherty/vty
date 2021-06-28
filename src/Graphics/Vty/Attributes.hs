@@ -151,12 +151,12 @@ instance (NFData v) => NFData (MaybeDefault v) where
     rnf KeepCurrent = ()
     rnf (SetTo v) = rnf v
 
-instance Eq v => Semigroup (MaybeDefault v) where
+instance Semigroup (MaybeDefault v) where
     _        <> v@(SetTo _) = v
     x        <> KeepCurrent = x
     _        <> Default     = Default
 
-instance Eq v => Monoid ( MaybeDefault v ) where
+instance Monoid ( MaybeDefault v ) where
     mempty = KeepCurrent
 #if !(MIN_VERSION_base(4,11,0))
     mappend = (<>)
