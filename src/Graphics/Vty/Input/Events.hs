@@ -1,6 +1,7 @@
 {-# Language DeriveGeneric #-}
 module Graphics.Vty.Input.Events where
 
+import Control.DeepSeq
 import Data.ByteString
 import GHC.Generics
 
@@ -21,15 +22,21 @@ data Key = KEsc  | KChar Char | KBS | KEnter
          | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin | KMenu
     deriving (Eq,Show,Read,Ord,Generic)
 
+instance NFData Key
+
 -- | Modifier keys. Key codes are interpreted such that users are more
 -- likely to have Meta than Alt; for instance on the PC Linux console,
 -- 'MMeta' will generally correspond to the physical Alt key.
 data Modifier = MShift | MCtrl | MMeta | MAlt
     deriving (Eq,Show,Read,Ord,Generic)
 
+instance NFData Modifier
+
 -- | Mouse buttons.
 data Button = BLeft | BMiddle | BRight | BScrollUp | BScrollDown
     deriving (Eq,Show,Read,Ord,Generic)
+
+instance NFData Button
 
 -- | Events.
 data Event
@@ -61,5 +68,7 @@ data Event
     | EvGainedFocus
     -- ^ The terminal running the application gained input focus.
     deriving (Eq,Show,Read,Ord,Generic)
+
+instance NFData Event
 
 type ClassifyMap = [(String,Event)]
