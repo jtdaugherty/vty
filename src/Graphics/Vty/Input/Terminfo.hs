@@ -91,7 +91,7 @@ specialSupportKeys =
     -- special support for ESC
     , ("\ESC",EvKey KEsc []), ("\ESC\ESC",EvKey KEsc [MMeta])
     -- Special support for backspace
-    , ("\DEL",EvKey KBS []), ("\ESC\DEL",EvKey KBS [MMeta])
+    , ("\DEL",EvKey KBS []), ("\ESC\DEL",EvKey KBS [MMeta]), ("\b",EvKey KBS [])
     -- Special support for Enter
     , ("\ESC\^J",EvKey KEnter [MMeta]), ("\^J",EvKey KEnter [])
     -- explicit support for tab

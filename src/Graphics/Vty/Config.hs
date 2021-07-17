@@ -54,7 +54,7 @@
 -- If a debug log is requested then vty will output the current input
 -- table to the log in the above format. A workflow for using this is
 -- to set @VTY_DEBUG_LOG@. Run the application. Check the debug log for
--- incorrect mappings. Add corrected mappings to @$HOME/.vty/config@.
+-- incorrect mappings. Add corrected mappings to @$HOME\/.vty\/config@.
 --
 -- = Unicode Character Width Maps
 --
