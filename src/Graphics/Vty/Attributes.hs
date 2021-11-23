@@ -61,9 +61,6 @@ where
 
 import Control.DeepSeq
 import Data.Bits
-#if !(MIN_VERSION_base(4,11,0))
-import Data.Semigroup
-#endif
 import Data.Text (Text)
 import Data.Word
 import GHC.Generics
@@ -116,19 +113,6 @@ data Attr = Attr
 --  Then the foreground color encoded into 8 bits.
 --  Then the background color encoded into 8 bits.
 
-instance Semigroup Attr where
-    attr0 <> attr1 =
-        Attr ( attrStyle attr0     <> attrStyle attr1 )
-             ( attrForeColor attr0 <> attrForeColor attr1 )
-             ( attrBackColor attr0 <> attrBackColor attr1 )
-             ( attrURL attr0       <> attrURL attr1 )
-
-instance Monoid Attr where
-    mempty = Attr mempty mempty mempty mempty
-#if !(MIN_VERSION_base(4,11,0))
-    mappend = (<>)
-#endif
-
 -- | Specifies the display attributes such that the final style and
 -- color values do not depend on the previously applied display
 -- attribute. The display attributes can still depend on the terminal's
@@ -150,17 +134,6 @@ instance (NFData v) => NFData (MaybeDefault v) where
     rnf Default = ()
     rnf KeepCurrent = ()
     rnf (SetTo v) = rnf v
-
-instance Semigroup (MaybeDefault v) where
-    _        <> v@(SetTo _) = v
-    x        <> KeepCurrent = x
-    _        <> Default     = Default
-
-instance Monoid ( MaybeDefault v ) where
-    mempty = KeepCurrent
-#if !(MIN_VERSION_base(4,11,0))
-    mappend = (<>)
-#endif
 
 -- | Styles are represented as an 8 bit word. Each bit in the word is 1
 -- if the style attribute assigned to that bit should be applied and 0

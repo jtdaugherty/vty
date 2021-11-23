@@ -56,13 +56,13 @@ data InlineState =
 -- | Set the background color to the provided 'Color'.
 backColor :: Color -> InlineM ()
 backColor c = modify $ \s ->
-    s { inlineAttr = inlineAttr s `mappend` (currentAttr `withBackColor` c)
+    s { inlineAttr = inlineAttr s `withBackColor` c
       }
 
 -- | Set the foreground color to the provided 'Color'.
 foreColor :: Color -> InlineM ()
 foreColor c = modify $ \s ->
-    s { inlineAttr = inlineAttr s `mappend` (currentAttr `withForeColor` c)
+    s { inlineAttr = inlineAttr s `withForeColor` c
       }
 
 -- | Attempt to change the 'Style' of the following text..
@@ -71,7 +71,7 @@ foreColor c = modify $ \s ->
 -- produced. The style can still be removed.
 applyStyle :: Style -> InlineM ()
 applyStyle st = modify $ \s ->
-    s { inlineAttr = inlineAttr s `mappend` (currentAttr `withStyle` st)
+    s { inlineAttr = inlineAttr s `withStyle` st
       }
 
 -- | Attempt to remove the specified 'Style' from the display of the
