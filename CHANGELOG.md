@@ -1,4 +1,33 @@
 
+5.34
+----
+
+API changes:
+ * Added an `NFData` instance for `Event` (thanks Mario Lang)
+ * Removed `Monoid` and `Semigroup` instances for `Attr` and
+   `MaybeDefault`. This change removed the instances because they were
+   misbehaved; merging `Attr` and `MaybeDefault` values with these
+   instances resulted in field value losses. For example, before this
+   change,
+```
+(defAttr `withForeColor` blue) <> (defAttr `withBackColor` green)
+```
+   would result in just
+```
+   (defAttr `withBackColor` green)
+```
+   because the instances were designed to favor the right-hand
+   arguments' fields even if they had not been explicitly set
+   (a consequence of the `MaybeDefault` `Semigroup` instance).
+   While that behavior was sensible specifically in the context of
+   `Graphics.Vty.Inline`, it wasn't a useful user-facing API and it made
+   for surprising instance behavior. Since there is actually no good way
+   to handle this in a `Semigroup` instance for `Attr` -- some choices
+   have to be made about how to merge two attributes' foreground colors,
+   and that won't be much better than what we had -- the instance was
+   just removed.
+
+
 5.33
 ----
 
