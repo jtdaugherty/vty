@@ -1,4 +1,5 @@
 {-# Language DeriveGeneric #-}
+{-# Language StrictData #-}
 module Graphics.Vty.Input.Events where
 
 import Control.DeepSeq
@@ -15,10 +16,10 @@ import GHC.Generics
 --
 -- * Actually, support for most of these but KEsc, KChar, KBS, and
 -- KEnter vary by terminal and keyboard.
-data Key = KEsc  | KChar Char | KBS | KEnter
+data Key = KEsc  | KChar {-# UNPACK #-} Char | KBS | KEnter
          | KLeft | KRight | KUp | KDown
          | KUpLeft | KUpRight | KDownLeft | KDownRight | KCenter
-         | KFun Int | KBackTab | KPrtScr | KPause | KIns
+         | KFun {-# UNPACK #-} Int | KBackTab | KPrtScr | KPause | KIns
          | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin | KMenu
     deriving (Eq,Show,Read,Ord,Generic)
 

@@ -1,5 +1,6 @@
 -- | This module exports the input classification type to avoid import
 -- cycles between other modules that need this.
+{-# StrictData #-}
 module Graphics.Vty.Input.Classify.Types
   ( KClass(..)
   )
