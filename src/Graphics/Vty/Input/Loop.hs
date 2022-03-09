@@ -80,9 +80,10 @@ makeLenses ''InputBuffer
 
 data InputState = InputState
     { _unprocessedBytes :: ByteString
+    , _classifierState :: ClassifierState
     , _appliedConfig :: Config
     , _inputBuffer :: InputBuffer
-    , _classifier :: ByteString -> KClass
+    , _classifier :: ClassifierState -> ByteString -> KClass
     }
 
 makeLenses ''InputState
@@ -154,28 +155,40 @@ applyConfig _ _ = fail "(vty) applyConfig was not provided a complete configurat
 parseEvent :: InputM Event
 parseEvent = do
     c <- use classifier
+    s <- use classifierState
     b <- use unprocessedBytes
-    case c b of
+    case c s b of
         Valid e remaining -> do
             logMsg $ "valid parse: " ++ show e
             logMsg $ "remaining: " ++ show remaining
+            classifierState .= ClassifierStart
             unprocessedBytes .= remaining
             return e
-        _                   -> mzero
+        _ -> mzero
 
 dropInvalid :: InputM ()
 dropInvalid = do
     c <- use classifier
+    s <- use classifierState
     b <- use unprocessedBytes
-    when (c b == Invalid) $ do
-        logMsg "dropping input bytes"
-        unprocessedBytes .= BS8.empty
+    case c s b of
+        Chunk -> do
+            classifierState .=
+                case s of
+                  ClassifierStart -> ClassifierInChunk b []
+                  ClassifierInChunk p bs -> ClassifierInChunk p (b:bs)
+            unprocessedBytes .= BS8.empty
+        Invalid -> do
+            logMsg "dropping input bytes"
+            classifierState .= ClassifierStart
+            unprocessedBytes .= BS8.empty
+        _ -> return ()
 
 runInputProcessorLoop :: ClassifyMap -> Input -> IO ()
 runInputProcessorLoop classifyTable input = do
     let bufferSize = 1024
     allocaArray bufferSize $ \(bufferPtr :: Ptr Word8) -> do
-        s0 <- InputState BS8.empty
+        s0 <- InputState BS8.empty ClassifierStart
                 <$> readIORef (_configRef input)
                 <*> pure (InputBuffer bufferPtr bufferSize)
                 <*> pure (classify classifyTable)

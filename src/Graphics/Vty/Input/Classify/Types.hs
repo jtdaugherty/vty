@@ -19,4 +19,7 @@ data KClass
     | Prefix
     -- ^ The input characters form the prefix of a valid event character
     -- sequence.
+    | Chunk
+    -- ^ The input characters are either start of a bracketed paste chunk
+    -- or in the middle of a bracketed paste chunk.
     deriving(Show, Eq)

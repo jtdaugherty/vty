@@ -5,6 +5,7 @@
 module Graphics.Vty.Input.Classify
   ( classify
   , KClass(..)
+  , ClassifierState(..)
   )
 where
 
@@ -26,6 +27,17 @@ import Data.Word
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
 import Data.ByteString.Char8 (ByteString)
+
+-- | Whether the classifier is currently processing a chunked format.
+-- Currently, only bracketed pastes use this.
+data ClassifierState
+    = ClassifierStart
+    -- ^ Not processing a chunked format.
+    | ClassifierInChunk ByteString [ByteString]
+    -- ^ Currently processing a chunked format. The initial chunk is in the
+    -- first argument and a reversed remainder of the chunks is collected in
+    -- the second argument. At the end of the processing, the chunks are
+    -- reversed and concatenated with the final chunk.
 
 compile :: ClassifyMap -> ByteString -> KClass
 compile table = cl' where
@@ -54,18 +66,27 @@ compile table = cl' where
                         -- neither a prefix or a full event.
                         [] -> Invalid
 
-classify :: ClassifyMap -> ByteString -> KClass
-classify table =
-    let standardClassifier = compile table
-    in \s -> case BS.uncons s of
-        _ | bracketedPasteStarted s ->
+classify :: ClassifyMap -> ClassifierState -> ByteString -> KClass
+classify table = process
+    where
+        standardClassifier = compile table
+
+        process ClassifierStart s =
+            case BS.uncons s of
+                _ | bracketedPasteStarted s ->
+                    if bracketedPasteFinished s
+                    then parseBracketedPaste s
+                    else Chunk
+                _ | isMouseEvent s      -> classifyMouseEvent s
+                _ | isFocusEvent s      -> classifyFocusEvent s
+                Just (c,cs) | c >= 0xC2 -> classifyUtf8 c cs
+                _                       -> standardClassifier s
+
+        process (ClassifierInChunk p ps) s | bracketedPasteStarted p =
             if bracketedPasteFinished s
-            then parseBracketedPaste s
-            else Prefix
-        _ | isMouseEvent s      -> classifyMouseEvent s
-        _ | isFocusEvent s      -> classifyFocusEvent s
-        Just (c,cs) | c >= 0xC2 -> classifyUtf8 c cs
-        _                       -> standardClassifier s
+            then parseBracketedPaste $ BS.concat $ p:reverse (s:ps)
+            else Chunk
+        process ClassifierInChunk{} _ = Invalid
 
 classifyUtf8 :: Word8 -> ByteString -> KClass
 classifyUtf8 c cs =
