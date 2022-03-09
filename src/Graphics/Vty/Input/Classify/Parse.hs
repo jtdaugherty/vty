@@ -16,12 +16,15 @@ import Graphics.Vty.Input.Classify.Types
 import Control.Monad.Trans.Maybe
 import Control.Monad.State
 
-type Parser a = MaybeT (State String) a
+import qualified Data.ByteString.Char8 as BS8
+import Data.ByteString.Char8 (ByteString)
+
+type Parser a = MaybeT (State ByteString) a
 
 -- | Run a parser on a given input string. If the parser fails, return
 -- 'Invalid'. Otherwise return the valid event ('Valid') and the
 -- remaining unparsed characters.
-runParser :: String -> Parser Event -> KClass
+runParser :: ByteString -> Parser Event -> KClass
 runParser s parser =
     case runState (runMaybeT parser) s of
         (Nothing, _)        -> Invalid
@@ -36,9 +39,9 @@ failParse = fail "invalid parse"
 -- return '123' and consume those characters.
 readInt :: Parser Int
 readInt = do
-    s <- get
+    s <- BS8.unpack <$> get
     case (reads :: ReadS Int) s of
-        [(i, rest)] -> put rest >> return i
+        [(i, rest)] -> put (BS8.pack rest) >> return i
         _ -> failParse
 
 -- | Read a character from the input stream. If one cannot be read (e.g.
@@ -46,9 +49,9 @@ readInt = do
 readChar :: Parser Char
 readChar = do
     s <- get
-    case s of
-        c:rest -> put rest >> return c
-        _ -> failParse
+    case BS8.uncons s of
+        Just (c,rest) -> put rest >> return c
+        Nothing -> failParse
 
 -- | Read a character from the input stream and fail parsing if it is
 -- not the specified character.

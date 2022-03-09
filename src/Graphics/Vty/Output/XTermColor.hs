@@ -15,13 +15,17 @@ import qualified Graphics.Vty.Output.TerminfoBased as TerminfoBased
 import Blaze.ByteString.Builder (writeToByteString)
 import Blaze.ByteString.Builder.Word (writeWord8)
 
+import qualified Data.ByteString.Char8 as BS8
+import Data.ByteString.Char8 (ByteString)
+import Foreign.Ptr (castPtr)
+
 import Control.Monad (void, when)
 import Control.Monad.Trans
 import Data.Char (toLower)
 import Data.IORef
 
-import System.Posix.IO (fdWrite)
-import System.Posix.Types (Fd)
+import System.Posix.IO (fdWriteBuf)
+import System.Posix.Types (ByteCount, Fd)
 import System.Posix.Env (getEnv)
 
 import Data.List (isInfixOf)
@@ -30,6 +34,12 @@ import Data.Maybe (catMaybes)
 #if !MIN_VERSION_base(4,11,0)
 import Data.Monoid ((<>))
 #endif
+
+-- | Write a 'ByteString' to an 'Fd'.
+fdWrite :: Fd -> ByteString -> IO ByteCount
+fdWrite fd s =
+    BS8.useAsCStringLen s $ \(buf,len) -> do
+        fdWriteBuf fd (castPtr buf) (fromIntegral len)
 
 -- | Construct an Xterm output driver. Initialize the display to UTF-8.
 reserveTerminal :: ( Applicative m, MonadIO m ) => String -> Fd -> m Output
@@ -100,19 +110,19 @@ utf8Active = do
 
 -- | Enable bracketed paste mode:
 -- http://cirw.in/blog/bracketed-paste
-enableBracketedPastes :: String
-enableBracketedPastes = "\ESC[?2004h"
+enableBracketedPastes :: ByteString
+enableBracketedPastes = BS8.pack "\ESC[?2004h"
 
 -- | Disable bracketed paste mode:
-disableBracketedPastes :: String
-disableBracketedPastes = "\ESC[?2004l"
+disableBracketedPastes :: ByteString
+disableBracketedPastes = BS8.pack "\ESC[?2004l"
 
 -- | These sequences set xterm based terminals to UTF-8 output.
 --
 -- There is no known terminfo capability equivalent to this.
-setUtf8CharSet, setDefaultCharSet :: String
-setUtf8CharSet = "\ESC%G"
-setDefaultCharSet = "\ESC%@"
+setUtf8CharSet, setDefaultCharSet :: ByteString
+setUtf8CharSet = BS8.pack "\ESC%G"
+setDefaultCharSet = BS8.pack "\ESC%@"
 
 xtermInlineHack :: Output -> IO ()
 xtermInlineHack t = do

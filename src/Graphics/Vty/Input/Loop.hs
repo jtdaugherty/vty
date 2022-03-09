@@ -33,12 +33,15 @@ import Control.Monad.Trans.State (StateT(..), evalStateT)
 import Control.Monad.State.Class (MonadState, modify)
 import Control.Monad.Trans.Reader (ReaderT(..))
 
-import Data.Char
+import qualified Data.ByteString.Char8 as BS8
+import qualified Data.ByteString as BS
+import Data.ByteString.Char8 (ByteString)
 import Data.IORef
 import Data.Word (Word8)
 
-import Foreign ( allocaArray, peekArray, Ptr )
+import Foreign (allocaArray)
 import Foreign.C.Types (CInt(..))
+import Foreign.Ptr (Ptr, castPtr)
 
 import System.IO
 import System.Posix.IO (fdReadBuf, setFdOption, FdOption(..))
@@ -76,10 +79,10 @@ data InputBuffer = InputBuffer
 makeLenses ''InputBuffer
 
 data InputState = InputState
-    { _unprocessedBytes :: String
+    { _unprocessedBytes :: ByteString
     , _appliedConfig :: Config
     , _inputBuffer :: InputBuffer
-    , _classifier :: String -> KClass
+    , _classifier :: ByteString -> KClass
     }
 
 makeLenses ''InputState
@@ -104,7 +107,7 @@ loopInputProcessor = do
     dropInvalid
     loopInputProcessor
 
-addBytesToProcess :: String -> InputM ()
+addBytesToProcess :: ByteString -> InputM ()
 addBytesToProcess block = unprocessedBytes <>= block
 
 emit :: Event -> InputM ()
@@ -117,7 +120,7 @@ emit event = do
 --
 -- Precondition: Under the threaded runtime. Only current use is from a
 -- forkOS thread. That case satisfies precondition.
-readFromDevice :: InputM String
+readFromDevice :: InputM ByteString
 readFromDevice = do
     newConfig <- view configRef >>= liftIO . readIORef
     oldConfig <- use appliedConfig
@@ -137,9 +140,10 @@ readFromDevice = do
         threadWaitRead fd
         bytesRead <- fdReadBuf fd bufferPtr (fromIntegral maxBytes)
         if bytesRead > 0
-        then map (chr . fromIntegral) <$> peekArray (fromIntegral bytesRead) bufferPtr
-        else return []
-    when (not $ null stringRep) $ logMsg $ "input bytes: " ++ show stringRep
+        then BS.packCStringLen (castPtr bufferPtr, fromIntegral bytesRead)
+        else return BS.empty
+    when (not $ BS.null stringRep) $
+        logMsg $ "input bytes: " ++ show (BS8.unpack stringRep)
     return stringRep
 
 applyConfig :: Fd -> Config -> IO ()
@@ -165,15 +169,16 @@ dropInvalid = do
     b <- use unprocessedBytes
     when (c b == Invalid) $ do
         logMsg "dropping input bytes"
-        unprocessedBytes .= []
+        unprocessedBytes .= BS8.empty
 
 runInputProcessorLoop :: ClassifyMap -> Input -> IO ()
 runInputProcessorLoop classifyTable input = do
     let bufferSize = 1024
     allocaArray bufferSize $ \(bufferPtr :: Ptr Word8) -> do
-        s0 <- InputState [] <$> readIORef (_configRef input)
-                            <*> pure (InputBuffer bufferPtr bufferSize)
-                            <*> pure (classify classifyTable)
+        s0 <- InputState BS8.empty
+                <$> readIORef (_configRef input)
+                <*> pure (InputBuffer bufferPtr bufferSize)
+                <*> pure (classify classifyTable)
         runReaderT (evalStateT loopInputProcessor s0) input
 
 -- | Construct two IO actions: one to configure the terminal for Vty and
