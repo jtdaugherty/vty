@@ -1,8 +1,9 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
-{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -funbox-strict-fields -O #-}
+{-# OPTIONS_HADDOCK hide #-}
 
 module Data.Terminfo.Parse
   ( module Data.Terminfo.Parse

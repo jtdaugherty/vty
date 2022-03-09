@@ -1,8 +1,9 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_HADDOCK hide #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_HADDOCK hide #-}
 -- | The input layer used to be a single function that correctly
 -- accounted for the non-threaded runtime by emulating the terminal
 -- VMIN adn VTIME handling. This has been removed and replace with a

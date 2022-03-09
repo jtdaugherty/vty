@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module VerifyEvalTerminfoCaps where
 
 import Blaze.ByteString.Builder.Internal.Write (runWrite, getBound)
