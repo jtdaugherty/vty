@@ -34,16 +34,9 @@ bracketedPasteFinished = isInfixOf bracketedPasteEnd
 -- 'True'.
 parseBracketedPaste :: String -> KClass
 parseBracketedPaste s =
-    let (p, rest) = takeUntil (drop (length bracketedPasteStart) s) bracketedPasteEnd
-        rest' = if bracketedPasteEnd `isPrefixOf` rest
-                then drop (length bracketedPasteEnd) rest
-                else rest
-    in Valid (EvPaste $ BS8.pack p) rest'
-
-takeUntil :: (Eq a) => [a] -> [a] -> ([a],[a])
-takeUntil [] _ = ([], [])
-takeUntil cs sub
-  | length cs < length sub      = (cs, [])
-  | take (length sub) cs == sub = ([], drop (length sub) cs)
-  | otherwise                   = let (pre, suf) = takeUntil (tail cs) sub
-                                  in (head cs:pre, suf)
+    Valid (EvPaste p) (BS8.unpack $ BS8.drop (BS8.length end) rest')
+    where
+        start = BS8.pack bracketedPasteStart
+        end   = BS8.pack bracketedPasteEnd
+        (_, rest ) = BS8.breakSubstring start . BS8.pack $ s
+        (p, rest') = BS8.breakSubstring end . BS8.drop (BS8.length start) $ rest
