@@ -9,34 +9,33 @@ module Graphics.Vty.Input.Paste
 where
 
 import qualified Data.ByteString.Char8 as BS8
+import Data.ByteString.Char8 (ByteString)
 
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Classify.Types
 
-import Data.List (isPrefixOf, isInfixOf)
+bracketedPasteStart :: ByteString
+bracketedPasteStart = BS8.pack "\ESC[200~"
 
-bracketedPasteStart :: String
-bracketedPasteStart = "\ESC[200~"
-
-bracketedPasteEnd :: String
-bracketedPasteEnd = "\ESC[201~"
+bracketedPasteEnd :: ByteString
+bracketedPasteEnd = BS8.pack "\ESC[201~"
 
 -- | Does the input start a bracketed paste?
-bracketedPasteStarted :: String -> Bool
-bracketedPasteStarted = isPrefixOf bracketedPasteStart
+bracketedPasteStarted :: ByteString -> Bool
+bracketedPasteStarted = BS8.isPrefixOf bracketedPasteStart
 
 -- | Does the input contain a complete bracketed paste?
-bracketedPasteFinished :: String -> Bool
-bracketedPasteFinished = isInfixOf bracketedPasteEnd
+bracketedPasteFinished :: ByteString -> Bool
+bracketedPasteFinished = BS8.isInfixOf bracketedPasteEnd
 
 -- | Parse a bracketed paste. This should only be called on a string if
 -- both 'bracketedPasteStarted' and 'bracketedPasteFinished' return
 -- 'True'.
-parseBracketedPaste :: String -> KClass
+parseBracketedPaste :: ByteString -> KClass
 parseBracketedPaste s =
-    Valid (EvPaste p) (BS8.unpack $ BS8.drop (BS8.length end) rest')
+    Valid (EvPaste p) (BS8.drop endLen rest')
     where
-        start = BS8.pack bracketedPasteStart
-        end   = BS8.pack bracketedPasteEnd
-        (_, rest ) = BS8.breakSubstring start . BS8.pack $ s
-        (p, rest') = BS8.breakSubstring end . BS8.drop (BS8.length start) $ rest
+        startLen = BS8.length bracketedPasteStart
+        endLen   = BS8.length bracketedPasteEnd
+        (_, rest ) = BS8.breakSubstring bracketedPasteStart s
+        (p, rest') = BS8.breakSubstring bracketedPasteEnd . BS8.drop startLen $ rest

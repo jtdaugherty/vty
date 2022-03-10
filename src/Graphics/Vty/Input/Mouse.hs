@@ -15,9 +15,11 @@ import Graphics.Vty.Input.Classify.Types
 import Graphics.Vty.Input.Classify.Parse
 
 import Control.Monad.State
-import Data.List (isPrefixOf)
 import Data.Maybe (catMaybes)
 import Data.Bits ((.&.))
+
+import qualified Data.ByteString.Char8 as BS8
+import Data.ByteString.Char8 (ByteString)
 
 -- A mouse event in SGR extended mode is
 --
@@ -32,28 +34,28 @@ import Data.Bits ((.&.))
 
 -- | These sequences set xterm-based terminals to send mouse event
 -- sequences.
-requestMouseEvents :: String
-requestMouseEvents = "\ESC[?1000h\ESC[?1002h\ESC[?1006h"
+requestMouseEvents :: ByteString
+requestMouseEvents = BS8.pack "\ESC[?1000h\ESC[?1002h\ESC[?1006h"
 
 -- | These sequences disable mouse events.
-disableMouseEvents :: String
-disableMouseEvents = "\ESC[?1000l\ESC[?1002l\ESC[?1006l"
+disableMouseEvents :: ByteString
+disableMouseEvents = BS8.pack "\ESC[?1000l\ESC[?1002l\ESC[?1006l"
 
 -- | Does the specified string begin with a mouse event?
-isMouseEvent :: String -> Bool
+isMouseEvent :: ByteString -> Bool
 isMouseEvent s = isSGREvent s || isNormalEvent s
 
-isSGREvent :: String -> Bool
-isSGREvent = isPrefixOf sgrPrefix
+isSGREvent :: ByteString -> Bool
+isSGREvent = BS8.isPrefixOf sgrPrefix
 
-sgrPrefix :: String
-sgrPrefix = "\ESC[M"
+sgrPrefix :: ByteString
+sgrPrefix = BS8.pack "\ESC[M"
 
-isNormalEvent :: String -> Bool
-isNormalEvent = isPrefixOf normalPrefix
+isNormalEvent :: ByteString -> Bool
+isNormalEvent = BS8.isPrefixOf normalPrefix
 
-normalPrefix :: String
-normalPrefix = "\ESC[<"
+normalPrefix :: ByteString
+normalPrefix = BS8.pack "\ESC[<"
 
 -- Modifier bits:
 shiftBit :: Int
@@ -88,7 +90,7 @@ hasBitSet :: Int -> Int -> Bool
 hasBitSet val bit = val .&. bit > 0
 
 -- | Attempt to lassify an input string as a mouse event.
-classifyMouseEvent :: String -> KClass
+classifyMouseEvent :: ByteString -> KClass
 classifyMouseEvent s = runParser s $ do
     when (not $ isMouseEvent s) failParse
 

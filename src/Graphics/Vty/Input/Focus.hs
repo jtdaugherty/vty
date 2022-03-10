@@ -11,30 +11,32 @@ import Graphics.Vty.Input.Classify.Types
 import Graphics.Vty.Input.Classify.Parse
 
 import Control.Monad.State
-import Data.List (isPrefixOf)
+
+import qualified Data.ByteString.Char8 as BS8
+import Data.ByteString.Char8 (ByteString)
 
 -- | These sequences set xterm-based terminals to send focus event
 -- sequences.
-requestFocusEvents :: String
-requestFocusEvents = "\ESC[?1004h"
+requestFocusEvents :: ByteString
+requestFocusEvents = BS8.pack "\ESC[?1004h"
 
 -- | These sequences disable focus events.
-disableFocusEvents :: String
-disableFocusEvents = "\ESC[?1004l"
+disableFocusEvents :: ByteString
+disableFocusEvents = BS8.pack "\ESC[?1004l"
 
 -- | Does the specified string begin with a focus event?
-isFocusEvent :: String -> Bool
-isFocusEvent s = isPrefixOf focusIn s ||
-                 isPrefixOf focusOut s
+isFocusEvent :: ByteString -> Bool
+isFocusEvent s = BS8.isPrefixOf focusIn s ||
+                 BS8.isPrefixOf focusOut s
 
-focusIn :: String
-focusIn = "\ESC[I"
+focusIn :: ByteString
+focusIn = BS8.pack "\ESC[I"
 
-focusOut :: String
-focusOut = "\ESC[O"
+focusOut :: ByteString
+focusOut = BS8.pack "\ESC[O"
 
 -- | Attempt to classify an input string as a focus event.
-classifyFocusEvent :: String -> KClass
+classifyFocusEvent :: ByteString -> KClass
 classifyFocusEvent s = runParser s $ do
     when (not $ isFocusEvent s) failParse
 
