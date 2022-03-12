@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module VerifyEmptyImageProps where
 
 import Verify

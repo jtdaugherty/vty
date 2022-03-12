@@ -1,5 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 -- Generate some input bytes and delays between blocks of input bytes.
 -- Verify the events produced are as expected.
 module Main where

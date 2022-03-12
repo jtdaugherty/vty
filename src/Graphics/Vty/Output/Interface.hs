@@ -3,6 +3,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 -- | This module provides an abstract interface for performing terminal
 -- output. The only user-facing part of this API is 'Output'.
 module Graphics.Vty.Output.Interface

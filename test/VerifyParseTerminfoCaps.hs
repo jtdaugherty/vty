@@ -1,4 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module VerifyParseTerminfoCaps where
 
 import Prelude hiding ( catch )
