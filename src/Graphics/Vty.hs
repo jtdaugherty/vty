@@ -211,16 +211,16 @@ internalMkVty input out = do
 
     let mkResize = uncurry EvResize <$> displayBounds out
 
-        handleInternalEvent ResumeAfterSignal = mkResize
-        handleInternalEvent (InputEvent e)    = return e
+        translateInternalEvent ResumeAfterSignal = mkResize
+        translateInternalEvent (InputEvent e)    = return e
 
         gkey = do
             e <- atomically $ readTChan $ _eventChannel input
-            handleInternalEvent e
+            translateInternalEvent e
         gkey' = do
             mEv <- atomically $ tryReadTChan $ _eventChannel input
             case mEv of
-                Just e  -> Just <$> handleInternalEvent e
+                Just e  -> Just <$> translateInternalEvent e
                 Nothing -> return Nothing
 
     return $ Vty { update = innerUpdate
