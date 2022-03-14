@@ -76,3 +76,13 @@ data Event
 instance NFData Event
 
 type ClassifyMap = [(String,Event)]
+
+-- | The type of internal events that drive the internal Vty event
+-- dispatching to the application.
+data InternalEvent =
+    ResumeAfterSignal
+    -- ^ Vty resumed operation after the process was interrupted with a
+    -- signal. In practice this translates into a screen redraw in the
+    -- input event loop.
+    | InputEvent Event
+    -- ^ An input event was received.

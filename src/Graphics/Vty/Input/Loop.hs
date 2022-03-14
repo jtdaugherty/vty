@@ -55,7 +55,7 @@ data Input = Input
     { -- | Channel of events direct from input processing. Unlike
       -- 'nextEvent' this will not refresh the display if the next event
       -- is an 'EvResize'.
-      _eventChannel  :: TChan Event
+      _eventChannel  :: TChan InternalEvent
       -- | Shuts down the input processing. As part of shutting down the
       -- input, this should also restore the input state.
     , shutdownInput :: IO ()
@@ -115,7 +115,7 @@ addBytesToProcess block = unprocessedBytes <>= block
 emit :: Event -> InputM ()
 emit event = do
     logMsg $ "parsed event: " ++ show event
-    view eventChannel >>= liftIO . atomically . flip writeTChan event
+    view eventChannel >>= liftIO . atomically . flip writeTChan (InputEvent event)
 
 -- The timing requirements are assured by the VMIN and VTIME set for the
 -- device.

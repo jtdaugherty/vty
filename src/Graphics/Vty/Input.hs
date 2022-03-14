@@ -158,9 +158,8 @@ inputForConfig config@Config{ termName = Just termName
     setAttrs
     input <- initInput config activeInputMap
     let pokeIO = Catch $ do
-            let e = error "vty internal failure: this value should not propagate to users"
             setAttrs
-            atomically $ writeTChan (input^.eventChannel) (EvResize e e)
+            atomically $ writeTChan (input^.eventChannel) ResumeAfterSignal
     _ <- installHandler windowChange pokeIO Nothing
     _ <- installHandler continueProcess pokeIO Nothing
 

@@ -48,6 +48,7 @@ where
 
 import Graphics.Vty.Config
 import Graphics.Vty.Input
+import Graphics.Vty.Input.Events
 import Graphics.Vty.Output
 import Graphics.Vty.Output.Interface
 import Graphics.Vty.Picture
@@ -209,16 +210,18 @@ internalMkVty input out = do
             maybe (return ()) innerUpdate mPic
 
     let mkResize = uncurry EvResize <$> displayBounds out
+
+        handleInternalEvent ResumeAfterSignal = mkResize
+        handleInternalEvent (InputEvent e)    = return e
+
         gkey = do
-            k <- atomically $ readTChan $ _eventChannel input
-            case k of
-                (EvResize _ _)  -> mkResize
-                _ -> return k
+            e <- atomically $ readTChan $ _eventChannel input
+            handleInternalEvent e
         gkey' = do
-            k <- atomically $ tryReadTChan $ _eventChannel input
-            case k of
-                (Just (EvResize _ _))  -> Just <$> mkResize
-                _ -> return k
+            mEv <- atomically $ tryReadTChan $ _eventChannel input
+            case mEv of
+                Just e  -> Just <$> handleInternalEvent e
+                Nothing -> return Nothing
 
     return $ Vty { update = innerUpdate
                  , nextEvent = gkey
