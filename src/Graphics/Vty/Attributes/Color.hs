@@ -49,7 +49,6 @@ where
 import Data.Word
 import GHC.Generics
 import Control.DeepSeq
-import Text.Printf (printf)
 import System.Environment (lookupEnv)
 
 import qualified System.Console.Terminfo as Terminfo
@@ -158,18 +157,13 @@ brightMagenta= ISOColor 13
 brightCyan   = ISOColor 14
 brightWhite  = ISOColor 15
 
--- TODO: test this with other terminals
 linearColor :: Integral i => i -> i -> i -> Color
-linearColor r g b
-    | r < 0 || r > 255 = makeError
-    | g < 0 || g > 255 = makeError
-    | b < 0 || b > 255 = makeError
-    | otherwise = RGBColor r' g' b'
+linearColor r g b = RGBColor r' g' b'
     where
-        r' = fromIntegral r :: Word8
-        g' = fromIntegral g :: Word8
-        b' = fromIntegral b :: Word8
-        makeError = error $ printf "invalid value in rgbColor: (%d, %d, %d)" r' g' b'
+        r' = fromIntegral (clamp r) :: Word8
+        g' = fromIntegral (clamp g) :: Word8
+        b' = fromIntegral (clamp b) :: Word8
+        clamp = min 255 . max 0
 
 srgbColor :: Integral i => i -> i -> i -> Color
 srgbColor r g b =
