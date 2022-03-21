@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE LambdaCase, MultiWayIf #-}
 -- | Vty supports a configuration file format and associated 'Config'
 -- data type. The 'Config' can be provided to 'mkVty' to customize the
 -- application's use of Vty.
@@ -122,6 +123,7 @@ import Data.Semigroup (Semigroup(..))
 import Data.Typeable (Typeable)
 
 import Graphics.Vty.Input.Events
+import Graphics.Vty.Attributes.Color (ColorMode(..), detectColorMode)
 
 import GHC.Generics
 
@@ -193,6 +195,9 @@ data Config =
            -- configuration specifies one. If no custom table is loaded
            -- (or if a load fails), the built-in character width table
            -- will be used.
+           , colorMode :: Maybe ColorMode
+           -- ^ The color mode used to know how many colors the terminal
+           -- supports.
            }
            deriving (Show, Eq)
 
@@ -214,6 +219,7 @@ instance Semigroup Config where
                , termWidthMaps = termWidthMaps c1 <|> termWidthMaps c0
                , allowCustomUnicodeWidthTables =
                    allowCustomUnicodeWidthTables c1 <|> allowCustomUnicodeWidthTables c0
+               , colorMode = colorMode c1 <|> colorMode c0
                }
 
 instance Monoid Config where
@@ -229,6 +235,7 @@ instance Monoid Config where
                , termName = Nothing
                , termWidthMaps = []
                , allowCustomUnicodeWidthTables = Nothing
+               , colorMode = Nothing
                }
 #if !(MIN_VERSION_base(4,11,0))
     mappend = (<>)
@@ -284,7 +291,8 @@ standardIOConfig = do
     mb <- lookupEnv termVariable
     case mb of
       Nothing -> throwIO VtyMissingTermEnvVar
-      Just t ->
+      Just t -> do
+        mcolorMode <- detectColorMode t
         return defaultConfig
           { vmin               = Just 1
           , mouseMode          = Just False
@@ -293,6 +301,7 @@ standardIOConfig = do
           , inputFd            = Just stdInput
           , outputFd           = Just stdOutput
           , termName           = Just t
+          , colorMode          = Just mcolorMode
           }
 
 parseConfigFile :: FilePath -> IO Config
