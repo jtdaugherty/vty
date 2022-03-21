@@ -132,7 +132,9 @@ assertEventsFromSynInput table inputSpec expectedEvents = do
         readLoop 0 = return ()
         readLoop n = do
             e <- atomically $ readTChan $ input^.eventChannel
-            modifyIORef eventsRef ((:) e)
+            case e of
+                InputEvent ev -> modifyIORef eventsRef ((:) ev)
+                ResumeAfterSignal -> return ()
             readLoop (n - 1)
     genEventsUsingIoActions maxDuration writeWaitClose readEvents
     outEvents <- reverse <$> readIORef eventsRef
