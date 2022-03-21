@@ -1,4 +1,36 @@
 
+5.35
+----
+
+New features:
+ * Add support for 24-bit color (thanks @u-quark). This change
+   updates Vty to look at the `COLORTERM` environment variable that is
+   conventionally used to advertise support for truecolor escape
+   sequences. The change also updates the Vty demo to demonstrate
+   24-bit colors. This change also adds a new data type, `ColorMode`,
+   to represent the color mode in use, as well as an `Output` interface
+   field, `outputColorMode`, to track the active color mode and use it
+   to clamp emitted color escape sequences to the active color range.
+
+API changes:
+ * All types in `Graphics.Vty.Input.Events` now have strict constructor
+   fields.
+ * Internal events are now wrapped in a new `InternalEvent` type to
+   improve how signal handling is done. This change modifies the `Input`
+   type's event channel API to produce `InternalEvents`, not `Events`.
+   The new `InternalEvent` either wraps `Event` with the `InputEvent`
+   constructor (the previous behavior) or indicates that Vty resumed
+   after handling a signal using the `ResumeAfterSignal` constructor.
+   This change avoids the previous use of `EvResize` with lazy exception
+   arguments as a sentinel value for `ResumeAfterSignal`.
+
+Other enhancements:
+ * Bracketed paste parsing performance has been greatly improved thanks
+   to benchmarking and optimization work by @iphydf. As part of that
+   work, Vty now uses bytestrings rather than Strings internally when
+   parsing input to look for events.
+ * The `\b` value is now interpreted as `KBS` (thanks @vglfr)
+
 5.34
 ----
 
