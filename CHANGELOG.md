@@ -1,4 +1,10 @@
 
+5.35.1
+------
+
+Bug fixes:
+ * Fixed a build issue with a test program.
+
 5.35
 ----
 
