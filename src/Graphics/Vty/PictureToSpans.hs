@@ -72,7 +72,7 @@ displayOpsForPic pic r = Vector.create (combinedOpsForLayers pic r)
 -- | Returns the DisplayOps for an image rendered to a window the size
 -- of the image.
 --
--- largerly used only for debugging.
+-- largely used only for debugging.
 displayOpsForImage :: Image -> DisplayOps
 displayOpsForImage i = displayOpsForPic (picForImage i) (imageWidth i, imageHeight i)
 

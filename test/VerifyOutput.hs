@@ -1,4 +1,4 @@
--- We setup the environment to envoke certain terminals of interest.
+-- We setup the environment to invoke certain terminals of interest.
 -- This assumes appropriate definitions exist in the current environment
 -- for the terminals of interest.
 {-# LANGUAGE ScopedTypeVariables #-}

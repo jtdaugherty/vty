@@ -78,7 +78,7 @@ outputForConfig config = (<> config) <$> standardIOConfig >>= outputForConfig
 
 -- | Sets the cursor position to the given output column and row.
 --
--- This is not necessarially the same as the character position with the
+-- This is not necessarily the same as the character position with the
 -- same coordinates. Characters can be a variable number of columns in
 -- width.
 --

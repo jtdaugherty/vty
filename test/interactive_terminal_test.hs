@@ -364,7 +364,7 @@ Did the test output match the description?
 |]
     defaultSuccessConfirmResults
 
--- Explicitely definethe bytes that encode each example text.
+-- Explicitly define the bytes that encode each example text.
 -- This avoids any issues with how the compiler represents string literals.
 --
 -- This document is UTF-8 encoded so the UTF-8 string is still included for

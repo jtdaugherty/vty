@@ -77,7 +77,7 @@
 -- The input encoding determines how UTF-8 encoded characters are
 -- recognized.
 --
--- * 7-bit mode: UTF-8 can be input unambiguiously. UTF-8 input is
+-- * 7-bit mode: UTF-8 can be input unambiguously. UTF-8 input is
 -- a superset of ASCII. UTF-8 does not overlap escaped control key
 -- sequences. However, the escape key must be differentiated from
 -- escaped control key sequences by the timing of the input bytes.
@@ -95,7 +95,7 @@
 --
 -- == Terminal Input is Broken
 --
--- Clearly terminal input has fundemental issues. There is no easy way
+-- Clearly terminal input has fundamental issues. There is no easy way
 -- to reliably resolve these issues.
 --
 -- One resolution would be to ditch standard terminal interfaces

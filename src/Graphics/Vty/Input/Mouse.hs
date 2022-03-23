@@ -89,7 +89,7 @@ scrollDown = 65
 hasBitSet :: Int -> Int -> Bool
 hasBitSet val bit = val .&. bit > 0
 
--- | Attempt to lassify an input string as a mouse event.
+-- | Attempt to classify an input string as a mouse event.
 classifyMouseEvent :: ByteString -> KClass
 classifyMouseEvent s = runParser s $ do
     when (not $ isMouseEvent s) failParse
@@ -102,7 +102,7 @@ classifyMouseEvent s = runParser s $ do
         'M' -> classifyNormalMouseEvent
         _   -> failParse
 
--- Given a modifer/button value, determine which button was indicated
+-- Given a modifier/button value, determine which button was indicated
 getSGRButton :: Int -> Parser Button
 getSGRButton mods =
     let buttonMap = [ (leftButton,   BLeft)

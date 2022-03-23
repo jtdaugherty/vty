@@ -137,7 +137,7 @@ cropBottomLimitsHeight :: Image -> Int -> Property
 cropBottomLimitsHeight i v = v >= 0 ==>
     v >= imageHeight (cropBottom v i)
 
--- rediculous tests just to satisfy my desire for nice code coverage :-P
+-- ridiculous tests just to satisfy my desire for nice code coverage :-P
 canShowImage :: Image -> Bool
 canShowImage i = length (show i) > 0
 

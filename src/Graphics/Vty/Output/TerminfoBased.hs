@@ -453,8 +453,8 @@ hardcodeColor side (r, g, b) =
 -- | The color table used by a terminal is a 16 color set followed by a
 -- 240 color set that might not be supported by the terminal.
 --
--- This takes a Color which clearly identifies which pallete to use and
--- computes the index into the full 256 color pallete.
+-- This takes a Color which clearly identifies which palette to use and
+-- computes the index into the full 256 color palette.
 ansiColorIndex :: Color -> Int
 ansiColorIndex (ISOColor v) = fromEnum v
 ansiColorIndex (Color240 v) = 16 + fromEnum v
