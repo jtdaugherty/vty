@@ -137,7 +137,7 @@ char a c =
     let displayWidth = safeWcwidth c
     in HorizText a (TL.singleton c) displayWidth 1
 
--- | Make an image from a string of characters layed out on a single
+-- | Make an image from a string of characters laid out on a single
 -- row with the same display attribute. The string is assumed to be a
 -- sequence of ISO-10646 characters. The input string should be
 -- sanitized of escape sequences (ASCII 27) and carriage returns;

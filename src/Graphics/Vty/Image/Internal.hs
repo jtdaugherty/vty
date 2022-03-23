@@ -228,7 +228,7 @@ instance Monoid Image where
 --
 -- The result image will have a width equal to the sum of the two images
 -- width. And the height will equal the largest height of the two
--- images. The area not defined in one image due to a height missmatch
+-- images. The area not defined in one image due to a height mismatch
 -- will be filled with the background pattern.
 horizJoin :: Image -> Image -> Image
 horizJoin EmptyImage i          = i
@@ -259,7 +259,7 @@ horizJoin _ _ = error "horizJoin applied to undefined values."
 --
 -- The result image will have a height equal to the sum of the heights
 -- of both images. The width will equal the largest width of the two
--- images. The area not defined in one image due to a width missmatch
+-- images. The area not defined in one image due to a width mismatch
 -- will be filled with the background pattern.
 vertJoin :: Image -> Image -> Image
 vertJoin EmptyImage i          = i

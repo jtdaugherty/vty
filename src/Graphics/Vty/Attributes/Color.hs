@@ -95,7 +95,7 @@ import Graphics.Vty.Attributes.Color240
 -- reported then the color reproduction will be incorrect.
 --
 -- If the terminal reports <= 16 colors then the 240 color palette
--- points are only mapped to the 8 color pallete. I'm not sure of
+-- points are only mapped to the 8 color palette. I'm not sure of
 -- the RGB points for the "bright" colors which is why they are not
 -- addressable via the 240 color palette.
 --
