@@ -31,7 +31,7 @@ type MockData = IORef (UTF8.UTF8 BS.ByteString)
 -- without considering terminal specific issues.
 --
 -- The mock implementation is useful in manually determining if the
--- sequence of terminal operations matche the expected sequence. The
+-- sequence of terminal operations matches the expected sequence. The
 -- requirement of the produced representation is simplicity in parsing
 -- the text representation and determining how the picture was mapped to
 -- terminal operations.
