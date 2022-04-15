@@ -1,5 +1,6 @@
 -- Copyright Corey O'Connor
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE ApplicativeDo #-}
 -- | A picture is translated into a sequences of state changes and
 -- character spans. The attribute is applied to all following spans,
 -- including spans of the next row. The nth element of the sequence
@@ -16,6 +17,14 @@ import Graphics.Vty.Image.Internal ( clipText )
 import qualified Data.Text.Lazy as TL
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
+import Control.Monad.ST.Strict
+import Data.Vector.Mutable
+import Control.Monad.Reader
+import qualified Data.Vector.Mutable as MV
+import Data.Functor
+import qualified Data.Vector as V
+import qualified Data.Vector.Mutable as VM
+import Data.STRef
 
 -- | This represents an operation on the terminal: either an attribute
 -- change or the output of a text string.
@@ -50,36 +59,52 @@ dropOps :: Int -> SpanOps -> SpanOps
 dropOps w = snd . splitOpsAt w
 
 splitOpsAt :: Int -> SpanOps -> (SpanOps, SpanOps)
-splitOpsAt = splitOpsAt'
+splitOpsAt n initOps =
+    let ((edgeShard, opsTaken), firstOps) = V.createT $ do
+            let l = V.length initOps
+            vm <- unsafeNew l
+            iRef <- newSTRef l
+            edgeShard' <- runReaderT (splitOpsAt' n initOps) (vm, iRef)
+            firstOpIndex <- readSTRef iRef
+            pure ((edgeShard', l - firstOpIndex), VM.unsafeDrop firstOpIndex vm)
+        notTaken = V.unsafeDrop opsTaken initOps
+        secondOps = case edgeShard of
+            Nothing -> notTaken
+            Just op -> V.cons op notTaken
+    in (firstOps, secondOps)
     where
-        splitOpsAt' 0 ops = (Vector.empty, ops)
-        splitOpsAt' remainingColumns ops = case Vector.head ops of
-            t@(TextSpan {}) -> if remainingColumns >= textSpanOutputWidth t
-                then let (pre,post) = splitOpsAt' (remainingColumns - textSpanOutputWidth t)
-                                                  (Vector.tail ops)
-                     in (Vector.cons t pre, post)
-                else let preTxt = clipText (textSpanText t) 0 remainingColumns
-                         preOp = TextSpan { textSpanAttr = textSpanAttr t
-                                           , textSpanOutputWidth = remainingColumns
-                                           , textSpanCharWidth = fromIntegral $! TL.length preTxt
-                                           , textSpanText = preTxt
-                                           }
-                         postWidth = textSpanOutputWidth t - remainingColumns
-                         postTxt = clipText (textSpanText t) remainingColumns postWidth
-                         postOp = TextSpan { textSpanAttr = textSpanAttr t
-                                            , textSpanOutputWidth = postWidth
-                                            , textSpanCharWidth = fromIntegral $! TL.length postTxt
-                                            , textSpanText = postTxt
+        -- | Prepends the op to the mutable vector
+        writeOp :: SpanOp -> ReaderT (MVector s SpanOp, STRef s Int) (ST s) ()
+        writeOp op = ReaderT $ \(v, iRef) -> do
+            i <- pred <$> readSTRef iRef
+            writeSTRef iRef i
+            MV.unsafeWrite v i op
+            pure ()
+        -- | Just means that the op on the edge was split and the returned value should be on the right.
+        splitOpsAt' :: Int -> SpanOps -> ReaderT (MVector s SpanOp, STRef s Int) (ST s) (Maybe SpanOp)
+        splitOpsAt' 0 _ = pure Nothing
+        splitOpsAt' remainingColumns ops = case Vector.unsafeHead ops of
+            t@TextSpan {} -> if remainingColumns >= textSpanOutputWidth t
+                then splitOpsAt' (remainingColumns - textSpanOutputWidth t) (Vector.unsafeTail ops) <* writeOp t
+                else do
+                        let preTxt = clipText (textSpanText t) 0 remainingColumns
+                            preOp = TextSpan { textSpanAttr = textSpanAttr t
+                                            , textSpanOutputWidth = remainingColumns
+                                            , textSpanCharWidth = fromIntegral $! TL.length preTxt
+                                            , textSpanText = preTxt
                                             }
-                     in ( Vector.singleton preOp
-                        , Vector.cons postOp (Vector.tail ops)
-                        )
+                            postWidth = textSpanOutputWidth t - remainingColumns
+                            postTxt = clipText (textSpanText t) remainingColumns postWidth
+                            postOp = TextSpan { textSpanAttr = textSpanAttr t
+                                                , textSpanOutputWidth = postWidth
+                                                , textSpanCharWidth = fromIntegral $! TL.length postTxt
+                                                , textSpanText = postTxt
+                                                }
+                        writeOp preOp
+                        pure $ Just postOp
             Skip w -> if remainingColumns >= w
-                then let (pre,post) = splitOpsAt' (remainingColumns - w) (Vector.tail ops)
-                     in (Vector.cons (Skip w) pre, post)
-                else ( Vector.singleton $ Skip remainingColumns
-                     , Vector.cons (Skip (w - remainingColumns)) (Vector.tail ops)
-                     )
+                then splitOpsAt' (remainingColumns - w) (Vector.tail ops) <* writeOp (Skip w)
+                else writeOp (Skip remainingColumns) $> Just (Skip (w - remainingColumns))
             RowEnd _ -> error "cannot split ops containing a row end"
 
 -- | A vector of span operation vectors for display, one per row of the

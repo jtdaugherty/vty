@@ -26,16 +26,17 @@ clipText txt leftSkip rightClip =
     let (toDrop,padPrefix) = clipForCharWidth leftSkip txt 0
         txt' = if padPrefix then TL.cons '…' (TL.drop (toDrop+1) txt) else TL.drop toDrop txt
         (toTake,padSuffix) = clipForCharWidth rightClip txt' 0
-        txt'' = TL.append (TL.take toTake txt') (if padSuffix then TL.singleton '…' else TL.empty)
+        txt'' = TL.take toTake txt'
+        txt''' = if padSuffix then TL.cons '…' txt'' else txt''
         -- Note: some characters and zero-width and combining characters
         -- combine to the left, so keep taking characters even if the
         -- width is zero.
-        clipForCharWidth w t n
-            | TL.null t = (n, False)
-            | w < cw    = (n, w /= 0)
-            | otherwise = clipForCharWidth (w - cw) (TL.tail t) (n + 1)
-            where cw = safeWcwidth (TL.head t)
-    in txt''
+        clipForCharWidth w t n = case TL.uncons t of
+            Nothing -> (n,False)
+            Just (c, t') ->
+              let cw = safeWcwidth c
+              in if w < cw then (n, w /= 0) else clipForCharWidth (w - cw) t' (n + 1)
+    in txt'''
 
 -- | This is the internal representation of Images. Use the constructors
 -- in "Graphics.Vty.Image" to create instances.
