@@ -83,7 +83,7 @@ displayOpsForImage i = displayOpsForPic (picForImage i) (imageWidth i, imageHeig
 -- | Produces the span ops for each layer then combines them.
 combinedOpsForLayers :: Picture -> DisplayRegion -> ST s (MRowOps s)
 combinedOpsForLayers pic r
-    | regionWidth r == 0 || regionHeight r == 0 = MVector.new 0
+    | regionWidth r == 0 || regionHeight r == 0 = MVector.unsafeNew 0
     | otherwise = do
         layerOps <- mapM (`buildSpans` r) (picLayers pic)
         case layerOps of
@@ -147,14 +147,14 @@ mergeRowUnder upper lower = V.create $ do
     i <- readSTRef iRef
     pure $ VM.unsafeTake i vm
     where
-        appendOp :: SpanOp -> ReaderT (MVector s SpanOp, STRef s Int) (ST s) ()
+        appendOp :: SpanOp -> ReaderT (MSpanOps s, STRef s Int) (ST s) ()
         appendOp op = ReaderT $ \(mv, iRef) -> do
             i <- readSTRef iRef
             writeSTRef iRef (succ i)
             VM.unsafeWrite mv i op
             pure ()
 
-        appendMVector :: MVector s SpanOp -> ReaderT (MVector s SpanOp, STRef s Int) (ST s) ()
+        appendMVector :: MVector s SpanOp -> ReaderT (MSpanOps s, STRef s Int) (ST s) ()
         appendMVector mv' = ReaderT $ \(mv, iRef) -> do
             let l = VM.length mv'
             i <- readSTRef iRef
@@ -163,7 +163,7 @@ mergeRowUnder upper lower = V.create $ do
             pure ()
         -- H: it will never be the case that we are out of upper ops
         -- before lower ops.
-        onUpperOp :: SpanOps -> SpanOps -> ReaderT (MVector s SpanOp, STRef s Int) (ST s) ()
+        onUpperOp :: SpanOps -> SpanOps -> ReaderT (MSpanOps s, STRef s Int) (ST s) ()
         onUpperOp upperOps lowerOps =
             let upperOpsLeft = Vector.unsafeTail upperOps
              in case V.unsafeHead upperOps of

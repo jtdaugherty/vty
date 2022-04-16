@@ -84,7 +84,7 @@ dropOps n initOps =
                 then dropOps' (remainingColumns - w) (Vector.tail ops)
                 else pure (Just $ Skip (w - remainingColumns))
             RowEnd _ -> error "cannot split ops containing a row end"
--- let ((edgeShard, opsTaken), firstOps) =
+
 splitOpsAt :: Int -> SpanOps -> ST s (MVector s SpanOp, SpanOps)
 splitOpsAt n initOps = do
         let l = V.length initOps
