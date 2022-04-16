@@ -159,11 +159,11 @@ affectedRegion ops = (displayOpsColumns ops, displayOpsRows ops)
 
 -- | The number of columns a SpanOps affects.
 spanOpsAffectedColumns :: SpanOps -> Int
-spanOpsAffectedColumns inOps = Vector.foldl' spanOpsAffectedColumns' 0 inOps
+spanOpsAffectedColumns = Vector.foldl' (\t op -> t + spanOpsAffectedColumns' op) 0
     where
-        spanOpsAffectedColumns' t (TextSpan _ w _ _ ) = t + w
-        spanOpsAffectedColumns' t (Skip w) = t + w
-        spanOpsAffectedColumns' t (RowEnd w) = t + w
+        spanOpsAffectedColumns' (TextSpan _ w _ _ ) = w
+        spanOpsAffectedColumns' (Skip w) = w
+        spanOpsAffectedColumns' (RowEnd w) = w
 
 -- | The width of a single SpanOp in columns.
 spanOpHasWidth :: SpanOp -> Maybe (Int, Int)
