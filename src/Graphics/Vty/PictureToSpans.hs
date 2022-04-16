@@ -4,6 +4,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ApplicativeDo #-}
 
 -- | Transforms an image into rows of operations.
 module Graphics.Vty.PictureToSpans where
@@ -26,6 +27,9 @@ import Data.Vector.Mutable ( MVector(..))
 import qualified Data.Vector.Mutable as MVector
 
 import qualified Data.Text.Lazy as TL
+import qualified Data.Vector as V
+import qualified Data.Vector.Mutable as VM
+import Data.STRef
 
 type MRowOps s = MVector s SpanOps
 
@@ -136,25 +140,44 @@ mergeUnder upper lower = do
     return upper
 
 mergeRowUnder :: SpanOps -> SpanOps -> SpanOps
-mergeRowUnder upperRowOps =
-    onUpperOp Vector.empty (Vector.head upperRowOps) (Vector.tail upperRowOps)
+mergeRowUnder upper lower = V.create $ do
+    vm <- VM.unsafeNew (V.length upper * 2 + 1)
+    iRef <- newSTRef 0
+    runReaderT (onUpperOp upper lower) (vm, iRef)
+    i <- readSTRef iRef
+    pure $ VM.unsafeTake i vm
     where
+        appendOp :: SpanOp -> ReaderT (MVector s SpanOp, STRef s Int) (ST s) ()
+        appendOp op = ReaderT $ \(mv, iRef) -> do
+            i <- readSTRef iRef
+            writeSTRef iRef (succ i)
+            VM.unsafeWrite mv i op
+            pure ()
+
+        appendMVector :: MVector s SpanOp -> ReaderT (MVector s SpanOp, STRef s Int) (ST s) ()
+        appendMVector mv' = ReaderT $ \(mv, iRef) -> do
+            let l = VM.length mv'
+            i <- readSTRef iRef
+            VM.unsafeCopy (VM.unsafeSlice i l mv) mv'
+            writeSTRef iRef (i + l)
+            pure ()
         -- H: it will never be the case that we are out of upper ops
         -- before lower ops.
-        onUpperOp :: SpanOps -> SpanOp -> SpanOps -> SpanOps -> SpanOps
-        onUpperOp outOps op@(TextSpan _ w _ _) upperOps lowerOps =
-            let lowerOps' = dropOps w lowerOps
-                outOps' = Vector.snoc outOps op
-            in if Vector.null lowerOps'
-                then outOps'
-                else onUpperOp outOps' (Vector.head upperOps) (Vector.tail upperOps) lowerOps'
-        onUpperOp outOps (Skip w) upperOps lowerOps =
-            let (ops', lowerOps') = splitOpsAt w lowerOps
-                outOps' = outOps `mappend` ops'
-            in if Vector.null lowerOps'
-                then outOps'
-                else onUpperOp outOps' (Vector.head upperOps) (Vector.tail upperOps) lowerOps'
-        onUpperOp _ (RowEnd _) _ _ = error "cannot merge rows containing RowEnd ops"
+        onUpperOp :: SpanOps -> SpanOps -> ReaderT (MVector s SpanOp, STRef s Int) (ST s) ()
+        onUpperOp upperOps lowerOps =
+            let upperOpsLeft = Vector.unsafeTail upperOps
+             in case V.unsafeHead upperOps of
+                op@(TextSpan _ w _ _) -> do
+                    let lowerOps' = dropOps w lowerOps
+                    appendOp op
+                    unless (V.null lowerOps') $ onUpperOp upperOpsLeft lowerOps'
+                    pure ()
+                Skip w -> do
+                    (ops', lowerOps') <- lift $ splitOpsAt w lowerOps
+                    appendMVector ops'
+                    unless (Vector.null lowerOps') $ onUpperOp upperOpsLeft lowerOps'
+                    pure ()
+                RowEnd _ -> error "cannot merge rows containing RowEnd ops"
 
 
 swapSkipsForSingleColumnCharSpan :: Char -> Attr -> SpanOps -> SpanOps

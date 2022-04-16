@@ -25,6 +25,7 @@ import Data.Functor
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as VM
 import Data.STRef
+import Control.Monad.Writer.Strict
 
 -- | This represents an operation on the terminal: either an attribute
 -- change or the output of a text string.
@@ -56,22 +57,47 @@ data SpanOp =
 type SpanOps = Vector SpanOp
 
 dropOps :: Int -> SpanOps -> SpanOps
-dropOps w = snd . splitOpsAt w
-
-splitOpsAt :: Int -> SpanOps -> (SpanOps, SpanOps)
-splitOpsAt n initOps =
-    let ((edgeShard, opsTaken), firstOps) = V.createT $ do
-            let l = V.length initOps
-            vm <- unsafeNew l
-            iRef <- newSTRef l
-            edgeShard' <- runReaderT (splitOpsAt' n initOps) (vm, iRef)
-            firstOpIndex <- readSTRef iRef
-            pure ((edgeShard', l - firstOpIndex), VM.unsafeDrop firstOpIndex vm)
-        notTaken = V.unsafeDrop opsTaken initOps
+dropOps n initOps =
+    let (edgeShard, Sum opsTaken) = runWriter $ dropOps' n initOps
+        opsLeft = V.unsafeDrop opsTaken initOps
         secondOps = case edgeShard of
-            Nothing -> notTaken
-            Just op -> V.cons op notTaken
-    in (firstOps, secondOps)
+            Nothing -> opsLeft
+            Just op -> V.cons op opsLeft
+    in secondOps
+    where
+        -- | Just means that the op on the edge was split and the returned value should be on the right.
+        dropOps' :: Int -> SpanOps -> Writer (Sum Int) (Maybe SpanOp)
+        dropOps' 0 _ = pure Nothing
+        dropOps' remainingColumns ops = tell (Sum 1) *> case Vector.unsafeHead ops of
+            t@TextSpan {} -> if remainingColumns >= textSpanOutputWidth t
+                then dropOps' (remainingColumns - textSpanOutputWidth t) (Vector.unsafeTail ops)
+                else
+                    let postWidth = textSpanOutputWidth t - remainingColumns
+                        postTxt = clipText (textSpanText t) remainingColumns postWidth
+                        postOp = TextSpan { textSpanAttr = textSpanAttr t
+                                            , textSpanOutputWidth = postWidth
+                                            , textSpanCharWidth = fromIntegral $! TL.length postTxt
+                                            , textSpanText = postTxt
+                                            }
+                     in pure (Just postOp)
+            Skip w -> if remainingColumns >= w
+                then dropOps' (remainingColumns - w) (Vector.tail ops)
+                else pure (Just $ Skip (w - remainingColumns))
+            RowEnd _ -> error "cannot split ops containing a row end"
+-- let ((edgeShard, opsTaken), firstOps) =
+splitOpsAt :: Int -> SpanOps -> ST s (MVector s SpanOp, SpanOps)
+splitOpsAt n initOps = do
+        let l = V.length initOps
+        vm <- unsafeNew l
+        iRef <- newSTRef l
+        edgeShard <- runReaderT (splitOpsAt' n initOps) (vm, iRef)
+        firstOpIndex <- readSTRef iRef
+        let opsTaken = l - firstOpIndex
+        let notTaken = V.unsafeDrop opsTaken initOps
+        let secondOps = case edgeShard of
+                Nothing -> notTaken
+                Just op -> V.cons op notTaken
+        pure (VM.unsafeDrop firstOpIndex vm, secondOps)
     where
         -- | Prepends the op to the mutable vector
         writeOp :: SpanOp -> ReaderT (MVector s SpanOp, STRef s Int) (ST s) ()
