@@ -5,6 +5,8 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TupleSections #-}
 
 -- | Transforms an image into rows of operations.
 module Graphics.Vty.PictureToSpans where
@@ -31,7 +33,8 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as VM
 import Data.STRef
 
-type MRowOps s = MVector s SpanOps
+-- (<used size, vector>)
+type MRowOps s = MVector s (Int, MSpanOps s)
 
 type MSpanOps s = MVector s SpanOp
 
@@ -71,7 +74,9 @@ type BlitM s a = ReaderT (BlitEnv s) (StateT BlitState (ST s)) a
 -- | Produces the span ops that will render the given picture, possibly
 -- cropped or padded, into the specified region.
 displayOpsForPic :: Picture -> DisplayRegion -> DisplayOps
-displayOpsForPic pic r = Vector.create (combinedOpsForLayers pic r)
+displayOpsForPic pic r = Vector.create $ do
+    ops <- combinedOpsForLayers pic r
+    MVector.generateM (MVector.length ops) (MVector.unsafeRead ops >=> V.unsafeFreeze)
 
 -- | Returns the DisplayOps for an image rendered to a window the size
 -- of the image.
@@ -81,67 +86,74 @@ displayOpsForImage :: Image -> DisplayOps
 displayOpsForImage i = displayOpsForPic (picForImage i) (imageWidth i, imageHeight i)
 
 -- | Produces the span ops for each layer then combines them.
-combinedOpsForLayers :: Picture -> DisplayRegion -> ST s (MRowOps s)
+combinedOpsForLayers :: Picture -> DisplayRegion -> ST s (MVector s (MSpanOps s))
 combinedOpsForLayers pic r
     | regionWidth r == 0 || regionHeight r == 0 = MVector.unsafeNew 0
     | otherwise = do
         layerOps <- mapM (`buildSpans` r) (picLayers pic)
         case layerOps of
             []    -> fail "empty picture"
-            [ops] -> substituteSkips (picBackground pic) ops
+            [ops] -> do
+                substituteSkips (picBackground pic) ops
+                pure ops
             -- instead of merging ops after generation the merging can
             -- be performed as part of snocOp.
             topOps : lowerOps -> do
-                ops <- foldM mergeUnder topOps lowerOps
-                substituteSkips (picBackground pic) ops
+                mapM_ (mergeUnder topOps) lowerOps
+                -- topOps has the result
+                substituteSkips (picBackground pic) topOps
+                pure topOps
 
-substituteSkips :: Background -> MRowOps s -> ST s (MRowOps s)
-substituteSkips ClearBackground ops = do
+substituteSkips :: Background -> MVector s (MSpanOps s) -> ST s ()
+substituteSkips ClearBackground ops =
     forM_ [0 .. MVector.length ops - 1] $ \row -> do
-        rowOps <- MVector.read ops row
+        rowOps <- MVector.unsafeRead ops row
         -- the image operations assure that background fills are
         -- combined. clipping a background fill does not split the
         -- background fill. merging of image layers can split a skip,
         -- but only by the insertion of a non skip. all this combines to
         -- mean we can check the last operation and remove it if it's a
         -- skip
-        let rowOps' = case Vector.last rowOps of
-                        Skip w -> Vector.init rowOps `Vector.snoc` RowEnd w
-                        _      -> rowOps
+        let i = MVector.length rowOps - 1
+        lastOp <- MVector.unsafeRead rowOps i
+
+        case lastOp of
+            Skip w -> VM.unsafeWrite rowOps i $ RowEnd w
+            _      -> pure ()
         -- now all the skips can be replaced by replications of ' ' of
         -- the required width.
-        let rowOps'' = swapSkipsForSingleColumnCharSpan ' ' currentAttr rowOps'
-        MVector.write ops row rowOps''
-    return ops
-substituteSkips (Background {backgroundChar, backgroundAttr}) ops = do
+        swapSkipsForSingleColumnCharSpan ' ' currentAttr rowOps
+
+substituteSkips Background {backgroundChar, backgroundAttr} ops =
     -- At this point we decide if the background character is single
     -- column or not. obviously, single column is easier.
     case safeWcwidth backgroundChar of
         w | w == 0 -> fail $ "invalid background character " ++ show backgroundChar
           | w == 1 -> do
                 forM_ [0 .. MVector.length ops - 1] $ \row -> do
-                    rowOps <- MVector.read ops row
-                    let rowOps' = swapSkipsForSingleColumnCharSpan backgroundChar backgroundAttr rowOps
-                    MVector.write ops row rowOps'
+                    rowOps <- MVector.unsafeRead ops row
+                    swapSkipsForSingleColumnCharSpan backgroundChar backgroundAttr rowOps
+                    pure ()
           | otherwise -> do
                 forM_ [0 .. MVector.length ops - 1] $ \row -> do
-                    rowOps <- MVector.read ops row
-                    let rowOps' = swapSkipsForCharSpan w backgroundChar backgroundAttr rowOps
-                    MVector.write ops row rowOps'
-    return ops
+                    rowOps <- MVector.unsafeRead ops row
+                    swapSkipsForCharSpan w backgroundChar backgroundAttr rowOps
+                    pure ()
 
-mergeUnder :: MRowOps s -> MRowOps s -> ST s (MRowOps s)
-mergeUnder upper lower = do
+
+-- | fucks up lower
+mergeUnder :: MVector s (MSpanOps s) -> MVector s (MSpanOps s) -> ST s ()
+mergeUnder upper lower =
     forM_ [0 .. MVector.length upper - 1] $ \row -> do
         upperRowOps <- MVector.read upper row
         lowerRowOps <- MVector.read lower row
-        let rowOps = mergeRowUnder upperRowOps lowerRowOps
-        MVector.write upper row rowOps
-    return upper
+        rowOps <- mergeRowUnder upperRowOps lowerRowOps
+        MVector.unsafeWrite upper row rowOps
 
-mergeRowUnder :: SpanOps -> SpanOps -> SpanOps
-mergeRowUnder upper lower = V.create $ do
-    vm <- VM.unsafeNew (V.length upper * 2 + 1)
+-- fucks up lower
+mergeRowUnder :: MSpanOps s -> MSpanOps s -> ST s (MSpanOps s)
+mergeRowUnder upper lower = do
+    vm <- VM.new (MVector.length upper * 2 + 1)
     iRef <- newSTRef 0
     runReaderT (onUpperOp upper lower) (vm, iRef)
     i <- readSTRef iRef
@@ -163,49 +175,59 @@ mergeRowUnder upper lower = V.create $ do
             pure ()
         -- H: it will never be the case that we are out of upper ops
         -- before lower ops.
-        onUpperOp :: SpanOps -> SpanOps -> ReaderT (MSpanOps s, STRef s Int) (ST s) ()
+        -- fucks up lowerOps
+        onUpperOp :: MSpanOps s -> MSpanOps s -> ReaderT (MSpanOps s, STRef s Int) (ST s) ()
         onUpperOp upperOps lowerOps =
-            let upperOpsLeft = Vector.unsafeTail upperOps
-             in case V.unsafeHead upperOps of
+            let upperOpsLeft = MVector.unsafeTail upperOps
+             in MVector.unsafeRead upperOps 0 >>= \case
                 op@(TextSpan _ w _ _) -> do
-                    let lowerOps' = dropOps w lowerOps
+                    lowerOps' <- lift $ dropOps w lowerOps
                     appendOp op
-                    unless (V.null lowerOps') $ onUpperOp upperOpsLeft lowerOps'
-                    pure ()
+                    unless (MVector.null lowerOps') $ onUpperOp upperOpsLeft lowerOps'
                 Skip w -> do
                     (ops', lowerOps') <- lift $ splitOpsAt w lowerOps
                     appendMVector ops'
-                    unless (Vector.null lowerOps') $ onUpperOp upperOpsLeft lowerOps'
-                    pure ()
+                    unless (MVector.null lowerOps') $ onUpperOp upperOpsLeft lowerOps'
                 RowEnd _ -> error "cannot merge rows containing RowEnd ops"
 
 
-swapSkipsForSingleColumnCharSpan :: Char -> Attr -> SpanOps -> SpanOps
-swapSkipsForSingleColumnCharSpan c a = Vector.map f
-    where f (Skip ow) = let txt = TL.pack $ replicate ow c
-                        in TextSpan a ow ow txt
-          f v = v
+swapSkipsForSingleColumnCharSpan :: Char -> Attr -> MSpanOps s -> ST s ()
+swapSkipsForSingleColumnCharSpan c a ops =
+    forM_ [0 .. MVector.length ops - 1] $ \i -> do
+        op <- MVector.unsafeRead ops i
+        case op of
+            Skip ow ->
+                MVector.unsafeWrite ops i $ TextSpan a ow ow $ TL.replicate (fromIntegral ow) (TL.singleton c)
+            _ -> pure ()
+        pure ()
 
-swapSkipsForCharSpan :: Int -> Char -> Attr -> SpanOps -> SpanOps
-swapSkipsForCharSpan w c a = Vector.map f
-    where
-        f (Skip ow) = let txt0Cw = ow `div` w
-                          txt0 = TL.pack $ replicate txt0Cw c
-                          txt1Cw = ow `mod` w
-                          txt1 = TL.pack $ replicate txt1Cw '…'
-                          cw = txt0Cw + txt1Cw
-                          txt = txt0 `TL.append` txt1
-                      in TextSpan a ow cw txt
-        f v = v
+swapSkipsForCharSpan :: Int -> Char -> Attr -> MSpanOps s -> ST s ()
+swapSkipsForCharSpan w c a ops =
+    forM_ [0 .. MVector.length ops - 1] $ \i -> do
+        op <- MVector.read ops i
+        case op of
+            Skip ow ->
+                let txt0Cw = ow `div` w
+                    txt0 = TL.replicate (fromIntegral txt0Cw) $ TL.singleton c
+                    txt1Cw = ow `mod` w
+                    txt1 = TL.replicate (fromIntegral txt1Cw) $ TL.singleton '…'
+                    cw = txt0Cw + txt1Cw
+                    txt = txt0 `TL.append` txt1
+                    in MVector.unsafeWrite ops i $ TextSpan a ow cw txt
+            _ -> pure ()
+        pure ()
 
 -- | Builds a vector of row operations that will output the given
 -- picture to the terminal.
 --
 -- Crops to the given display region.
-buildSpans :: Image -> DisplayRegion -> ST s (MRowOps s)
+buildSpans :: Image -> DisplayRegion -> ST s (MVector s (MVector s SpanOp))
 buildSpans image outRegion = do
     -- First we create a mutable vector for each rows output operations.
-    outOps <- MVector.replicate (regionHeight outRegion) Vector.empty
+    tmpOps <-
+        MVector.replicateM
+            (regionHeight outRegion)
+            ((0,) <$> MVector.new (regionWidth outRegion))
     -- It's possible that building the span operations in display order
     -- would provide better performance.
     --
@@ -228,18 +250,21 @@ buildSpans image outRegion = do
                 startImageBuild image
                 -- Fill in any unspecified columns with a skip.
                 forM_ [0 .. (regionHeight outRegion - 1)] (addRowCompletion outRegion)
-            initEnv   = BlitEnv outRegion outOps
+            initEnv   = BlitEnv outRegion tmpOps
             initState = BlitState 0 0 0 0 (regionWidth outRegion) (regionHeight outRegion)
         _ <- runStateT (runReaderT fullBuild initEnv) initState
-        return ()
-    return outOps
+        pure ()
+
+    MVector.generateM (MVector.length tmpOps) $ \i -> do
+        (l, ops) <- MVector.unsafeRead tmpOps i
+        pure $ MVector.unsafeTake l ops
 
 -- | Add the operations required to build a given image to the current
 -- set of row operations.
 startImageBuild :: Image -> BlitM s ()
 startImageBuild image = do
     outOfBounds <- isOutOfBounds image <$> get
-    when (not outOfBounds) $ addMaybeClipped image
+    unless outOfBounds $ addMaybeClipped image
 
 isOutOfBounds :: Image -> BlitState -> Bool
 isOutOfBounds i s
@@ -289,7 +314,7 @@ addMaybeClipped BGFill {outputWidth, outputHeight} = do
         outputHeight' = min (outputHeight - s^.skipRows   ) (s^.remainingRows)
     y <- use rowOffset
     forM_ [y..y+outputHeight'-1] $ snocOp (Skip outputWidth')
-addMaybeClipped CropRight {croppedImage, outputWidth} = do
+addMaybeClipped CropRight {croppedImage, outputWidth} =  do
     s <- use skipColumns
     r <- use remainingColumns
     let x = outputWidth - s
@@ -352,8 +377,8 @@ addUnclippedText a txt = do
 addRowCompletion :: DisplayRegion -> Int -> BlitM s ()
 addRowCompletion displayRegion row = do
     allRowOps <- view mrowOps
-    rowOps <- lift $ lift $ MVector.read allRowOps row
-    let endX = spanOpsAffectedColumns rowOps
+    (i, rowOps) <- lift $ lift $ MVector.unsafeRead allRowOps row
+    endX <- lift . lift $ spanOpsAffectedColumns (MVector.unsafeTake i rowOps)
     when (endX < regionWidth displayRegion) $ do
         let ow = regionWidth displayRegion - endX
         snocOp (Skip ow) row
@@ -364,8 +389,10 @@ snocOp !op !row = do
     theMrowOps <- view mrowOps
     theRegion <- view region
     lift $ lift $ do
-        ops <- MVector.read theMrowOps row
-        let ops' = Vector.snoc ops op
-        when (spanOpsAffectedColumns ops' > regionWidth theRegion)
+        (i, ops) <- MVector.unsafeRead theMrowOps row
+        MVector.unsafeWrite ops i op
+        MVector.unsafeWrite theMrowOps row (i+1, ops)
+        aCols <- spanOpsAffectedColumns (MVector.unsafeTake (i + 1) ops)
+        when (aCols > regionWidth theRegion)
              $ fail $ "row " ++ show row ++ " now exceeds region width"
-        MVector.write theMrowOps row ops'
+    pure ()

@@ -14,11 +14,11 @@ import qualified Data.Vector as Vector
 
 rowOpsAffectedColumns :: DisplayOps -> [Int]
 rowOpsAffectedColumns ops
-    = Vector.toList $ Vector.map spanOpsAffectedColumns ops
+    = Vector.toList $ Vector.map spanOpsAffectedColumnsTraversable ops
 
 allSpansHaveWidth :: DisplayOps -> Int -> Bool
 allSpansHaveWidth ops expected
-    = all (== expected) $ Vector.toList $ Vector.map spanOpsAffectedColumns ops
+    = all (== expected) $ Vector.toList $ Vector.map spanOpsAffectedColumnsTraversable ops
 
 spanOpsAffectedRows :: DisplayOps -> Int
 spanOpsAffectedRows ops

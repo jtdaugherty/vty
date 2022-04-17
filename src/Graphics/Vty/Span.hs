@@ -1,6 +1,7 @@
 -- Copyright Corey O'Connor
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE LambdaCase #-}
 -- | A picture is translated into a sequences of state changes and
 -- character spans. The attribute is applied to all following spans,
 -- including spans of the next row. The nth element of the sequence
@@ -22,7 +23,6 @@ import Data.Vector.Mutable
 import Control.Monad.Reader
 import qualified Data.Vector.Mutable as MV
 import Data.Functor
-import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as VM
 import Data.STRef
 import Control.Monad.Writer.Strict
@@ -56,47 +56,55 @@ data SpanOp =
 -- rows until the foreground color is changed.
 type SpanOps = Vector SpanOp
 
-dropOps :: Int -> SpanOps -> SpanOps
-dropOps n initOps =
-    let (edgeShard, Sum opsTaken) = runWriter $ dropOps' n initOps
-        opsLeft = V.unsafeDrop opsTaken initOps
-        secondOps = case edgeShard of
-            Nothing -> opsLeft
-            Just op -> V.cons op opsLeft
-    in secondOps
+-- | fucks up initOps
+dropOps :: Int -> MVector s SpanOp -> ST s (MVector s SpanOp)
+dropOps n initOps = do
+    (edgeShard, Sum opsTaken) <- runWriterT $ dropOps' n initOps
+    case edgeShard of
+        Nothing -> pure $ MV.unsafeDrop opsTaken initOps
+        Just op -> do
+            let opsLeft = MV.unsafeDrop (opsTaken - 1) initOps
+            MV.unsafeWrite opsLeft 0 op
+            pure opsLeft
     where
         -- | Just means that the op on the edge was split and the returned value should be on the right.
-        dropOps' :: Int -> SpanOps -> Writer (Sum Int) (Maybe SpanOp)
+        dropOps' :: Int -> MVector s SpanOp -> WriterT (Sum Int) (ST s) (Maybe SpanOp)
         dropOps' 0 _ = pure Nothing
-        dropOps' remainingColumns ops = tell (Sum 1) *> case Vector.unsafeHead ops of
-            t@TextSpan {} -> if remainingColumns >= textSpanOutputWidth t
-                then dropOps' (remainingColumns - textSpanOutputWidth t) (Vector.unsafeTail ops)
-                else
-                    let postWidth = textSpanOutputWidth t - remainingColumns
-                        postTxt = clipText (textSpanText t) remainingColumns postWidth
-                        postOp = TextSpan { textSpanAttr = textSpanAttr t
-                                            , textSpanOutputWidth = postWidth
-                                            , textSpanCharWidth = fromIntegral $! TL.length postTxt
-                                            , textSpanText = postTxt
-                                            }
-                     in pure (Just postOp)
-            Skip w -> if remainingColumns >= w
-                then dropOps' (remainingColumns - w) (Vector.tail ops)
-                else pure (Just $ Skip (w - remainingColumns))
-            RowEnd _ -> error "cannot split ops containing a row end"
+        dropOps' remainingColumns ops = do
+            tell (Sum 1)
+            op <- MV.unsafeRead ops 0
+            case op of
+                t@TextSpan {} -> if remainingColumns >= textSpanOutputWidth t
+                    then dropOps' (remainingColumns - textSpanOutputWidth t) (MV.unsafeTail ops)
+                    else
+                        let postWidth = textSpanOutputWidth t - remainingColumns
+                            postTxt = clipText (textSpanText t) remainingColumns postWidth
+                            postOp = TextSpan { textSpanAttr = textSpanAttr t
+                                                , textSpanOutputWidth = postWidth
+                                                , textSpanCharWidth = fromIntegral $! TL.length postTxt
+                                                , textSpanText = postTxt
+                                                }
+                        in pure (Just postOp)
+                Skip w -> if remainingColumns >= w
+                    then dropOps' (remainingColumns - w) (MV.unsafeTail ops)
+                    else pure (Just $ Skip (w - remainingColumns))
+                RowEnd _ -> error "cannot split ops containing a row end"
 
-splitOpsAt :: Int -> SpanOps -> ST s (MVector s SpanOp, SpanOps)
+-- fucks up initOps
+splitOpsAt :: Int -> MVector s SpanOp -> ST s (MVector s SpanOp, MVector s SpanOp)
 splitOpsAt n initOps = do
-        let l = V.length initOps
+        let l = VM.length initOps
         vm <- unsafeNew l
         iRef <- newSTRef l
         edgeShard <- runReaderT (splitOpsAt' n initOps) (vm, iRef)
         firstOpIndex <- readSTRef iRef
         let opsTaken = l - firstOpIndex
-        let notTaken = V.unsafeDrop opsTaken initOps
-        let secondOps = case edgeShard of
-                Nothing -> notTaken
-                Just op -> V.cons op notTaken
+        secondOps <- case edgeShard of
+                Nothing -> pure $ MV.unsafeDrop opsTaken initOps
+                Just op -> do
+                    let opsLeft = MV.unsafeDrop (opsTaken - 1) initOps
+                    MV.unsafeWrite opsLeft 0 op
+                    pure opsLeft
         pure (VM.unsafeDrop firstOpIndex vm, secondOps)
     where
         -- | Prepends the op to the mutable vector
@@ -107,11 +115,11 @@ splitOpsAt n initOps = do
             MV.unsafeWrite v i op
             pure ()
         -- | Just means that the op on the edge was split and the returned value should be on the right.
-        splitOpsAt' :: Int -> SpanOps -> ReaderT (MVector s SpanOp, STRef s Int) (ST s) (Maybe SpanOp)
+        splitOpsAt' :: Int -> MVector s SpanOp -> ReaderT (MVector s SpanOp, STRef s Int) (ST s) (Maybe SpanOp)
         splitOpsAt' 0 _ = pure Nothing
-        splitOpsAt' remainingColumns ops = case Vector.unsafeHead ops of
+        splitOpsAt' remainingColumns ops = VM.unsafeRead ops 0 >>= \case
             t@TextSpan {} -> if remainingColumns >= textSpanOutputWidth t
-                then splitOpsAt' (remainingColumns - textSpanOutputWidth t) (Vector.unsafeTail ops) <* writeOp t
+                then splitOpsAt' (remainingColumns - textSpanOutputWidth t) (MV.unsafeTail ops) <* writeOp t
                 else do
                         let preTxt = clipText (textSpanText t) 0 remainingColumns
                             preOp = TextSpan { textSpanAttr = textSpanAttr t
@@ -129,7 +137,7 @@ splitOpsAt n initOps = do
                         writeOp preOp
                         pure $ Just postOp
             Skip w -> if remainingColumns >= w
-                then splitOpsAt' (remainingColumns - w) (Vector.tail ops) <* writeOp (Skip w)
+                then splitOpsAt' (remainingColumns - w) (MV.unsafeTail ops) <* writeOp (Skip w)
                 else writeOp (Skip remainingColumns) $> Just (Skip (w - remainingColumns))
             RowEnd _ -> error "cannot split ops containing a row end"
 
@@ -158,12 +166,16 @@ affectedRegion :: DisplayOps -> DisplayRegion
 affectedRegion ops = (displayOpsColumns ops, displayOpsRows ops)
 
 -- | The number of columns a SpanOps affects.
-spanOpsAffectedColumns :: SpanOps -> Int
-spanOpsAffectedColumns = Vector.foldl' (\t op -> t + spanOpsAffectedColumns' op) 0
-    where
-        spanOpsAffectedColumns' (TextSpan _ w _ _ ) = w
-        spanOpsAffectedColumns' (Skip w) = w
-        spanOpsAffectedColumns' (RowEnd w) = w
+spanOpsAffectedColumns :: MV.MVector s SpanOp -> ST s Int
+spanOpsAffectedColumns = MV.foldl' (\t op -> t + spanOpsAffectedColumns' op) 0
+
+spanOpsAffectedColumns' :: SpanOp -> Int
+spanOpsAffectedColumns' (TextSpan _ w _ _ ) = w
+spanOpsAffectedColumns' (Skip w) = w
+spanOpsAffectedColumns' (RowEnd w) = w
+
+spanOpsAffectedColumnsTraversable :: Foldable f => f SpanOp -> Int
+spanOpsAffectedColumnsTraversable = getSum . foldMap (Sum . spanOpsAffectedColumns')
 
 -- | The width of a single SpanOp in columns.
 spanOpHasWidth :: SpanOp -> Maybe (Int, Int)
