@@ -16,7 +16,7 @@ import Data.Terminfo.Parse
 
 import Control.Monad.Identity
 import Control.Monad.State.Strict
-import Control.Monad.Writer
+import Control.Monad.Writer.Strict
 
 import Data.Bits ((.|.), (.&.), xor)
 import Data.List
@@ -35,7 +35,7 @@ type Eval a = StateT EvalState (Writer Write) a
 pop :: Eval CapParam
 pop = do
     s <- get
-    let v : stack' = evalStack s
+    let ~(v : stack') = evalStack s
         s' = s { evalStack = stack' }
     put s'
     return v
@@ -52,7 +52,7 @@ push !v = do
     put s'
 
 applyParamOps :: CapExpression -> [CapParam] -> [CapParam]
-applyParamOps cap params = foldl applyParamOp params (paramOps cap)
+applyParamOps cap params = foldl' applyParamOp params (paramOps cap)
 
 applyParamOp :: [CapParam] -> ParamOp -> [CapParam]
 applyParamOp params IncFirstTwo = map (+ 1) params
@@ -69,7 +69,7 @@ writeCapOps = mapM_ writeCapOp
 writeCapOp :: CapOp -> Eval ()
 writeCapOp (Bytes !offset !count) = do
     !cap <- evalExpression <$> get
-    let bytes = Vector.take count $ Vector.drop offset (capBytes cap)
+    let bytes = Vector.unsafeSlice offset count (capBytes cap)
     Vector.forM_ bytes $ tell.writeWord8
 writeCapOp DecOut = do
     p <- pop

@@ -23,10 +23,11 @@ import qualified Data.Vector.Unboxed as Vector
 import Numeric (showHex)
 
 import Text.Parsec
+import qualified Data.Vector.Unboxed as VU
 
 data CapExpression = CapExpression
     { capOps :: !CapOps
-    , capBytes :: !(Vector.Vector Word8)
+    , capBytes :: !(VU.Vector Word8)
     , sourceString :: !String
     , paramCount :: !Int
     , paramOps :: !ParamOps
