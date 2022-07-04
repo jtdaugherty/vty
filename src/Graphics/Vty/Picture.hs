@@ -30,10 +30,7 @@ data Picture = Picture
     , picBackground :: Background
     -- ^ The picture's background to be displayed in locations with no
     -- Image data.
-    } deriving Eq
-
-instance Show Picture where
-    show (Picture _ layers _ ) = "Picture ?? " ++ show layers ++ " ??"
+    } deriving (Eq, Show)
 
 instance NFData Picture where
     rnf (Picture c l b) = c `deepseq` l `deepseq` b `deepseq` ()
@@ -92,7 +89,7 @@ data Cursor =
     | Cursor !Int !Int
     -- | Show the cursor at the given absolute terminal column and row
     | AbsoluteCursor !Int !Int
-    deriving Eq
+    deriving (Eq, Show)
 
 instance NFData Cursor where
     rnf c = c `seq` ()
@@ -116,7 +113,7 @@ data Background
      --
      -- * End of line if there are no remaining non-skip ops.
     | ClearBackground
-    deriving Eq
+    deriving (Eq, Show)
 
 instance NFData Background where
     rnf (Background c a) = c `seq` a `seq` ()
