@@ -45,7 +45,7 @@ library
                        deepseq >= 1.1 && < 1.5,
                        directory,
                        filepath >= 1.0 && < 2.0,
-                       microlens < 0.4.13,
+                       microlens < 0.4.14,
                        microlens-mtl,
                        microlens-th,
                        hashable >= 1.2,
