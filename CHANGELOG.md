@@ -1,4 +1,11 @@
 
+5.36
+----
+
+ * Raised `microlens` upper bound to allow building with 0.4.13.
+ * Replaced incomplete `Show` output for `Picture` with a derived
+   instance; derived `Show` for `Cursor` and `Background`, too.
+
 5.35.1
 ------
 
