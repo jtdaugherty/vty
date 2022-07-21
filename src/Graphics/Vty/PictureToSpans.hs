@@ -83,7 +83,7 @@ combinedOpsForLayers pic r
     | otherwise = do
         layerOps <- mapM (`buildSpans` r) (picLayers pic)
         case layerOps of
-            []    -> fail "empty picture"
+            []    -> error "empty picture"
             [ops] -> substituteSkips (picBackground pic) ops
             -- instead of merging ops after generation the merging can
             -- be performed as part of snocOp.
@@ -113,7 +113,7 @@ substituteSkips (Background {backgroundChar, backgroundAttr}) ops = do
     -- At this point we decide if the background character is single
     -- column or not. obviously, single column is easier.
     case safeWcwidth backgroundChar of
-        w | w == 0 -> fail $ "invalid background character " ++ show backgroundChar
+        w | w == 0 -> error $ "invalid background character " ++ show backgroundChar
           | w == 1 -> do
                 forM_ [0 .. MVector.length ops - 1] $ \row -> do
                     rowOps <- MVector.read ops row
@@ -296,7 +296,7 @@ addMaybeClippedJoin :: forall s . String
                        -> BlitM s ()
 addMaybeClippedJoin name skip remaining offset i0Dim i0 i1 size = do
     state <- get
-    when (state^.remaining <= 0) $ fail $ name ++ " with remaining <= 0"
+    when (state^.remaining <= 0) $ error $ name ++ " with remaining <= 0"
     case state^.skip of
         s | s > size -> put $ state & skip %~ subtract size
           | s == 0    -> if state^.remaining > i0Dim
@@ -316,7 +316,7 @@ addMaybeClippedJoin name skip remaining offset i0Dim i0 i1 size = do
           | s >= i0Dim -> do
                 put $ state & skip %~ subtract i0Dim
                 addMaybeClipped i1
-        _ -> fail $ name ++ " has unhandled skip class"
+        _ -> error $ name ++ " has unhandled skip class"
 
 addUnclippedText :: Attr -> DisplayText -> BlitM s ()
 addUnclippedText a txt = do
@@ -344,5 +344,5 @@ snocOp !op !row = do
         ops <- MVector.read theMrowOps row
         let ops' = Vector.snoc ops op
         when (spanOpsAffectedColumns ops' > regionWidth theRegion)
-             $ fail $ "row " ++ show row ++ " now exceeds region width"
+             $ error $ "row " ++ show row ++ " now exceeds region width"
         MVector.write theMrowOps row ops'
