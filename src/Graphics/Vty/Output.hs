@@ -55,12 +55,12 @@ import Data.Monoid ((<>))
 --
 -- Selection of a terminal is done as follows:
 --
---      * If TERM contains "xterm" or "screen", use XTermColor.
+--      * If TERM starts with "xterm", "screen" or "tmux", use XTermColor.
 --      * otherwise use the TerminfoBased driver.
 outputForConfig :: Config -> IO Output
 outputForConfig Config{ outputFd = Just fd, termName = Just termName
                       , colorMode = Just colorMode, .. } = do
-    t <- if "xterm" `isPrefixOf` termName || "screen" `isPrefixOf` termName
+    t <- if "xterm" `isPrefixOf` termName || "screen" `isPrefixOf` termName || "tmux" `isPrefixOf` termName
         then XTermColor.reserveTerminal termName fd colorMode
         -- Not an xterm-like terminal. try for generic terminfo.
         else TerminfoBased.reserveTerminal termName fd colorMode
