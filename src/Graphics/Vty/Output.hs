@@ -60,10 +60,10 @@ import Data.Monoid ((<>))
 outputForConfig :: Config -> IO Output
 outputForConfig Config{ outputFd = Just fd, termName = Just termName
                       , colorMode = Just colorMode, .. } = do
-    t <- if "xterm" `isPrefixOf` termName || "screen" `isPrefixOf` termName || "tmux" `isPrefixOf` termName
-        then XTermColor.reserveTerminal termName fd colorMode
-        -- Not an xterm-like terminal. try for generic terminfo.
-        else TerminfoBased.reserveTerminal termName fd colorMode
+    t <- if isXtermLike termName
+         then XTermColor.reserveTerminal termName fd colorMode
+         -- Not an xterm-like terminal. try for generic terminfo.
+         else TerminfoBased.reserveTerminal termName fd colorMode
 
     case mouseMode of
         Just s -> setMode t Mouse s
@@ -75,6 +75,17 @@ outputForConfig Config{ outputFd = Just fd, termName = Just termName
 
     return t
 outputForConfig config = (<> config) <$> standardIOConfig >>= outputForConfig
+
+isXtermLike :: String -> Bool
+isXtermLike termName =
+    any (`isPrefixOf` termName) xtermLikeTerminalNamePrefixes
+
+xtermLikeTerminalNamePrefixes :: [String]
+xtermLikeTerminalNamePrefixes =
+    [ "xterm"
+    , "screen"
+    , "tmux"
+    ]
 
 -- | Sets the cursor position to the given output column and row.
 --
