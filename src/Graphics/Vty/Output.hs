@@ -85,6 +85,7 @@ xtermLikeTerminalNamePrefixes =
     [ "xterm"
     , "screen"
     , "tmux"
+    , "rxvt"
     ]
 
 -- | Sets the cursor position to the given output column and row.
