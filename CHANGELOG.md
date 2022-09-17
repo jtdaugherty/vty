@@ -1,4 +1,11 @@
 
+5.37
+----
+
+* The Xterm backend is now used when `TERM` matches `rxvt` or `tmux`.
+* PictureToSpans now uses `error`, not `fail`, to avoid dependence on
+  soon-to-be-removed `MonadFail` instance for `ST` (#248)
+
 5.36
 ----
 
