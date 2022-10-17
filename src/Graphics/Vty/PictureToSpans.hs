@@ -228,10 +228,10 @@ isOutOfBounds i s
 
 -- | This adds an image that might be partially clipped to the output
 -- ops.
---
 -- This is a very touchy algorithm. Too touchy. For instance, the
--- CropRight and CropBottom implementations are odd. They pass the
--- current tests but something seems terribly wrong about all this.
+-- Crop implementations is odd. They pass the current tests but
+-- something seems terribly wrong about all this.
+--
 addMaybeClipped :: forall s . Image -> BlitM s ()
 addMaybeClipped EmptyImage = return ()
 addMaybeClipped (HorizText a textStr ow _cw) = do
@@ -266,23 +266,13 @@ addMaybeClipped BGFill {outputWidth, outputHeight} = do
         outputHeight' = min (outputHeight - s^.skipRows   ) (s^.remainingRows)
     y <- use rowOffset
     forM_ [y..y+outputHeight'-1] $ snocOp (Skip outputWidth')
-addMaybeClipped CropRight {croppedImage, outputWidth} = do
-    s <- use skipColumns
-    r <- use remainingColumns
-    let x = outputWidth - s
-    when (x < r) $ remainingColumns .= x
-    addMaybeClipped croppedImage
-addMaybeClipped CropLeft {croppedImage, leftSkip} = do
+addMaybeClipped Crop {croppedImage, leftSkip, topSkip, outputWidth, outputHeight} = do
+    sx <- use skipColumns
     skipColumns += leftSkip
-    addMaybeClipped croppedImage
-addMaybeClipped CropBottom {croppedImage, outputHeight} = do
-    s <- use skipRows
-    r <- use remainingRows
-    let x = outputHeight - s
-    when (x < r) $ remainingRows .= x
-    addMaybeClipped croppedImage
-addMaybeClipped CropTop {croppedImage, topSkip} = do
+    modifying remainingColumns (min (outputWidth - sx))
+    sy <- use skipRows
     skipRows += topSkip
+    modifying remainingRows (min (outputHeight - sy))
     addMaybeClipped croppedImage
 
 addMaybeClippedJoin :: forall s . String

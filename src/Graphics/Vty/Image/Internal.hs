@@ -96,42 +96,12 @@ data Image =
       { outputWidth :: Int -- ^ always > 0
       , outputHeight :: Int -- ^ always > 0
       }
-    -- | Crop an image horizontally to a size by reducing the size from
-    -- the right.
-    | CropRight
+    -- | Crop an image
+    | Crop
       { croppedImage :: Image
-      -- | Always < imageWidth croppedImage > 0
-      , outputWidth :: Int
-      , outputHeight :: Int -- ^ imageHeight croppedImage
-      }
-    -- | Crop an image horizontally to a size by reducing the size from
-    -- the left.
-    | CropLeft
-      { croppedImage :: Image
-      -- | Always < imageWidth croppedImage > 0
       , leftSkip :: Int
-      -- | Always < imageWidth croppedImage > 0
-      , outputWidth :: Int
-      , outputHeight :: Int
-      }
-    -- | Crop an image vertically to a size by reducing the size from
-    -- the bottom
-    | CropBottom
-      { croppedImage :: Image
-      -- | imageWidth croppedImage
-      , outputWidth :: Int
-      -- | height image is cropped to. Always < imageHeight croppedImage > 0
-      , outputHeight :: Int
-      }
-    -- | Crop an image vertically to a size by reducing the size from
-    -- the top
-    | CropTop
-      { croppedImage :: Image
-      -- | Always < imageHeight croppedImage > 0
       , topSkip :: Int
-      -- | imageWidth croppedImage
       , outputWidth :: Int
-      -- | Always < imageHeight croppedImage > 0
       , outputHeight :: Int
       }
     -- | The empty image
@@ -159,26 +129,14 @@ ppImageStructure = go 0
             = "VertJoin(" ++ show c ++ ", " ++ show r ++ ")\n"
               ++ go (i+1) t ++ "\n"
               ++ go (i+1) b
-        pp i (CropRight {croppedImage, outputWidth, outputHeight})
-            = "CropRight(" ++ show outputWidth ++ "," ++ show outputHeight ++ ")\n"
-              ++ go (i+1) croppedImage
-        pp i (CropLeft {croppedImage, leftSkip, outputWidth, outputHeight})
-            = "CropLeft(" ++ show leftSkip ++ "->" ++ show outputWidth ++ "," ++ show outputHeight ++ ")\n"
-              ++ go (i+1) croppedImage
-        pp i (CropBottom {croppedImage, outputWidth, outputHeight})
-            = "CropBottom(" ++ show outputWidth ++ "," ++ show outputHeight ++ ")\n"
-              ++ go (i+1) croppedImage
-        pp i (CropTop {croppedImage, topSkip, outputWidth, outputHeight})
-            = "CropTop("++ show outputWidth ++ "," ++ show topSkip ++ "->" ++ show outputHeight ++ ")\n"
+        pp i (Crop {croppedImage, leftSkip, topSkip, outputWidth, outputHeight})
+            = "Crop(" ++ show leftSkip ++ "," ++ show topSkip ++ "," ++ show outputWidth ++ "," ++ show outputHeight ++ ")\n"
               ++ go (i+1) croppedImage
         pp _ EmptyImage = "EmptyImage"
 
 instance NFData Image where
     rnf EmptyImage = ()
-    rnf (CropRight i w h) = i `deepseq` w `seq` h `seq` ()
-    rnf (CropLeft i s w h) = i `deepseq` s `seq` w `seq` h `seq` ()
-    rnf (CropBottom i w h) = i `deepseq` w `seq` h `seq` ()
-    rnf (CropTop i s w h) = i `deepseq` s `seq` w `seq` h `seq` ()
+    rnf (Crop i x y w h) = i `deepseq` x `seq` y `seq` w `seq` h `seq` ()
     rnf (BGFill w h) = w `seq` h `seq` ()
     rnf (VertJoin t b w h) = t `deepseq` b `deepseq` w `seq` h `seq` ()
     rnf (HorizJoin l r w h) = l `deepseq` r `deepseq` w `seq` h `seq` ()
@@ -191,10 +149,7 @@ imageWidth HorizText { outputWidth = w } = w
 imageWidth HorizJoin { outputWidth = w } = w
 imageWidth VertJoin { outputWidth = w } = w
 imageWidth BGFill { outputWidth = w } = w
-imageWidth CropRight { outputWidth  = w } = w
-imageWidth CropLeft { outputWidth  = w } = w
-imageWidth CropBottom { outputWidth = w } = w
-imageWidth CropTop { outputWidth = w } = w
+imageWidth Crop { outputWidth = w } = w
 imageWidth EmptyImage = 0
 
 -- | The height of an Image. This is the number of display rows the
@@ -204,10 +159,7 @@ imageHeight HorizText {} = 1
 imageHeight HorizJoin { outputHeight = h } = h
 imageHeight VertJoin { outputHeight = h } = h
 imageHeight BGFill { outputHeight = h } = h
-imageHeight CropRight { outputHeight  = h } = h
-imageHeight CropLeft { outputHeight  = h } = h
-imageHeight CropBottom { outputHeight = h } = h
-imageHeight CropTop { outputHeight = h } = h
+imageHeight Crop { outputHeight = h } = h
 imageHeight EmptyImage = 0
 
 -- | Append in the 'Semigroup' instance is equivalent to '<->'.
