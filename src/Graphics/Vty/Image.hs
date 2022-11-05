@@ -258,7 +258,7 @@ translate x y i = translateX x (translateY y i)
 translateX :: Int -> Image -> Image
 translateX x i
     | x < 0 && (abs x > imageWidth i) = emptyImage
-    | x < 0     = let s = abs x in CropLeft i s (imageWidth i - s) (imageHeight i)
+    | x < 0     = cropLeft (imageWidth i + x) i
     | x == 0    = i
     | otherwise = let h = imageHeight i in HorizJoin (BGFill x h) i (imageWidth i + x) h
 
@@ -266,7 +266,7 @@ translateX x i
 translateY :: Int -> Image -> Image
 translateY y i
     | y < 0 && (abs y > imageHeight i) = emptyImage
-    | y < 0     = let s = abs y in CropTop i s (imageWidth i) (imageHeight i - s)
+    | y < 0     = cropTop (imageHeight i + y) i
     | y == 0    = i
     | otherwise = let w = imageWidth i in VertJoin (BGFill w y) i w (imageHeight i + y)
 
@@ -296,12 +296,11 @@ cropBottom h inI
     | otherwise = go inI
         where
             go EmptyImage = EmptyImage
-            go i@(CropBottom {croppedImage, outputWidth, outputHeight})
-                | outputHeight <= h = i
-                | otherwise          = CropBottom croppedImage outputWidth h
+            go i@(Crop {outputHeight})
+                = i {outputHeight = min h outputHeight}
             go i
                 | h >= imageHeight i = i
-                | otherwise           = CropBottom i (imageWidth i) h
+                | otherwise = Crop i 0 0 (imageWidth i) h
 
 -- | Crop an image's width. If the image's width is less than or equal
 -- to the specified width then this operation has no effect. Otherwise
@@ -313,12 +312,11 @@ cropRight w inI
     | otherwise = go inI
         where
             go EmptyImage = EmptyImage
-            go i@(CropRight {croppedImage, outputWidth, outputHeight})
-                | outputWidth <= w = i
-                | otherwise         = CropRight croppedImage w outputHeight
+            go i@(Crop {outputWidth})
+                = i {outputWidth = min w outputWidth}
             go i
                 | w >= imageWidth i = i
-                | otherwise          = CropRight i w (imageHeight i)
+                | otherwise = Crop i 0 0 w (imageHeight i)
 
 -- | Crop an image's width. If the image's width is less than or equal
 -- to the specified width then this operation has no effect. Otherwise
@@ -330,14 +328,13 @@ cropLeft w inI
     | otherwise = go inI
         where
             go EmptyImage = EmptyImage
-            go i@(CropLeft {croppedImage, leftSkip, outputWidth, outputHeight})
-                | outputWidth <= w = i
-                | otherwise         =
-                    let leftSkip' = leftSkip + outputWidth - w
-                    in CropLeft croppedImage leftSkip' w outputHeight
+            go i@(Crop {leftSkip, outputWidth}) =
+                let delta = max 0 (outputWidth - w)
+                in i { leftSkip = leftSkip + delta
+                     , outputWidth = outputWidth - delta }
             go i
                 | imageWidth i <= w = i
-                | otherwise          = CropLeft i (imageWidth i - w) w (imageHeight i)
+                | otherwise = Crop i (imageWidth i - w) 0 w (imageHeight i)
 
 -- | Crop an image's height. If the image's height is less than or equal
 -- to the specified height then this operation has no effect. Otherwise
@@ -349,14 +346,13 @@ cropTop h inI
     | otherwise = go inI
         where
             go EmptyImage = EmptyImage
-            go i@(CropTop {croppedImage, topSkip, outputWidth, outputHeight})
-                | outputHeight <= h = i
-                | otherwise         =
-                    let topSkip' = topSkip + outputHeight - h
-                    in CropTop croppedImage topSkip' outputWidth h
+            go i@(Crop {topSkip, outputHeight}) =
+                let delta = max 0 (outputHeight - h)
+                in i { topSkip = topSkip + delta
+                     , outputHeight = outputHeight - delta }
             go i
                 | imageHeight i <= h = i
-                | otherwise          = CropTop i (imageHeight i - h) (imageWidth i) h
+                | otherwise = Crop i 0 (imageHeight i - h) (imageWidth i) h
 
 -- | Generic resize. Pads and crops are added to ensure that the
 -- resulting image matches the specified dimensions. This is biased to

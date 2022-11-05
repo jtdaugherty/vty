@@ -181,18 +181,6 @@ instance Arbitrary Image  where
         !partTop' <- shrink partTop
         !partBottom' <- shrink partBottom
         [i_alt, partTop' <-> partBottom']
-    shrink i@(CropRight {croppedImage, outputWidth}) = do
-        let !i_alt = backgroundFill (imageWidth i) (imageHeight i)
-        [i_alt, croppedImage]
-    shrink i@(CropLeft {croppedImage, leftSkip, outputWidth}) = do
-        let !i_alt = backgroundFill (imageWidth i) (imageHeight i)
-        [i_alt, croppedImage]
-    shrink i@(CropBottom {croppedImage, outputHeight}) = do
-        let !i_alt = backgroundFill (imageWidth i) (imageHeight i)
-        [i_alt, croppedImage]
-    shrink i@(CropTop {croppedImage, topSkip, outputHeight}) = do
-        let !i_alt = backgroundFill (imageWidth i) (imageHeight i)
-        [i_alt, croppedImage]
     shrink i = [emptyImage, backgroundFill (imageWidth i) (imageHeight i)]
     -}
 
