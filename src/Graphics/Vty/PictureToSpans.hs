@@ -220,8 +220,8 @@ startImageBuild image = do
 
 isOutOfBounds :: Image -> BlitState -> Bool
 isOutOfBounds i s
-    | s ^. remainingColumns <= 0              = True
-    | s ^. remainingRows    <= 0              = True
+    | s ^. remainingColumns <= 0             = True
+    | s ^. remainingRows    <= 0             = True
     | s ^. skipColumns      >= imageWidth i  = True
     | s ^. skipRows         >= imageHeight i = True
     | otherwise = False
