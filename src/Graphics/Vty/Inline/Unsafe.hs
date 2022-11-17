@@ -1,6 +1,10 @@
 {-# OPTIONS_HADDOCK hide #-}
 
-module Graphics.Vty.Inline.Unsafe where
+module Graphics.Vty.Inline.Unsafe
+  ( withOutput
+  , withVty
+  )
+where
 
 import Graphics.Vty
 
