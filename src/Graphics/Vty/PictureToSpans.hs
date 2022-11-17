@@ -29,8 +29,6 @@ import qualified Data.Text.Lazy as TL
 
 type MRowOps s = MVector s SpanOps
 
-type MSpanOps s = MVector s SpanOp
-
 -- transform plus clip. More or less.
 data BlitState = BlitState
     -- we always snoc to the operation vectors. Thus the columnOffset =
