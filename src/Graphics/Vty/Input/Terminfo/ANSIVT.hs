@@ -5,7 +5,10 @@
 -- Terminal emulators will often use VT50 input bytes regardless of
 -- declared terminal type. This provides compatibility with programs
 -- that don't follow terminfo.
-module Graphics.Vty.Input.Terminfo.ANSIVT where
+module Graphics.Vty.Input.Terminfo.ANSIVT
+  ( classifyTable
+  )
+where
 
 import Graphics.Vty.Input.Events
 
