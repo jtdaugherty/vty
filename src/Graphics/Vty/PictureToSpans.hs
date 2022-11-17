@@ -308,7 +308,7 @@ addMaybeClippedJoin name skip remaining offset i0Dim i0 i1 size = do
                 addMaybeClipped i1
         _ -> error $ name ++ " has unhandled skip class"
 
-addUnclippedText :: Attr -> DisplayText -> BlitM s ()
+addUnclippedText :: Attr -> TL.Text -> BlitM s ()
 addUnclippedText a txt = do
     let op = TextSpan a usedDisplayColumns
                       (fromIntegral $ TL.length txt)

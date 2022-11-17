@@ -17,10 +17,7 @@ import Data.Semigroup (Semigroup(..))
 #endif
 import qualified Data.Text.Lazy as TL
 
--- | A display text is a Data.Text.Lazy
-type DisplayText = TL.Text
-
-clipText :: DisplayText -> Int -> Int -> DisplayText
+clipText :: TL.Text -> Int -> Int -> TL.Text
 clipText txt leftSkip rightClip =
     -- CPS would clarify this I think
     let (toDrop,padPrefix) = clipForCharWidth leftSkip txt 0
@@ -57,7 +54,7 @@ data Image =
       { attr :: Attr
       -- | The text to display. The display width of the text is always
       -- outputWidth.
-      , displayText :: DisplayText
+      , displayText :: TL.Text
       -- | The number of display columns for the text.
       , outputWidth :: Int
       -- | the number of characters in the text.

@@ -28,7 +28,7 @@ data SpanOp =
       { textSpanAttr :: !Attr
       , textSpanOutputWidth :: !Int
       , textSpanCharWidth :: !Int
-      , textSpanText :: DisplayText
+      , textSpanText :: TL.Text
       }
     -- | Skips the given number of columns.
     | Skip !Int

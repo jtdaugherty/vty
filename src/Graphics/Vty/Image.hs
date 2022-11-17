@@ -52,7 +52,6 @@ module Graphics.Vty.Image
   , wctwidth
   , wctlwidth
   -- * Display Regions
-  , DisplayText
   , DisplayRegion
   , regionWidth
   , regionHeight
