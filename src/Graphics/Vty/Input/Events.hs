@@ -1,6 +1,14 @@
 {-# Language DeriveGeneric #-}
 {-# Language StrictData #-}
-module Graphics.Vty.Input.Events where
+module Graphics.Vty.Input.Events
+  ( Key(..)
+  , Modifier(..)
+  , Event(..)
+  , Button(..)
+  , ClassifyMap
+  , InternalEvent(..)
+  )
+where
 
 import Control.DeepSeq
 import Data.ByteString
