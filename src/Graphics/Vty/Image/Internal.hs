@@ -3,7 +3,17 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# OPTIONS_HADDOCK hide #-}
 
-module Graphics.Vty.Image.Internal where
+module Graphics.Vty.Image.Internal
+  ( Image(..)
+  , imageHeight
+  , imageWidth
+  , horizJoin
+  , vertJoin
+
+  , ppImageStructure
+  , clipText
+  )
+where
 
 import Graphics.Vty.Attributes
 import Graphics.Text.Width
