@@ -1,5 +1,13 @@
 {-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
-module Graphics.Vty.Input.Terminfo where
+module Graphics.Vty.Input.Terminfo
+  ( classifyMapForTerm
+  , specialSupportKeys
+  , capsClassifyMap
+  , keysFromCapsTable
+  , universalTable
+  , visibleChars
+  )
+where
 
 import Graphics.Vty.Input.Events
 import qualified Graphics.Vty.Input.Terminfo.ANSIVT as ANSIVT
