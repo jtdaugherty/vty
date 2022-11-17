@@ -1,4 +1,7 @@
-module Graphics.Vty.Error where
+module Graphics.Vty.Error
+  ( VtyException(..)
+  )
+where
 
 -- | The type of exceptions specific to vty.
 --
