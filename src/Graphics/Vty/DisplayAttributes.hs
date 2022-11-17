@@ -2,7 +2,15 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
 
-module Graphics.Vty.DisplayAttributes where
+module Graphics.Vty.DisplayAttributes
+  ( DisplayAttrDiff(..)
+  , StyleStateChange(..)
+  , DisplayColorDiff(..)
+  , URLDiff(..)
+  , fixDisplayAttr
+  , displayAttrDiffs
+  )
+where
 
 import Graphics.Vty.Attributes
 
