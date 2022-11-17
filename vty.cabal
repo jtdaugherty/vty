@@ -104,8 +104,7 @@ library
                        Graphics.Vty.UnicodeWidthTable.Query
                        Graphics.Vty.UnicodeWidthTable.Install
 
-  other-modules:       Graphics.Vty.Debug.Image
-                       Graphics.Vty.Input.Terminfo.ANSIVT
+  other-modules:       Graphics.Vty.Input.Terminfo.ANSIVT
 
   c-sources:           cbits/gwinsz.c
                        cbits/set_term_timing.c

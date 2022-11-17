@@ -1,13 +1,15 @@
 -- Copyright 2009-2010 Corey O'Connor
 module Graphics.Vty.Debug
-  ( module Graphics.Vty.Debug
-  , module Graphics.Vty.Debug.Image
+  ( MockWindow(..)
+  , regionForWindow
+  , allSpansHaveWidth
+  , spanOpsAffectedColumns
+  , spanOpsAffectedRows
   )
 where
 
 import Graphics.Vty.Attributes
 import Graphics.Vty.Image (DisplayRegion)
-import Graphics.Vty.Debug.Image
 import Graphics.Vty.Span
 
 import qualified Data.Vector as Vector
