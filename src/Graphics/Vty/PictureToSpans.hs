@@ -6,7 +6,10 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 -- | Transforms an image into rows of operations.
-module Graphics.Vty.PictureToSpans where
+module Graphics.Vty.PictureToSpans
+  ( displayOpsForPic
+  )
+where
 
 import Graphics.Vty.Attributes (Attr, currentAttr)
 import Graphics.Vty.Image
