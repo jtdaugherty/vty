@@ -20,7 +20,6 @@ module Graphics.Vty.Input.Loop
   , eventChannel
 
   , initInput
-  , attributeControl
   )
 where
 
@@ -53,7 +52,6 @@ import Foreign.Ptr (Ptr, castPtr)
 
 import System.IO
 import System.Posix.IO (fdReadBuf, setFdOption, FdOption(..))
-import System.Posix.Terminal
 import System.Posix.Types (Fd(..))
 
 import Text.Printf (hPrintf)
@@ -201,48 +199,6 @@ runInputProcessorLoop classifyTable input = do
                 <*> pure (InputBuffer bufferPtr bufferSize)
                 <*> pure (classify classifyTable)
         runReaderT (evalStateT loopInputProcessor s0) input
-
--- | Construct two IO actions: one to configure the terminal for Vty and
--- one to restore the terminal mode flags to the values they had at the
--- time this function was called.
---
--- This function constructs a configuration action to clear the
--- following terminal mode flags:
---
--- * IXON disabled: disables software flow control on outgoing data.
--- This stops the process from being suspended if the output terminal
--- cannot keep up.
---
--- * Raw mode is used for input.
---
--- * ISIG (enables keyboard combinations that result in
--- signals)
---
--- * ECHO (input is not echoed to the output)
---
--- * ICANON (canonical mode (line mode) input is not used)
---
--- * IEXTEN (extended functions are disabled)
---
--- The configuration action also explicitly sets these flags:
---
--- * ICRNL (input carriage returns are mapped to newlines)
-attributeControl :: Fd -> IO (IO (), IO ())
-attributeControl fd = do
-    original <- getTerminalAttributes fd
-    let vtyMode = foldl withMode clearedFlags flagsToSet
-        clearedFlags = foldl withoutMode original flagsToUnset
-        flagsToSet = [ MapCRtoLF -- ICRNL
-                     ]
-        flagsToUnset = [ StartStopOutput -- IXON
-                       , KeyboardInterrupts -- ISIG
-                       , EnableEcho -- ECHO
-                       , ProcessInput -- ICANON
-                       , ExtendedFunctions -- IEXTEN
-                       ]
-    let setAttrs = setTerminalAttributes fd vtyMode Immediately
-        unsetAttrs = setTerminalAttributes fd original Immediately
-    return (setAttrs, unsetAttrs)
 
 logInitialInputState :: Input -> ClassifyMap -> IO()
 logInitialInputState input classifyTable = case _inputDebug input of
