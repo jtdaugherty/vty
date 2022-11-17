@@ -80,7 +80,6 @@ library
                        Graphics.Vty.Picture
                        Graphics.Vty.Output
                        Graphics.Text.Width
-                       Codec.Binary.UTF8.Debug
                        Data.Terminfo.Parse
                        Data.Terminfo.Eval
                        Graphics.Vty.Debug
