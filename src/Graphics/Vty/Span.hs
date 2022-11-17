@@ -7,7 +7,22 @@
 --
 -- A span op sequence will be defined for all rows and columns (and no
 -- more) of the region provided with the picture to 'spansForPic'.
-module Graphics.Vty.Span where
+module Graphics.Vty.Span
+  ( SpanOp(..)
+  , columnsToCharOffset
+  , spanOpHasWidth
+
+  , SpanOps
+  , spanOpsAffectedColumns
+  , splitOpsAt
+  , dropOps
+
+  , DisplayOps
+  , displayOpsRows
+  , displayOpsColumns
+  , affectedRegion
+  )
+where
 
 import Graphics.Vty.Attributes (Attr)
 import Graphics.Vty.Image
