@@ -15,7 +15,14 @@
 -- more of these examples...
 --
 -- reference: http://www.unixwiz.net/techtips/termios-vmin-vtime.html
-module Graphics.Vty.Input.Loop where
+module Graphics.Vty.Input.Loop
+  ( Input(..)
+  , eventChannel
+
+  , initInput
+  , attributeControl
+  )
+where
 
 import Graphics.Vty.Config
 import Graphics.Vty.Input.Classify
