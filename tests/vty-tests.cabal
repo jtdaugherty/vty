@@ -1,0 +1,218 @@
+name:                vty-tests
+version:             5.37
+license:             BSD3
+license-file:        LICENSE
+author:              AUTHORS
+maintainer:          Jonathan Daugherty (cygnus@foobox.com)
+homepage:            https://github.com/jtdaugherty/vty
+category:            User Interfaces
+synopsis:            Test suite for the Vty library
+cabal-version:       1.18
+build-type:          Simple
+extra-doc-files:     LICENSE
+tested-with:         GHC==7.10.3, GHC==8.0.2, GHC==8.2.2, GHC==8.4.3, GHC==8.6.5
+
+source-repository head
+  type: git
+  location: https://github.com/jtdaugherty/vty.git
+
+library
+  default-language:    Haskell2010
+  hs-source-dirs:      src
+  exposed-modules:     Verify
+                       Verify.Graphics.Vty.Attributes
+                       Verify.Graphics.Vty.DisplayAttributes
+                       Verify.Graphics.Vty.Prelude
+                       Verify.Graphics.Vty.Picture
+                       Verify.Graphics.Vty.Image
+                       Verify.Graphics.Vty.Span
+                       Verify.Graphics.Vty.Output
+                       Verify.Data.Terminfo.Parse
+  build-depends:       base >= 4.8 && < 5,
+                       deepseq >= 1.1 && < 1.5,
+                       mtl >= 1.1.1.0 && < 2.3,
+                       utf8-string >= 0.3 && < 1.1,
+                       vector >= 0.7,
+                       QuickCheck,
+                       Cabal,
+                       vty
+
+  if !impl(ghc >= 8.0)
+    build-depends:     semigroups >= 0.16,
+                       fail
+
+test-suite verify-using-mock-terminal
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      programs
+  test-module:         VerifyUsingMockTerminal
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       Cabal >= 1.20,
+                       bytestring,
+                       utf8-string >= 0.3 && < 1.1
+
+test-suite verify-terminal
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      programs
+  test-module:         VerifyOutput
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       Cabal >= 1.20,
+                       terminfo >= 0.3 && < 0.5,
+                       unix
+
+test-suite verify-display-attributes
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      programs
+  test-module:         VerifyDisplayAttributes
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       Cabal >= 1.20
+
+test-suite verify-empty-image-props
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      programs
+  test-module:         VerifyEmptyImageProps
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       Cabal >= 1.20
+
+test-suite verify-eval-terminfo-caps
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      programs
+  test-module:         VerifyEvalTerminfoCaps
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       Cabal >= 1.20,
+                       blaze-builder >= 0.3.3.2 && < 0.5,
+                       deepseq >= 1.1 && < 1.5,
+                       terminfo >= 0.3 && < 0.5
+
+test-suite verify-image-ops
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      programs
+  test-module:         VerifyImageOps
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       Cabal >= 1.20,
+                       deepseq >= 1.1 && < 1.5
+
+test-suite verify-image-trans
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      programs
+  test-module:         VerifyImageTrans
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       Cabal >= 1.20
+
+test-suite verify-parse-terminfo-caps
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      programs
+  test-module:         VerifyParseTerminfoCaps
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       blaze-builder >= 0.3.3.2 && < 0.5,
+                       Cabal >= 1.20,
+                       deepseq >= 1.1 && < 1.5,
+                       terminfo >= 0.3 && < 0.5
+
+test-suite verify-simple-span-generation
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      programs
+  test-module:         VerifySimpleSpanGeneration
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       Cabal >= 1.20,
+                       vector >= 0.7
+
+test-suite verify-crop-span-generation
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      programs
+  test-module:         VerifyCropSpanGeneration
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       Cabal >= 1.20,
+                       vector >= 0.7
+
+test-suite verify-layers-span-generation
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      programs
+  test-module:         VerifyLayersSpanGeneration
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       Cabal >= 1.20,
+                       vector >= 0.7
+
+test-suite verify-color-mapping
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      programs
+  test-module:         VerifyColor240
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       Cabal >= 1.20
+
+test-suite verify-utf8-width
+  default-language:    Haskell2010
+  type:                detailed-0.9
+  hs-source-dirs:      programs
+  test-module:         VerifyUtf8Width
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       Cabal >= 1.20
+
+test-suite verify-using-mock-input
+  default-language:    Haskell2010
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      programs
+  main-is:             VerifyUsingMockInput.hs
+  ghc-options:         -threaded -Wall
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       smallcheck == 1.*,
+                       test-framework == 0.8.*,
+                       test-framework-smallcheck == 0.2.*,
+                       microlens,
+                       stm,
+                       terminfo >= 0.3 && < 0.5,
+                       unix
+
+test-suite verify-config
+  default-language:    Haskell2010
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      programs
+  main-is:             VerifyConfig.hs
+  ghc-options:         -threaded -Wall
+  build-depends:       base >= 4.8 && < 5,
+                       vty,
+                       vty-tests,
+                       HUnit,
+                       test-framework == 0.8.*,
+                       test-framework-hunit,
+                       bytestring,
+                       string-qq

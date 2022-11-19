@@ -1,5 +1,5 @@
 name:                vty-examples
-version:             5.7
+version:             5.37
 license:             BSD3
 license-file:        LICENSE
 author:              AUTHORS
@@ -41,28 +41,10 @@ executable vty-interactive-terminal-test
   default-extensions:  ScopedTypeVariables
   ghc-options:         -threaded
 
-  build-depends:       vty >= 5.15,
-                       base >= 4 && < 5,
-                       bytestring,
-                       containers,
-                       data-default,
-                       deepseq,
-                       lens,
-                       mtl,
-                       parallel,
-                       parsec,
+  build-depends:       base >= 4 && < 5,
+                       vty,
                        string-qq,
-                       terminfo,
-                       text,
-                       unix,
-                       utf8-string,
-                       vector,
-                       QuickCheck,
                        Cabal
-
-  hs-source-dirs:      .
-  other-modules:       Verify.Data.Terminfo.Parse
-                       Verify
 
 executable vty-event-echo
   main-is:             EventEcho.hs
@@ -72,18 +54,10 @@ executable vty-event-echo
                        FlexibleContexts
   ghc-options:         -threaded
 
-  build-depends:       vty >= 5.15,
-                       base >= 4 && < 5,
-                       array,
-                       bytestring,
+  build-depends:       base >= 4 && < 5,
+                       vty,
                        containers,
-                       data-default,
-                       lens,
-                       mtl,
-                       parallel,
-                       text,
-                       utf8-string,
-                       vector
+                       mtl
 
 executable vty-rogue
   main-is:             Rogue.hs
@@ -92,19 +66,11 @@ executable vty-rogue
   default-extensions:  ScopedTypeVariables
   ghc-options:         -threaded
 
-  build-depends:       vty >= 5.15,
-                       base >= 4 && < 5,
+  build-depends:       base >= 4 && < 5,
+                       vty,
                        array,
-                       bytestring,
-                       containers,
-                       data-default,
-                       lens,
                        mtl,
-                       parallel,
-                       random,
-                       text,
-                       utf8-string,
-                       vector
+                       random
 
 executable vty-benchmark
   main-is:             benchmark.hs
@@ -113,30 +79,14 @@ executable vty-benchmark
   default-extensions:  ScopedTypeVariables
   ghc-options:         -threaded
 
-  build-depends:       vty >= 5.15,
-                       base >= 4 && < 5,
+  build-depends:       base >= 4 && < 5,
+                       vty,
+                       vty-tests,
                        bytestring,
-                       Cabal,
-                       containers,
-                       data-default,
-                       deepseq,
-                       lens,
-                       mtl,
-                       parallel,
-                       parsec,
-                       QuickCheck,
                        random,
-                       string-qq,
-                       terminfo,
-                       text,
-                       unix,
-                       utf8-string,
-                       vector
+                       unix
 
   other-modules:       BenchImageFuzz
                        BenchNoDiffOpt
                        BenchRenderChar
                        BenchVerticalScroll
-                       Verify.Graphics.Vty.Image
-                       Verify.Graphics.Vty.Attributes
-                       Verify
