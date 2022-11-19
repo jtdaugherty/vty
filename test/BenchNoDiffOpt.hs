@@ -1,7 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 module BenchNoDiffOpt where
 
-{-# LANGUAGE BangPatterns #-}
 import Graphics.Vty
 import Verify
 

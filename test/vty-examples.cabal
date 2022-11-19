@@ -56,8 +56,11 @@ executable vty-interactive-terminal-test
                        text,
                        unix,
                        utf8-string,
-                       vector
+                       vector,
+                       QuickCheck,
+                       Cabal
 
+  hs-source-dirs:      .
   other-modules:       Verify.Data.Terminfo.Parse
                        Verify
 
@@ -136,3 +139,4 @@ executable vty-benchmark
                        BenchVerticalScroll
                        Verify.Graphics.Vty.Image
                        Verify.Graphics.Vty.Attributes
+                       Verify

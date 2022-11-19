@@ -13,6 +13,7 @@ import System.Environment( getArgs )
 import System.IO
 import System.Random
 
+bench0 :: IO Bench
 bench0 = do
     let fixedGen = mkStdGen 0
     setStdGen fixedGen
