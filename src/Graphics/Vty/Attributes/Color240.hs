@@ -11,7 +11,10 @@ import Text.Printf
 -- Note: rgbColor's mapping from RGB to 240 colors was generated from
 -- 256colres.pl which is forked from xterm 256colres.pl.
 
--- | Create a value in the Color240 set from an RGB triple
+-- | Create a value in the Color240 set from an RGB triple. This maps
+-- the input arguments to an entry in the 240-color palette depicted at:
+--
+-- https://rich.readthedocs.io/en/stable/appendix/colors.html
 rgbColorToColor240 :: Integral i => i -> i -> i -> Word8
 rgbColorToColor240 r g b
     | r < 0 && g < 0 && b < 0 = error "rgbColor with negative color component intensity"

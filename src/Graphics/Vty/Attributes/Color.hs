@@ -157,6 +157,10 @@ brightMagenta= ISOColor 13
 brightCyan   = ISOColor 14
 brightWhite  = ISOColor 15
 
+-- | Create a color value from RGB values in the 0..255 range inclusive.
+-- No transformation of the input values is done; a color is created
+-- directly from the RGB values specified, unlike the 'srgbColor' and
+-- 'color240' functions.
 linearColor :: Integral i => i -> i -> i -> Color
 linearColor r g b = RGBColor r' g' b'
     where
@@ -165,11 +169,12 @@ linearColor r g b = RGBColor r' g' b'
         b' = fromIntegral (clamp b) :: Word8
         clamp = min 255 . max 0
 
+-- | Given RGB values in the range 0..255 inclusive, create a color
+-- using the sRGB transformation described at
+--
+-- https://en.wikipedia.org/wiki/SRGB#The_reverse_transformation
 srgbColor :: Integral i => i -> i -> i -> Color
 srgbColor r g b =
-    -- srgb to rgb transformation as described at
-    -- https://en.wikipedia.org/wiki/SRGB#The_reverse_transformation
-    --
     -- TODO: it may be worth translating this to a lookup table, as with color240
     let shrink n = fromIntegral n / 255 :: Double
         -- called gamma^-1 in wiki
@@ -185,7 +190,8 @@ color240 :: Integral i => i -> i -> i -> Color
 color240 r g b = Color240 (rgbColorToColor240 r g b)
 
 -- | Create a Vty 'Color' (in the 240 color set) from an RGB triple.
--- This function is lossy in the sense that we only internally support 240 colors but the
--- #RRGGBB format supports 16^3 colors.
+-- This is a synonym for 'color240'. This function is lossy in the sense
+-- that we only internally support 240 colors but the #RRGGBB format
+-- supports 16^3 colors.
 rgbColor :: Integral i => i -> i -> i -> Color
 rgbColor = color240
