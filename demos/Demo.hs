@@ -5,6 +5,7 @@ import Graphics.Vty
 
 import Control.Applicative hiding ((<|>))
 import Control.Arrow
+import Control.Monad
 import Control.Monad.RWS
 
 import Data.Sequence (Seq, (<|) )
