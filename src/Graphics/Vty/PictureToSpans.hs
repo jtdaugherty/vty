@@ -20,6 +20,7 @@ import Graphics.Vty.Span
 import Lens.Micro
 import Lens.Micro.Mtl
 import Lens.Micro.TH
+import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.State.Strict hiding ( state )
 import Control.Monad.ST.Strict

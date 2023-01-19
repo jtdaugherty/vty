@@ -51,7 +51,7 @@ library
                        microlens < 0.4.14,
                        microlens-mtl,
                        microlens-th,
-                       mtl >= 1.1.1.0 && < 2.3,
+                       mtl >= 1.1.1.0 && < 2.4,
                        parsec >= 2 && < 4,
                        stm,
                        terminfo >= 0.3 && < 0.5,

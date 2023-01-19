@@ -14,6 +14,7 @@ import Blaze.ByteString.Builder.Word
 import Blaze.ByteString.Builder
 import Data.Terminfo.Parse
 
+import Control.Monad
 import Control.Monad.Identity
 import Control.Monad.State.Strict
 import Control.Monad.Writer

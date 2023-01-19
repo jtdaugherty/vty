@@ -10,6 +10,7 @@ import Graphics.Vty.Input.Events
 import Graphics.Vty.Input.Classify.Types
 import Graphics.Vty.Input.Classify.Parse
 
+import Control.Monad
 import Control.Monad.State
 
 import qualified Data.ByteString.Char8 as BS8
