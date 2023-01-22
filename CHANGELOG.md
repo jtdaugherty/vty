@@ -1,4 +1,43 @@
 
+5.38
+----
+
+This release includes numerous API changes, although none of them should
+break your programs. If so, please open a ticket on the Vty issue
+tracker.
+
+Package changes:
+* Support mtl 2.3 (thanks Daniel Firth)
+* The test and example collections got completely overhauled to clean up
+  bit rot.
+  * Moved example programs into examples/ under a new vty-examples
+    package.
+  * Moved test suite programs out of vty.cabal and into tests/ under a
+    new vty-tests package.
+  * Cleaned up all build-depends lists in all three packages to remove
+    unused deps.
+  * Consolidated the test suite library modules into the vty-tests
+    library to avoid redundant compilation.
+  * Added build.sh to build everything in the development process to
+    help ensure that examples and tests don't get forgotten.
+  * Removeed lots of stale/unused modules in old test/ directory.
+* Got vty-examples building again and resolved various warnings and
+  issues.
+
+API changes:
+* All modules got explicit export lists. Prior to this release, many
+  modules exported everything they contained, making it difficult to
+  know what was really intended to be part of the public API. The new
+  export lists should contain everything that applications need; the
+  risk of breakage exists but should be minor. Please open a ticket if
+  you were using something that is no longer exported. It might be that
+  it was never supposed to be exported to begin with, or it might be
+  just something we need to export once again.
+* Moved the `attributeControl` function from `Graphics.Vty.Input.Loop`
+  to `Graphics.Vty.Input`.
+* Removed the `Graphics.Vty.Image.DisplayText` alias for `Text`.
+* Unified the `Image` cropping constructors (thanks Fraser Tweedale)
+
 5.37
 ----
 
