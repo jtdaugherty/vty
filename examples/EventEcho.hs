@@ -4,7 +4,9 @@ import Graphics.Vty
 
 import Control.Applicative
 import Control.Arrow
-import Control.Monad.RWS
+import Control.Monad (unless)
+import Control.Monad.IO.Class (MonadIO(..))
+import Control.Monad.RWS (MonadReader(..), MonadState(..), RWST, execRWST, modify)
 
 import Data.Sequence (Seq, (<|) )
 import qualified Data.Sequence as Seq
