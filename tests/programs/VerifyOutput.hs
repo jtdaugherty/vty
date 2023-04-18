@@ -1,6 +1,7 @@
 -- We setup the environment to invoke certain terminals of interest.
 -- This assumes appropriate definitions exist in the current environment
 -- for the terminals of interest.
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module VerifyOutput where
 
@@ -34,7 +35,11 @@ smokeTestTermNonMac termName i = liftIOResult $ do
 
 smokeTestTerm :: String -> Image -> IO Result
 smokeTestTerm termName i = do
-    nullOut <- openFd "/dev/null" WriteOnly Nothing defaultFileFlags
+    nullOut <- openFd "/dev/null" WriteOnly
+#if !MIN_VERSION_unix(2,8,0)
+                      Nothing
+#endif
+                      defaultFileFlags
     t <- outputForConfig $ defaultConfig
         { outputFd = Just nullOut
         , termName = Just termName
