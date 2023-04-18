@@ -30,7 +30,7 @@ library
                        Verify.Data.Terminfo.Parse
   build-depends:       base >= 4.8 && < 5,
                        deepseq >= 1.1 && < 1.5,
-                       mtl >= 1.1.1.0 && < 2.3,
+                       mtl >= 1.1.1.0 && < 2.4,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7,
                        QuickCheck,
