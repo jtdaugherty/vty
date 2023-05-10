@@ -110,6 +110,20 @@ library
                        cbits/get_tty_erase.c
                        cbits/mk_wcwidth.c
 
+executable vty-bold-demo
+  main-is:             BoldDemo.hs
+  hs-source-dirs:      tools
+  default-language:    Haskell2010
+  ghc-options:         -threaded -Wall
+
+  if !impl(ghc >= 8.0)
+    build-depends:     semigroups >= 0.16
+
+  build-depends:       base,
+                       vty,
+                       directory,
+                       filepath
+
 executable vty-build-width-table
   main-is:             BuildWidthTable.hs
   hs-source-dirs:      tools
