@@ -6,7 +6,7 @@ import Graphics.Vty
 main :: IO ()
 main = do
     let img = horizCat [ string defAttr "not bold "
-                       , string (defAttr `withStyle` bold) "bold"
+                       , string (defAttr `withStyle` bold `withForeColor` red) "bold"
                        , string defAttr " not bold"
                        ]
     cfg <- standardIOConfig
