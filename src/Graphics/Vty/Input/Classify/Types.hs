@@ -3,12 +3,24 @@
 {-# LANGUAGE StrictData #-}
 module Graphics.Vty.Input.Classify.Types
   ( KClass(..)
+  , ClassifierState(..)
   )
 where
 
 import Graphics.Vty.Input.Events
 
 import Data.ByteString.Char8 (ByteString)
+
+-- | Whether the classifier is currently processing a chunked format.
+-- Currently, only bracketed pastes use this.
+data ClassifierState
+    = ClassifierStart
+    -- ^ Not processing a chunked format.
+    | ClassifierInChunk ByteString [ByteString]
+    -- ^ Currently processing a chunked format. The initial chunk is in the
+    -- first argument and a reversed remainder of the chunks is collected in
+    -- the second argument. At the end of the processing, the chunks are
+    -- reversed and concatenated with the final chunk.
 
 data KClass
     = Valid Event ByteString

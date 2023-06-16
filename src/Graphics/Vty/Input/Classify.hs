@@ -4,7 +4,6 @@
 -- be better.
 module Graphics.Vty.Input.Classify
   ( classify
-  , ClassifierState(..)
   )
 where
 
@@ -26,17 +25,6 @@ import Data.Word
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
 import Data.ByteString.Char8 (ByteString)
-
--- | Whether the classifier is currently processing a chunked format.
--- Currently, only bracketed pastes use this.
-data ClassifierState
-    = ClassifierStart
-    -- ^ Not processing a chunked format.
-    | ClassifierInChunk ByteString [ByteString]
-    -- ^ Currently processing a chunked format. The initial chunk is in the
-    -- first argument and a reversed remainder of the chunks is collected in
-    -- the second argument. At the end of the processing, the chunks are
-    -- reversed and concatenated with the final chunk.
 
 compile :: ClassifyMap -> ByteString -> KClass
 compile table = cl' where
