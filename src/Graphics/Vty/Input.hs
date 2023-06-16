@@ -1,5 +1,4 @@
 {-# LANGUAGE RecordWildCards, CPP #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 -- | This module provides the input layer for Vty, including methods
 -- for initializing an 'Input' structure and reading 'Event's from the
@@ -114,9 +113,6 @@
 -- * http://www.leonerd.org.uk/hacks/fixterms/
 module Graphics.Vty.Input
   ( Input(..)
-  , eventChannel
-  , configRef
-
   , Key(..)
   , Modifier(..)
   , Button(..)
@@ -129,7 +125,6 @@ import Graphics.Vty.Input.Events
 
 import Control.Concurrent.STM
 import Data.IORef (IORef)
-import Lens.Micro.TH (makeLenses)
 
 #if !MIN_VERSION_base(4,11,0)
 import Data.Monoid ((<>))
@@ -139,7 +134,7 @@ data Input = Input
     { -- | Channel of events direct from input processing. Unlike
       -- 'nextEvent' this will not refresh the display if the next event
       -- is an 'EvResize'.
-      _eventChannel  :: TChan InternalEvent
+      eventChannel  :: TChan InternalEvent
       -- | Shuts down the input processing. As part of shutting down the
       -- input, this should also restore the input state.
     , shutdownInput :: IO ()
@@ -149,7 +144,5 @@ data Input = Input
       -- directly.
     , restoreInputState :: IO ()
       -- | Changes to this value are reflected after the next event.
-    , _configRef :: IORef Config
+    , configRef :: IORef Config
     }
-
-makeLenses ''Input

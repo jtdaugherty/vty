@@ -215,10 +215,10 @@ internalMkVty input out = do
         translateInternalEvent (InputEvent e)    = return e
 
         gkey = do
-            e <- atomically $ readTChan $ _eventChannel input
+            e <- atomically $ readTChan $ eventChannel input
             translateInternalEvent e
         gkey' = do
-            mEv <- atomically $ tryReadTChan $ _eventChannel input
+            mEv <- atomically $ tryReadTChan $ eventChannel input
             case mEv of
                 Just e  -> Just <$> translateInternalEvent e
                 Nothing -> return Nothing
