@@ -56,9 +56,6 @@ import Graphics.Vty.Attributes
 import Graphics.Vty.UnicodeWidthTable.IO
 import Graphics.Vty.UnicodeWidthTable.Install
 
-import Data.Char (isPrint, showLitChar)
-import qualified Data.ByteString.Char8 as BS8
-
 import qualified Control.Exception as E
 import Control.Monad (when)
 import Control.Concurrent.STM
@@ -225,10 +222,5 @@ mkVtyFromPair input out = do
 --
 -- https://tldp.org/HOWTO/Xterm-Title-3.html
 setWindowTitle :: Vty -> String -> IO ()
-setWindowTitle vty title = do
-    let sanitize :: String -> String
-        sanitize = concatMap sanitizeChar
-        sanitizeChar c | not (isPrint c) = showLitChar c ""
-                       | otherwise = [c]
-    let buf = BS8.pack $ "\ESC]2;" <> sanitize title <> "\007"
-    outputByteBuffer (outputIface vty) buf
+setWindowTitle vty title =
+    setOutputWindowTitle (outputIface vty) title

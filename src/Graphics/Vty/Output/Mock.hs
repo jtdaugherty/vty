@@ -62,6 +62,7 @@ mockTerminal r = liftIO $ do
             , getModeStatus = const $ return False
             , assumedStateRef = newAssumedStateRef
             , outputColorMode = ColorMode16
+            , setOutputWindowTitle = const $ return ()
             , mkDisplayContext = \tActual rActual -> return $ DisplayContext
                 { contextRegion = rActual
                 , contextDevice = tActual

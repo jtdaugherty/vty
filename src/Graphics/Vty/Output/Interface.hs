@@ -116,6 +116,8 @@ data Output = Output
     , supportsStrikethrough :: IO Bool
       -- | Returns how many colors the terminal supports.
     , outputColorMode :: ColorMode
+      -- | Set the output's window title, if any.
+    , setOutputWindowTitle :: String -> IO ()
     }
 
 displayContext :: Output -> DisplayRegion -> IO DisplayContext
