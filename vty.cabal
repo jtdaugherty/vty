@@ -81,8 +81,6 @@ library
                        Graphics.Vty.Picture
                        Graphics.Vty.Output
                        Graphics.Text.Width
-                       Data.Terminfo.Parse
-                       Data.Terminfo.Eval
                        Graphics.Vty.Debug
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.Image.Internal
@@ -90,21 +88,16 @@ library
                        Graphics.Vty.Input.Classify.Types
                        Graphics.Vty.Input.Classify.Parse
                        Graphics.Vty.Input.Loop
-                       Graphics.Vty.Input.Mouse
                        Graphics.Vty.Input.Focus
                        Graphics.Vty.Input.Paste
-                       Graphics.Vty.Input.Terminfo
                        Graphics.Vty.PictureToSpans
                        Graphics.Vty.Span
                        Graphics.Vty.Output.Mock
                        Graphics.Vty.Output.Interface
-                       Graphics.Vty.Output.XTermColor
-                       Graphics.Vty.Output.TerminfoBased
                        Graphics.Vty.UnicodeWidthTable.Types
                        Graphics.Vty.UnicodeWidthTable.IO
                        Graphics.Vty.UnicodeWidthTable.Query
                        Graphics.Vty.UnicodeWidthTable.Install
-  other-modules:       Graphics.Vty.Input.Terminfo.ANSIVT
   c-sources:           cbits/gwinsz.c
                        cbits/set_term_timing.c
                        cbits/get_tty_erase.c
