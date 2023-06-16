@@ -4,7 +4,6 @@
 -- be better.
 module Graphics.Vty.Input.Classify
   ( classify
-  , KClass(..)
   , ClassifierState(..)
   )
 where
