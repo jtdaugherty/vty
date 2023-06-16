@@ -83,7 +83,6 @@ library
                        Graphics.Vty.Debug
                        Graphics.Vty.DisplayAttributes
                        Graphics.Vty.Image.Internal
-                       Graphics.Vty.Input.Classify.Types
                        Graphics.Vty.PictureToSpans
                        Graphics.Vty.Span
                        Graphics.Vty.Output.Mock
