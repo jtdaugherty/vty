@@ -125,8 +125,8 @@ mkVty appConfig = do
     when (allowCustomUnicodeWidthTables config /= Just False) $
         installCustomWidthTable config
 
-    input <- inputForConfig config
-    out <- outputForConfig config
+    input <- error "FIXME: was: inputForConfig config"
+    out <- error "FIXME: was: outputForConfig config"
     internalMkVty input out
 
 installCustomWidthTable :: Config -> IO ()

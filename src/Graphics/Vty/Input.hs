@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards, CPP #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- | This module provides the input layer for Vty, including methods
 -- for initializing an 'Input' structure and reading 'Event's from the
@@ -112,110 +113,43 @@
 --
 -- * http://www.leonerd.org.uk/hacks/fixterms/
 module Graphics.Vty.Input
-  ( Key(..)
+  ( Input(..)
+  , eventChannel
+  , configRef
+
+  , Key(..)
   , Modifier(..)
   , Button(..)
   , Event(..)
-  , Input(..)
-  , inputForConfig
-  , attributeControl
   )
 where
 
 import Graphics.Vty.Config
 import Graphics.Vty.Input.Events
-import Graphics.Vty.Input.Loop
-import Graphics.Vty.Input.Terminfo
 
 import Control.Concurrent.STM
-import Lens.Micro
-
-import qualified System.Console.Terminfo as Terminfo
-import System.Posix.Signals.Exts
-import System.Posix.Terminal
-import System.Posix.Types (Fd(..))
+import Data.IORef (IORef)
+import Lens.Micro.TH (makeLenses)
 
 #if !MIN_VERSION_base(4,11,0)
 import Data.Monoid ((<>))
 #endif
 
--- | Set up the terminal with file descriptor `inputFd` for input.
--- Returns an 'Input'.
---
--- The table used to determine the 'Events' to produce for the input
--- bytes comes from 'classifyMapForTerm' which is then overridden by
--- the the applicable entries from the configuration's 'inputMap'.
---
--- The terminal device's mode flags are configured by the
--- 'attributeControl' function.
-inputForConfig :: Config -> IO Input
-inputForConfig config@Config{ termName = Just termName
-                            , inputFd = Just termFd
-                            , vmin = Just _
-                            , vtime = Just _
-                            , .. } = do
-    terminal <- Terminfo.setupTerm termName
-    let inputOverrides = [(s,e) | (t,s,e) <- inputMap, t == Nothing || t == Just termName]
-        activeInputMap = classifyMapForTerm termName terminal `mappend` inputOverrides
-    (setAttrs, unsetAttrs) <- attributeControl termFd
-    setAttrs
-    input <- initInput config activeInputMap
-    let pokeIO = Catch $ do
-            setAttrs
-            atomically $ writeTChan (input^.eventChannel) ResumeAfterSignal
-    _ <- installHandler windowChange pokeIO Nothing
-    _ <- installHandler continueProcess pokeIO Nothing
+data Input = Input
+    { -- | Channel of events direct from input processing. Unlike
+      -- 'nextEvent' this will not refresh the display if the next event
+      -- is an 'EvResize'.
+      _eventChannel  :: TChan InternalEvent
+      -- | Shuts down the input processing. As part of shutting down the
+      -- input, this should also restore the input state.
+    , shutdownInput :: IO ()
+      -- | Restore the terminal's input state to what it was prior
+      -- to configuring input for Vty. This should be done as part of
+      -- 'shutdownInput' but is exposed in case you need to access it
+      -- directly.
+    , restoreInputState :: IO ()
+      -- | Changes to this value are reflected after the next event.
+    , _configRef :: IORef Config
+    }
 
-    let restore = unsetAttrs
-
-    return $ input
-        { shutdownInput = do
-            shutdownInput input
-            _ <- installHandler windowChange Ignore Nothing
-            _ <- installHandler continueProcess Ignore Nothing
-            restore
-        , restoreInputState = restoreInputState input >> restore
-        }
-inputForConfig config = (<> config) <$> standardIOConfig >>= inputForConfig
-
--- | Construct two IO actions: one to configure the terminal for Vty and
--- one to restore the terminal mode flags to the values they had at the
--- time this function was called.
---
--- This function constructs a configuration action to clear the
--- following terminal mode flags:
---
--- * IXON disabled: disables software flow control on outgoing data.
--- This stops the process from being suspended if the output terminal
--- cannot keep up.
---
--- * Raw mode is used for input.
---
--- * ISIG (enables keyboard combinations that result in
--- signals)
---
--- * ECHO (input is not echoed to the output)
---
--- * ICANON (canonical mode (line mode) input is not used)
---
--- * IEXTEN (extended functions are disabled)
---
--- The configuration action also explicitly sets these flags:
---
--- * ICRNL (input carriage returns are mapped to newlines)
-attributeControl :: Fd -> IO (IO (), IO ())
-attributeControl fd = do
-    original <- getTerminalAttributes fd
-    let vtyMode = foldl withMode clearedFlags flagsToSet
-        clearedFlags = foldl withoutMode original flagsToUnset
-        flagsToSet = [ MapCRtoLF -- ICRNL
-                     ]
-        flagsToUnset = [ StartStopOutput -- IXON
-                       , KeyboardInterrupts -- ISIG
-                       , EnableEcho -- ECHO
-                       , ProcessInput -- ICANON
-                       , ExtendedFunctions -- IEXTEN
-                       ]
-    let setAttrs = setTerminalAttributes fd vtyMode Immediately
-        unsetAttrs = setTerminalAttributes fd original Immediately
-    return (setAttrs, unsetAttrs)
+makeLenses ''Input

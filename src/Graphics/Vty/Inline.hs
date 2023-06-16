@@ -29,13 +29,11 @@
 -- Copyright 2009-2010 Corey O'Connor
 module Graphics.Vty.Inline
   ( module Graphics.Vty.Inline
-  , withVty
   )
 where
 
 import Graphics.Vty
 import Graphics.Vty.DisplayAttributes
-import Graphics.Vty.Inline.Unsafe
 
 import Blaze.ByteString.Builder (writeToByteString)
 
@@ -119,8 +117,8 @@ putAttrChange out c = liftIO $ do
 -- output device.
 --
 -- This will flush the terminal output.
-putAttrChange_ :: ( Applicative m, MonadIO m ) => InlineM () -> m ()
-putAttrChange_ c = liftIO $ withOutput $ \out -> do
+putAttrChange_ :: ( Applicative m, MonadIO m ) => Output -> InlineM () -> m ()
+putAttrChange_ out c = liftIO $ do
     hFlush stdout
     putAttrChange out c
     hFlush stdout
