@@ -54,10 +54,8 @@ library
                        mtl >= 1.1.1.0 && < 2.4,
                        parsec >= 2 && < 4,
                        stm,
-                       terminfo >= 0.3 && < 0.5,
                        transformers >= 0.3.0.0,
                        text >= 0.11.3,
-                       unix,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7,
                        binary,
@@ -71,7 +69,6 @@ library
                        Graphics.Vty.Attributes
                        Graphics.Vty.Attributes.Color
                        Graphics.Vty.Attributes.Color240
-                       Graphics.Vty.Config
                        Graphics.Vty.Error
                        Graphics.Vty.Image
                        Graphics.Vty.Inline
@@ -96,40 +93,28 @@ library
                        cbits/get_tty_erase.c
                        cbits/mk_wcwidth.c
 
-executable vty-build-width-table
-  main-is:             BuildWidthTable.hs
-  hs-source-dirs:      tools
-  default-language:    Haskell2010
-  ghc-options:         -threaded -Wall
+-- executable vty-build-width-table
+--   main-is:             BuildWidthTable.hs
+--   hs-source-dirs:      tools
+--   default-language:    Haskell2010
+--   ghc-options:         -threaded -Wall
+-- 
+--   if !impl(ghc >= 8.0)
+--     build-depends:     semigroups >= 0.16
+-- 
+--   build-depends:       base,
+--                        vty,
+--                        directory,
+--                        filepath
 
-  if !impl(ghc >= 8.0)
-    build-depends:     semigroups >= 0.16
-
-  build-depends:       base,
-                       vty,
-                       directory,
-                       filepath
-
-executable vty-mode-demo
-  main-is:             ModeDemo.hs
-  hs-source-dirs:      demos
-  default-language:    Haskell2010
-  ghc-options:         -threaded
-  build-depends:       base,
-                       vty,
-                       containers,
-                       microlens,
-                       microlens-mtl,
-                       mtl
-
-executable vty-demo
-  main-is:             Demo.hs
-  hs-source-dirs:      demos
-  default-language:    Haskell2010
-  ghc-options:         -threaded
-  build-depends:       base,
-                       vty,
-                       containers,
-                       microlens,
-                       microlens-mtl,
-                       mtl
+-- executable vty-demo
+--   main-is:             Demo.hs
+--   hs-source-dirs:      demos
+--   default-language:    Haskell2010
+--   ghc-options:         -threaded
+--   build-depends:       base,
+--                        vty,
+--                        containers,
+--                        microlens,
+--                        microlens-mtl,
+--                        mtl

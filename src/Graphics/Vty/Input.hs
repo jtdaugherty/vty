@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards, CPP #-}
-
 -- | This module provides the input layer for Vty, including methods
 -- for initializing an 'Input' structure and reading 'Event's from the
 -- terminal.
@@ -120,15 +118,8 @@ module Graphics.Vty.Input
   )
 where
 
-import Graphics.Vty.Config
 import Graphics.Vty.Input.Events
-
 import Control.Concurrent.STM
-import Data.IORef (IORef)
-
-#if !MIN_VERSION_base(4,11,0)
-import Data.Monoid ((<>))
-#endif
 
 data Input = Input
     { -- | Channel of events direct from input processing. Unlike
@@ -144,5 +135,4 @@ data Input = Input
       -- directly.
     , restoreInputState :: IO ()
       -- | Changes to this value are reflected after the next event.
-    , configRef :: IORef Config
     }

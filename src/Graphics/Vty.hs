@@ -33,10 +33,10 @@
 -- @
 module Graphics.Vty
   ( Vty(..)
-  , mkVty
   , setWindowTitle
+  , installCustomWidthTable
+  , mkVtyFromPair
   , Mode(..)
-  , module Graphics.Vty.Config
   , module Graphics.Vty.Input
   , module Graphics.Vty.Output
   , module Graphics.Vty.Output.Interface
@@ -46,7 +46,6 @@ module Graphics.Vty
   )
 where
 
-import Graphics.Vty.Config
 import Graphics.Vty.Input
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Output
@@ -110,41 +109,21 @@ data Vty =
         , isShutdown :: IO Bool
         }
 
--- | Create a Vty handle. At most one handle should be created at a time
--- for a given terminal device.
---
--- The specified configuration is added to the the configuration
--- loaded by 'userConfig' with the 'userConfig' configuration taking
--- precedence. See "Graphics.Vty.Config".
---
--- For most applications @mkVty defaultConfig@ is sufficient.
-mkVty :: Config -> IO Vty
-mkVty appConfig = do
-    config <- (<> appConfig) <$> userConfig
-
-    when (allowCustomUnicodeWidthTables config /= Just False) $
-        installCustomWidthTable config
-
-    input <- error "FIXME: was: inputForConfig config"
-    out <- error "FIXME: was: outputForConfig config"
-    internalMkVty input out
-
-installCustomWidthTable :: Config -> IO ()
-installCustomWidthTable c = do
-    let doLog s = case debugLog c of
-            Nothing -> return ()
-            Just path -> appendFile path $ "installWidthTable: " <> s <> "\n"
+installCustomWidthTable :: Maybe FilePath -> Maybe String -> [(String, String)] -> IO ()
+installCustomWidthTable logPath tblName widthMaps = do
+    let doLog s = case logPath of
+                      Nothing -> return ()
+                      Just path -> appendFile path $ "installWidthTable: " <> s <> "\n"
 
     customInstalled <- isCustomTableReady
     when (not customInstalled) $ do
-        mTerm <- currentTerminalName
-        case mTerm of
+        case tblName of
             Nothing ->
-                doLog "No current terminal name available"
-            Just currentTerm ->
-                case lookup currentTerm (termWidthMaps c) of
+                doLog "No terminal name given in the configuration, skipping load"
+            Just name ->
+                case lookup name widthMaps of
                     Nothing ->
-                        doLog "Current terminal not found in custom character width mapping list"
+                        doLog $ "Width table " <> show name <> " not found in custom character width mapping list"
                     Just path -> do
                         tableResult <- E.try $ readUnicodeWidthTable path
                         case tableResult of
@@ -164,8 +143,8 @@ installCustomWidthTable c = do
                                         doLog $ "Successfully installed Unicode width table " <>
                                                 " from " <> show path
 
-internalMkVty :: Input -> Output -> IO Vty
-internalMkVty input out = do
+mkVtyFromPair :: Input -> Output -> IO Vty
+mkVtyFromPair input out = do
     reserveDisplay out
 
     shutdownVar <- newTVarIO False
