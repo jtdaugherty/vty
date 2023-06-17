@@ -210,17 +210,6 @@ mkVtyFromPair input out = do
                  }
 
 -- | Set the terminal window title string.
---
--- This function emits an Xterm-compatible escape sequence that we
--- anticipate will work for essentially all modern terminal emulators.
--- Ideally we'd use a terminal capability for this, but there does not
--- seem to exist a termcap for setting window titles. If you find that
--- this function does not work for a given terminal emulator, please
--- report the issue.
---
--- For details, see:
---
--- https://tldp.org/HOWTO/Xterm-Title-3.html
 setWindowTitle :: Vty -> String -> IO ()
 setWindowTitle vty title =
     setOutputWindowTitle (outputIface vty) title
