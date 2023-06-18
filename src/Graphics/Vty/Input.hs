@@ -134,5 +134,4 @@ data Input = Input
       -- 'shutdownInput' but is exposed in case you need to access it
       -- directly.
     , restoreInputState :: IO ()
-      -- | Changes to this value are reflected after the next event.
     }
