@@ -111,14 +111,11 @@
 -- * http://www.leonerd.org.uk/hacks/fixterms/
 module Graphics.Vty.Input
   ( Input(..)
-  , Key(..)
-  , Modifier(..)
-  , Button(..)
-  , Event(..)
+  , module Graphics.Vty.Input.Events
   )
 where
 
-import Graphics.Vty.Input.Events
+import Graphics.Vty.Input.Events (InternalEvent)
 import Control.Concurrent.STM (TChan)
 
 data Input =
