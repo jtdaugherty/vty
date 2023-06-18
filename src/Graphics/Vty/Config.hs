@@ -139,18 +139,18 @@ type InputMap = [(Maybe String, String, Event)]
 -- | A Vty core library configuration. Platform-specific details are not
 -- included in the VtyUserConfig.
 data VtyUserConfig =
-    VtyUserConfig { debugLog :: Maybe FilePath
+    VtyUserConfig { configDebugLog :: Maybe FilePath
                   -- ^ Debug information is appended to this file if not
                   -- Nothing.
-                  , inputMap :: InputMap
+                  , configInputMap :: InputMap
                   -- ^ The (input byte, output event) pairs extend the internal
                   -- input table of VTY and the table from terminfo.
                   --
                   -- See "Graphics.Vty.Config" module documentation for
                   -- documentation of the @map@ directive.
-                  , termWidthMaps :: [(String, FilePath)]
+                  , configTermWidthMaps :: [(String, FilePath)]
                   -- ^ Terminal width map files.
-                  , allowCustomUnicodeWidthTables :: Maybe Bool
+                  , configAllowCustomUnicodeWidthTables :: Maybe Bool
                   -- ^ Whether to permit custom Unicode width table loading by
                   -- 'Graphics.Vty.mkVty'. @'Just' 'False'@ indicates that
                   -- table loading should not be performed. Other values permit
@@ -170,19 +170,22 @@ defaultConfig = mempty
 instance Semigroup VtyUserConfig where
     c0 <> c1 =
         -- latter config takes priority for everything but inputMap
-        VtyUserConfig { debugLog = debugLog c1 <|> debugLog c0
-                      , inputMap = inputMap c0 <> inputMap c1
-                      , termWidthMaps = termWidthMaps c1 <|> termWidthMaps c0
-                      , allowCustomUnicodeWidthTables =
-                          allowCustomUnicodeWidthTables c1 <|> allowCustomUnicodeWidthTables c0
+        VtyUserConfig { configDebugLog =
+                          configDebugLog c1 <|> configDebugLog c0
+                      , configInputMap =
+                          configInputMap c0 <> configInputMap c1
+                      , configTermWidthMaps =
+                          configTermWidthMaps c1 <|> configTermWidthMaps c0
+                      , configAllowCustomUnicodeWidthTables =
+                          configAllowCustomUnicodeWidthTables c1 <|> configAllowCustomUnicodeWidthTables c0
                       }
 
 instance Monoid VtyUserConfig where
     mempty =
-        VtyUserConfig { debugLog = mempty
-                      , inputMap = mempty
-                      , termWidthMaps = []
-                      , allowCustomUnicodeWidthTables = Nothing
+        VtyUserConfig { configDebugLog = mempty
+                      , configInputMap = mempty
+                      , configTermWidthMaps = []
+                      , configAllowCustomUnicodeWidthTables = Nothing
                       }
 #if !(MIN_VERSION_base(4,11,0))
     mappend = (<>)
@@ -230,7 +233,7 @@ terminalWidthTablePath = do
 overrideEnvConfig :: IO VtyUserConfig
 overrideEnvConfig = do
     d <- lookupEnv "VTY_DEBUG_LOG"
-    return $ defaultConfig { debugLog = d }
+    return $ defaultConfig { configDebugLog = d }
 
 parseConfigFile :: FilePath -> IO VtyUserConfig
 parseConfigFile path = do
@@ -273,20 +276,20 @@ mapDecl = do
     bytes     <- P.stringLiteral configLexer
     key       <- parseValue
     modifiers <- parseValue
-    return defaultConfig { inputMap = [(termIdent, bytes, EvKey key modifiers)] }
+    return defaultConfig { configInputMap = [(termIdent, bytes, EvKey key modifiers)] }
 
 debugLogDecl :: Parser VtyUserConfig
 debugLogDecl = do
     "debugLog" <- P.identifier configLexer
     path       <- P.stringLiteral configLexer
-    return defaultConfig { debugLog = Just path }
+    return defaultConfig { configDebugLog = Just path }
 
 widthMapDecl :: Parser VtyUserConfig
 widthMapDecl = do
     "widthMap" <- P.identifier configLexer
     tName <- P.stringLiteral configLexer
     path <- P.stringLiteral configLexer
-    return defaultConfig { termWidthMaps = [(tName, path)] }
+    return defaultConfig { configTermWidthMaps = [(tName, path)] }
 
 ignoreLine :: Parser ()
 ignoreLine = void $ manyTill anyChar newline
@@ -386,9 +389,9 @@ addConfigWidthMap configPath term tablePath = do
 
         updateConfig = do
             config <- parseConfigFile configPath
-            if (term, tablePath) `elem` termWidthMaps config
+            if (term, tablePath) `elem` configTermWidthMaps config
                then return ConfigurationRedundant
-               else case lookup term (termWidthMaps config) of
+               else case lookup term (configTermWidthMaps config) of
                    Just other -> return $ ConfigurationConflict other
                    Nothing -> do
                        appendFile configPath directive
