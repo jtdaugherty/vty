@@ -54,7 +54,10 @@ library
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7,
                        binary,
-                       ansi-terminal >= 0.10.3
+                       ansi-terminal >= 0.10.3,
+                       parsec,
+                       filepath,
+                       directory
 
   if !impl(ghc >= 8.0)
     build-depends:     semigroups >= 0.16,
@@ -64,6 +67,7 @@ library
                        Graphics.Vty.Attributes
                        Graphics.Vty.Attributes.Color
                        Graphics.Vty.Attributes.Color240
+                       Graphics.Vty.Config
                        Graphics.Vty.Error
                        Graphics.Vty.Image
                        Graphics.Vty.Inline
