@@ -134,4 +134,6 @@ data Input = Input
       -- 'shutdownInput' but is exposed in case you need to access it
       -- directly.
     , restoreInputState :: IO ()
+      -- | Log the specified message.
+    , inputLogMsg :: String -> IO ()
     }
