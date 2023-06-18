@@ -85,7 +85,6 @@ library
                        Graphics.Vty.UnicodeWidthTable.Install
   c-sources:           cbits/gwinsz.c
                        cbits/set_term_timing.c
-                       cbits/get_tty_erase.c
                        cbits/mk_wcwidth.c
 
 -- executable vty-build-width-table
