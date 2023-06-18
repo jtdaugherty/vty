@@ -1,10 +1,13 @@
 -- Copyright 2009-2010 Corey O'Connor
 module Graphics.Vty.Debug
   ( MockWindow(..)
+  , SpanConstructLog
   , regionForWindow
   , allSpansHaveWidth
   , spanOpsAffectedColumns
   , spanOpsAffectedRows
+  , rowOpsAffectedColumns
+  , isSetAttr
   )
 where
 
