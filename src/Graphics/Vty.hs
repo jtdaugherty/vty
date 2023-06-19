@@ -38,6 +38,7 @@ module Graphics.Vty
   , mkVtyFromPair
   , Mode(..)
   , module Graphics.Vty.Input
+  , module Graphics.Vty.Input.Events
   , module Graphics.Vty.Output
   , module Graphics.Vty.Output.Interface
   , module Graphics.Vty.Picture
