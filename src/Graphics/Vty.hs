@@ -37,6 +37,7 @@ module Graphics.Vty
   , installCustomWidthTable
   , mkVtyFromPair
   , Mode(..)
+  , module Graphics.Vty.Config
   , module Graphics.Vty.Input
   , module Graphics.Vty.Input.Events
   , module Graphics.Vty.Output
@@ -47,6 +48,7 @@ module Graphics.Vty
   )
 where
 
+import Graphics.Vty.Config
 import Graphics.Vty.Input
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Output
