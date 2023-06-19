@@ -152,7 +152,7 @@ mkVtyFromPair input out = do
                 releaseDisplay out
                 releaseTerminal out
 
-    let shutdownStatus = readTVarIO shutdownVar
+        shutdownStatus = readTVarIO shutdownVar
 
     lastPicRef <- newIORef Nothing
     lastUpdateRef <- newIORef Nothing
@@ -177,7 +177,7 @@ mkVtyFromPair input out = do
             writeIORef lastUpdateRef $ Just updateData
             writeIORef lastPicRef $ Just inPic
 
-    let innerRefresh = do
+        innerRefresh = do
             writeIORef lastUpdateRef Nothing
             bounds <- displayBounds out
             dc <- displayContext out bounds
@@ -185,7 +185,7 @@ mkVtyFromPair input out = do
             mPic <- readIORef lastPicRef
             maybe (return ()) innerUpdate mPic
 
-    let mkResize = uncurry EvResize <$> displayBounds out
+        mkResize = uncurry EvResize <$> displayBounds out
 
         translateInternalEvent ResumeAfterSignal = mkResize
         translateInternalEvent (InputEvent e)    = return e
