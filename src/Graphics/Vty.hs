@@ -36,7 +36,6 @@ module Graphics.Vty
   , setWindowTitle
   , installCustomWidthTable
   , mkVtyFromPair
-  , Mode(..)
   , module Graphics.Vty.Config
   , module Graphics.Vty.Input
   , module Graphics.Vty.Input.Events
