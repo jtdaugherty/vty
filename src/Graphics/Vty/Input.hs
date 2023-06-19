@@ -5,7 +5,7 @@ module Graphics.Vty.Input
   )
 where
 
-import Graphics.Vty.Input.Events (InternalEvent)
+import Graphics.Vty.Input.Events
 import Control.Concurrent.STM (TChan)
 
 data Input =
