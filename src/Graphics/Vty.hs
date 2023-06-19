@@ -187,8 +187,8 @@ mkVtyFromPair input out = do
 
         mkResize = uncurry EvResize <$> displayBounds out
 
-        translateInternalEvent ResumeAfterSignal = mkResize
-        translateInternalEvent (InputEvent e)    = return e
+        translateInternalEvent ResumeAfterInterrupt = mkResize
+        translateInternalEvent (InputEvent e) = return e
 
         gkey = do
             e <- atomically $ readTChan $ eventChannel input
