@@ -48,17 +48,17 @@ mkRanges pairs =
 defaultUnicodeTableUpperBound :: Char
 defaultUnicodeTableUpperBound = '\xe0000'
 
--- | Construct a unicode character width table by querying the terminal
--- connected to stdout. This works by emitting characters to stdout
--- and then querying the terminal to determine the resulting cursor
--- position in order to measure character widths. Consequently this will
--- generate a lot of output and may take a while, depending on your
--- system performance. This should not be run in a terminal while it is
--- controlled by Vty.
+-- | Construct a unicode character width table. This works by using the
+-- provided function to obtain the appropriate width for each character
+-- in a wide range of Unicode code points, which on some platforms
+-- may perform local terminal operations or may interact with system
+-- libraries. Depending on how the provided width function works, this
+-- may need to be run only in a terminal that is not actively controlled
+-- by a Vty handle.
 --
--- The argument specifies the upper bound code point to test when
--- building the table. This allows callers to decide how much of the
--- Unicode code point space to scan when building the table.
+-- The character argument specifies the upper bound code point to test
+-- when building the table. This allows callers to decide how much of
+-- the Unicode code point space to scan when building the table.
 --
 -- This does not handle exceptions.
 buildUnicodeWidthTable :: (Char -> IO Int) -> Char -> IO UnicodeWidthTable
