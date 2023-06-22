@@ -62,30 +62,30 @@ library
     build-depends:     semigroups >= 0.16,
                        fail
 
-  exposed-modules:     Graphics.Vty
+  exposed-modules:     Graphics.Text.Width
+                       Graphics.Vty
                        Graphics.Vty.Attributes
                        Graphics.Vty.Attributes.Color
                        Graphics.Vty.Attributes.Color240
                        Graphics.Vty.Config
+                       Graphics.Vty.Debug
+                       Graphics.Vty.DisplayAttributes
                        Graphics.Vty.Error
                        Graphics.Vty.Image
+                       Graphics.Vty.Image.Internal
                        Graphics.Vty.Inline
                        Graphics.Vty.Input
                        Graphics.Vty.Input.Events
-                       Graphics.Vty.Picture
                        Graphics.Vty.Output
-                       Graphics.Text.Width
-                       Graphics.Vty.Debug
-                       Graphics.Vty.DisplayAttributes
-                       Graphics.Vty.Image.Internal
+                       Graphics.Vty.Output.Mock
+                       Graphics.Vty.Picture
                        Graphics.Vty.PictureToSpans
                        Graphics.Vty.Span
-                       Graphics.Vty.Output.Mock
-                       Graphics.Vty.UnicodeWidthTable.Types
                        Graphics.Vty.UnicodeWidthTable.IO
-                       Graphics.Vty.UnicodeWidthTable.Query
-                       Graphics.Vty.UnicodeWidthTable.Main
                        Graphics.Vty.UnicodeWidthTable.Install
+                       Graphics.Vty.UnicodeWidthTable.Main
+                       Graphics.Vty.UnicodeWidthTable.Query
+                       Graphics.Vty.UnicodeWidthTable.Types
   c-sources:           cbits/mk_wcwidth.c
 
 -- executable vty-demo
