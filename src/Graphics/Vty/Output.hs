@@ -2,23 +2,9 @@
 -- | This module provides functions for accessing the current terminal
 -- or a specific terminal device.
 --
--- See also:
---
--- 1. "Graphics.Vty.Output": This instantiates an abtract interface
--- to the terminal based on the @TERM@ and @COLORTERM@ environment
--- variables.
---
--- 2. "Graphics.Vty.Output.Interface": Defines the generic interface all
--- terminal modules need to implement.
---
--- 3. "Graphics.Vty.Output.TerminfoBased": Defines a terminal instance
--- that uses terminfo for all control strings. No attempt is made to
--- change the character set to UTF-8 for these terminals.
---
--- 4. "Graphics.Vty.Output.XTermColor": This module contains an
--- interface suitable for xterm-like terminals. These are the terminals
--- where @TERM@ begins with @xterm@. This does use terminfo for as many
--- control codes as possible.
+-- See also "Graphics.Vty.Output.Interface", which defines the generic
+-- device output interface that all Vty platform implementations must
+-- implement.
 module Graphics.Vty.Output
   ( setCursorPos
   , hideCursor

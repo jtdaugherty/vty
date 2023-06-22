@@ -53,7 +53,9 @@ data Mode = Mouse
           -- you intend to support. It is off by default.
           deriving (Eq, Read, Show)
 
--- | The Vty terminal output interface.
+-- | The library's device output abstraction. Platform-specific
+-- implementations must implement an 'Output' and provide it to
+-- 'Graphics.Vty.mkVtyFromPair'.
 data Output = Output
     { -- | Text identifier for the output device. Used for debugging.
       terminalID :: String
