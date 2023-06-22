@@ -4,20 +4,21 @@
 -- | Vty provides interfaces for both terminal input and terminal
 -- output.
 --
--- - Input to the terminal is provided to the Vty application as a
+-- - User input to the terminal is provided to the Vty application as a
 --   sequence of 'Event's.
 --
--- - Output is provided to Vty by the application in the form of a
+-- - Output is provided to by the application to Vty in the form of a
 --   'Picture'. A 'Picture' is one or more layers of 'Image's.
 --   'Image' values can be built by the various constructors in
 --   "Graphics.Vty.Image". Output can be syled using 'Attr' (attribute)
 --   values in the "Graphics.Vty.Attributes" module.
 --
--- Vty uses threads internally, so programs made with Vty need to be
+-- Vty uses threads internally, so programs made with Vty must be
 -- compiled with the threaded runtime using the GHC @-threaded@ option.
 --
 -- @
 --  import "Graphics.Vty"
+--  import "Graphics.Vty.Platform.Unix (mkVty)"
 --
 --  main = do
 --      cfg <- 'standardIOConfig'
@@ -67,26 +68,28 @@ import Data.IORef
 import Data.Semigroup ((<>))
 #endif
 
--- | A Vty value represents a handle to the Vty library that the
+-- | A 'Vty' value represents a handle to the Vty library that the
 -- application must create in order to use Vty.
 --
--- The use of Vty typically follows this process:
+-- The use of this library typically follows this process:
 --
---    1. Initialize vty with 'mkVty' (this takes control of the terminal).
+-- 1. Initialize Vty with the 'mkVty' implementation for your platform's
+-- Vty package, or, more generically, with 'mkVtyFromPair'. This takes
+-- control of (and set up) the terminal.
 --
---    2. Use 'update' to display a picture.
+-- 2. Use 'update' to display a picture.
 --
---    3. Use 'nextEvent' to get the next input event.
+-- 3. Use 'nextEvent' to get the next input event.
 --
---    4. Depending on the event, go to 2 or 5.
+-- 4. Depending on the event, go to 2 or 5.
 --
---    5. Shutdown vty and restore the terminal state with 'shutdown'. At
---    this point the 'Vty' handle cannot be used again.
+-- 5. Shutdown Vty and restore the terminal state with 'shutdown'. At
+-- this point the 'Vty' handle cannot be used again.
 --
 -- Operations on Vty handles are not thread-safe.
 data Vty =
     Vty { update :: Picture -> IO ()
-        -- ^ Outputs the given 'Picture'.
+        -- ^ Output the given 'Picture' to the terminal.
         , nextEvent :: IO Event
         -- ^ Return the next 'Event' or block until one becomes
         -- available.
