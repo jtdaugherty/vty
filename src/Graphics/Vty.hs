@@ -16,13 +16,15 @@
 -- Vty uses threads internally, so programs made with Vty must be
 -- compiled with the threaded runtime using the GHC @-threaded@ option.
 --
+-- As a small example, the following program demonstrates the use of Vty
+-- on a Unix system using the @vty-unix@ package:
+--
 -- @
 --  import "Graphics.Vty"
---  import "Graphics.Vty.Platform.Unix (mkVty)"
+--  import "Graphics.Vty.Platform.Unix" ('Graphics.Vty.Platform.Unix.mkVty')
 --
 --  main = do
---      cfg <- 'standardIOConfig'
---      vty <- 'mkVty' cfg
+--      vty <- 'mkVty' 'defaultConfig' Nothing
 --      let line0 = 'string' ('defAttr' ` 'withForeColor' ` 'green') \"first line\"
 --          line1 = 'string' ('defAttr' ` 'withBackColor' ` 'blue') \"second line\"
 --          img = line0 '<->' line1
