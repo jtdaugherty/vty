@@ -12,7 +12,7 @@ where
 
 import Graphics.Vty.Image (DisplayRegion)
 import Graphics.Vty.Attributes.Color (ColorMode(ColorMode16))
-import Graphics.Vty.Output.Interface
+import Graphics.Vty.Output
 
 import Blaze.ByteString.Builder.Word (writeWord8)
 

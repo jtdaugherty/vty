@@ -81,7 +81,6 @@ library
                        Graphics.Vty.PictureToSpans
                        Graphics.Vty.Span
                        Graphics.Vty.Output.Mock
-                       Graphics.Vty.Output.Interface
                        Graphics.Vty.UnicodeWidthTable.Types
                        Graphics.Vty.UnicodeWidthTable.IO
                        Graphics.Vty.UnicodeWidthTable.Query

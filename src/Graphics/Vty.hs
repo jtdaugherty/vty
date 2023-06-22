@@ -43,7 +43,6 @@ module Graphics.Vty
   , module Graphics.Vty.Input
   , module Graphics.Vty.Input.Events
   , module Graphics.Vty.Output
-  , module Graphics.Vty.Output.Interface
   , module Graphics.Vty.Picture
   , module Graphics.Vty.Image
   , module Graphics.Vty.Attributes
@@ -54,7 +53,6 @@ import Graphics.Vty.Config
 import Graphics.Vty.Input
 import Graphics.Vty.Input.Events
 import Graphics.Vty.Output
-import Graphics.Vty.Output.Interface
 import Graphics.Vty.Picture
 import Graphics.Vty.Image
 import Graphics.Vty.Attributes
