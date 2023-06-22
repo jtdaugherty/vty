@@ -1,5 +1,18 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE CPP #-}
+-- | This module provides a command-line tool implementation for
+-- building Vty character width tables and updating the user's local Vty
+-- configuration to load them.
+--
+-- The API is parameterized on a platform-specific function to obtain
+-- character widths. For example, on Unix platforms, this could be done
+-- with a routine that communicates with the terminal to query it for
+-- character widths. On other platforms, such a routine might interact
+-- with a system library.
+--
+-- This tool is provided as a library implementation so that the tool
+-- has a consistent interface across platforms and so that it implements
+-- the Vty configuration update the same way everywhere.
 module Graphics.Vty.UnicodeWidthTable.Main
   ( defaultMain
   )
@@ -92,6 +105,26 @@ updateConfigFromArg (TableUpperBound s) c =
 updateConfigFromArg (OutputPath p) c =
     c { configOutputPath = Just p }
 
+-- | Run the character width table builder tool using the specified
+-- function to obtain character widths. This is intended to be a 'main'
+-- implementation, e.g. @main = defaultMain getCharWidth@.
+--
+-- The tool queries the local terminal in some way (as determined by
+-- the provided function) over a wide range of Unicode code points and
+-- generates a table of character widths that can subsequently be loaded
+-- by Vty-based applications.
+--
+-- The tool respects the following command-line flags, all of which are
+-- optional and have sensible defaults:
+--
+-- * @-h@/@--help@: help output
+-- * @-b@/@--bound@: Unicode code point upper bound to use when building
+--   the table.
+-- * @-p@/@--path@: the output path where the generated table should be
+--   written.
+-- * @-u@/@--update-config@: If given, create or update the user's Vty
+--   configuration file to use the new table.
+-- * @-c@/@--config-path@: the path to the user's Vty configuration.
 defaultMain :: (Char -> IO Int) -> IO ()
 defaultMain charWidth = do
     defConfig <- mkDefaultConfig
