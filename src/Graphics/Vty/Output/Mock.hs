@@ -88,4 +88,3 @@ mockTerminal r = liftIO $ do
                 }
             }
     return (outRef, t)
-
