@@ -7,8 +7,6 @@ where
 
 import Control.Monad (forM)
 import Data.Char (generalCategory, GeneralCategory(..))
-import System.Console.ANSI (getCursorPosition)
-import Text.Printf (printf)
 
 import Graphics.Vty.UnicodeWidthTable.Types
 
@@ -19,13 +17,6 @@ shouldConsider c =
         NotAssigned -> False
         Surrogate   -> False
         _           -> True
-
-charWidth :: Char -> IO Int
-charWidth c = do
-    printf "\r"
-    putChar c
-    Just (_, col) <- getCursorPosition
-    return col
 
 -- | Convert a sequence of character/width pairs into a list of
 -- run-length encoded ranges. This function assumes the pairs come
@@ -70,8 +61,8 @@ defaultUnicodeTableUpperBound = '\xe0000'
 -- Unicode code point space to scan when building the table.
 --
 -- This does not handle exceptions.
-buildUnicodeWidthTable :: Char -> IO UnicodeWidthTable
-buildUnicodeWidthTable tableUpperBound = do
+buildUnicodeWidthTable :: (Char -> IO Int) -> Char -> IO UnicodeWidthTable
+buildUnicodeWidthTable charWidth tableUpperBound = do
     pairs <- forM (filter shouldConsider ['\0'..tableUpperBound]) $ \i ->
         (i,) <$> charWidth i
 

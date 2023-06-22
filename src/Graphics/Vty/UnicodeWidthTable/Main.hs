@@ -1,6 +1,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE CPP #-}
-module Main where
+module Graphics.Vty.UnicodeWidthTable.Main
+  ( defaultMain
+  )
+where
 
 import qualified Control.Exception as E
 import Control.Monad (when)
@@ -89,8 +92,8 @@ updateConfigFromArg (TableUpperBound s) c =
 updateConfigFromArg (OutputPath p) c =
     c { configOutputPath = Just p }
 
-main :: IO ()
-main = do
+defaultMain :: (Char -> IO Int) -> IO ()
+defaultMain charWidth = do
     defConfig <- mkDefaultConfig
     strArgs <- getArgs
     let (args, unused, errors) = getOpt Permute (options defConfig) strArgs
@@ -112,7 +115,7 @@ main = do
         Just path -> return path
 
     putStrLn "Querying terminal:"
-    builtTable <- buildUnicodeWidthTable $ configBound config
+    builtTable <- buildUnicodeWidthTable charWidth $ configBound config
 
     let dir = takeDirectory outputPath
     createDirectoryIfMissing True dir
