@@ -29,7 +29,7 @@ data Key = KEsc  | KChar {-# UNPACK #-} Char | KBS | KEnter
          | KUpLeft | KUpRight | KDownLeft | KDownRight | KCenter
          | KFun {-# UNPACK #-} Int | KBackTab | KPrtScr | KPause | KIns
          | KHome | KPageUp | KDel | KEnd | KPageDown | KBegin | KMenu
-    deriving (Eq,Show,Read,Ord,Generic)
+    deriving (Eq, Show, Read, Ord, Generic)
 
 instance NFData Key
 
@@ -37,13 +37,13 @@ instance NFData Key
 -- likely to have Meta than Alt; for instance on the PC Linux console,
 -- 'MMeta' will generally correspond to the physical Alt key.
 data Modifier = MShift | MCtrl | MMeta | MAlt
-    deriving (Eq,Show,Read,Ord,Generic)
+    deriving (Eq, Show, Read, Ord, Generic)
 
 instance NFData Modifier
 
 -- | Mouse buttons.
 data Button = BLeft | BMiddle | BRight | BScrollUp | BScrollDown
-    deriving (Eq,Show,Read,Ord,Generic)
+    deriving (Eq, Show, Read, Ord, Generic)
 
 instance NFData Button
 
@@ -74,7 +74,7 @@ data Event
     -- ^ The terminal running the application lost input focus.
     | EvGainedFocus
     -- ^ The terminal running the application gained input focus.
-    deriving (Eq,Show,Read,Ord,Generic)
+    deriving (Eq, Show, Read, Ord, Generic)
 
 instance NFData Event
 
