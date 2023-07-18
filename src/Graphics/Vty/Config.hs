@@ -345,11 +345,22 @@ instance (GParseAlts f, GParseAlts g) => GParseAlts (f :+: g) where
 
 instance GParseAlts V1 where gparseAlts _ = fail "GParse: V1"
 
+-- | The result of a configuration change attempt made by
+-- 'addConfigWidthMap'.
 data ConfigUpdateResult =
     ConfigurationCreated
+    -- ^ A new configuration file file was written with the new width
+    -- table entry.
     | ConfigurationModified
+    -- ^ An existing configuration file was modified with the new width
+    -- table entry.
     | ConfigurationConflict String
+    -- ^ The attempted width table entry could not be written to the
+    -- configuration due to a conflict; the argument here is the width
+    -- table file path for the conflicting entry.
     | ConfigurationRedundant
+    -- ^ No change was made because the existing configuration already
+    -- contains the specified mapping.
     deriving (Eq, Show)
 
 -- | Add a @widthMap@ directive to the Vty configuration file at the
