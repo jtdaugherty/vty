@@ -3,12 +3,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
--- | Vty supports a configuration file format and associated
--- 'VtyUserConfig' data type. The 'VtyUserConfig' can be provided to
--- 'mkVty' to customize the application's use of Vty.
---
--- Lines in config files that fail to parse are ignored. Later entries
--- take precedence over earlier ones.
+-- | Vty supports a configuration file format and provides a
+-- corresponding 'VtyUserConfig' data type. The 'VtyUserConfig' can be
+-- provided to platform packages' @mkVty@ functions to customize the
+-- application's use of Vty.
 --
 -- = Debug
 --
@@ -72,15 +70,14 @@
 --   widthMap \"xterm\" \"\/home\/user\/.vty\/xterm\_map.dat\"
 -- @
 --
--- This directive specifies the path to a Unicode character width
--- map (the second argument) that should be loaded and used when
--- the value of TERM matches the first argument. Unicode character
--- width maps can be produced either by running the provided binary
--- @vty-build-width-table@ or by calling the library routine
--- 'Graphics.Vty.UnicodeWidthTable.Query.buildUnicodeWidthTable'. The
--- 'Graphics.Vty.mkVty' function will use these configuration settings
--- to attempt to load and install the specified width map. See the
--- documentation for 'Graphics.Vty.mkVty' for details.
+-- This directive specifies the path to a Unicode character
+-- width map (the second argument) that should correspond to
+-- the terminal named by first argument. Unicode character
+-- width maps can be produced either by running platform
+-- packages' width table tools or by calling the library routine
+-- 'Graphics.Vty.UnicodeWidthTable.Query.buildUnicodeWidthTable'. Vty
+-- platform packages should use these configuration settings to attempt
+-- to load and install the specified width map.
 module Graphics.Vty.Config
   ( InputMap
   , VtyUserConfig(..)
@@ -235,6 +232,10 @@ overrideEnvConfig = do
     d <- lookupEnv "VTY_DEBUG_LOG"
     return $ defaultConfig { configDebugLog = d }
 
+-- | Parse a Vty configuration file.
+--
+-- Lines in config files that fail to parse are ignored. Later entries
+-- take precedence over earlier ones.
 parseConfigFile :: FilePath -> IO VtyUserConfig
 parseConfigFile path = do
     catch (runParseConfig path <$> BS.readFile path)
