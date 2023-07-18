@@ -13,8 +13,10 @@
 --   "Graphics.Vty.Image". Output can be syled using 'Attr' (attribute)
 --   values in the "Graphics.Vty.Attributes" module.
 --
--- Vty uses threads internally, so programs made with Vty must be
--- compiled with the threaded runtime using the GHC @-threaded@ option.
+-- - Each platform on which Vty is supported provides a package that
+--   provides Vty with access to the platform-specific terminal
+--   interface. For example, on Unix systems, the @vty-unix@ package
+--   must be used to initialize Vty with access to a Unix terminal.
 --
 -- As a small example, the following program demonstrates the use of Vty
 -- on a Unix system using the @vty-unix@ package:
@@ -34,6 +36,9 @@
 --      'shutdown' vty
 --      'print' (\"Last event was: \" '++' 'show' e)
 -- @
+--
+-- Vty uses threads internally, so programs made with Vty must be
+-- compiled with the threaded runtime using the GHC @-threaded@ option.
 module Graphics.Vty
   ( Vty(..)
   , setWindowTitle
