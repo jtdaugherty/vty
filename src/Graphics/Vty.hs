@@ -130,7 +130,7 @@ installCustomWidthTable :: Maybe FilePath
                         -- the terminal name, e.g. value of @TERM@ on
                         -- Unix systems). If omitted, this function does
                         -- not attempt to load a table.
-                        -> [(String, String)]
+                        -> [(String, FilePath)]
                         -- ^ Mapping from width table entry names to
                         -- width table file paths. This is usually
                         -- obtained from 'configTermWidthMaps' of
