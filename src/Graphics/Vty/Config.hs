@@ -363,8 +363,8 @@ data ConfigUpdateResult =
 -- If the configuration path does not exist, a new configuration file
 -- will be created and any directories in the path will also be created.
 --
--- This returns @True@ if the configuration was created or modified and
--- @False@ otherwise. This does not handle exceptions raised by file or
+-- This returns a 'ConfigUpdateResult' indicating the change to the
+-- configuration. This does not handle exceptions raised by file or
 -- directory permissions issues.
 addConfigWidthMap :: FilePath
                   -- ^ The configuration file path of the configuration
