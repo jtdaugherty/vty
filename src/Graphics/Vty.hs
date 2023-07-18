@@ -24,7 +24,7 @@
 --  import "Graphics.Vty.Platform.Unix" ('Graphics.Vty.Platform.Unix.mkVty')
 --
 --  main = do
---      vty <- 'mkVty' 'defaultConfig' Nothing
+--      vty <- 'mkVty' 'defaultConfig'
 --      let line0 = 'string' ('defAttr' ` 'withForeColor' ` 'green') \"first line\"
 --          line1 = 'string' ('defAttr' ` 'withBackColor' ` 'blue') \"second line\"
 --          img = line0 '<->' line1
