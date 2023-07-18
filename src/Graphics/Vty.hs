@@ -76,9 +76,9 @@ import Data.Semigroup ((<>))
 --
 -- The use of this library typically follows this process:
 --
--- 1. Initialize Vty with the 'mkVty' implementation for your platform's
--- Vty package, or, more generically, with 'mkVtyFromPair'. This takes
--- control of (and set up) the terminal.
+-- 1. Initialize Vty with the 'mkVty' implementation for your
+-- platform's Vty package (e.g. @vty-unix@), or, more generically, with
+-- 'mkVtyFromPair'. This takes control of (and sets up) the terminal.
 --
 -- 2. Use 'update' to display a picture.
 --
