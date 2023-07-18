@@ -168,6 +168,6 @@ color240 r g b = Color240 (rgbColorToColor240 r g b)
 -- | Create a Vty 'Color' (in the 240 color set) from an RGB triple.
 -- This is a synonym for 'color240'. This function is lossy in the sense
 -- that we only internally support 240 colors but the #RRGGBB format
--- supports 16^3 colors.
+-- supports 256^3 colors.
 rgbColor :: Integral i => i -> i -> i -> Color
 rgbColor = color240
