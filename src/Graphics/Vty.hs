@@ -169,6 +169,11 @@ installCustomWidthTable logPath tblName widthMaps = do
                                         doLog $ "Successfully installed Unicode width table " <>
                                                 " from " <> show path
 
+-- | Build a 'Vty' handle from an input/output pair.
+--
+-- This is exposed for Vty platform package implementors; application
+-- developers should never need to call this, and should instead call
+-- @mkVty@ or equivalent from their platform package of choice.
 mkVtyFromPair :: Input -> Output -> IO Vty
 mkVtyFromPair input out = do
     reserveDisplay out
