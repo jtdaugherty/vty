@@ -64,21 +64,21 @@ import Graphics.Vty.Attributes.Color240
 --
 -- The 8 ISO 6429 (ANSI) colors are as follows:
 --
---      0. black
+--      * black (0)
 --
---      1. red
+--      * red (1)
 --
---      2. green
+--      * green (2)
 --
---      3. yellow
+--      * yellow (3)
 --
---      4. blue
+--      * blue (4)
 --
---      5. magenta
+--      * magenta (5)
 --
---      6. cyan
+--      * cyan (6)
 --
---      7. white
+--      * white (7)
 --
 -- The mapping from points in the 240 color palette to colors actually
 -- displayable by the terminal depends on the number of colors the
