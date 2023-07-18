@@ -114,7 +114,28 @@ data Vty =
         , isShutdown :: IO Bool
         }
 
-installCustomWidthTable :: Maybe FilePath -> Maybe String -> [(String, String)] -> IO ()
+-- | Attempt to load and install a custom character width table into
+-- this process.
+--
+-- This looks up the specified terminal name in the specified width
+-- table map and, if a map file path is found, the map is loaded and
+-- installed. This is exposed for Vty platform package implementors;
+-- application developers should never need to call this.
+installCustomWidthTable :: Maybe FilePath
+                        -- ^ Optional path to a log file where log
+                        -- messages should be written when attempting to
+                        -- load a width table.
+                        -> Maybe String
+                        -- ^ Optional width table entry name (usually
+                        -- the terminal name, e.g. value of @TERM@ on
+                        -- Unix systems). If omitted, this function does
+                        -- not attempt to load a table.
+                        -> [(String, String)]
+                        -- ^ Mapping from width table entry names to
+                        -- width table file paths. This is usually
+                        -- obtained from 'configTermWidthMaps' of
+                        -- 'VtyUserConfig'.
+                        -> IO ()
 installCustomWidthTable logPath tblName widthMaps = do
     let doLog s = case logPath of
                       Nothing -> return ()
