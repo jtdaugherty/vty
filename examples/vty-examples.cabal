@@ -15,12 +15,6 @@ description:
   vty-interactive-terminal-test - interactive test. Useful for building
   a bug report for vtys author.
   .
-  vty-event-echo - view a input event log for vty. Example of
-  interacting with user.
-  .
-  vty-rogue - A bad rogue-like game. Go from the entrance to exit.
-  Example of layers
-  .
   vty-benchmark - benchmarks vty. A series of tests that push random
   pictures to the terminal.
   .
@@ -45,32 +39,6 @@ executable vty-interactive-terminal-test
                        vty,
                        string-qq,
                        Cabal
-
-executable vty-event-echo
-  main-is:             EventEcho.hs
-
-  default-language:    Haskell2010
-  default-extensions:  ScopedTypeVariables
-                       FlexibleContexts
-  ghc-options:         -threaded
-
-  build-depends:       base >= 4 && < 5,
-                       vty,
-                       containers,
-                       mtl
-
-executable vty-rogue
-  main-is:             Rogue.hs
-
-  default-language:    Haskell2010
-  default-extensions:  ScopedTypeVariables
-  ghc-options:         -threaded
-
-  build-depends:       base >= 4 && < 5,
-                       vty,
-                       array,
-                       mtl,
-                       random
 
 executable vty-benchmark
   main-is:             benchmark.hs
