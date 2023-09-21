@@ -6,10 +6,12 @@ This release marks the beginning of multi-platform support in Vty.
 Getting to this point involved removing Unix-specific functionality
 from Vty and moving it to a new package, `vty-unix`. In addition,
 another package, `vty-crossplatform`, is provided as a convenience for
-applications that want to support multiple Vty platforms at build time.
+applications that want to support multiple Vty platforms at build time,
+and at the time of this release, a release of a `vty-windows` package is
+forthcoming.
 
-To upgrade to this version of Vty, most applications will only need to
-take a few steps:
+To upgrade to this version of Vty, most people will only need to take a
+few steps:
 
 1. Add a dependency to `vty-unix` or `vty-crossplatform`, depending on
    the desired level of platform support. For example, if an application
