@@ -10,7 +10,9 @@ Steps
 
 Here are the high-level steps required to add support for a new platform
 for Vty. We'll use a fictional "toy operating system" as the platform in
-this example.
+this example. Following the conventions listed here will help users more
+easily use your platform package since it'll share conventions with the
+existing packages.
 
 1. Create a new package named `vty-<platform>`, e.g. `vty-toy-os`.
 1. Expose a single module, `Graphics.Vty.Platform.<PLATFORM>`, e.g.
