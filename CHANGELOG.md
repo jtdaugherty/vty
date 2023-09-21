@@ -37,8 +37,8 @@ below. For people who want to write their own Vty platform package like
   * The following modules got added to the `vty` library:
     * `Graphics.Vty.UnicodeWidthTable.Main`
   * The following modules got moved to `vty-unix`:
-    * `Data.Terminfo.Eval` (moved directly)
-    * `Data.Terminfo.Parse` (moved directly)
+    * `Data.Terminfo.Eval`
+    * `Data.Terminfo.Parse`
   * The following modules got moved to `vty-unix` into the
     `Graphics.Vty.Platform.Unix` module namespace (previously
     `Graphics.Vty`):
