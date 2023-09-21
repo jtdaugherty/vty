@@ -1,4 +1,111 @@
 
+6.0
+---
+
+This release marks the beginning of multi-platform support in Vty.
+Getting to this point involved removing Unix-specific functionality
+from Vty and moving it to a new package, `vty-unix`. In addition,
+another package, `vty-crossplatform`, is provided as a convenience for
+applications that want to support multiple Vty platforms at build time.
+
+To upgrade to this version of Vty, most applications will only need to
+take a few steps:
+
+1. Add a dependency to `vty-unix` or `vty-crossplatform`, depending on
+   the desired level of platform support. For example, if an application
+   only supports Unix systems, it should depend on `vty-unix`. But
+   if an application is intended to work anywhere Vty works, then
+   `vty-crossplatform` is a better choice.
+2. Import `mkVty` from the platform package in step (1). (`mkVty` was
+   removed from the `vty` package and is now the responsibility of each
+   platform package.)
+3. Maintain any existing package dependency on `vty`; the core library
+   abstractions, types, and functions are still obtained from `vty`
+   itself. The platform packages do not re-export the core library's
+   modules.
+4. If desired, call `Graphics.Vty.Config.userConfig` to load the Vty
+   user configuration since this step is longer automatic.
+
+For applications using more of Vty's API than just the basic
+initialization and rendering API, the full change list is provided
+below. For people who want to write their own Vty platform package like
+`vty-unix`, see `PLATFORM-HOWTO.md`.
+
+* Package changes:
+  * The following modules got added to the `vty` library:
+    * `Graphics.Vty.UnicodeWidthTable.Main`
+  * The following modules got moved to `vty-unix`:
+    * `Data.Terminfo.Eval` (moved directly)
+    * `Data.Terminfo.Parse` (moved directly)
+  * The following modules got moved to `vty-unix` into the
+    `Graphics.Vty.Platform.Unix` module namespace (previously
+    `Graphics.Vty`):
+    * `Graphics.Vty.Input.Classify`
+    * `Graphics.Vty.Input.Classify.Parse`
+    * `Graphics.Vty.Input.Classify.Types`
+    * `Graphics.Vty.Input.Focus`
+    * `Graphics.Vty.Input.Loop`
+    * `Graphics.Vty.Input.Mouse`
+    * `Graphics.Vty.Input.Paste`
+    * `Graphics.Vty.Input.Terminfo`
+    * `Graphics.Vty.Output.TerminfoBased`
+    * `Graphics.Vty.Output.XTermColor`
+  * The following modules were removed entirely:
+    * `Graphics.Vty.Inline.Unsafe`
+    * `Graphics.Vty.Output.Interface`
+  * Removed library dependencies on the following packages:
+    * `ansi-terminal`
+    * `containers`
+    * `terminfo`
+    * `transformers`
+    * `unix`
+  * The following executables were moved to other packages:
+    * `vty-build-width-table`
+    * `vty-mode-demo`
+    * `vty-demo`: TODO: move to `vty-crossplatform`?
+* API changes:
+  * `Graphics.Vty.mkVty` moved to the `vty-unix` package.
+  * Added `Graphics.Vty.mkVtyFromPair` for platform packages to
+    construct `Vty` handles.
+  * The contents of the `Graphics.Vty.Output.Interface` module were
+    merged into `Graphics.Vty.Output`.
+  * The `vty-build-width-table` tool was removed, but its
+    core functionality is now exposed as a library for platform
+    packages to use to provide platform-specific tools using
+    `Graphics.Vty.UnicodeWidthTable.Main`.
+  * `Graphics.Vty.Events`: the `InternalEvent` type's
+    `ResumeAfterSignal` constructor was renamed to
+    `ResumeAfterInterrupt` to be a bit more abstract and
+    platform-agnostic.
+  * Removed the following lenses for fields of the `Input` type:
+    * `eventChannel` (was for `_eventChannel` which was then renamed to
+      `eventChannel`)
+    * `configRef` (was for `_configRef` which was then renamed to
+      `configRef`)
+  * The `Output` record type got a new field, `setOutputWindowTitle`.
+  * The `Input` record type got a new field, `inputLogMsg :: String ->
+    IO ()`, for logging to the Vty log.
+  * `Graphics.Vty.Config` now exposes `VtyUserConfig` instead of
+    `Config`. Many of its fields were Unix-specific and were
+    consequently moved to the `UnixSettings` type in `vty-unix`.
+  * The `VtyUserConfig` type's fields got a `config` record prefix.
+* Behavior changes:
+  * Since `vty` no longer implements `mkVty`, the Vty user configuration
+    is no longer implicitly loaded by Vty-based applications.
+    Instead, it is now up to the applications to call
+    `Graphics.Vty.Config.userConfig` to load any user-provided
+    configuration.
+  * Vty no longer implicitly attempts to load configured Unicode
+    width tables. It is now the responsibility of the backend packages
+    (such as `vty-unix`) and/or applications to load tables via
+    `Graphics.Vty.UnicodeWidthTable.Main` or other library routines.
+* Changes to demonstration programs:
+  * `EventEcho`, `ModeDemo`, and `Rogue` demo programs moved to the
+    `vty-crossplatform` package.
+* Changes to tests:
+  * Where appropriate, some test programs and test cases were moved to
+    `vty-unix` or `vty-crossplatform`.
+
 5.38
 ----
 
