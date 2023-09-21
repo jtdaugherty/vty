@@ -21,10 +21,10 @@ where both `Vty` and `VtyUserConfig` come from `Graphics.Vty`.
 **The function should be exported by a module called
 `Graphics.Vty.Platform.<PLATFORM>`.**
 
-At an implementation level, though, its `mkVty` function must take care
-of initializing terminal input and output for the platform. This is done
-by providing implementations of the `Input` and `Output` records from
-the `vty` package.
+At an implementation level, its `mkVty` function must take care of
+initializing terminal input and output for the platform. This is done by
+providing implementations of the `Input` and `Output` records from the
+`vty` package.
 
 In addition, a platform package may provide its own platform-specific
 settings type. For example, the `vty-unix` package provides a
@@ -34,7 +34,8 @@ provides a settings type, please name it `<PLATFORM>Settings` to be
 consistent with existing packages (e.g., `UnixSettings`).**
 
 If the package provides a settings type, we recommend providing a
-function `mkVtyWithSettings` specialized to that settings type:
+`mkVty` alternative called `mkVtyWithSettings` specialized to that
+settings type:
 
 ```haskell
 mkVtyWithSettings :: VtyUserConfig -> UnixSettings -> IO Vty
