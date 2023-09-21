@@ -12,11 +12,13 @@ Here are the high-level steps required to add support for a new platform
 for Vty. We'll use a fictional "toy operating system" as the platform in
 this example.
 
-1. Create a new package, `vty-toy-os`.
-1. Expose a single module, `Graphics.Vty.Platform.ToyOS`.
+1. Create a new package named `vty-<platform>`, e.g. `vty-toy-os`.
+1. Expose a single module, `Graphics.Vty.Platform.<PLATFORM>`, e.g.
+   `Graphics.Vty.Platform.ToyOS`.
 1. Have `Graphics.Vty.Platform.ToyOS` expose:
-   * A function `mkVty :: VtyUserConfig -> IO Vty`.
-   * Optionally, a platform-specific settings type `data ToyOSSettings`.
+   * A required function `mkVty :: VtyUserConfig -> IO Vty`.
+   * Optionally, a platform-specific settings type `<PLATFORM>Settings`,
+     e.g. `data ToyOSSettings`.
    * Optionally, a platform-specific `Vty` constructor using the
      settings, `mkVtyWithSettings :: VtyUserConfig -> ToyOSSettings -> IO Vty`.
 1. Optionally, submit a pull request to the
