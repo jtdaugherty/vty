@@ -52,7 +52,8 @@ below. For people who want to write their own Vty platform package like
     * `Graphics.Vty.Input.Terminfo`
     * `Graphics.Vty.Output.TerminfoBased`
     * `Graphics.Vty.Output.XTermColor`
-  * The following modules were removed entirely:
+  * The following modules were removed entirely (with contents migrated
+    elsewhere as needed):
     * `Graphics.Vty.Inline.Unsafe`
     * `Graphics.Vty.Output.Interface`
   * Removed library dependencies on the following packages:
@@ -71,10 +72,11 @@ below. For people who want to write their own Vty platform package like
     construct `Vty` handles.
   * The contents of the `Graphics.Vty.Output.Interface` module were
     merged into `Graphics.Vty.Output`.
-  * The `vty-build-width-table` tool was removed, but its
-    core functionality is now exposed as a library for platform
-    packages to use to provide platform-specific tools using
-    `Graphics.Vty.UnicodeWidthTable.Main`.
+  * The `vty-build-width-table` tool was removed from the `vty` package,
+    but its core functionality is now exposed as a library for
+    platform packages to use to provide platform-specific tools using
+    `Graphics.Vty.UnicodeWidthTable.Main` and a new tool by the same
+    name was added to the `vty-unix` package.
   * `Graphics.Vty.Events`: the `InternalEvent` type's
     `ResumeAfterSignal` constructor was renamed to
     `ResumeAfterInterrupt` to be a bit more abstract and
