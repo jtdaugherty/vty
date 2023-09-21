@@ -91,7 +91,7 @@ below. For people who want to write their own Vty platform package like
   * `Graphics.Vty.Config` now exposes `VtyUserConfig` instead of
     `Config`. Many of its fields were Unix-specific and were
     consequently moved to the `UnixSettings` type in `vty-unix`.
-  * The `VtyUserConfig` type's fields got a `config` record prefix.
+  * The `VtyUserConfig` type's fields got a `config` field name prefix.
 * Behavior changes:
   * Since `vty` no longer implements `mkVty`, the Vty user configuration
     is no longer implicitly loaded by Vty-based applications.
