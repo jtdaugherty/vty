@@ -65,7 +65,6 @@ below. For people who want to write their own Vty platform package like
   * The following executables were moved to other packages:
     * `vty-build-width-table`
     * `vty-mode-demo`
-    * `vty-demo`: TODO: move to `vty-crossplatform`?
 * API changes:
   * `Graphics.Vty.mkVty` moved to the `vty-unix` package.
   * Added `Graphics.Vty.mkVtyFromPair` for platform packages to

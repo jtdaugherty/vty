@@ -87,15 +87,3 @@ library
                        Graphics.Vty.UnicodeWidthTable.Query
                        Graphics.Vty.UnicodeWidthTable.Types
   c-sources:           cbits/mk_wcwidth.c
-
--- executable vty-demo
---   main-is:             Demo.hs
---   hs-source-dirs:      demos
---   default-language:    Haskell2010
---   ghc-options:         -threaded
---   build-depends:       base,
---                        vty,
---                        containers,
---                        microlens,
---                        microlens-mtl,
---                        mtl
