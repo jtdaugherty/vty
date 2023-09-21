@@ -13,7 +13,7 @@ forthcoming.
 To upgrade to this version of Vty, most people will only need to take a
 few steps:
 
-1. Add a dependency to `vty-unix`, `vty-windows,` or
+1. Add a package dependency on `vty-unix`, `vty-windows,` or
    `vty-crossplatform`, depending on the desired level of platform
    support. For example, if an application only supports Unix systems,
    it should depend on `vty-unix`. But if an application is intended to
