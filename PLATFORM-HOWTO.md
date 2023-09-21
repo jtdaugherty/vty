@@ -20,9 +20,9 @@ existing packages.
 1. Have `Graphics.Vty.Platform.ToyOS` expose:
    * A required function `mkVty :: VtyUserConfig -> IO Vty`.
    * Optionally, a platform-specific settings type `<PLATFORM>Settings`,
-     e.g. `data ToyOSSettings`.
-   * Optionally, a platform-specific `Vty` constructor using the
-     settings, `mkVtyWithSettings :: VtyUserConfig -> ToyOSSettings -> IO Vty`.
+     e.g. `data ToyOSSettings`, and a corresponding platform-specific
+     `Vty` constructor using the settings, `mkVtyWithSettings ::
+     VtyUserConfig -> ToyOSSettings -> IO Vty`.
 1. Optionally, submit a pull request to the
    [`vty-crossplatform`](https://github.com/jtdaugherty/vty-crossplatform)
    repository to get your new platform's package supported transparently
