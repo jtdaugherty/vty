@@ -13,11 +13,11 @@ forthcoming.
 To upgrade to this version of Vty, most people will only need to take a
 few steps:
 
-1. Add a dependency to `vty-unix` or `vty-crossplatform`, depending on
-   the desired level of platform support. For example, if an application
-   only supports Unix systems, it should depend on `vty-unix`. But
-   if an application is intended to work anywhere Vty works, then
-   `vty-crossplatform` is a better choice.
+1. Add a dependency to `vty-unix`, `vty-windows,` or
+   `vty-crossplatform`, depending on the desired level of platform
+   support. For example, if an application only supports Unix systems,
+   it should depend on `vty-unix`. But if an application is intended to
+   work anywhere Vty works, then `vty-crossplatform` is the best choice.
 2. Import `mkVty` from the platform package in step (1). (`mkVty` was
    removed from the `vty` package and is now the responsibility of each
    platform package.)
