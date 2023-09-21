@@ -8,8 +8,10 @@ platform package. This document provides some guidance on doing so.
 What goes in a platform package?
 --------------------------------
 
-At an API level, each platform package is responsible for providing one
-and only one function: `mkVty`. Its type must be
+At an API level, each platform package is responsible for providing
+one and only one function: `mkVty`. It must construct a `Vty` that has
+been initialized for the terminal in use. At a minimum, it must take a
+`VtyUserConfig` argument, i.e.,
 
 ```haskell
 mkVty :: VtyUserConfig -> IO Vty
@@ -50,3 +52,14 @@ mkVty userConfig = do
     out <- buildOutput settings
     mkVtyFromPair input out
 ```
+
+Can I get the new package integrated with `vty-crossplatform`?
+--------------------------------------------------------------
+
+Yes! The build-time requirement to integrate with
+the `vty-crossplatform` package is simply that your
+package export a function called `mkVty` with type
+`VtyUserConfig -> IO Vty`. Open a ticket on the
+[`vty-crossplatform`](https://github.com/jtdaugherty/vty-crossplatform)
+repository with a request to add your package and we can work out the
+details.
