@@ -35,7 +35,7 @@ consistent with existing packages (e.g., `UnixSettings`).**
 
 If the package provides a settings type, we recommend providing a
 `mkVty` alternative called `mkVtyWithSettings` specialized to that
-settings type:
+settings type in addition to the `mkVty` function, e.g.,
 
 ```haskell
 mkVtyWithSettings :: VtyUserConfig -> UnixSettings -> IO Vty
@@ -44,9 +44,15 @@ mkVtyWithSettings :: VtyUserConfig -> UnixSettings -> IO Vty
 Ultimately, the platform package's `mkVty` implementation must
 construct an `Input` and an `Output` for the terminal. Those can then
 be used to build the required `Vty` handle using the `vty` package's
-`mkVtyFromPair` function.
+`mkVtyFromPair` function. Here's a simple skeletal example:
 
 ```haskell
+import Graphics.Vty (Vty, VtyUserConfig, Input, Output, mkVtyFromPair)
+
+data UnixSettings = ...
+buildInput :: VtyUserConfig -> IO Input
+buildOutput :: UnixSettings -> IO Output
+
 mkVty :: VtyUserConfig -> IO Vty
 mkVty userConfig = do
     input <- buildInput userConfig
