@@ -5,8 +5,27 @@ If the existing platform backends for `vty` don't suit your needs
 (e.g. `vty-unix` and `vty-windows`) then you might need to write a new
 platform package. This document provides some guidance on doing so.
 
-What goes in a platform package?
---------------------------------
+Steps
+-----
+
+Here are the high-level steps required to add support for a new platform
+for Vty. We'll use a fictional "toy operating system" as the platform in
+this example.
+
+1. Create a new package, `vty-toy-os`.
+1. Expose a single module, `Graphics.Vty.Platform.ToyOS`.
+1. Have `Graphics.Vty.Platform.ToyOS` expose:
+   * A function `mkVty :: VtyUserConfig -> IO Vty`.
+   * Optionally, a platform-specific settings type `data ToyOSSettings`.
+   * Optionally, a platform-specific `Vty` constructor using the
+     settings, `mkVtyWithSettings :: VtyUserConfig -> ToyOSSettings -> IO Vty`.
+1. Optionally, submit a pull request to the
+   [`vty-crossplatform`](https://github.com/jtdaugherty/vty-crossplatform)
+   repository to get your new platform's package supported transparently
+   for users of `vty-crossplatform`.
+
+The details
+-----------
 
 At an API level, each platform package is responsible for providing
 one and only one function: `mkVty`. It must construct a `Vty` that has
