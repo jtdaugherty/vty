@@ -111,7 +111,7 @@ import Prelude
 import Control.Applicative hiding (many)
 
 import Control.Exception (catch, IOException, Exception(..), throwIO)
-import Control.Monad (liftM, guard, void)
+import Control.Monad (liftM, guard, void, when)
 
 import qualified Data.ByteString as BS
 #if !(MIN_VERSION_base(4,8,0))
@@ -132,6 +132,7 @@ import System.Directory ( getAppUserDataDirectory, doesFileExist
                         )
 import System.Environment (lookupEnv)
 import System.FilePath ((</>), takeDirectory)
+import System.IO (Handle, BufferMode(..), hReady, hGetBuffering, hSetBuffering, hGetChar, stdin)
 import System.Posix.IO (stdInput, stdOutput)
 import System.Posix.Types (Fd(..))
 import Foreign.C.Types (CInt(..), CChar(..))
@@ -293,6 +294,7 @@ standardIOConfig = do
       Nothing -> throwIO VtyMissingTermEnvVar
       Just t -> do
         mcolorMode <- detectColorMode t
+        flushInput stdin
         return defaultConfig
           { vmin               = Just 1
           , mouseMode          = Just False
@@ -486,3 +488,21 @@ addConfigWidthMap configPath term tablePath = do
                    Nothing -> do
                        appendFile configPath directive
                        return ConfigurationModified
+
+flushInput :: Handle -> IO ()
+flushInput h = do
+    mode <- hGetBuffering h
+    hSetBuffering h NoBuffering
+    whileM $ consume h
+    hSetBuffering h mode
+
+whileM :: (Monad m) => m Bool -> m ()
+whileM act = do
+    continue <- act
+    when continue $ whileM act
+
+consume :: Handle -> IO Bool
+consume h = do
+    avail <- hReady h
+    when avail $ void $ hGetChar h
+    return avail
