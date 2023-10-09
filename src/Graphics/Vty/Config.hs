@@ -132,7 +132,7 @@ import System.Directory ( getAppUserDataDirectory, doesFileExist
                         )
 import System.Environment (lookupEnv)
 import System.FilePath ((</>), takeDirectory)
-import System.IO (Handle, BufferMode(..), hReady, hGetBuffering, hSetBuffering, hGetChar, stdin)
+import System.IO (Handle, BufferMode(..), hReady, hSetBuffering, hGetChar, stdin)
 import System.Posix.IO (stdInput, stdOutput)
 import System.Posix.Types (Fd(..))
 import Foreign.C.Types (CInt(..), CChar(..))
@@ -491,10 +491,8 @@ addConfigWidthMap configPath term tablePath = do
 
 flushInput :: Handle -> IO ()
 flushInput h = do
-    mode <- hGetBuffering h
     hSetBuffering h NoBuffering
     whileM $ consume h
-    hSetBuffering h mode
 
 whileM :: (Monad m) => m Bool -> m ()
 whileM act = do
