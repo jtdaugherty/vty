@@ -109,6 +109,16 @@ below. For people who want to write their own Vty platform package like
   * Where appropriate, some test programs and test cases were moved to
     `vty-unix` or `vty-crossplatform`.
 
+5.39
+----
+
+Package changes:
+* Now builds with `mtl-2.3.*`.
+
+Bug fixes:
+* Fixed a long-standing issue where unused input on stdin could cause a
+  memory error and a crash when Vty was being initialized. (#266)
+
 5.38
 ----
 
