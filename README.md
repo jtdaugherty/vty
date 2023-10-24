@@ -80,19 +80,6 @@ you would like to implement support for a new platform for Vty, see
 Vty uses threads internally, so programs made with Vty need to be
 compiled with the threaded runtime using the GHC `-threaded` option.
 
-# Platform Support
-
-## Posix Terminals
-
-Unix-like systems are supported by the `vty-unix` platform package. For
-the most part, Vty uses `terminfo` to determine terminal protocol with
-some special rules to handle some omissions from `terminfo`.
-
-## Windows
-
-Windows systems are supported by the third-party `vty-windows` platform
-package.
-
 # Multi-Column Character Support
 
 Vty supports rendering of multi-column characters such as two-column
