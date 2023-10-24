@@ -26,7 +26,7 @@ few steps:
    itself. The platform packages do not re-export the core library's
    modules.
 4. If desired, call `Graphics.Vty.Config.userConfig` to load the Vty
-   user configuration since this step is longer automatic.
+   user configuration since this step is no longer automatic.
 
 For applications using more of Vty's API than just the basic
 initialization and rendering API, the full change list is provided
