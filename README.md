@@ -36,6 +36,12 @@ platform. Known platform packages are:
 Once you've initialized the terminal and have a `Vty` value, all of the
 `vty` package's API is now ready to use to do terminal I/O.
 
+# Implementing support for a new platform
+
+Although this shouldn't be necessary to do very often (if ever!), if
+you would like to implement support for a new platform for Vty, see
+`PLATFORM-HOWTO.md`.
+
 # Features
 
 * Supports a large number of terminals, i.e., vt100, ansi, hurd, linux,
