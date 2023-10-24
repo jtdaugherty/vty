@@ -44,15 +44,10 @@ you would like to implement support for a new platform for Vty, see
 
 # Features
 
-* Supports a large number of terminals, i.e., vt100, ansi, hurd, linux,
-  `screen`, etc., or anything with a sufficient terminfo entry.
-
-* Automatically handles window resizes.
-
-* Supports Unicode output on terminals with UTF-8 support.
-
 * Provides an efficient output algorithm. Output buffering and terminal
   state changes are minimized.
+
+* Automatically handles window resizes.
 
 * Minimizes repaint area, which virtually eliminates the flicker
   problems that plague ncurses programs.
@@ -60,18 +55,9 @@ you would like to implement support for a new platform for Vty, see
 * Provides a pure, compositional interface for efficiently constructing
   display images.
 
-* Automatically decodes keyboard keys into (key,[modifier]) tuples.
-
 * Automatically supports refresh on Ctrl-L.
 
-* Supports a keypress timeout after for lone ESC. The timeout is
-  customizable.
-
 * Provides extensible input and output interfaces.
-
-* Supports ANSI graphics modes (SGR as defined in `console_codes(4)`)
-  with a type-safe interface and graceful fallback for terminals
-  with limited or nonexistent support for such modes.
 
 * Properly handles cleanup (but not due to signals).
 
@@ -199,25 +185,6 @@ should consider to make submitting patches easier for all concerned:
  - If you make changes, make them consistent with the syntactic
    conventions already used in the codebase.
  - Please provide Haddock documentation for any changes you make.
-
-# Known Issues
-
-* Terminals have numerous quirks and bugs, so mileage may vary. Please
-  report issues as you encounter them and provide details on your
-  terminal emulator, operating system, etc.
-
-* STOP, TERM and INT signals are not handled.
-
-* The character encoding of the terminal is assumed to be UTF-8 if
-  unicode is used.
-
-* Terminfo is assumed to be correct unless there is an override
-  configured. Some terminals will not have correct special key support
-  (shifted F10 etc). See `Config` for customizing vty's behavior for a
-  particular terminal.
-
-* Vty uses the `TIOCGWINSZ` ioctl to find the current window size, which
-  appears to be limited to Linux and BSD.
 
 # Further Reading
 
