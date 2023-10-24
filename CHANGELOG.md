@@ -63,10 +63,12 @@ below. For people who want to write their own Vty platform package like
     * `transformers`
     * `unix`
   * The following executables were moved to other packages:
-    * `vty-build-width-table`
-    * `vty-mode-demo`
+    * `vty-build-width-table` (moved to `vty-unix` as
+      `vty-unix-build-width-table`)
+    * `vty-mode-demo` (moved to `vty-crossplatform`)
 * API changes:
-  * `Graphics.Vty.mkVty` moved to the `vty-unix` package.
+  * `Graphics.Vty.mkVty` moved to the `vty-unix` package's
+    `Graphics.Vty.Platform.Unix` module.
   * Added `Graphics.Vty.mkVtyFromPair` for platform packages to
     construct `Vty` handles.
   * The contents of the `Graphics.Vty.Output.Interface` module were
