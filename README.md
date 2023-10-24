@@ -105,13 +105,11 @@ character width table. Since the built-in table is likely to eventually
 disagree with your terminal, Vty provides an API and a command-line tool
 to generate and install custom tables.
 
-Custom Unicode width tables based on your terminal emulator can be
-built by running Vty's built-in tool, `vty-build-width-table`. The tool
-works by querying the current terminal emulator to obtain its width
-measurements for the entire supported Unicode range. The
-results are then saved to a disk file. These custom tables
-can also be generated programmatically by using the API in
-`Graphics.Vty.UnicodeWidthTable.Query`.
+Custom Unicode width tables based on your terminal emulator can
+be built by using the API in `Graphics.Vty.UnicodeWidthTable`.
+The process works by querying the current terminal environment to
+obtain its width measurements for the entire supported Unicode
+range. The results are then saved to a disk file.
 
 Saved width tables can then be loaded in one of two ways:
 
@@ -144,20 +142,6 @@ Once a custom table has been loaded, the functions will use the new
 custom table. Only one custom table load can be performed in a Vty
 program. Once a custom table has been loaded, it cannot be replaced or
 removed.
-
-Without using a custom width table, users of Vty-based applications
-are likely to eventually experience rendering problems with with wide
-characters. We recommend that developers of Vty-based applications either:
-
-* Provide the `vty-build-width-table` tool and documentation for running
-  it and updating the Vty configuration, or
-* Have the application invoke the Vty library's table-building
-  functionality and load the table at startup without using the Vty
-  configuration.
-
-The best option will depend on a number of factors: the user audience,
-the amount of risk posed by wide character rendering, the terminal
-emulators in use, etc.
 
 # Contributing
 
