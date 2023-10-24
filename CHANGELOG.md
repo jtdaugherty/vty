@@ -102,9 +102,10 @@ below. For people who want to write their own Vty platform package like
     `Graphics.Vty.Config.userConfig` to load any user-provided
     configuration.
   * Vty no longer implicitly attempts to load configured Unicode
-    width tables. It is now the responsibility of the backend packages
+    width tables. It is now the responsibility of the platform packages
     (such as `vty-unix`) and/or applications to load tables via
-    `Graphics.Vty.UnicodeWidthTable.Main` or other library routines.
+    `Graphics.Vty.UnicodeWidthTable.IO` and install them via
+    `Graphics.Vty.UnicodeWidthTable.Install`.
 * Changes to demonstration programs:
   * `EventEcho`, `ModeDemo`, and `Rogue` demo programs moved to the
     `vty-crossplatform` package.
