@@ -4,17 +4,37 @@
 interface for doing terminal I/O. Vty is supported on GHC versions
 7.10.1 and up.
 
-Install via `git` with:
+`vty` and its partner packages are published on
+[Hackage](https://hackage.haskell.org/). The `vty` package works in
+concert with one or more *platform packages* to do terminal I/O. Each
+platform package provides support for terminal I/O on a specific
+platform. Known platform packages are:
 
-```
-git clone git://github.com/jtdaugherty/vty.git
-```
+* [vty-unix](https://github.com/jtdaugherty/vty-unix) - the Unix
+  terminal backend for Vty
+* [vty-windows](https://github.com/chhackett/vty-windows) - the Windows
+  terminal backend for Vty
+* [vty-crossplatform](https://github.com/jtdaugherty/vty-crossplatform) -
+  a package that builds `vty-unix` or `vty-windows` based on the build
+  environment
 
-Install via `cabal` with:
+# How to use Vty
 
-```
-cabal install vty
-```
+1. Add a package dependency on `vty-unix`, `vty-windows,` or
+   `vty-crossplatform`, depending on the desired level of platform
+   support. For example, if an application only supports Unix systems,
+   it should depend on `vty-unix`. But if an application is intended to
+   work anywhere Vty works, then `vty-crossplatform` is the best choice.
+2. Add a package dependency on `vty`; the core library abstractions,
+   types, and functions are obtained from `vty` itself. The platform
+   packages do not re-export the core library's modules.
+3. Import `mkVty` from the platform package in step (1) and use that to
+   construct a `Vty` handle and initialize the terminal.
+4. If desired, call `Graphics.Vty.Config.userConfig` to load the Vty
+   user configuration since this step is not automatic.
+
+Once you've initialized the terminal and have a `Vty` value, all of the
+`vty` package's API is now ready to use to do terminal I/O.
 
 # Features
 
@@ -72,12 +92,14 @@ compiled with the threaded runtime using the GHC `-threaded` option.
 
 ## Posix Terminals
 
-For the most part, Vty uses `terminfo` to determine terminal protocol
-with some special rules to handle some omissions from `terminfo`.
+Unix-like systems are supported by the `vty-unix` platform package. For
+the most part, Vty uses `terminfo` to determine terminal protocol with
+some special rules to handle some omissions from `terminfo`.
 
 ## Windows
 
-Windows is not supported.
+Windows systems are supported by the third-party `vty-windows` platform
+package.
 
 # Multi-Column Character Support
 
