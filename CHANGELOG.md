@@ -55,7 +55,8 @@ below. For people who want to write their own Vty platform package like
   * The following modules were removed entirely (with contents migrated
     elsewhere as needed):
     * `Graphics.Vty.Inline.Unsafe`
-    * `Graphics.Vty.Output.Interface`
+    * `Graphics.Vty.Output.Interface` (migrated to
+      `Graphics.Vty.Output`)
   * Removed library dependencies on the following packages:
     * `ansi-terminal`
     * `containers`
