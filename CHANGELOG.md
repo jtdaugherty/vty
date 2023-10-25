@@ -10,6 +10,8 @@ applications that want to support multiple Vty platforms at build time,
 and at the time of this release, a release of a `vty-windows` package is
 forthcoming.
 
+**Migration guide for 6.0**
+
 To upgrade to this version of Vty, most people will only need to take a
 few steps:
 
@@ -32,6 +34,8 @@ For applications using more of Vty's API than just the basic
 initialization and rendering API, the full change list is provided
 below. For people who want to write their own Vty platform package like
 `vty-unix`, see `PLATFORM-HOWTO.md`.
+
+**Detailed change list for 6.0**
 
 * Package changes:
   * The following modules got added to the `vty` library:
