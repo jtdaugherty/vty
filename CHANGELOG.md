@@ -22,7 +22,10 @@ few steps:
    work anywhere Vty works, then `vty-crossplatform` is the best choice.
 2. Import `mkVty` from the platform package in step (1). (`mkVty` was
    removed from the `vty` package and is now the responsibility of each
-   platform package.)
+   platform package.) Imports are as follows:
+   * `vty-unix`: `Graphics.Vty.Platform.Unix`
+   * `vty-windows`: `Graphics.Vty.Platform.Windows`
+   * `vty-crossplatform`: `Graphics.Vty.CrossPlatform`
 3. Maintain any existing package dependency on `vty`; the core library
    abstractions, types, and functions are still obtained from `vty`
    itself. The platform packages do not re-export the core library's
