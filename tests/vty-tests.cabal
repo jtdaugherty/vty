@@ -28,7 +28,7 @@ library
                        Verify.Graphics.Vty.Span
                        Verify.Graphics.Vty.Output
   build-depends:       base >= 4.8 && < 5,
-                       deepseq >= 1.1 && < 1.5,
+                       deepseq >= 1.1 && < 1.6,
                        mtl >= 1.1.1.0 && < 2.4,
                        utf8-string >= 0.3 && < 1.1,
                        vector >= 0.7,
