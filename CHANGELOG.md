@@ -1,4 +1,17 @@
 
+6.1
+---
+
+API changes:
+* `ColorMode` got a `Read` instance.
+* The `Config` type got a new `configPreferredColorMode` field for
+  specifying a preferred `ColorMode`. Backend packages should respect
+  this field, but note that `vty` itself does not (and cannot) enact
+  this preference since it's up to the backend driver to configure the
+  color mode.
+* The Vty configuration file got a new `colorMode` field whose value is
+  a string literal compatible with the `ColorMode` `Read` instance.
+
 6.0
 ---
 
