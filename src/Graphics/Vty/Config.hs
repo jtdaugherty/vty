@@ -10,6 +10,20 @@
 --
 -- = Debug
 --
+-- == @colorMode@
+--
+-- Format:
+--
+-- @
+--  colorMode \"<ColorMode8|ColorMode16|ColorMode240 <int>|FullColor>\"
+-- @
+--
+-- The preferred color mode to use, chosen from the constructors of the
+-- 'ColorMode' type. If absent, the backend driver may detect and choose
+-- an appropriate color mode. Implementor's note: backend packages
+-- should respect this setting when it is present even when their
+-- detection indicates that a different color mode should be used.
+--
 -- == @debugLog@
 --
 -- Format:
@@ -113,7 +127,9 @@ import Data.Monoid (Monoid(..))
 #if !(MIN_VERSION_base(4,11,0))
 import Data.Semigroup (Semigroup(..))
 #endif
+import Text.Read (readMaybe)
 
+import Graphics.Vty.Attributes.Color (ColorMode(..))
 import Graphics.Vty.Input.Events
 
 import GHC.Generics
@@ -291,6 +307,12 @@ debugLogDecl = do
     path       <- P.stringLiteral configLexer
     return defaultConfig { configDebugLog = Just path }
 
+colorModeDecl :: Parser VtyUserConfig
+colorModeDecl = do
+    "colorMode" <- P.identifier configLexer
+    mode <- P.stringLiteral configLexer
+    return defaultConfig { configPreferredColorMode = readMaybe mode }
+
 widthMapDecl :: Parser VtyUserConfig
 widthMapDecl = do
     "widthMap" <- P.identifier configLexer
@@ -304,7 +326,7 @@ ignoreLine = void $ manyTill anyChar newline
 parseConfig :: Parser VtyUserConfig
 parseConfig = liftM mconcat $ many $ do
     P.whiteSpace configLexer
-    let directives = [try mapDecl, try debugLogDecl, try widthMapDecl]
+    let directives = [try mapDecl, try debugLogDecl, try widthMapDecl, try colorModeDecl]
     choice directives <|> (ignoreLine >> return defaultConfig)
 
 class    Parse a        where parseValue :: Parser a
