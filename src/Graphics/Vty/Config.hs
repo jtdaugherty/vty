@@ -158,6 +158,9 @@ data VtyUserConfig =
                   -- configuration specifies one. If no custom table is loaded
                   -- (or if a load fails), the built-in character width table
                   -- will be used.
+                  , configPreferredColorMode :: Maybe ColorMode
+                  -- ^ Preferred color mode. If set, this should
+                  -- override platform color mode detection.
                   }
                   deriving (Show, Eq)
 
@@ -175,6 +178,8 @@ instance Semigroup VtyUserConfig where
                           configTermWidthMaps c1 <|> configTermWidthMaps c0
                       , configAllowCustomUnicodeWidthTables =
                           configAllowCustomUnicodeWidthTables c1 <|> configAllowCustomUnicodeWidthTables c0
+                      , configPreferredColorMode =
+                          configPreferredColorMode c1 <|> configPreferredColorMode c0
                       }
 
 instance Monoid VtyUserConfig where
@@ -183,6 +188,7 @@ instance Monoid VtyUserConfig where
                       , configInputMap = mempty
                       , configTermWidthMaps = []
                       , configAllowCustomUnicodeWidthTables = Nothing
+                      , configPreferredColorMode = Nothing
                       }
 #if !(MIN_VERSION_base(4,11,0))
     mappend = (<>)
