@@ -110,7 +110,7 @@ data ColorMode
     | ColorMode16
     | ColorMode240 !Word8
     | FullColor
-    deriving ( Eq, Show )
+    deriving ( Eq, Show, Read )
 
 black, red, green, yellow, blue, magenta, cyan, white :: Color
 black  = ISOColor 0
