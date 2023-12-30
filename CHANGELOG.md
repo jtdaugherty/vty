@@ -45,6 +45,9 @@ few steps:
    modules.
 4. If desired, call `Graphics.Vty.Config.userConfig` to load the Vty
    user configuration since this step is no longer automatic.
+5. Some configurations have been moved to `Graphics.Vty.Output`. For 
+   example, `mouseMode` is no longer a field in `VtyUserConfig`. 
+   Instead, use `setMode` to enable it.
 
 For applications using more of Vty's API than just the basic
 initialization and rendering API, the full change list is provided
