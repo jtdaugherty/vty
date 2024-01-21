@@ -3,7 +3,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 -- | Transforms an image into rows of operations.
 module Graphics.Vty.PictureToSpans
@@ -19,7 +18,6 @@ import Graphics.Vty.Span
 
 import Lens.Micro
 import Lens.Micro.Mtl
-import Lens.Micro.TH
 import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.State.Strict hiding ( state )
@@ -55,14 +53,34 @@ data BlitState = BlitState
     , _remainingRows :: Int
     }
 
-makeLenses ''BlitState
+columnOffset :: Lens' BlitState Int
+columnOffset = lens _columnOffset (\e v -> e { _columnOffset = v })
+
+rowOffset :: Lens' BlitState Int
+rowOffset = lens _rowOffset (\e v -> e { _rowOffset = v })
+
+skipColumns :: Lens' BlitState Int
+skipColumns = lens _skipColumns (\e v -> e { _skipColumns = v })
+
+skipRows :: Lens' BlitState Int
+skipRows = lens _skipRows (\e v -> e { _skipRows = v })
+
+remainingColumns :: Lens' BlitState Int
+remainingColumns = lens _remainingColumns (\e v -> e { _remainingColumns = v })
+
+remainingRows :: Lens' BlitState Int
+remainingRows = lens _remainingRows (\e v -> e { _remainingRows = v })
 
 data BlitEnv s = BlitEnv
     { _region :: DisplayRegion
     , _mrowOps :: MRowOps s
     }
 
-makeLenses ''BlitEnv
+region :: Lens' (BlitEnv s) DisplayRegion
+region = lens _region (\e r -> e { _region = r })
+
+mrowOps :: Lens' (BlitEnv s) (MRowOps s)
+mrowOps = lens _mrowOps (\e r -> e { _mrowOps = r })
 
 type BlitM s a = ReaderT (BlitEnv s) (StateT BlitState (ST s)) a
 
