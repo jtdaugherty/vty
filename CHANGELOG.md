@@ -1,4 +1,14 @@
 
+6.2
+---
+
+Package changes:
+* Update version bounds to support building with GHC 9.8
+
+Bug fixes:
+* Updated `PictureToSpans` module to implement its lenses manually to
+  avoid template haskell which has trouble on Windows and GHC 9.2 (#271)
+
 6.1
 ---
 
