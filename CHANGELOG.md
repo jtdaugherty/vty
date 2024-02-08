@@ -126,8 +126,14 @@ below. For people who want to write their own Vty platform package like
     IO ()`, for logging to the Vty log.
   * `Graphics.Vty.Config` now exposes `VtyUserConfig` instead of
     `Config`. Many of its fields were Unix-specific and were
-    consequently moved to the `UnixSettings` type in `vty-unix`.
+    consequently moved to the `UnixSettings` type in `vty-unix` and
+    given a `settings` prefix. This includes `outputFd`, `inputFd`,
+    `vmin`, `vtime`, and `termName`.
   * The `VtyUserConfig` type's fields got a `config` field name prefix.
+  * `inputForConfig` was moved to `vty-unix` as `buildInput` but
+    generally should not be needed and is exposed only for testing.
+  * `outputForConfig` was moved to `vty-unix` as `buildOutput` but
+    generally should not be needed and is exposed only for testing.
 * Behavior changes:
   * Since `vty` no longer implements `mkVty`, the Vty user configuration
     is no longer implicitly loaded by Vty-based applications.
