@@ -14,9 +14,6 @@ description:
   See the example programs in the @vty-crossplatform@ package examples
   on how to use the library.
   .
-  Import the @Graphics.Vty@ convenience module to get access to the core
-  parts of the library.
-  .
   &#169; 2006-2007 Stefan O'Rear; BSD3 license.
   .
   &#169; Corey O'Connor; BSD3 license.
