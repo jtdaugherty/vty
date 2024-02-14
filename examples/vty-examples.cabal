@@ -12,9 +12,6 @@ description:
   be easy to use, have no confusing corner cases, and good support for
   common terminal types.
   .
-  vty-interactive-terminal-test - interactive test. Useful for building
-  a bug report for vtys author.
-  .
   vty-benchmark - benchmarks vty. A series of tests that push random
   pictures to the terminal.
   .
@@ -27,18 +24,6 @@ build-type:           Simple
 source-repository head
   type: git
   location: https://github.com/jtdaugherty/vty.git
-
-executable vty-interactive-terminal-test
-  main-is:             interactive_terminal_test.hs
-
-  default-language:    Haskell2010
-  default-extensions:  ScopedTypeVariables
-  ghc-options:         -threaded
-
-  build-depends:       base >= 4 && < 5,
-                       vty,
-                       string-qq,
-                       Cabal
 
 executable vty-benchmark
   main-is:             benchmark.hs

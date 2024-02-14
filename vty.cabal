@@ -11,9 +11,8 @@ description:
   vty is terminal GUI library in the niche of ncurses. It is intended to
   be easy to use and to provide good support for common terminal types.
   .
-  See the @vty-examples@ package as well as the program
-  @examples/interactive_terminal_test.hs@ included in the @vty@
-  repository for examples on how to use the library.
+  See the example programs in the @vty-crossplatform@ package examples
+  on how to use the library.
   .
   Import the @Graphics.Vty@ convenience module to get access to the core
   parts of the library.
