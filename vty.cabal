@@ -51,7 +51,8 @@ library
                        binary,
                        parsec,
                        filepath,
-                       directory
+                       directory,
+                       vty-input
 
   if !impl(ghc >= 8.0)
     build-depends:     semigroups >= 0.16,
@@ -70,7 +71,6 @@ library
                        Graphics.Vty.Image.Internal
                        Graphics.Vty.Inline
                        Graphics.Vty.Input
-                       Graphics.Vty.Input.Events
                        Graphics.Vty.Output
                        Graphics.Vty.Output.Mock
                        Graphics.Vty.Picture
@@ -81,4 +81,6 @@ library
                        Graphics.Vty.UnicodeWidthTable.Main
                        Graphics.Vty.UnicodeWidthTable.Query
                        Graphics.Vty.UnicodeWidthTable.Types
+  reexported-modules:  Graphics.Vty.Input.Events
+
   c-sources:           cbits/mk_wcwidth.c
