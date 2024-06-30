@@ -199,11 +199,13 @@ jobs:
       - name: generate cabal.project
         run: |
           PKGDIR_vty="$(find "$GITHUB_WORKSPACE/unpacked" -maxdepth 1 -type d -regex '.*/vty-[0-9.]*')"
+          PKGDIR_vtyinput="$(find "$GITHUB_WORKSPACE/unpacked" -maxdepth 1 -type d -regex '.*/vty-input-[0-9.]*')"
           echo "PKGDIR_vty=${PKGDIR_vty}" >> "$GITHUB_ENV"
+          echo "PKGDIR_vtyinput=${PKGDIR_vtyinput}" >> "$GITHUB_ENV"
           rm -f cabal.project cabal.project.local
           touch cabal.project
           touch cabal.project.local
-          echo "packages: ${PKGDIR_vty}" >> cabal.project
+          echo "packages: ${PKGDIR_vty},${PKGDIR_vtyinput}" >> cabal.project
           if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "package vty" >> cabal.project ; fi
           if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "    ghc-options: -Werror=missing-methods" >> cabal.project ; fi
           cat >> cabal.project <<EOF
