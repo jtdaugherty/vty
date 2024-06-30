@@ -1,15 +1,12 @@
 name:                vty-input
-version:             5.37
+version:             1.0.0
 license:             BSD3
-license-file:        LICENSE
-author:              AUTHORS
 maintainer:          Jonathan Daugherty (cygnus@foobox.com)
 homepage:            https://github.com/jtdaugherty/vty
 category:            User Interfaces
 synopsis:            Input event definitions for the Vty library
 cabal-version:       1.18
 build-type:          Simple
-extra-doc-files:     LICENSE
 tested-with:         GHC==7.10.3, GHC==8.0.2, GHC==8.2.2, GHC==8.4.3, GHC==8.6.5
 
 source-repository head
