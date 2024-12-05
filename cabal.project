@@ -1,2 +1,6 @@
 packages: .
           tests/
+
+if impl (ghc >= 9.12)
+  allow-newer:
+    , splitmix:base
