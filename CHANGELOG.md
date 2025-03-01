@@ -1,4 +1,12 @@
 
+6.3
+---
+
+* Raise microlens upper bound to build with 0.4.14 (#278)
+* Updated other bounds to permit building with GHC 9.12 (thanks Erik de
+  Catro Lopo)
+* Removed defunct examples from project
+
 6.2
 ---
 
