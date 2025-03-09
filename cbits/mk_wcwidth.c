@@ -72,6 +72,9 @@
 // built-in tree search logic is used.
 static uint8_t* custom_table = NULL;
 
+// Unused table cell value.
+static uint8_t UNUSED_CELL = 0xff;
+
 // The size of the custom table, in entries. This should only be set
 // if custom_table is not NULL. Its value should be the size of the
 // custom_table array.
@@ -228,14 +231,24 @@ static HsInt builtin_wcwidth(HsChar ucs)
 // Return the width, in terminal cells, of the specified character.
 //
 // If the global custom width table is present, that table will be
-// consulted for the character's width. If the character is not in
-// the table, zero will be returned. If the custom width table is not
-// present, the built-in width table will be used.
+// consulted for the character's width. If the character is not in the
+// table, this will fall back to the built-in table. If the character is
+// in neither table, zero will be returned. If the custom width table is
+// not present, the built-in width table will be used.
 HsInt vty_mk_wcwidth(HsChar ch)
 {
     if (custom_table_ready) {
         if ((ch >= 0) && (ch < custom_table_size)) {
-            return custom_table[ch];
+            uint8_t result = custom_table[ch];
+
+            // The table is filled with UNUSED_CELL values for
+            // uninitialized ranges so we can defer to the built-in
+            // table in those cases.
+            if (result == UNUSED_CELL) {
+                return builtin_wcwidth(ch);
+            } else {
+                return result;
+            }
         } else {
             return -1;
         }
@@ -249,7 +262,7 @@ HsInt vty_mk_wcwidth(HsChar ch)
 // This allocates a new character width table of the specified size
 // (in characters). If a custom table has already been allocated, this
 // returns 1. Otherwise it allocates a new table, initializes all of its
-// entries to 1, and returns zero.
+// entries to UNUSED_CELL, and returns zero.
 //
 // Note that this does *not* mark the table as ready for use. Until the
 // table is marked ready, it will not be used by vty_mk_wcwidth. To mark
@@ -261,7 +274,7 @@ int vty_init_custom_table(int size)
         if (size > 0 && size <= MAX_CUSTOM_TABLE_SIZE) {
             custom_table_ready = 0;
             custom_table = malloc(size);
-            memset(custom_table, 1, size);
+            memset(custom_table, UNUSED_CELL, size);
             custom_table_size = size;
             return 0;
         } else {
