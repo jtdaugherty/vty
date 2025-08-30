@@ -172,7 +172,7 @@ mergeRowUnder upperRowOps =
 
 swapSkipsForSingleColumnCharSpan :: Char -> Attr -> SpanOps -> SpanOps
 swapSkipsForSingleColumnCharSpan c a = Vector.map f
-    where f (Skip ow) = let txt = TL.pack $ replicate ow c
+    where f (Skip ow) = let txt = TL.take (toEnum ow) $ TL.repeat c
                         in TextSpan a ow ow txt
           f v = v
 
