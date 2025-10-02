@@ -48,7 +48,7 @@ library
                        mtl >= 1.1.1.0 && < 2.4,
                        stm,
                        text >= 0.11.3,
-                       utf8-string >= 0.3 && < 1.1,
+                       utf8-string >= 0.3.1 && < 1.1,
                        vector >= 0.7,
                        binary,
                        parsec,
