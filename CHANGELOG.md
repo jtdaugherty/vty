@@ -1,4 +1,13 @@
 
+6.5
+---
+
+* Raised upper bound on `microlens` dependency to permit builds against
+  0.5.
+* Fixed the `utf8-string` dependency lower bound to account for an added
+  module in 0.3.1. (#279)
+* Improved the allocation behavior of `swapSkipsForSingleColumnCharSpan`.
+
 6.4
 ---
 
