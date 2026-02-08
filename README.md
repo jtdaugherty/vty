@@ -148,6 +148,8 @@ removed.
 If you decide to contribute, that's great! Here are some guidelines you
 should consider to make submitting patches easier for all concerned:
 
+ - Patches written completely or partially by AI are unlikely to be
+   accepted.
  - Please ensure that the examples and test suites build along with the
    library by running `build.sh` in the repository.
  - If you want to take on big things, talk to me first; let's have a
