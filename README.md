@@ -149,15 +149,17 @@ If you decide to contribute, that's great! Here are some guidelines you
 should consider to make submitting patches easier for all concerned:
 
  - Patches written completely or partially by AI are unlikely to be
-   accepted.
- - Please ensure that the examples and test suites build along with the
-   library by running `build.sh` in the repository.
+   accepted. Please disclose any AI use.
  - If you want to take on big things, talk to me first; let's have a
    design/vision discussion before you start coding. Create a GitHub
    issue and we can use that as the place to hash things out.
  - If you make changes, make them consistent with the syntactic
    conventions already used in the codebase.
  - Please provide Haddock documentation for any changes you make.
+ - Please do NOT include package version changes in your patches.
+   Package version changes are only done at release time when the full
+   scope of a release's changes can be evaluated to determine the
+   appropriate version change.
 
 # Further Reading
 
