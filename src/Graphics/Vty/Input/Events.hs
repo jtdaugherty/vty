@@ -42,7 +42,14 @@ data Modifier = MShift | MCtrl | MMeta | MAlt
 instance NFData Modifier
 
 -- | Mouse buttons.
-data Button = BLeft | BMiddle | BRight | BScrollUp | BScrollDown
+data Button 
+    = BLeft 
+    | BMiddle 
+    | BRight 
+    | BScrollUp 
+    | BScrollDown 
+    | BScrollLeft -- ^ Some terminals (e.g., Kitty, Alacritty) support horizontal scrolling too. 
+    | BScrollRight
     deriving (Eq, Show, Read, Ord, Generic)
 
 instance NFData Button
