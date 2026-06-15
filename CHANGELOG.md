@@ -1,4 +1,12 @@
 
+6.6
+---
+
+* Added support for horizontal scrolling inputs. The `Button` type in
+  `Graphics.Vty.Input.Events` got new constructors `BScrollLeft` and
+  `BScrollRight` for Vty backend implementations that support horizontal
+  scrolling inputs.
+
 6.5
 ---
 
