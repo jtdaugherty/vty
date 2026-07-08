@@ -150,6 +150,14 @@ should consider to make submitting patches easier for all concerned:
 
  - Patches written completely or partially by AI are unlikely to be
    accepted. Please disclose any AI use.
+ - Use good commit hygiene: each commit should make a single,
+   independent logical change and its commit message should clearly
+   describe the motivation for that change and what it does at a high
+   level. If a commit changes something that has tests, the commit
+   should also include test changes as well, or add new tests if
+   possible. "WIP" commits, commits that mix up style and substance
+   (e.g. reformatting style while also adding a feature), etc., are to
+   be avoided.
  - If you want to take on big things, talk to me first; let's have a
    design/vision discussion before you start coding. Create a GitHub
    issue and we can use that as the place to hash things out.
