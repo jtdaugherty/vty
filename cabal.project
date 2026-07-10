@@ -1,6 +1,14 @@
 packages: .
           tests/
 
-if impl (ghc >= 9.12)
+tests: True
+
+test-show-details: direct
+
+if impl (ghc >= 9.14)
   allow-newer:
+    , directory:time
+    , primitive:base
     , splitmix:base
+    , tagged:template-haskell
+    , test-framework:time
