@@ -247,7 +247,7 @@ isOutOfBounds i s
 --
 addMaybeClipped :: forall s . Image -> BlitM s ()
 addMaybeClipped EmptyImage = return ()
-addMaybeClipped (HorizText a textStr ow _cw) = do
+addMaybeClipped (HorizText a textStr ow cw) = do
     -- This assumes that text spans are only 1 row high.
     s <- use skipRows
     when (s < 1) $ do
@@ -258,7 +258,7 @@ addMaybeClipped (HorizText a textStr ow _cw) = do
         if leftClipped || rightClipped
             then let textStr' = clipText textStr leftClip rightClip
                  in addUnclippedText a textStr'
-            else addUnclippedText a textStr
+            else snocOp (TextSpan a ow cw textStr) =<< use rowOffset
 addMaybeClipped (VertJoin topImage bottomImage _ow oh) = do
     when (imageHeight topImage + imageHeight bottomImage > 0) $
         addMaybeClippedJoin "vert_join" skipRows remainingRows rowOffset
