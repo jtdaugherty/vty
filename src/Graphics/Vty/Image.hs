@@ -42,6 +42,7 @@ module Graphics.Vty.Image
   , translate
   , translateX
   , translateY
+  , rewriteAttrs
   -- * Character width functions
   , safeWcwidth
   , safeWcswidth

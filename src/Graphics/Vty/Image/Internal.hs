@@ -9,6 +9,7 @@ module Graphics.Vty.Image.Internal
   , imageWidth
   , horizJoin
   , vertJoin
+  , rewriteAttrs
 
   , ppImageStructure
   , clipText
@@ -120,6 +121,26 @@ data Image =
     -- Any image of zero size equals the empty image.
     | EmptyImage
     deriving (Eq, Generic, Show, Read)
+
+-- | Rewrite all attributes in the image using the specified
+-- transformation.
+rewriteAttrs :: (Attr -> Attr) -> Image -> Image
+rewriteAttrs f i =
+    case i of
+        HorizText { attr = a } ->
+            i { attr = f a }
+        HorizJoin { partLeft = l, partRight = r } ->
+            i { partLeft = rewriteAttrs f l
+              , partRight = rewriteAttrs f r
+              }
+        VertJoin { partTop = t, partBottom = b } ->
+            i { partTop = rewriteAttrs f t
+              , partBottom = rewriteAttrs f b
+              }
+        Crop { croppedImage = c } ->
+            i { croppedImage = rewriteAttrs f c }
+        BGFill {} -> i
+        EmptyImage -> i
 
 -- | pretty print just the structure of an image.
 ppImageStructure :: Image -> String
