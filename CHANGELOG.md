@@ -1,4 +1,17 @@
 
+6.7
+---
+
+API changes:
+
+* `Graphics.Vty.Image`: added `rewriteAttrs` for performing arbitrary
+  attribute transformations over images
+
+Other improvements:
+
+* Improved image performance by re-using known text string widths
+  (thanks Andrzej Rybczak)
+
 6.6
 ---
 
