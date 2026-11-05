@@ -51,7 +51,8 @@ library
                        utf8-string >= 0.3.1 && < 1.1,
                        vector >= 0.7,
                        binary,
-                       parsec,
+                       -- Earlier versions have an identifier clash with mtl.
+                       parsec >= 3.1.18,
                        filepath,
                        directory
 
